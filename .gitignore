@@ -1,0 +1,8 @@
+.vs
+_ReSharper.Caches
+
+*.user
+
+Mute/bin
+Mute/obj
+Mute/config.json
