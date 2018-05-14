@@ -1,80 +1,152 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Addons.Interactive;
+using Discord.Commands;
 using Discord.WebSocket;
-using Mute;
+using Microsoft.Extensions.DependencyInjection;
+using Mute.Services;
 using Newtonsoft.Json;
 
-namespace _01_basic_ping_bot
+namespace Mute
 {
-    // This is a minimal, barebones example of using Discord.Net
-    //
-    // If writing a bot with commands, we recommend using the Discord.Net.Commands
-    // framework, rather than handling commands yourself, like we do in this sample.
-    //
-    // You can find samples of using the command framework:
-    // - Here, under the 02_commands_framework sample
-    // - https://github.com/foxbot/DiscordBotBase - a barebones bot template
-    // - https://github.com/foxbot/patek - a more feature-filled bot, utilizing more aspects of the library
     class Program
     {
-        private DiscordSocketClient _client;
-        private Configuration _config;
+        private readonly CommandService _commands;
+        private readonly DiscordSocketClient _client;
+        private readonly IServiceProvider _services;
 
-        static void Main(string[] args) => new Program().MainAsync(args).GetAwaiter().GetResult();
+        private readonly Configuration _config;
 
-        public async Task MainAsync(string[] args)
+        #region static main
+        static void Main(string[] args) 
         {
-            //Sanity check and early exit
-            if (!File.Exists(@"configuration.json"))
+            //Sanity check config file exists and early exit
+            if (!File.Exists(@"config.json"))
             {
+                Console.Write(Directory.GetCurrentDirectory());
                 Console.Error.WriteLine("No config file found");
                 return;
             }
 
             //Read config file
-            _config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(@"configuration.json"));
+            var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(@"config.json"));
 
+            //Run the program
+            new Program(config)
+                .MainAsync(args)
+                .GetAwaiter()
+                .GetResult();
+        }
+        #endregion
+
+        public Program(Configuration config)
+        {
+            _config = config;
+
+            _commands = new CommandService(new CommandServiceConfig {
+                CaseSensitiveCommands = false,
+                DefaultRunMode = RunMode.Async
+            });
             _client = new DiscordSocketClient();
 
-            _client.Log += LogAsync;
-            _client.Ready += ReadyAsync;
-            _client.MessageReceived += MessageReceivedAsync;
+            var serviceCollection = new ServiceCollection()
+                .AddSingleton(_config)
+                .AddSingleton(_commands)
+                .AddSingleton(_client)
+                .AddSingleton(new DatabaseService(_config.Database))
+                .AddSingleton<InteractiveService>()
+                .AddSingleton<CatPictureService>()
+                .AddSingleton<DogPictureService>()
+                .AddSingleton<CryptoCurrencyService>()
+                .AddSingleton<IStockService>(new AlphaAdvantageService(config.AlphaAdvantage))
+                .AddScoped<Random>();
 
-            // Tokens should be considered secret data, and never hard-coded.
+            _services = serviceCollection.BuildServiceProvider();
+        }
+
+        public async Task MainAsync(string[] args)
+        {
+            await SetupModules();
+
+            // Log the bot in
             await _client.LoginAsync(TokenType.Bot, _config.Auth.Token);
             await _client.StartAsync();
 
+            if (Debugger.IsAttached)
+                await _client.SetGameAsync("Debug Mode");
+
             // Block the program until it is closed.
-            await Task.Delay(-1);
+            Console.WriteLine("Press any key to exit");
+            Console.ReadKey(true);
+
+            if (_client.LoginState == LoginState.LoggedIn)
+            {
+                Console.WriteLine("Exiting");
+                await _client.LogoutAsync();
+            }
         }
 
-        private Task LogAsync(LogMessage log)
+        public async Task SetupModules()
         {
-            Console.WriteLine(log.ToString());
-            return Task.CompletedTask;
+            // Hook the MessageReceived Event into our Command Handler
+            _client.MessageReceived += HandleMessage;
+
+            // Discover all of the commands in this assembly and load them.
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
+            
+            // Print loaded modules
+            Console.WriteLine($"Loaded Modules ({_commands.Modules.Count()}):");
+            foreach (var module in _commands.Modules)
+                Console.WriteLine($" - {module.Name}");
         }
 
-        // The Ready event indicates that the client has opened a
-        // connection and it is now safe to access the cache.
-        private Task ReadyAsync()
+        public async Task HandleMessage(SocketMessage messageParam)
         {
-            Console.WriteLine($"{_client.CurrentUser} is connected!");
-
-            return Task.CompletedTask;
-        }
-
-        // This is not the recommmended way to write a bot - consider
-        // reading over the Commands Framework sample.
-        private async Task MessageReceivedAsync(SocketMessage message)
-        {
-            // The bot should never respond to itself.
-            if (message.Author.Id == _client.CurrentUser.Id)
+            // Don't process the command if it was a System Message
+            if (!(messageParam is SocketUserMessage message))
                 return;
 
-            if (message.Content == "!ping")
-                await message.Channel.SendMessageAsync("pong!");
+            // Check if the message starts with the command prefix character
+            var prefixPos = 0;
+            var hasPrefix = message.HasCharPrefix('!', ref prefixPos);
+
+            // Check if the bot is mentioned in a prefix
+            var prefixMentionPos = 0;
+            var hasPrefixMention = message.HasMentionPrefix(_client.CurrentUser, ref prefixMentionPos);
+
+            // Check if the bot is mentioned at all
+            var mentionsBot = ((IUserMessage)message).MentionedUserIds.Contains(_client.CurrentUser.Id);
+
+            if (hasPrefix || hasPrefixMention)
+            {
+                //It's a command, process it as such
+                await ProcessAsCommand(message, Math.Max(prefixPos, prefixMentionPos));
+            }
+            else if (mentionsBot)
+            {
+                //It's not a command, but the bot was mentioned
+                Console.WriteLine($"I was mentioned in: '{message.Content}'");
+            }
+        }
+
+        private async Task ProcessAsCommand(SocketUserMessage message, int offset)
+        {
+            // Create a Command Context
+            var context = new SocketCommandContext(_client, message);
+
+            // When there's a mention the command may or may not include the prefix. Check if it does include it and skip over it if so
+            if (context.Message.Content[offset] == '!')
+                offset++;
+
+            // Execute the command
+            var result = await _commands.ExecuteAsync(context, offset, _services);
+            if (!result.IsSuccess)
+                await context.Channel.SendMessageAsync(result.ErrorReason);
         }
     }
 }
