@@ -42,7 +42,7 @@ namespace Mute.Services
 
             [JsonProperty("circulating_supply")] public decimal CirculatingSupply { get; private set; }
             [JsonProperty("total_supply")] public decimal TotalSupply { get; private set; }
-            [JsonProperty("max_supply")] public decimal MaxSupply { get; private set; }
+            [JsonProperty("max_supply")] public decimal? MaxSupply { get; private set; }
 
             [JsonProperty("quotes")] private Dictionary<string, Quote> _quotes;
             public IReadOnlyDictionary<string, Quote> Quotes => _quotes;
@@ -122,7 +122,8 @@ namespace Mute.Services
             {
                 var getResult = await httpClient.GetAsync($"https://api.coinmarketcap.com/v2/ticker/{currency.Id}/?convert={quote ?? "btc"}");
 
-                var jsonResult = JsonConvert.DeserializeObject<TickerContainer>(await getResult.Content.ReadAsStringAsync());
+                var jsonString = await getResult.Content.ReadAsStringAsync();
+                var jsonResult = JsonConvert.DeserializeObject<TickerContainer>(jsonString);
                 return jsonResult.Data;
             }
         }

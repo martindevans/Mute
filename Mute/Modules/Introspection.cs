@@ -71,5 +71,11 @@ namespace Mute.Modules
                 await Task.Delay(_random.Next(300) + 150);
             }
         }
+
+        [Command("home")]
+        public async Task Home()
+        {
+            await this.TypingReplyAsync("My code is here: https://github.com/martindevans/Mute");
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Globalization;
+using System.Threading.Tasks;
 using Discord.Commands;
 using Mute.Extensions;
 using Mute.Services;
@@ -67,7 +68,8 @@ namespace Mute.Modules
             //Format the value part of the quote
             if (val != null)
             {
-                reply += $" is worth {quote.TryGetCurrencySymbol().ToUpperInvariant()}{val.Price:#} (";
+                var price = val.Price.ToString("C", CultureInfo.InvariantCulture);
+                reply += $" is worth {quote.TryGetCurrencySymbol().ToUpperInvariant()}{price} (";
 
                 if (val.PctChange24H > 0)
                     reply += "up";

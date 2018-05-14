@@ -80,14 +80,16 @@ namespace Mute
             if (Debugger.IsAttached)
                 await _client.SetGameAsync("Debug Mode");
 
-            // Block the program until it is closed.
-            Console.WriteLine("Press any key to exit");
-            Console.ReadKey(true);
-
-            if (_client.LoginState == LoginState.LoggedIn)
+            // Type exit to exit
+            Console.WriteLine("type 'exit' to exit");
+            while (true)
             {
-                Console.WriteLine("Exiting");
-                await _client.LogoutAsync();
+                var line = Console.ReadLine();
+                if (line != null && line.ToLowerInvariant() == "exit")
+                {
+                    await _client.LogoutAsync();
+                    break;
+                }
             }
         }
 
