@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -71,6 +72,8 @@ namespace Mute
 
         public async Task MainAsync(string[] args)
         {
+            DependencyHelper.TestDependencies();
+
             await SetupModules();
 
             // Log the bot in
@@ -146,9 +149,32 @@ namespace Mute
                 offset++;
 
             // Execute the command
-            var result = await _commands.ExecuteAsync(context, offset, _services);
-            if (!result.IsSuccess)
-                await context.Channel.SendMessageAsync(result.ErrorReason);
+            try
+            {
+                var result = await _commands.ExecuteAsync(context, offset, _services);
+                if (!result.IsSuccess)
+                    await context.Channel.SendMessageAsync(result.ErrorReason);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+    }
+
+    class DependencyHelper
+    {
+        [DllImport("opus", EntryPoint = "opus_get_version_string", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr OpusVersionString();
+        [DllImport("libsodium", EntryPoint = "sodium_version_string", CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr SodiumVersionString();
+        
+        public static void TestDependencies()
+        {
+            string opusVersion = Marshal.PtrToStringAnsi(OpusVersionString());
+            Console.WriteLine($"Loaded opus with version string: {opusVersion}");
+            string sodiumVersion = Marshal.PtrToStringAnsi(SodiumVersionString());
+            Console.WriteLine($"Loaded sodium with version string: {sodiumVersion}");
         }
     }
 }

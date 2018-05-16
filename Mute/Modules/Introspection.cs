@@ -1,6 +1,9 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Audio;
 using Discord.Commands;
 using Discord.WebSocket;
 using Mute.Extensions;
@@ -76,6 +79,39 @@ namespace Mute.Modules
         public async Task Home()
         {
             await this.TypingReplyAsync("My code is here: https://github.com/martindevans/Mute");
+        }
+
+        [Command("say")]
+        [RequireOwner]
+        public async Task Say(params string[] s)
+        {
+            await this.TypingReplyAsync(string.Join(' ', s));
+        }
+
+        [Command("music")]
+        [RequireOwner]
+        public async Task JoinVoice()
+        {
+            if (Context.User is IVoiceState v)
+            {
+                using (var client = await v.VoiceChannel.ConnectAsync())
+                {
+                    await client.SetSpeakingAsync(true);
+
+                    Console.WriteLine("Starting writing");
+
+                    using (var bytes = File.OpenRead("piano.pcm"))
+                    {
+                        var discord = client.CreatePCMStream(AudioApplication.Mixed, 90000, 200);
+                        await bytes.CopyToAsync(discord);
+                        await discord.FlushAsync();
+                    }
+
+                    await Task.Delay(1000);
+
+                    await client.SetSpeakingAsync(false);
+                }
+            }
         }
     }
 }

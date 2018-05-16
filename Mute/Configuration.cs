@@ -4,7 +4,7 @@
     {
         public AuthConfig Auth;
         public AlphaAdvantageConfig AlphaAdvantage;
-        public DatabaseConfig Database { get; set; }
+        public DatabaseConfig Database;
     }
 
     public class AuthConfig
@@ -19,6 +19,6 @@
 
     public class DatabaseConfig
     {
-        
+        public string ConnectionString;
     }
 }
