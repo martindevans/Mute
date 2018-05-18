@@ -1,5 +1,6 @@
 ﻿using System.Data.Common;
 using System.Data.SQLite;
+using System.Threading.Tasks;
 
 namespace Mute.Services
 {
@@ -16,6 +17,24 @@ namespace Mute.Services
         public DbCommand CreateCommand()
         {
             return new SQLiteCommand(_dbConnection);
+        }
+
+        public int Exec(string sql)
+        {
+            using (var cmd = CreateCommand())
+            {
+                cmd.CommandText = sql;
+                return cmd.ExecuteNonQuery();
+            }
+        }
+
+        public Task<DbDataReader> ExecReader(string sql)
+        {
+            using (var cmd = CreateCommand())
+            {
+                cmd.CommandText = sql;
+                return cmd.ExecuteReaderAsync();
+            }
         }
     }
 }

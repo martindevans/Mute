@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -65,6 +66,7 @@ namespace Mute
                 .AddSingleton<DogPictureService>()
                 .AddSingleton<CryptoCurrencyService>()
                 .AddSingleton<IStockService>(new AlphaAdvantageService(config.AlphaAdvantage))
+                .AddSingleton<IouDatabaseService>()
                 .AddScoped<Random>();
 
             _services = serviceCollection.BuildServiceProvider();
@@ -116,6 +118,10 @@ namespace Mute
             if (!(messageParam is SocketUserMessage message))
                 return;
 
+            //Ignore messages from self
+            if (message.Author.Id == _client.CurrentUser.Id)
+                return;
+
             // Check if the message starts with the command prefix character
             var prefixPos = 0;
             var hasPrefix = message.HasCharPrefix('!', ref prefixPos);
@@ -152,8 +158,12 @@ namespace Mute
             try
             {
                 var result = await _commands.ExecuteAsync(context, offset, _services);
+
                 if (!result.IsSuccess)
                     await context.Channel.SendMessageAsync(result.ErrorReason);
+
+                if (result.ErrorReason != null)
+                    Console.WriteLine(result.ErrorReason);
             }
             catch (Exception e)
             {

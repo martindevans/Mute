@@ -30,7 +30,7 @@ namespace Mute.Modules
             _random = random;
         }
 
-        [Command("hugot")]
+        [Command("hugot"), Summary("Nothing, I will ignore all !Hugot commands")]
         public async Task DoNothing(params string[] nothing)
         {
             if (_random.NextDouble() < 0.05f)

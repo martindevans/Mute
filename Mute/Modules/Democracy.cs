@@ -18,29 +18,12 @@ namespace Mute.Modules
             _database = database;
 
             //Create table of votes
-            Exec("CREATE TABLE `VoteId` (`ID` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, `OwnerId` INTEGER NOT NULL, `IsOpen` INTEGER NOT NULL, `ChannelId` TEXT NOT NULL);");
-            Exec("CREATE TABLE `Votes` (`VoteId` INTEGER NOT NULL, `VoterId` INTEGER NOT NULL, `Chosen` TEXT NOT NULL, FOREIGN KEY(`VoteId`) REFERENCES `Votes`(`ID`));");
-        }
-
-        private void Exec(string sql)
-        {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = sql;
-                cmd.ExecuteNonQuery();
-            }
-        }
-
-        private Task<DbDataReader> ExecReader(string sql)
-        {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = sql;
-                return cmd.ExecuteReaderAsync();
-            }
+            _database.Exec("CREATE TABLE `VoteId` (`ID` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, `OwnerId` INTEGER NOT NULL, `IsOpen` INTEGER NOT NULL, `ChannelId` TEXT NOT NULL);");
+            _database.Exec("CREATE TABLE `Votes` (`VoteId` INTEGER NOT NULL, `VoterId` INTEGER NOT NULL, `Chosen` TEXT NOT NULL, FOREIGN KEY(`VoteId`) REFERENCES `Votes`(`ID`));");
         }
 
         [Command("call"), Summary("I will start running a new vote"), Priority(1)]
+        [RequireOwner]
         public async Task CreateVote(params string[] options)
         {
             //todo: check if a vote it already running
@@ -53,6 +36,7 @@ namespace Mute.Modules
         }
 
         [Command("end"), Summary("I will stop running the current vote"), Priority(1)]
+        [RequireOwner]
         public async Task EndVote()
         {
             //todo: count votes
@@ -62,6 +46,7 @@ namespace Mute.Modules
         }
 
         [Command, Summary("I will record a vote for the currently running vote"), Priority(0)]
+        [RequireOwner]
         public async Task Vote(string choice)
         {
             //todo: update vote for this user
