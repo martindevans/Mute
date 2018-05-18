@@ -27,6 +27,7 @@ namespace Mute.Modules
         }
 
         [Command("sql"), Summary("I will execute an arbitrary SQL statement. Please be very careful x_x")]
+        [RequireOwner]
         public async Task Sql([Remainder] string sql)
         {
             using (var result = await _database.ExecReader(sql))
