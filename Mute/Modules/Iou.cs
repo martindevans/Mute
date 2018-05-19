@@ -14,10 +14,12 @@ namespace Mute.Modules
         : InteractiveBase
     {
         private readonly IouDatabaseService _database;
+        private readonly Random _random;
 
-        public Iou(IouDatabaseService database)
+        public Iou(IouDatabaseService database, Random random)
         {
             _database = database;
+            _random = random;
         }
 
         [Command("iou"), Summary("I will remember that you owe something to another user")]
@@ -28,7 +30,7 @@ namespace Mute.Modules
 
             using (Context.Channel.EnterTypingState())
             {
-                await _database.Insert(user, Context.User, amount, unit, note);
+                await _database.InsertDebt(user, Context.User, amount, unit, note);
 
                 var symbol = unit.TryGetCurrencySymbol();
                 if (unit == symbol)
@@ -48,7 +50,7 @@ namespace Mute.Modules
                 return $"{sym}{amount}";
         }
 
-        private async Task SpeakResult(IReadOnlyList<Owed> owed, Func<string> nothing, Func<Owed, string> singleResult, Func<IReadOnlyList<Owed>, string> fewResults, Func<IReadOnlyList<Owed>, string> manyPrelude, Func<Owed, int, string> debtToString)
+        private async Task SpeakResult<T>(IReadOnlyList<T> owed, Func<string> nothing, Func<T, string> singleResult, Func<IReadOnlyList<T>, string> fewResults, Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
         {
             if (owed.Count == 0)
             {
@@ -63,7 +65,7 @@ namespace Mute.Modules
             {
                 await this.TypingReplyAsync(singleResult(owed.Single()));
             }
-            else if (owed.Count < 5)
+            else if (owed.Count < 5 && fewResults != null)
             {
                 await this.TypingReplyAsync(fewResults(owed));
             }
@@ -73,7 +75,7 @@ namespace Mute.Modules
 
                 var index = 0;
                 foreach (var debt in owed)
-                    await this.TypingReplyAsync(debtToString(debt, index++));
+                    await this.TypingReplyAsync(itemToString(debt, index++));
             }
         }
 
@@ -125,6 +127,61 @@ namespace Mute.Modules
                     os => $"{Context.User.Mention} is owed {string.Join(", ", os.Select(FormatBorrowed))}",
                     os => $"{Context.User.Mention} is owed {os.Count} debts...",
                     (o, i) => $"{i+1}. {FormatBorrowed(o)}"
+                );
+            }
+        }
+
+        [Command("pay"), Summary("I will record that you have paid someone else some money")]
+        public async Task CreatePendingPayment(IUser receiver, decimal amount, string unit, [Remainder] string note = null)
+        {
+            if (amount < 0)
+                await this.TypingReplyAsync("You cannot pay a negative amount!");
+
+            using (Context.Channel.EnterTypingState())
+            {
+                var id = unchecked((uint)_random.Next()).MeaninglessString();
+
+                await _database.InsertUnconfirmedPayment(Context.User, receiver, amount, unit, note, id);
+                await this.TypingReplyAsync($"{receiver.Mention} type '!confirm {id}` to confirm that you have received this payment");
+            }
+        }
+
+        [Command("confirm"), Summary("I will record that you have received the pending payment")]
+        public async Task ConfirmPendingPayment(string id)
+        {
+            using (Context.Channel.EnterTypingState())
+            {
+                var result = await _database.ConfirmPending(id);
+
+                if (result.HasValue)
+                    await ReplyAsync($"{Context.User.Mention} Confirmed receipt of {FormatCurrency(result.Value.Amount, result.Value.Unit)} from {Context.Client.GetUser(result.Value.PayerId).Mention}");
+                else
+                    await ReplyAsync($"{Context.User.Mention} I can't find a pending payment with that ID");
+            }
+        }
+
+        [Command("pending"), Summary("I will list all pending payments you have yet to confirm")]
+        public async Task ListPendingPayments()
+        {
+            string Note(Pending pending)
+            {
+                if (string.IsNullOrEmpty(pending.Note))
+                    return "";
+                else
+                    return $" for `{pending.Note}`";
+            }
+
+            using (Context.Channel.EnterTypingState())
+            {
+                var pending = await _database.GetPending(Context.User);
+
+                await SpeakResult(
+                    pending,
+                    () => "You have no pending payments to confirm",
+                    p => $"Type `!confirm {p.Id}` to confirm receipt of {FormatCurrency(p.Amount, p.Unit)} from {Context.Client.GetUser(p.PayerId).Mention}{Note(p)}",
+                    null,
+                    ps => $"You have {ps.Count} payments to confirm. Type `!confirm $id` for each payment you have received",
+                    (p, i) => $"{p.Id}: {Context.Client.GetUser(p.PayerId).Mention} paid you {FormatCurrency(p.Amount, p.Unit)}, '{p.Note}'"
                 );
             }
         }

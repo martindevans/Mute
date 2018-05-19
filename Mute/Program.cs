@@ -159,7 +159,8 @@ namespace Mute
             {
                 var result = await _commands.ExecuteAsync(context, offset, _services);
 
-                if (!result.IsSuccess)
+                //Don't print error message in response to messages from self
+                if (!result.IsSuccess && message.Author.Id != _client.CurrentUser.Id)
                     await context.Channel.SendMessageAsync(result.ErrorReason);
 
                 if (result.ErrorReason != null)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 
@@ -10,8 +11,8 @@ namespace Mute.Services
 {
     public class IouDatabaseService
     {
-        #region SQL
-        private const string InsertSql = "INSERT INTO `IOU_Debts` (`LenderId`, `BorrowerId`, `Amount`, `Unit`, `Note`) VALUES (@LenderId, @BorrowerId, @Amount, @Unit, @Note)";
+        #region SQL debts
+        private const string InsertDebtSql = "INSERT INTO `IOU_Debts` (`LenderId`, `BorrowerId`, `Amount`, `Unit`, `Note`) VALUES (@LenderId, @BorrowerId, @Amount, @Unit, @Note)";
 
         private const string FindOwedByPerson = @"SELECT *
             FROM (
@@ -52,6 +53,29 @@ namespace Mute.Services
             WHERE `Amount` > 0";
         #endregion
 
+        #region sql payments
+        private const string InsertPaymentSql = "INSERT INTO `IOU_PendingPayments` (`ID`, `PayerId`, `ReceiverId`, `Amount`, `Unit`, `Note`) VALUES (@Id, @PayerId, @ReceiverId, @Amount, @Unit, @Note)";
+
+        private const string FindPaymentsByReceiver = "SELECT * FROM IOU_PendingPayments WHERE ReceiverId = @ReceiverId AND Confirmed = 'false'";
+
+        private const string ConfirmPayment = @"BEGIN TRANSACTION;
+	        INSERT INTO IOU_Debts (LenderId, BorrowerId, Amount, Unit, Note)
+	        SELECT PayerId, ReceiverId, Amount, Unit, '(payment:'||ID||') '||Note
+            FROM IOU_PendingPayments
+            WHERE ID = @PaymentId
+            AND Confirmed = 'false';
+
+            UPDATE IOU_PendingPayments
+            SET Confirmed = 'true'
+            WHERE ID = @PaymentId;
+	    
+            SELECT * FROM IOU_PendingPayments
+                WHERE ID = @PaymentId
+            AND Confirmed = 'true';
+	    
+        COMMIT;";
+        #endregion
+
         private readonly DatabaseService _database;
 
         public IouDatabaseService(DatabaseService database)
@@ -61,13 +85,17 @@ namespace Mute.Services
             _database.Exec("CREATE TABLE IF NOT EXISTS `IOU_Debts` (`ID` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, `LenderId` TEXT NOT NULL, `BorrowerId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT);");
             _database.Exec("CREATE INDEX IF NOT EXISTS `DebtsIndexBorrowerLeading` ON `IOU_Debts` ( `BorrowerId` ASC, `Unit` ASC, `LenderId` ASC, `Amount` ASC )");
             _database.Exec("CREATE INDEX IF NOT EXISTS `DebtsIndexLenderLeading` ON `IOU_Debts` ( `LenderId` ASC, `Unit` ASC, `BorrowerId` ASC, `Amount` ASC )");
+
+            _database.Exec("CREATE TABLE IF NOT EXISTS `IOU_PendingPayments` (`ID` TEXT NOT NULL UNIQUE, `PayerId` TEXT NOT NULL, `ReceiverId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `Confirmed` BOOL NOT NULL DEFAULT 'false', PRIMARY KEY(`ID`) )");
+            _database.Exec("CREATE INDEX IF NOT EXISTS `PendingPaymentsIndexByReceiver` ON `IOU_PendingPayments` (`ReceiverId` ASC)");
         }
 
-        public async Task Insert(IUser lender, IUser borrower, decimal amount, string unit, string note)
+        #region debts
+        public async Task InsertDebt(IUser lender, IUser borrower, decimal amount, string unit, string note)
         {
             using (var cmd = _database.CreateCommand())
             {
-                cmd.CommandText = InsertSql;
+                cmd.CommandText = InsertDebtSql;
                 cmd.Parameters.Add(new SQLiteParameter("@LenderId", System.Data.DbType.String) {Value = lender.Id.ToString()});
                 cmd.Parameters.Add(new SQLiteParameter("@BorrowerId", System.Data.DbType.String) {Value = borrower.Id.ToString()});
                 cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) {Value = amount.ToString(CultureInfo.InvariantCulture)});
@@ -134,6 +162,89 @@ namespace Mute.Services
                 throw;
             }
         }
+        #endregion
+
+        #region payments
+        public async Task InsertUnconfirmedPayment(IUser payer, IUser receiver, decimal amount, string unit, string note, string id)
+        {
+            try
+            {
+                using (var cmd = _database.CreateCommand())
+                {
+                    cmd.CommandText = InsertPaymentSql;
+                    cmd.Parameters.Add(new SQLiteParameter("@Id", System.Data.DbType.String) {Value = id});
+                    cmd.Parameters.Add(new SQLiteParameter("@PayerId", System.Data.DbType.String) {Value = payer.Id.ToString()});
+                    cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) {Value = receiver.Id.ToString()});
+                    cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) {Value = amount.ToString(CultureInfo.InvariantCulture)});
+                    cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) {Value = unit.ToLowerInvariant()});
+                    cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) {Value = note ?? ""});
+
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        private static async Task<IReadOnlyList<Pending>> ParsePayments(DbDataReader reader)
+        {
+            var debts = new List<Pending>();
+
+            while (await reader.ReadAsync())
+            {
+                debts.Add(new Pending(
+                    ulong.Parse((string)reader["PayerId"]),
+                    ulong.Parse((string)reader["ReceiverId"]),
+                    decimal.Parse(reader["Amount"].ToString()),
+                    (string)reader["Unit"],
+                    (string)reader["Note"],
+                    (string)reader["ID"]
+                ));
+            }
+
+            return debts;
+        }
+
+        public async Task<IReadOnlyList<Pending>> GetPending(IUser receiver)
+        {
+            try
+            {
+                using (var cmd = _database.CreateCommand())
+                {
+                    cmd.CommandText = FindPaymentsByReceiver;
+                    cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) {Value = receiver.Id.ToString()});
+
+                    using (var results = await cmd.ExecuteReaderAsync())
+                        return await ParsePayments(results);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public async Task<Pending?> ConfirmPending(string id)
+        {
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = ConfirmPayment;
+                cmd.Parameters.Add(new SQLiteParameter("@PaymentId", System.Data.DbType.String) {Value = id});
+                using (var results = await cmd.ExecuteReaderAsync())
+                {
+                    if (!results.HasRows)
+                        return null;
+
+                    var parsed = await ParsePayments(results);
+                    return parsed.Single();
+                }
+            }
+        }
+        #endregion
     }
 
     public struct Owed
@@ -149,6 +260,26 @@ namespace Mute.Services
             BorrowerId = borrowerId;
             Amount = amount;
             Unit = unit;
+        }
+    }
+
+    public struct Pending
+    {
+        public readonly ulong PayerId;
+        public readonly ulong ReceiverId;
+        public readonly decimal Amount;
+        public readonly string Unit;
+        public readonly string Note;
+        public readonly string Id;
+
+        public Pending(ulong payerId, ulong receiverId, decimal amount, string unit, string note, string id)
+        {
+            PayerId = payerId;
+            ReceiverId = receiverId;
+            Amount = amount;
+            Unit = unit;
+            Note = note;
+            Id = id;
         }
     }
 }
