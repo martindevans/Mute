@@ -33,31 +33,5 @@ namespace Mute.Modules
             using (var result = await _database.ExecReader(sql))
                 await this.TypingReplyAsync($"SQL affected {result.RecordsAffected} rows");
         }
-
-        [Command("music"), Summary("Test command for voice integration")]
-        [RequireOwner]
-        public async Task JoinVoice()
-        {
-            if (Context.User is IVoiceState v)
-            {
-                using (var client = await v.VoiceChannel.ConnectAsync())
-                {
-                    await client.SetSpeakingAsync(true);
-
-                    Console.WriteLine("Starting writing");
-
-                    using (var bytes = File.OpenRead("piano.pcm"))
-                    {
-                        var discord = client.CreatePCMStream(AudioApplication.Mixed, 90000, 200);
-                        await bytes.CopyToAsync(discord);
-                        await discord.FlushAsync();
-                    }
-
-                    await Task.Delay(1000);
-
-                    await client.SetSpeakingAsync(false);
-                }
-            }
-        }
     }
 }

@@ -67,6 +67,7 @@ namespace Mute
                 .AddSingleton<CryptoCurrencyService>()
                 .AddSingleton<IStockService>(new AlphaAdvantageService(config.AlphaAdvantage))
                 .AddSingleton<IouDatabaseService>()
+                .AddSingleton<FileSystemService>()
                 .AddScoped<Random>();
 
             _services = serviceCollection.BuildServiceProvider();
@@ -82,6 +83,9 @@ namespace Mute
             await _client.LoginAsync(TokenType.Bot, _config.Auth.Token);
             await _client.StartAsync();
 
+            if (_client.ConnectionState != ConnectionState.Connected)
+                Console.WriteLine("Not connected");
+
             if (Debugger.IsAttached)
                 await _client.SetGameAsync("Debug Mode");
 
@@ -93,6 +97,7 @@ namespace Mute
                 if (line != null && line.ToLowerInvariant() == "exit")
                 {
                     await _client.LogoutAsync();
+                    await _client.StopAsync();
                     break;
                 }
             }
