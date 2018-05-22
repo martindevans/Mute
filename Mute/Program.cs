@@ -10,8 +10,10 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Services;
+using Mute.Services.Audio;
 using Newtonsoft.Json;
 
 namespace Mute
@@ -46,7 +48,7 @@ namespace Mute
         }
         #endregion
 
-        public Program(Configuration config)
+        public Program([NotNull] Configuration config)
         {
             _config = config;
 
@@ -68,6 +70,7 @@ namespace Mute
                 .AddSingleton<IStockService>(new AlphaAdvantageService(config.AlphaAdvantage))
                 .AddSingleton<IouDatabaseService>()
                 .AddSingleton<FileSystemService>()
+                .AddSingleton<AudioPlayerService>()
                 .AddScoped<Random>();
 
             _services = serviceCollection.BuildServiceProvider();
@@ -80,12 +83,11 @@ namespace Mute
             await SetupModules();
 
             // Log the bot in
+            await _client.LogoutAsync();
             await _client.LoginAsync(TokenType.Bot, _config.Auth.Token);
             await _client.StartAsync();
 
-            if (_client.ConnectionState != ConnectionState.Connected)
-                Console.WriteLine("Not connected");
-
+            // Set presence
             if (Debugger.IsAttached)
                 await _client.SetGameAsync("Debug Mode");
 

@@ -1,8 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Threading.Tasks;
-using Discord;
-using Discord.Audio;
+﻿using System.Threading.Tasks;
 using Discord.Commands;
 using Mute.Extensions;
 using Mute.Services;
