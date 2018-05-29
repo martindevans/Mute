@@ -5,6 +5,8 @@ using Mute.Services;
 
 namespace Mute.Modules
 {
+    [Group]
+    [RequireOwner]
     public class Administration
         : ModuleBase
     {

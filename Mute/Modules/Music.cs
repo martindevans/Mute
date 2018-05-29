@@ -3,30 +3,34 @@ using System.IO;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
-using Discord.Audio;
 using Discord.Commands;
+using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
 using Mute.Services.Audio;
-using NAudio.Wave;
+using Mute.Services.Audio.Clips;
 
 namespace Mute.Modules
 {
+    [Group]
+    [RequireOwner]
     public class Music
         : InteractiveBase
     {
         private readonly FileSystemService _fs;
         private readonly AudioPlayerService _audio;
+        private readonly YoutubeService _youtube;
 
-        public Music(FileSystemService fs, AudioPlayerService audio)
+        public Music(FileSystemService fs, AudioPlayerService audio, YoutubeService youtube)
         {
             _fs = fs;
             _audio = audio;
+            _youtube = youtube;
         }
 
         [Command("leave-voice")]
         [RequireOwner]
-        public async Task Play2()
+        public async Task LeaveVoice()
         {
             if (Context.User is IVoiceState v)
             {
@@ -39,14 +43,87 @@ namespace Mute.Modules
             }
         }
 
-        [Command("skip")]
+        [Command("download_youtube")]
         [RequireOwner]
-        public async Task Skip()
+        public async Task DownloadYoutubeUrl([NotNull] string urlString)
         {
-            _audio.Skip();
+            //Sanity check that it's even a well formed URL
+            if (!Uri.TryCreate(urlString, UriKind.Absolute, out var url))
+            {
+                await this.TypingReplyAsync("That's not a valid URL");
+                return;
+            }
+
+            //Sanity check that the scheme is correct
+            if (url.Scheme != "http" && url.Scheme != "https")
+            {
+                await this.TypingReplyAsync("URL scheme must be `http` or `https`");
+                return;
+            }
+
+            //Get the file with the content of this video
+            try
+            {
+                await this.TypingReplyAsync("Starting");
+                var r = await _youtube.GetYoutubeAudio(urlString);
+                await this.TypingReplyAsync("Downloaded " + r.FullName + " " + r.Exists);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            //https://www.youtube.com/watch?v=i7Gkh_9hyi8
         }
 
-        [Command("play")]
+        [Command("skip")]
+        [RequireOwner]
+        public Task Skip()
+        {
+            _audio.Skip();
+
+            return Task.CompletedTask;
+        }
+
+        [Command("play_youtube")]
+        [RequireOwner]
+        public async Task EnqueueYoutube(string url)
+        {
+            //Check that the URL is valid
+            try
+            {
+                _youtube.CheckUrl(url);
+            }
+            catch (Exception e)
+            {
+                await this.TypingReplyAsync(e.Message);
+                return;
+            }
+
+            //Check that the user is in a voice channel
+            if (Context.User is IVoiceState v)
+            {
+                //Start downloading the video
+                var download = Task.Factory.StartNew(async () => {
+                    var yt = await _youtube.GetYoutubeAudio(url);
+                    Console.WriteLine("Download complete");
+                    return yt;
+                }).Unwrap();
+
+                //Queue up the file to play
+                _audio.Enqueue(new AsyncFileAudio(download, AudioClipType.Music));
+
+                if (_audio.Channel != v.VoiceChannel)
+                    _audio.Channel = v.VoiceChannel;
+            }
+            else
+            {
+                await ReplyAsync("You are not in a voice channel");
+            }
+        }
+
+        [Command("play_file")]
         [RequireOwner]
         public async Task Play2(string name)
         {

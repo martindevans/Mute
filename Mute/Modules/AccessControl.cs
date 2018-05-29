@@ -7,6 +7,7 @@ using Mute.Services;
 namespace Mute.Modules
 {
     [Group("acl")]
+    [RequireOwner]
     public class AccessControl
         : InteractiveBase
     {

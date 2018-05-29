@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using JetBrains.Annotations;
+using Mute.Services.Audio.Clips;
 using NAudio.Wave;
 
 namespace Mute.Services.Audio
@@ -132,6 +133,8 @@ namespace Mute.Services.Audio
             private IDisposable _source;
             private byte[] _buffer;
 
+            private DateTime? _firstStartAttemptUtc;
+
             public PlayingClip(IAudioClip clip)
             {
                 Clip = clip;
@@ -140,7 +143,11 @@ namespace Mute.Services.Audio
             public async Task Update([NotNull] Stream stream)
             {
                 if (!_started)
+                {
                     Start();
+                    return;
+                }
+
                 if (IsComplete)
                     return;
 
@@ -167,6 +174,18 @@ namespace Mute.Services.Audio
 
             private void Start()
             {
+                //Store when we first start trying to start
+                if (!_firstStartAttemptUtc.HasValue)
+                    _firstStartAttemptUtc = DateTime.UtcNow;
+
+                //Check for 30s timeout
+                if (DateTime.UtcNow - _firstStartAttemptUtc.Value > TimeSpan.FromSeconds(30))
+                    IsComplete = true;
+
+                //Exit out if the clip isn't ready yet
+                if (!Clip.IsLoaded)
+                    return;
+
                 var format = new WaveFormat(48000, 16, 2);
                 
                 var s = Clip.Open();

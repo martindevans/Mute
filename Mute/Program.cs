@@ -71,6 +71,7 @@ namespace Mute
                 .AddSingleton<IouDatabaseService>()
                 .AddSingleton<FileSystemService>()
                 .AddSingleton<AudioPlayerService>()
+                .AddSingleton<YoutubeService>()
                 .AddScoped<Random>();
 
             _services = serviceCollection.BuildServiceProvider();

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
+using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
 
@@ -22,8 +23,9 @@ namespace Mute.Modules
             _random = random;
         }
 
+        #region debts
         [Command("iou"), Summary("I will remember that you owe something to another user")]
-        public async Task CreateDebt(IUser user, decimal amount, string unit, [Remainder] string note = null)
+        public async Task CreateDebt([NotNull] IUser user, decimal amount, string unit, [CanBeNull, Remainder] string note = null)
         {
             if (amount < 0)
                 await this.TypingReplyAsync("You cannot owe a negative amount!");
@@ -40,47 +42,8 @@ namespace Mute.Modules
             }
         }
 
-        private static string FormatCurrency(decimal amount, string unit)
-        {
-            var sym = unit.TryGetCurrencySymbol();
-
-            if (unit == sym)
-                return $"{amount}({unit.ToUpperInvariant()})";
-            else
-                return $"{sym}{amount}";
-        }
-
-        private async Task SpeakResult<T>(IReadOnlyList<T> owed, Func<string> nothing, Func<T, string> singleResult, Func<IReadOnlyList<T>, string> fewResults, Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
-        {
-            if (owed.Count == 0)
-            {
-                await this.TypingReplyAsync(nothing());
-                return;
-            }
-
-            //Make sure we have a fresh user list to resolve users from IDs
-            await Context.Guild.DownloadUsersAsync();
-
-            if (owed.Count == 1)
-            {
-                await this.TypingReplyAsync(singleResult(owed.Single()));
-            }
-            else if (owed.Count < 5 && fewResults != null)
-            {
-                await this.TypingReplyAsync(fewResults(owed));
-            }
-            else
-            {
-                await this.TypingReplyAsync(manyPrelude(owed));
-
-                var index = 0;
-                foreach (var debt in owed)
-                    await this.TypingReplyAsync(itemToString(debt, index++));
-            }
-        }
-
         [Command("io"), Summary("I will tell you what you currently owe")]
-        public async Task ListDebtsByBorrower(IUser lender = null)
+        public async Task ListDebtsByBorrower([CanBeNull] IUser lender = null)
         {
             string FormatOwed(Owed owe)
             {
@@ -95,7 +58,7 @@ namespace Mute.Modules
                     .OrderBy(o => o.LenderId)
                     .ToArray();
 
-                await SpeakResult(owed, 
+                await SpeakItems(owed, 
                     () => "You are debt free :D",
                     o => $"{Context.User.Mention} owes {Context.Client.GetUser(o.LenderId).Mention} {FormatCurrency(o.Amount, o.Unit)}",
                     os => $"{Context.User.Mention} owes {string.Join(", ", os.Select(FormatOwed))}",
@@ -106,7 +69,7 @@ namespace Mute.Modules
         }
 
         [Command("oi"), Summary("I will tell you what you are currently owed")]
-        public async Task ListDebtsByLender(IUser borrower = null)
+        public async Task ListDebtsByLender([CanBeNull] IUser borrower = null)
         {
             string FormatBorrowed(Owed owe)
             {
@@ -121,7 +84,7 @@ namespace Mute.Modules
                     .OrderBy(o => o.LenderId)
                     .ToArray();
 
-                await SpeakResult(owed, 
+                await SpeakItems(owed, 
                     () => "You are owed nothing",
                     o => $"{Context.Client.GetUser(o.BorrowerId).Mention} owes {Context.User.Mention} {FormatCurrency(o.Amount, o.Unit)}",
                     os => $"{Context.User.Mention} is owed {string.Join(", ", os.Select(FormatBorrowed))}",
@@ -130,9 +93,11 @@ namespace Mute.Modules
                 );
             }
         }
+        #endregion
 
+        #region payments
         [Command("pay"), Summary("I will record that you have paid someone else some money")]
-        public async Task CreatePendingPayment(IUser receiver, decimal amount, string unit, [Remainder] string note = null)
+        public async Task CreatePendingPayment([NotNull] IUser receiver, decimal amount, string unit, [CanBeNull] [Remainder] string note = null)
         {
             if (amount < 0)
                 await this.TypingReplyAsync("You cannot pay a negative amount!");
@@ -142,7 +107,7 @@ namespace Mute.Modules
                 var id = unchecked((uint)_random.Next()).MeaninglessString();
 
                 await _database.InsertUnconfirmedPayment(Context.User, receiver, amount, unit, note, id);
-                await this.TypingReplyAsync($"{receiver.Mention} type '!confirm {id}` to confirm that you have received this payment");
+                await this.TypingReplyAsync($"{receiver.Mention} type `!confirm {id}` to confirm that you have received this payment");
             }
         }
 
@@ -160,7 +125,7 @@ namespace Mute.Modules
             }
         }
 
-        [Command("pending"), Summary("I will list all pending payments you have yet to confirm")]
+        [Command("pending"), Summary("I will list all pending transactions you have yet to confirm")]
         public async Task ListPendingPayments()
         {
             string Note(Pending pending)
@@ -175,7 +140,7 @@ namespace Mute.Modules
             {
                 var pending = await _database.GetPending(Context.User);
 
-                await SpeakResult(
+                await SpeakItems(
                     pending,
                     () => "You have no pending payments to confirm",
                     p => $"Type `!confirm {p.Id}` to confirm receipt of {FormatCurrency(p.Amount, p.Unit)} from {Context.Client.GetUser(p.PayerId).Mention}{Note(p)}",
@@ -185,5 +150,64 @@ namespace Mute.Modules
                 );
             }
         }
+        #endregion
+
+        #region helpers
+        /// <summary>
+        /// Generate a human readable string to represent the given amount/currency pair
+        /// </summary>
+        /// <param name="amount"></param>
+        /// <param name="unit"></param>
+        /// <returns></returns>
+        [NotNull] private static string FormatCurrency(decimal amount, string unit)
+        {
+            var sym = unit.TryGetCurrencySymbol();
+
+            if (unit == sym)
+                return $"{amount}({unit.ToUpperInvariant()})";
+            else
+                return $"{sym}{amount}";
+        }
+
+        /// <summary>
+        /// Speak a list of items. Will use different formats for none, few and many items.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="items">The list of items to speak</param>
+        /// <param name="nothing">Generate a string for no items</param>
+        /// <param name="singleResult">Generate a string for a single item</param>
+        /// <param name="fewResults">Generate a string for the given set of results</param>
+        /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
+        /// <param name="itemToString">Convert a single item (of many) to a string</param>
+        /// <returns></returns>
+        private async Task SpeakItems<T>([NotNull] IReadOnlyList<T> items, Func<string> nothing, Func<T, string> singleResult, Func<IReadOnlyList<T>, string> fewResults, Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
+        {
+            if (items.Count == 0)
+            {
+                await this.TypingReplyAsync(nothing());
+                return;
+            }
+
+            //Make sure we have a fresh user list to resolve users from IDs
+            await Context.Guild.DownloadUsersAsync();
+
+            if (items.Count == 1)
+            {
+                await this.TypingReplyAsync(singleResult(items.Single()));
+            }
+            else if (items.Count < 5 && fewResults != null)
+            {
+                await this.TypingReplyAsync(fewResults(items));
+            }
+            else
+            {
+                await this.TypingReplyAsync(manyPrelude(items));
+
+                var index = 0;
+                foreach (var debt in items)
+                    await this.TypingReplyAsync(itemToString(debt, index++));
+            }
+        }
+        #endregion
     }
 }
