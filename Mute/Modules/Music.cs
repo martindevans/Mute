@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
-using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
 using Mute.Services.Audio;
@@ -17,7 +16,6 @@ namespace Mute.Modules
     public class Music
         : InteractiveBase
     {
-        private readonly FileSystemService _fs;
         private readonly AudioPlayerService _audio;
         private readonly YoutubeService _youtube;
 
@@ -43,40 +41,6 @@ namespace Mute.Modules
             }
         }
 
-        [Command("download_youtube")]
-        [RequireOwner]
-        public async Task DownloadYoutubeUrl([NotNull] string urlString)
-        {
-            //Sanity check that it's even a well formed URL
-            if (!Uri.TryCreate(urlString, UriKind.Absolute, out var url))
-            {
-                await this.TypingReplyAsync("That's not a valid URL");
-                return;
-            }
-
-            //Sanity check that the scheme is correct
-            if (url.Scheme != "http" && url.Scheme != "https")
-            {
-                await this.TypingReplyAsync("URL scheme must be `http` or `https`");
-                return;
-            }
-
-            //Get the file with the content of this video
-            try
-            {
-                await this.TypingReplyAsync("Starting");
-                var r = await _youtube.GetYoutubeAudio(urlString);
-                await this.TypingReplyAsync("Downloaded " + r.FullName + " " + r.Exists);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-
-            //https://www.youtube.com/watch?v=i7Gkh_9hyi8
-        }
-
         [Command("skip")]
         [RequireOwner]
         public Task Skip()
@@ -86,7 +50,28 @@ namespace Mute.Modules
             return Task.CompletedTask;
         }
 
-        [Command("play_youtube")]
+        private async Task EnqueueMusicClip(Func<IAudioClip> clip)
+        {
+            if (Context.User is IVoiceState v)
+            {
+                try
+                {
+                    _audio.Enqueue(clip());
+                    _audio.Channel = v.VoiceChannel;
+                    _audio.Play();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
+            else
+            {
+                await ReplyAsync("You are not in a voice channel");
+            }
+        }
+
+        [Command("play"), Summary("I will download and play audio from a youtube video into whichever voice channel you are in")]
         [RequireOwner]
         public async Task EnqueueYoutube(string url)
         {
@@ -101,50 +86,22 @@ namespace Mute.Modules
                 return;
             }
 
-            //Check that the user is in a voice channel
-            if (Context.User is IVoiceState v)
-            {
-                //Start downloading the video
-                var download = Task.Factory.StartNew(async () => {
-                    var yt = await _youtube.GetYoutubeAudio(url);
-                    Console.WriteLine("Download complete");
-                    return yt;
-                }).Unwrap();
+            //Start downloading the video
+            var download = Task.Factory.StartNew(async () => {
+                var yt = await _youtube.GetYoutubeAudio(url);
+                Console.WriteLine("Download complete");
+                return yt;
+            }).Unwrap();
 
-                //Queue up the file to play
-                _audio.Enqueue(new AsyncFileAudio(download, AudioClipType.Music));
+            //Add the reaction options (from love to hate)
+            await Context.Message.AddReactionAsync(EmojiLookup.Heart);
+            await Context.Message.AddReactionAsync(EmojiLookup.ThumbsUp);
+            await Context.Message.AddReactionAsync(EmojiLookup.Expressionless);
+            await Context.Message.AddReactionAsync(EmojiLookup.ThumbsDown);
+            await Context.Message.AddReactionAsync(EmojiLookup.BrokenHeart);
 
-                if (_audio.Channel != v.VoiceChannel)
-                    _audio.Channel = v.VoiceChannel;
-            }
-            else
-            {
-                await ReplyAsync("You are not in a voice channel");
-            }
-        }
-
-        [Command("play_file")]
-        [RequireOwner]
-        public async Task Play2(string name)
-        {
-            //Find the file and early exit if we cannot
-            var f = new FileInfo(Path.Combine(@"C:\Users\Martin\Documents\dotnet\Mute\Test Music\", name));
-            if (!f.Exists)
-            {
-                await this.TypingReplyAsync($"Cannot find file `{name}`");
-                return;
-            }
-
-            if (Context.User is IVoiceState v)
-            {
-                _audio.Enqueue(new FileAudio(f, AudioClipType.Music));
-                _audio.Channel = v.VoiceChannel;
-                _audio.Play();
-            }
-            else
-            {
-                await ReplyAsync("You are not in a voice channel");
-            }
+            //Finally enqueue the track
+            await EnqueueMusicClip(() => new AsyncFileAudio(download, AudioClipType.Music));
         }
     }
 }

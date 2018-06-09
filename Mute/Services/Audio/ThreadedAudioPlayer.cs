@@ -13,7 +13,7 @@ namespace Mute.Services.Audio
     internal class ThreadedAudioPlayer
     {
         private readonly AutoResetEvent _threadEvent;
-        private readonly Task _thread;
+        private Task _thread;
 
         private volatile bool _stopped;
         private PlayingClip _playing;
@@ -34,12 +34,11 @@ namespace Mute.Services.Audio
 
             _provider = provider;
             _threadEvent = new AutoResetEvent(true);
-            _thread = Task.Run(ThreadEntry);
         }
 
         public void Start()
         {
-            _thread.Start();
+            _thread = Task.Run(ThreadEntry);
         }
 
         public void Ping()

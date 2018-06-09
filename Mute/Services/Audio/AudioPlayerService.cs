@@ -28,6 +28,8 @@ namespace Mute.Services.Audio
             get => _channel;
             set
             {
+                if (_channel == value)
+                    return;
                 _channel = value;
 
                 if (_player != null)
@@ -92,8 +94,6 @@ namespace Mute.Services.Audio
             {
                 _player = new ThreadedAudioPlayer(_channel, this);
                 _player.Start();
-
-                Resume();
             }
         }
 

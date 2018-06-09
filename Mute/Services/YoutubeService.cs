@@ -3,12 +3,16 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Newtonsoft.Json.Linq;
+using Nito.AsyncEx;
 
 namespace Mute.Services
 {
     public class YoutubeService
     {
         [NotNull] private readonly YoutubeDlConfig _config;
+
+        private readonly AsyncLock _mutex = new AsyncLock();
 
         public YoutubeService([NotNull] Configuration config, [NotNull] DatabaseService database)
         {
@@ -34,12 +38,9 @@ namespace Mute.Services
 
         [ItemCanBeNull] public async Task<FileInfo> GetYoutubeAudio([NotNull] string youtubeUrl)
         {
-            return await DownloadYoutube(CheckUrl(youtubeUrl), true);
-        }
-
-        [ItemCanBeNull] public async Task<FileInfo> GetYoutubeVideo([NotNull] string youtubeUrl)
-        {
-            return await DownloadYoutube(CheckUrl(youtubeUrl), false);
+            //Lock the mutex to ensure we only process one download at a time
+            using (await _mutex.LockAsync())
+                return await DownloadYoutube(CheckUrl(youtubeUrl), true);
         }
 
         [ItemCanBeNull] private async Task<FileInfo> DownloadYoutube([NotNull] Uri youtubeUrl, bool extractAudio)
@@ -47,13 +48,11 @@ namespace Mute.Services
             //Build args
             var fileName = Guid.NewGuid().ToString();
             var downloadingLocation = Path.GetFullPath(Path.Combine(_config.InProgressDownloadFolder, fileName));
-            var args = $"\"{youtubeUrl}\" --no-check-certificate --output \"{downloadingLocation}.`%(ext)s\" --quiet --no-warnings --limit-rate {_config.RateLimit ?? "2.5M"}";
-            if (extractAudio)
-                args += " --extract-audio --audio-format wav";
+            var args = $"\"{youtubeUrl}\" --no-check-certificate --output \"{downloadingLocation}.`%(ext)s\" --quiet --no-warnings --no-playlist --write-info-json --limit-rate {_config.RateLimit ?? "2.5M"} --extract-audio --audio-format wav";
 
             Console.WriteLine(args);
 
-            //Download to the in progress download folder
+            //Download to the in-progress-download folder
             try
             {
                 await AsyncProcess.StartProcess(
@@ -67,19 +66,48 @@ namespace Mute.Services
                 return null;
             }
 
-            //Find the completed download (we don't know the extension, so search for it by name)
-            var maybeCompleteFile = Directory.GetFiles(Path.GetFullPath(_config.InProgressDownloadFolder), fileName + ".*").SingleOrDefault();
+            //Find the completed download. It should be two files
+            // <guid>.wav contains the audio
+            // <guid>.json contains the metadata (including the video ID)
+            var maybeCompleteFiles = Directory.GetFiles(Path.GetFullPath(_config.InProgressDownloadFolder), fileName + ".*").Select(f => new FileInfo(f)) .ToArray();
 
             //Early exit if it doesn't exist (download failed)
-            if (maybeCompleteFile == null)
+            if (maybeCompleteFiles.Length == 0)
                 return null;
 
-            //Move to completed folder
-            var completedDownload = new FileInfo(maybeCompleteFile);
-            var finalLocation = new FileInfo(Path.Combine(_config.CompleteDownloadFolder, completedDownload.Name));
-            completedDownload.MoveTo(finalLocation.FullName);
+            //Find the two files we want
+            var audioFile = maybeCompleteFiles.SingleOrDefault(f => f.Extension == ".wav");
+            var metadataFile = maybeCompleteFiles.SingleOrDefault(f => f.Extension == ".json");
 
-            return finalLocation;
+            //if one is null something went wrong, delete everything anbd early exit
+            if (audioFile == null || metadataFile == null)
+            {
+                foreach (var maybeCompleteFile in maybeCompleteFiles)
+                    maybeCompleteFile.Delete();
+                return null;
+            }
+            else
+            {
+                //Find out the video ID from the metadata
+                var metadata = JObject.Parse(await File.ReadAllTextAsync(metadataFile.FullName));
+                var idToken = metadata["display_id"];
+                var id = idToken.Value<string>();
+                if (id == null)
+                    return null;
+
+                //Move to completed folder, with the ID of the video as the name
+                var finalLocation = new FileInfo(Path.Combine(_config.CompleteDownloadFolder, id + ".wav"));
+                if (finalLocation.Exists)
+                    audioFile.Delete();
+                else
+                    audioFile.MoveTo(finalLocation.FullName);
+
+                //Delete temp files
+                metadataFile.Delete();
+
+                //return final audio file
+                return finalLocation;
+            }
         }
     }
 }

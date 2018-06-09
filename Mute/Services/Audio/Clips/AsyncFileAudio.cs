@@ -20,7 +20,7 @@ namespace Mute.Services.Audio.Clips
             Type = type;
             Name = "Loading...";
 
-            _fileTask = Task.Factory.StartNew(() => { _file = file.Result; });
+            _fileTask = Task.Factory.StartNew(async () => { _file = await file; });
         }
 
         public bool IsLoaded => _fileTask.IsCompleted && _file != null;
