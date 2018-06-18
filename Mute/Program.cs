@@ -48,13 +48,14 @@ namespace Mute
         }
         #endregion
 
-        public Program([NotNull] Configuration config)
+        private Program([NotNull] Configuration config)
         {
             _config = config;
 
             _commands = new CommandService(new CommandServiceConfig {
                 CaseSensitiveCommands = false,
-                DefaultRunMode = RunMode.Async
+                DefaultRunMode = RunMode.Async,
+                ThrowOnError = true
             });
             _client = new DiscordSocketClient();
 
@@ -72,12 +73,13 @@ namespace Mute
                 .AddSingleton<FileSystemService>()
                 .AddSingleton<AudioPlayerService>()
                 .AddSingleton<YoutubeService>()
+                .AddSingleton<MusicRatingService>()
                 .AddScoped<Random>();
 
-            _services = serviceCollection.BuildServiceProvider();
+            _services = serviceCollection.BuildServiceProvider(true);
         }
 
-        public async Task MainAsync(string[] args)
+        private async Task MainAsync(string[] args)
         {
             DependencyHelper.TestDependencies();
 
@@ -101,12 +103,13 @@ namespace Mute
                 {
                     await _client.LogoutAsync();
                     await _client.StopAsync();
+                    _client.Dispose();
                     break;
                 }
             }
         }
 
-        public async Task SetupModules()
+        private async Task SetupModules()
         {
             // Hook the MessageReceived Event into our Command Handler
             _client.MessageReceived += HandleMessage;
@@ -120,7 +123,7 @@ namespace Mute
                 Console.WriteLine($" - {module.Name}");
         }
 
-        public async Task HandleMessage(SocketMessage messageParam)
+        private async Task HandleMessage(SocketMessage messageParam)
         {
             // Don't process the command if it was a System Message
             if (!(messageParam is SocketUserMessage message))

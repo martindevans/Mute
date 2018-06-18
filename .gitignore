@@ -6,3 +6,4 @@ _ReSharper.Caches
 Mute/bin
 Mute/obj
 Mute/config.json
+/Mute/Properties/PublishProfiles

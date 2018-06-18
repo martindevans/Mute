@@ -21,7 +21,7 @@ namespace Mute.Services.Audio
         private int _skipRequest;
 
         [CanBeNull]
-        public IAudioClip Playing => _playing?.Clip;
+        public IAudioClip Playing => _playing?.Clip.Clip;
 
         public bool IsAlive => !_thread.IsCompleted;
 
@@ -94,6 +94,8 @@ namespace Mute.Services.Audio
                             //Check if we need to terminate playback of this clip
                             if (Interlocked.CompareExchange(ref _skipRequest, 0, 1) == 1 && _playing != null)
                             {
+                                _playing.Clip.TaskCompletion.SetResult(false);
+
                                 _playing.Dispose();
                                 _playing = null;
                             }
@@ -102,7 +104,7 @@ namespace Mute.Services.Audio
                         //Try to find a track to play
                         var next = _provider.GetNextClip();
                         if (next != null)
-                            _playing = new PlayingClip(next);
+                            _playing = new PlayingClip(next.Value);
                     }
                 }
             }
@@ -122,7 +124,7 @@ namespace Mute.Services.Audio
         private class PlayingClip
             : IDisposable
         {
-            public IAudioClip Clip { get; }
+            public QueuedClip Clip { get; }
         
             public bool IsComplete { get; private set; }
 
@@ -134,7 +136,7 @@ namespace Mute.Services.Audio
 
             private DateTime? _firstStartAttemptUtc;
 
-            public PlayingClip(IAudioClip clip)
+            public PlayingClip(QueuedClip clip)
             {
                 Clip = clip;
             }
@@ -151,6 +153,10 @@ namespace Mute.Services.Audio
                     return;
 
                 await Pump(stream);
+
+                // Set completion to indicate track has been played
+                if (IsComplete)
+                    Clip.TaskCompletion.SetResult(true);
             }
 
             private async Task Pump([NotNull] Stream stream)
@@ -182,12 +188,12 @@ namespace Mute.Services.Audio
                     IsComplete = true;
 
                 //Exit out if the clip isn't ready yet
-                if (!Clip.IsLoaded)
+                if (!Clip.Clip.IsLoaded)
                     return;
 
                 var format = new WaveFormat(48000, 16, 2);
                 
-                var s = Clip.Open();
+                var s = Clip.Clip.Open();
                 _source = s as IDisposable;
 
                 _resampler = new MediaFoundationResampler(s.ToWaveProvider(), format) {

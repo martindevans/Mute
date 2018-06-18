@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using JetBrains.Annotations;
 
 namespace Mute.Services
 {
@@ -165,8 +166,10 @@ namespace Mute.Services
         #endregion
 
         #region payments
-        public async Task InsertUnconfirmedPayment(IUser payer, IUser receiver, decimal amount, string unit, string note, string id)
+        public async Task InsertUnconfirmedPayment([NotNull] IUser payer, [NotNull] IUser receiver, decimal amount, [NotNull] string unit, [CanBeNull] string note, [NotNull] string id)
         {
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
             try
             {
                 using (var cmd = _database.CreateCommand())
@@ -189,7 +192,7 @@ namespace Mute.Services
             }
         }
 
-        private static async Task<IReadOnlyList<Pending>> ParsePayments(DbDataReader reader)
+        [NotNull, ItemNotNull] private static async Task<IReadOnlyList<Pending>> ParsePayments([NotNull] DbDataReader reader)
         {
             var debts = new List<Pending>();
 
@@ -208,7 +211,7 @@ namespace Mute.Services
             return debts;
         }
 
-        public async Task<IReadOnlyList<Pending>> GetPending(IUser receiver)
+        [NotNull, ItemNotNull] public async Task<IReadOnlyList<Pending>> GetPending([NotNull] IUser receiver)
         {
             try
             {
