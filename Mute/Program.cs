@@ -76,7 +76,7 @@ namespace Mute
                 .AddSingleton<MusicRatingService>()
                 .AddScoped<Random>();
 
-            _services = serviceCollection.BuildServiceProvider(true);
+            _services = serviceCollection.BuildServiceProvider();
         }
 
         private async Task MainAsync(string[] args)
