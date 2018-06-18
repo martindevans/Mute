@@ -87,6 +87,38 @@ namespace Mute.Modules
             return null;
         }
 
+        [NotNull, ItemCanBeNull] private Task<Task> EnqueueYoutubeClip(string vid)
+        {
+            var url = $"https://www.youtube.com/watch?v={vid}";
+
+            //Start downloading the video
+            var download = Task.Factory.StartNew(async () => {
+                var yt = await _youtube.GetYoutubeAudio(url);
+                Console.WriteLine("Download complete");
+                return yt;
+            }).Unwrap();
+
+            //Enqueue the track, if that returns a null task that means something went wrong (early exit)
+            return EnqueueMusicClip(() => new YoutubeAsyncFileAudio(vid, download, AudioClipType.Music));
+        }
+
+        private async Task RunClipReactions(IUserMessage message, string vid, [NotNull] Task playingClip)
+        {
+            //Setup reaction buttons
+            await Task.Run(async () => await AddYoutubeReactions(message, vid));
+
+            //Wait for the clip to finish playing
+            await playingClip;
+
+            //After a short time remove the reactions
+            Console.WriteLine("Track complete, starting timeout...");
+            await Task.Delay(ReactionTimeout).ContinueWith(async _ => {
+                Console.WriteLine("Timeout complete!");
+                Interactive.RemoveReactionCallback(message);
+                await message.RemoveAllReactionsAsync();
+            });
+        }
+
         [Command("play"), Summary("I will download and play audio from a youtube video into whichever voice channel you are in")]
         public async Task EnqueueYoutube(string url)
         {
@@ -115,13 +147,6 @@ namespace Mute.Modules
                 return;
             }
 
-            //Start downloading the video
-            var download = Task.Factory.StartNew(async () => {
-                var yt = await _youtube.GetYoutubeAudio(url);
-                Console.WriteLine("Download complete");
-                return yt;
-            }).Unwrap();
-
             //Get video ID
             var queryDictionary = HttpUtility.ParseQueryString(new Uri(url).Query);
             var vid = queryDictionary["v"];
@@ -131,27 +156,13 @@ namespace Mute.Modules
                 return;
             }
 
-            //Setup reaction buttons
-            var addReactions = Task.Run(async () => await AddYoutubeReactions(vid));
-
             //Enqueue the track, if that returns a null task that means something went wrong (early exit)
-            var clip = await EnqueueMusicClip(() => new YoutubeAsyncFileAudio(vid, download, AudioClipType.Music));
+            var clip = await EnqueueYoutubeClip(vid);
             if (clip == null)
                 return;
 
-            //Wait for the reactions to all be added
-            await addReactions;
-
-            //Wait for the clip to finish playing
-            await clip;
-
-            //After a short time remove the reactions
-            Console.WriteLine("Track complete, starting timeout...");
-            await Task.Delay(ReactionTimeout).ContinueWith(async _ => {
-                Console.WriteLine("Timeout complete!");
-                Interactive.RemoveReactionCallback(Context.Message);
-                await Context.Message.RemoveAllReactionsAsync();
-            });
+            //Show reaction buttons and remove them once track is complete
+            await RunClipReactions(Context.Message, vid, clip);
         }
 
         [Command("shuffle"), Summary("I will randomise the order of the media player queue")]
@@ -176,14 +187,16 @@ namespace Mute.Modules
                         .ToArray();
 
             //Select one (weighted by rating)
-            var item = SelectWeightedItem(rated, new Random());
+            var vid = SelectWeightedItem(rated, new Random());
 
-            if (item != null)
+            if (vid != null)
             {
-                var url = $"https://www.youtube.com/watch?v={item}";
-                await Context.Message.ModifyAsync(a => a.Content = new Optional<string>(url));
+                var clip = await EnqueueYoutubeClip(vid);
 
-                await EnqueueYoutube($"https://www.youtube.com/watch?v={item}");
+                var url = $"https://www.youtube.com/watch?v={vid}";
+                var msg = await ReplyAsync(url);
+
+                await RunClipReactions(msg, vid, clip);
             }
         }
 
@@ -217,13 +230,13 @@ namespace Mute.Modules
                 return (item.Item1, 1f / -item.Item2);
         }
 
-        private async Task AddYoutubeReactions(string id)
+        private async Task AddYoutubeReactions(IUserMessage message, string id)
         {
-            Interactive.AddReactionCallback(Context.Message, new ReactionCallbackHandler(_ratings, Context, id));
+            Interactive.AddReactionCallback(message, new ReactionCallbackHandler(_ratings, Context, id));
 
             //Add the reaction options (from love to hate)
             foreach (var reactionScore in ReactionScores)
-                await Context.Message.AddReactionAsync(reactionScore.Key);
+                await message.AddReactionAsync(reactionScore.Key);
         }
 
         private class ReactionCallbackHandler
