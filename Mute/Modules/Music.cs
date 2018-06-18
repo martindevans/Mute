@@ -225,7 +225,7 @@ namespace Mute.Modules
         private static (string, float) NormalizeScore((string, int) item)
         {
             if (item.Item2 >= 0)
-                return (item.Item1, (float)item.Item2);
+                return (item.Item1, (float)item.Item2 + 1);
             else
                 return (item.Item1, 1f / -item.Item2);
         }
