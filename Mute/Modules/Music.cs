@@ -1,9 +1,13 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
+using Discord.WebSocket;
+using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
 using Mute.Services.Audio;
@@ -12,27 +16,36 @@ using Mute.Services.Audio.Clips;
 namespace Mute.Modules
 {
     [Group]
-    [RequireOwner]
     public class Music
         : InteractiveBase
     {
+        private static readonly TimeSpan ReactionTimeout = TimeSpan.FromSeconds(15);
+
+        private static readonly IReadOnlyDictionary<IEmote, int> ReactionScores = new Dictionary<IEmote, int> {
+            { EmojiLookup.Heart, 2 },
+            { EmojiLookup.ThumbsUp, 1 },
+            { EmojiLookup.Expressionless, 0 },
+            { EmojiLookup.ThumbsDown, -1 },
+            { EmojiLookup.BrokenHeart, -2 }
+        };
+
         private readonly AudioPlayerService _audio;
         private readonly YoutubeService _youtube;
+        private readonly MusicRatingService _ratings;
 
-        public Music(FileSystemService fs, AudioPlayerService audio, YoutubeService youtube)
+        public Music(AudioPlayerService audio, YoutubeService youtube, MusicRatingService ratings)
         {
-            _fs = fs;
             _audio = audio;
             _youtube = youtube;
+            _ratings = ratings;
         }
 
         [Command("leave-voice")]
-        [RequireOwner]
         public async Task LeaveVoice()
         {
             if (Context.User is IVoiceState v)
             {
-                using (var d = await v.VoiceChannel.ConnectAsync())
+                using (await v.VoiceChannel.ConnectAsync())
                     await Task.Delay(100);
             }
             else
@@ -42,7 +55,6 @@ namespace Mute.Modules
         }
 
         [Command("skip")]
-        [RequireOwner]
         public Task Skip()
         {
             _audio.Skip();
@@ -50,15 +62,17 @@ namespace Mute.Modules
             return Task.CompletedTask;
         }
 
-        private async Task EnqueueMusicClip(Func<IAudioClip> clip)
+        [NotNull, ItemCanBeNull] private async Task<Task> EnqueueMusicClip(Func<IAudioClip> clip)
         {
             if (Context.User is IVoiceState v)
             {
                 try
                 {
-                    _audio.Enqueue(clip());
+                    var playTask = _audio.Enqueue(clip());
                     _audio.Channel = v.VoiceChannel;
                     _audio.Play();
+
+                    return playTask;
                 }
                 catch (Exception e)
                 {
@@ -69,12 +83,27 @@ namespace Mute.Modules
             {
                 await ReplyAsync("You are not in a voice channel");
             }
+
+            return null;
         }
 
         [Command("play"), Summary("I will download and play audio from a youtube video into whichever voice channel you are in")]
-        [RequireOwner]
         public async Task EnqueueYoutube(string url)
         {
+            // Tolerate people misuing the play command
+            if (url == "random")
+            {
+                await PlayRandom();
+                return;
+            }
+
+            //Check that the user is in a channel
+            if (Context.User is IVoiceState vs && vs.VoiceChannel == null)
+            {
+                await this.TypingReplyAsync("You're not in a voice channel!");
+                return;
+            }
+
             //Check that the URL is valid
             try
             {
@@ -93,15 +122,138 @@ namespace Mute.Modules
                 return yt;
             }).Unwrap();
 
-            //Add the reaction options (from love to hate)
-            await Context.Message.AddReactionAsync(EmojiLookup.Heart);
-            await Context.Message.AddReactionAsync(EmojiLookup.ThumbsUp);
-            await Context.Message.AddReactionAsync(EmojiLookup.Expressionless);
-            await Context.Message.AddReactionAsync(EmojiLookup.ThumbsDown);
-            await Context.Message.AddReactionAsync(EmojiLookup.BrokenHeart);
+            //Get video ID
+            var queryDictionary = HttpUtility.ParseQueryString(new Uri(url).Query);
+            var vid = queryDictionary["v"];
+            if (vid == null)
+            {
+                await this.TypingReplyAsync("I'm sorry, I don't recognise this video URL");
+                return;
+            }
 
-            //Finally enqueue the track
-            await EnqueueMusicClip(() => new AsyncFileAudio(download, AudioClipType.Music));
+            //Setup reaction buttons
+            var addReactions = Task.Run(async () => await AddYoutubeReactions(vid));
+
+            //Enqueue the track, if that returns a null task that means something went wrong (early exit)
+            var clip = await EnqueueMusicClip(() => new YoutubeAsyncFileAudio(vid, download, AudioClipType.Music));
+            if (clip == null)
+                return;
+
+            //Wait for the reactions to all be added
+            await addReactions;
+
+            //Wait for the clip to finish playing
+            await clip;
+
+            //After a short time remove the reactions
+            Console.WriteLine("Track complete, starting timeout...");
+            await Task.Delay(ReactionTimeout).ContinueWith(async _ => {
+                Console.WriteLine("Timeout complete!");
+                Interactive.RemoveReactionCallback(Context.Message);
+                await Context.Message.RemoveAllReactionsAsync();
+            });
+        }
+
+        [Command("shuffle"), Summary("I will randomise the order of the media player queue")]
+        public Task ShuffleQueue()
+        {
+            _audio.Shuffle();
+
+            return Task.CompletedTask;
+        }
+
+        [Command("play-random")]
+        public async Task PlayRandom()
+        {
+            //Get a set of youtube items currently in the play queue
+            var queue = new HashSet<string>(_audio.Queue.OfType<YoutubeAsyncFileAudio>().Select(a => a.ID));
+
+            //Get a list of top rated tracks (best first) which are not already in the queue
+            var rated = (await _ratings.GetAggregateTrackRatings())
+                        .Where(a => !queue.Contains(a.Item1))
+                        .OrderByDescending(a => a.Item2)
+                        .Select(NormalizeScore)
+                        .ToArray();
+
+            //Select one (weighted by rating)
+            var item = SelectWeightedItem(rated, new Random());
+
+            if (item != null)
+            {
+                var url = $"https://www.youtube.com/watch?v={item}";
+                await Context.Message.ModifyAsync(a => a.Content = new Optional<string>(url));
+
+                await EnqueueYoutube($"https://www.youtube.com/watch?v={item}");
+            }
+        }
+
+        [CanBeNull] private static T SelectWeightedItem<T>([NotNull] IEnumerable<(T, float)> items, [NotNull] Random random) where T : class 
+        {
+            //Get total ratings
+            var ratingSum = items.Select(a => a.Item2).Sum();
+
+            //Choose the "index" of the item we're going to use
+            var index = random.NextDouble() * ratingSum;
+
+            //Find that item
+            const int accumulator = 0;
+            foreach (var item in items)
+                if (accumulator + item.Item2 >= index)
+                    return item.Item1;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Scores on tracks can be negative, transform into positive rating (lower scores still come lower in a total ordering)
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
+        private static (string, float) NormalizeScore((string, int) item)
+        {
+            if (item.Item2 >= 0)
+                return (item.Item1, (float)item.Item2);
+            else
+                return (item.Item1, 1f / -item.Item2);
+        }
+
+        private async Task AddYoutubeReactions(string id)
+        {
+            Interactive.AddReactionCallback(Context.Message, new ReactionCallbackHandler(_ratings, Context, id));
+
+            //Add the reaction options (from love to hate)
+            foreach (var reactionScore in ReactionScores)
+                await Context.Message.AddReactionAsync(reactionScore.Key);
+        }
+
+        private class ReactionCallbackHandler
+            : IReactionCallback
+        {
+            private readonly MusicRatingService _rating;
+            private readonly string _id;
+
+            public RunMode RunMode => RunMode.Async;
+
+            [NotNull] public ICriterion<SocketReaction> Criterion => new EmptyCriterion<SocketReaction>();
+
+            public TimeSpan? Timeout => TimeSpan.FromMinutes(60);
+
+            public SocketCommandContext Context { get; }
+
+            public ReactionCallbackHandler(MusicRatingService rating, SocketCommandContext context, string id)
+            {
+                _rating = rating;
+                _id = id;
+                Context = context;
+            }
+
+            public async Task<bool> HandleCallbackAsync([NotNull] SocketReaction reaction)
+            {
+                if (ReactionScores.TryGetValue(reaction.Emote, out var score))
+                    await _rating.Record(_id, reaction.User.Value.Id, score);
+
+                return false;
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 using JetBrains.Annotations;
 using Mute.Services.Audio.Clips;
@@ -12,13 +14,13 @@ namespace Mute.Services.Audio
         private ThreadedAudioPlayer _player;
 
         private readonly object _queueLock = new object();
-        private List<IAudioClip> _queue = new List<IAudioClip>();
-        [CanBeNull, ItemNotNull] public IReadOnlyList<IAudioClip> Queue
+        private readonly List<QueuedClip> _queue = new List<QueuedClip>();
+        [NotNull] public IReadOnlyList<IAudioClip> Queue
         {
             get
             {
                 lock (_queue)
-                    return _queue.ToArray();
+                    return _queue.Select(a => a.Clip).ToArray();
             }
         }
 
@@ -76,10 +78,15 @@ namespace Mute.Services.Audio
         /// <summary>
         /// Add an audio clip to the end of the current playback queue
         /// </summary>
-        public void Enqueue(IAudioClip clip)
+        /// <returns>A task which will complete when the song has been played or skipped</returns>
+        public Task<bool> Enqueue(IAudioClip clip)
         {
+            var qc = new QueuedClip(clip, new TaskCompletionSource<bool>());
+
             lock (_queueLock)
-                _queue.Add(clip);
+                _queue.Add(qc);
+
+            return qc.TaskCompletion.Task;
         }
 
         /// <summary>
@@ -97,13 +104,7 @@ namespace Mute.Services.Audio
             }
         }
 
-        public void ModifyQueue([NotNull] Func<List<IAudioClip>, List<IAudioClip>> modify)
-        {
-            lock (_queueLock)
-                _queue = modify(_queue);
-        }
-
-        IAudioClip IClipProvider.GetNextClip()
+        QueuedClip? IClipProvider.GetNextClip()
         {
             lock (_queueLock)
             {
@@ -113,6 +114,20 @@ namespace Mute.Services.Audio
                 var next = _queue[0];
                 _queue.RemoveAt(0);
                 return next;
+            }
+        }
+
+        public void Shuffle()
+        {
+            lock (_queueLock)
+            {
+                //Get all clips in queue and order them randomly
+                var r = new Random();
+                var clips = _queue.Select(a => (a, r.Next())).OrderBy(a => a.Item2).Select(a => a.Item1).ToArray();
+
+                //Reinsert al those clips in the new order
+                _queue.Clear();
+                _queue.AddRange(clips);
             }
         }
     }

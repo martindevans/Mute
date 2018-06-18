@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using JetBrains.Annotations;
 using Newtonsoft.Json.Linq;
 using Nito.AsyncEx;
@@ -45,6 +46,16 @@ namespace Mute.Services
 
         [ItemCanBeNull] private async Task<FileInfo> DownloadYoutube([NotNull] Uri youtubeUrl, bool extractAudio)
         {
+            // Get the ID from the url
+            var vid = HttpUtility.ParseQueryString(youtubeUrl.Query)["v"];
+            if (vid == null)
+                return null;
+
+            //Check if the file already exists in the downloaded folder
+            var cachedOutput = new FileInfo(Path.Combine(_config.CompleteDownloadFolder, vid + ".wav"));
+            if (cachedOutput.Exists)
+                return cachedOutput;
+
             //Build args
             var fileName = Guid.NewGuid().ToString();
             var downloadingLocation = Path.GetFullPath(Path.Combine(_config.InProgressDownloadFolder, fileName));

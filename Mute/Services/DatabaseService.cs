@@ -1,6 +1,7 @@
 ﻿using System.Data.Common;
 using System.Data.SQLite;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Mute.Services
 {
@@ -8,7 +9,7 @@ namespace Mute.Services
     {
         private readonly SQLiteConnection _dbConnection;
 
-        public DatabaseService(DatabaseConfig config)
+        public DatabaseService([NotNull] DatabaseConfig config)
         {
             _dbConnection = new SQLiteConnection(config.ConnectionString);
             _dbConnection.Open();
