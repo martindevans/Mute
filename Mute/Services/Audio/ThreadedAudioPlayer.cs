@@ -183,8 +183,8 @@ namespace Mute.Services.Audio
                 if (!_firstStartAttemptUtc.HasValue)
                     _firstStartAttemptUtc = DateTime.UtcNow;
 
-                //Check for 30s timeout
-                if (DateTime.UtcNow - _firstStartAttemptUtc.Value > TimeSpan.FromSeconds(30))
+                //Check for timeout
+                if (DateTime.UtcNow - _firstStartAttemptUtc.Value > TimeSpan.FromSeconds(15))
                     IsComplete = true;
 
                 //Exit out if the clip isn't ready yet

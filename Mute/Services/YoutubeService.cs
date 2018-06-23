@@ -37,11 +37,31 @@ namespace Mute.Services
             return url;
         }
 
+        [CanBeNull] public FileInfo TryGetCachedYoutubeAudio([NotNull] string youtubeUrl)
+        {
+            return TryGetCachedYoutubeAudio(CheckUrl(youtubeUrl));
+        }
+
         [ItemCanBeNull] public async Task<FileInfo> GetYoutubeAudio([NotNull] string youtubeUrl)
         {
             //Lock the mutex to ensure we only process one download at a time
             using (await _mutex.LockAsync())
                 return await DownloadYoutube(CheckUrl(youtubeUrl), true);
+        }
+
+        [CanBeNull] private FileInfo TryGetCachedYoutubeAudio([NotNull] Uri youtubeUrl)
+        {
+            // Get the ID from the url
+            var vid = HttpUtility.ParseQueryString(youtubeUrl.Query)["v"];
+            if (vid == null)
+                return null;
+
+            //Check if the file already exists in the downloaded folder
+            var cachedOutput = new FileInfo(Path.Combine(_config.CompleteDownloadFolder, vid + ".wav"));
+            if (cachedOutput.Exists)
+                return cachedOutput;
+
+            return null;
         }
 
         [ItemCanBeNull] private async Task<FileInfo> DownloadYoutube([NotNull] Uri youtubeUrl, bool extractAudio)

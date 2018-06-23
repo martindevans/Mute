@@ -87,19 +87,40 @@ namespace Mute.Modules
             return null;
         }
 
-        [NotNull, ItemCanBeNull] private Task<Task> EnqueueYoutubeClip(string vid)
+        [NotNull, ItemCanBeNull] private async Task<Task> EnqueueYoutubeClip(string vid, IUserMessage message)
         {
             var url = $"https://www.youtube.com/watch?v={vid}";
 
-            //Start downloading the video
-            var download = Task.Factory.StartNew(async () => {
-                var yt = await _youtube.GetYoutubeAudio(url);
-                Console.WriteLine("Download complete");
-                return yt;
-            }).Unwrap();
+            //Try to get the audio from the cache
+            var cached = _youtube.TryGetCachedYoutubeAudio(url);
 
-            //Enqueue the track, if that returns a null task that means something went wrong (early exit)
-            return EnqueueMusicClip(() => new YoutubeAsyncFileAudio(vid, download, AudioClipType.Music));
+            if (cached != null)
+            {
+                Console.WriteLine($"Retrieved {vid} from cache");
+                return await EnqueueMusicClip(() => new FileAudio(cached, AudioClipType.Music));
+            }
+            else
+            {
+                //Add reaction indicating download
+                var addEmoji = message.AddReactionAsync(EmojiLookup.Loading);
+
+                //Start downloading the video
+                var download = Task.Factory.StartNew(async () => {
+                    var yt = await _youtube.GetYoutubeAudio(url);
+                    Console.WriteLine("Download complete");
+                    return yt;
+                }).Unwrap();
+
+                //Wait for download to complete
+                await addEmoji;
+                await download;
+
+                //Remove emoji indicating download
+                await message.RemoveReactionAsync(EmojiLookup.Loading, Context.Client.CurrentUser);
+
+                //Enqueue the track
+                return await EnqueueMusicClip(() => new YoutubeAsyncFileAudio(vid, download, AudioClipType.Music));
+            }
         }
 
         private async Task RunClipReactions(IUserMessage message, string vid, [NotNull] Task playingClip)
@@ -157,7 +178,7 @@ namespace Mute.Modules
             }
 
             //Enqueue the track, if that returns a null task that means something went wrong (early exit)
-            var clip = await EnqueueYoutubeClip(vid);
+            var clip = await EnqueueYoutubeClip(vid, Context.Message);
             if (clip == null)
                 return;
 
@@ -186,18 +207,24 @@ namespace Mute.Modules
                         .Select(NormalizeScore)
                         .ToArray();
 
+            Console.WriteLine($"{rated.Length} tracks can be selected to play randomly");
+
             //Select one (weighted by rating)
             var vid = SelectWeightedItem(rated, new Random());
 
             if (vid != null)
             {
-                var clip = await EnqueueYoutubeClip(vid);
+                var clip = await EnqueueYoutubeClip(vid, Context.Message);
+                if (clip == null)
+                    return;
 
                 var url = $"https://www.youtube.com/watch?v={vid}";
                 var msg = await ReplyAsync(url);
 
                 await RunClipReactions(msg, vid, clip);
             }
+            else
+                Console.WriteLine("Didn't select a track to play");
         }
 
         [CanBeNull] private static T SelectWeightedItem<T>([NotNull] IEnumerable<(T, float)> items, [NotNull] Random random) where T : class 
@@ -209,10 +236,14 @@ namespace Mute.Modules
             var index = random.NextDouble() * ratingSum;
 
             //Find that item
-            const int accumulator = 0;
+            var accumulator = 0f;
             foreach (var item in items)
+            {
                 if (accumulator + item.Item2 >= index)
                     return item.Item1;
+                else
+                    accumulator += item.Item2;
+            }
 
             return null;
         }

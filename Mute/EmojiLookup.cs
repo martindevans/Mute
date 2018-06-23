@@ -24,5 +24,7 @@ namespace Mute
         public static readonly Emoji PlayPause = new Emoji("⏯");
         public static readonly Emoji FastBackward = new Emoji("⏪");
         public static readonly Emoji SkipBackward = new Emoji("⏮");
+
+        public static readonly Emoji Loading = new Emoji("🔄");
     }
 }
