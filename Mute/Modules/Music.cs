@@ -187,11 +187,11 @@ namespace Mute.Modules
         }
 
         [Command("shuffle"), Summary("I will randomise the order of the media player queue")]
-        public Task ShuffleQueue()
+        public async Task ShuffleQueue()
         {
             _audio.Shuffle();
 
-            return Task.CompletedTask;
+            await this.TypingReplyAsync($"Shuffled {_audio.Queue.Count} items");
         }
 
         [Command("play-random")]

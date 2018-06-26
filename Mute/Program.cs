@@ -14,6 +14,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Services;
 using Mute.Services.Audio;
+using Mute.Services.Games;
 using Newtonsoft.Json;
 
 namespace Mute
@@ -74,9 +75,13 @@ namespace Mute
                 .AddSingleton<AudioPlayerService>()
                 .AddSingleton<YoutubeService>()
                 .AddSingleton<MusicRatingService>()
+                .AddSingleton<GameService>()
                 .AddScoped<Random>();
 
             _services = serviceCollection.BuildServiceProvider();
+
+            //Force creation of active services
+            _services.GetService<GameService>();
         }
 
         private async Task MainAsync(string[] args)
