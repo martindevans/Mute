@@ -65,7 +65,7 @@ namespace Mute.Modules
         [Command("stop")]
         public async Task StopPlayback()
         {
-            await Task.Factory.StartNew(() => { _audio.Stop(); });
+            await _audio.Stop();
         }
 
         [NotNull, ItemCanBeNull] private async Task<Task> EnqueueMusicClip(Func<IAudioClip> clip)

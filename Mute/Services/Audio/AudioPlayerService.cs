@@ -12,6 +12,7 @@ namespace Mute.Services.Audio
     public class AudioPlayerService
         : IClipProvider
     {
+        [NotNull] private readonly DiscordSocketClient _client;
         private ThreadedAudioPlayer _player;
 
         private readonly object _queueLock = new object();
@@ -49,20 +50,33 @@ namespace Mute.Services.Audio
 
         public AudioPlayerService([NotNull] DiscordSocketClient client)
         {
+            _client = client;
             client.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
         }
 
         private async Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
         {
+            Console.WriteLine("User voice state updated");
+
             if (Channel == null)
                 return;
 
-            //Check if any users are still listening to music
-            if (await Channel.GetUsersAsync().Any())
+            if (user.Id == _client.CurrentUser.Id)
                 return;
 
+            //Ensure we can get all users in this channel
+            await _client.DownloadUsersAsync(new [] { Channel.Guild });
+
+            //Get user count (including Bot)
+            var count = await Channel.GetUsersAsync().Select(a => a.Count).Sum();
+            if (count > 1)
+            {
+                Console.WriteLine("Still users in channel");
+                return;
+            }
+
             //No one is listening :(
-            Stop();
+            await Stop();
         }
 
         /// <summary>
@@ -83,14 +97,19 @@ namespace Mute.Services.Audio
         /// <summary>
         /// Stop playback and clear the queue
         /// </summary>
-        public void Stop()
+        public async Task Stop()
         {
+            Console.WriteLine("Stopping audio service");
+
             _player?.Stop();
             _player = null;
 
-            lock (_queueLock)
-                _queue.Clear();    
-            
+            await Task.Factory.StartNew(() =>
+            {
+                lock (_queueLock)
+                    _queue.Clear();
+            });
+
         }
 
         /// <summary>
