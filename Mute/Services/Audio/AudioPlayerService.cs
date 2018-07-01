@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Services.Audio.Clips;
 
@@ -46,6 +47,24 @@ namespace Mute.Services.Audio
 
         [CanBeNull] public IAudioClip Playing => _player?.Playing;
 
+        public AudioPlayerService([NotNull] DiscordSocketClient client)
+        {
+            client.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
+        }
+
+        private async Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
+        {
+            if (Channel == null)
+                return;
+
+            //Check if any users are still listening to music
+            if (await Channel.GetUsersAsync().Any())
+                return;
+
+            //No one is listening :(
+            Stop();
+        }
+
         /// <summary>
         /// Skip the currently playing track
         /// </summary>
@@ -66,9 +85,8 @@ namespace Mute.Services.Audio
         /// </summary>
         public void Stop()
         {
-            var p = _player;
-            if (p != null)
-                p.Stop();
+            _player?.Stop();
+            _player = null;
 
             lock (_queueLock)
                 _queue.Clear();    
