@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using JetBrains.Annotations;
-using Mute.Services.Audio.Clips;
 using NAudio.Wave;
 
 namespace Mute.Services.Audio
@@ -21,7 +20,7 @@ namespace Mute.Services.Audio
         private int _skipRequest;
 
         [CanBeNull]
-        public IAudioClip Playing => _playing?.Clip.Clip;
+        public QueuedClip? Playing => _playing?.Clip;
 
         public bool IsAlive => !_thread.IsCompleted;
 

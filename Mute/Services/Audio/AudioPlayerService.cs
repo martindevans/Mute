@@ -46,7 +46,7 @@ namespace Mute.Services.Audio
             }
         }
 
-        [CanBeNull] public IAudioClip Playing => _player?.Playing;
+        [CanBeNull] public QueuedClip? Playing => _player?.Playing;
 
         public AudioPlayerService([NotNull] DiscordSocketClient client)
         {

@@ -68,6 +68,30 @@ namespace Mute.Modules
             await _audio.Stop();
         }
 
+        [Command("playing")]
+        public async Task NowPlaying()
+        {
+            var playing = _audio.Playing;
+            if (!playing.HasValue)
+                await this.TypingReplyAsync("Nothing is currently playing");
+            else
+            {
+                var msg = await this.TypingReplyAsync("Now playing: " + playing.Value.Clip.Name);
+
+                if (playing.Value.Clip is YoutubeAsyncFileAudio youtube)
+                {
+                    await AddYoutubeReactions(msg, youtube.ID);
+
+                    //Wait for song to finish
+                    await playing.Value.TaskCompletion.Task;
+                    await Task.Delay(ReactionTimeout);
+
+                    //Delete playing message
+                    await msg.DeleteAsync();
+                }
+            }
+        }
+
         [NotNull, ItemCanBeNull] private async Task<Task> EnqueueMusicClip(Func<IAudioClip> clip)
         {
             if (Context.User is IVoiceState v)
