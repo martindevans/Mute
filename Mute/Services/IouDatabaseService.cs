@@ -31,6 +31,7 @@ namespace Mute.Services
             GROUP BY `Unit`, `BorrowerId`
             ) borrowed
                 ON `lent`.`LenderId` = `borrowed`.`BorrowerId` AND `lent`.`Unit` = `borrowed`.`Unit`
+                WHERE (`lent`.`Unit` = @Unit or @Unit is NULL)
             )
             WHERE `Amount` > 0";
 
@@ -50,6 +51,7 @@ namespace Mute.Services
             GROUP BY `Unit`, `LenderId`
             ) borrowed
                 ON `lent`.`BorrowerId` = `borrowed`.`LenderId` AND `lent`.`Unit` = `borrowed`.`Unit`
+                WHERE (`lent`.`Unit` = @Unit or @Unit is NULL)
             )
             WHERE `Amount` > 0";
         #endregion
@@ -92,22 +94,23 @@ namespace Mute.Services
         }
 
         #region debts
-        public async Task InsertDebt(IUser lender, IUser borrower, decimal amount, string unit, string note)
+        public async Task InsertDebt([NotNull] IUser lender, [NotNull] IUser borrower, decimal amount, [NotNull] string unit, [CanBeNull] string note)
         {
             using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = InsertDebtSql;
-                cmd.Parameters.Add(new SQLiteParameter("@LenderId", System.Data.DbType.String) {Value = lender.Id.ToString()});
-                cmd.Parameters.Add(new SQLiteParameter("@BorrowerId", System.Data.DbType.String) {Value = borrower.Id.ToString()});
-                cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) {Value = amount.ToString(CultureInfo.InvariantCulture)});
-                cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) {Value = unit.ToLowerInvariant()});
-                cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) {Value = note ?? ""});
+                cmd.Parameters.Add(new SQLiteParameter("@LenderId", System.Data.DbType.String) { Value = lender.Id.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@BorrowerId", System.Data.DbType.String) { Value = borrower.Id.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
+                cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
+                cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
 
                 await cmd.ExecuteNonQueryAsync();
             }
         }
 
-        private static async Task<IReadOnlyList<Owed>> ParseOwed(DbDataReader reader)
+        [ItemNotNull]
+        private static async Task<IReadOnlyList<Owed>> ParseOwed([NotNull] DbDataReader reader)
         {
             var debts = new List<Owed>();
 
@@ -124,14 +127,24 @@ namespace Mute.Services
             return debts;
         }
 
-        public async Task<IReadOnlyList<Owed>> GetOwed(IUser borrower)
+        [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetOwed([NotNull] IUser borrower)
+        {
+            return await GetOwed(borrower.Id, null);
+        }
+
+        [ItemNotNull] private async Task<IReadOnlyList<Owed>> GetOwed(ulong borrowerId, [CanBeNull] string unit = null)
         {
             try
             {
                 using (var cmd = _database.CreateCommand())
                 {
                     cmd.CommandText = FindOwedByPerson;
-                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) {Value = borrower.Id.ToString()});
+                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = borrowerId.ToString() });
+
+                    if (unit != null)
+                        cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit });
+                    else
+                        cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = DBNull.Value });
 
                     using (var results = await cmd.ExecuteReaderAsync())
                         return await ParseOwed(results);
@@ -144,14 +157,16 @@ namespace Mute.Services
             }
         }
 
-        public async Task<IReadOnlyList<Owed>> GetLent(IUser lender)
+        [ItemNotNull]
+        public async Task<IReadOnlyList<Owed>> GetLent([NotNull] IUser lender)
         {
             try
             {
                 using (var cmd = _database.CreateCommand())
                 {
                     cmd.CommandText = FindLentByPerson;
-                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) {Value = lender.Id.ToString()});
+                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = lender.Id.ToString() });
+                    cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = DBNull.Value });
 
                     using (var results = await cmd.ExecuteReaderAsync())
                         return await ParseOwed(results);
@@ -175,12 +190,12 @@ namespace Mute.Services
                 using (var cmd = _database.CreateCommand())
                 {
                     cmd.CommandText = InsertPaymentSql;
-                    cmd.Parameters.Add(new SQLiteParameter("@Id", System.Data.DbType.String) {Value = id});
-                    cmd.Parameters.Add(new SQLiteParameter("@PayerId", System.Data.DbType.String) {Value = payer.Id.ToString()});
-                    cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) {Value = receiver.Id.ToString()});
-                    cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) {Value = amount.ToString(CultureInfo.InvariantCulture)});
-                    cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) {Value = unit.ToLowerInvariant()});
-                    cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) {Value = note ?? ""});
+                    cmd.Parameters.Add(new SQLiteParameter("@Id", System.Data.DbType.String) { Value = id });
+                    cmd.Parameters.Add(new SQLiteParameter("@PayerId", System.Data.DbType.String) { Value = payer.Id.ToString() });
+                    cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiver.Id.ToString() });
+                    cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
+                    cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
+                    cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
 
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -192,7 +207,8 @@ namespace Mute.Services
             }
         }
 
-        [NotNull, ItemNotNull] private static async Task<IReadOnlyList<Pending>> ParsePayments([NotNull] DbDataReader reader)
+        [NotNull, ItemNotNull]
+        private static async Task<IReadOnlyList<Pending>> ParsePayments([NotNull] DbDataReader reader)
         {
             var debts = new List<Pending>();
 
@@ -211,14 +227,15 @@ namespace Mute.Services
             return debts;
         }
 
-        [NotNull, ItemNotNull] public async Task<IReadOnlyList<Pending>> GetPending([NotNull] IUser receiver)
+        [NotNull, ItemNotNull]
+        public async Task<IReadOnlyList<Pending>> GetPending([NotNull] IUser receiver)
         {
             try
             {
                 using (var cmd = _database.CreateCommand())
                 {
                     cmd.CommandText = FindPaymentsByReceiver;
-                    cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) {Value = receiver.Id.ToString()});
+                    cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiver.Id.ToString() });
 
                     using (var results = await cmd.ExecuteReaderAsync())
                         return await ParsePayments(results);
@@ -236,7 +253,7 @@ namespace Mute.Services
             using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = ConfirmPayment;
-                cmd.Parameters.Add(new SQLiteParameter("@PaymentId", System.Data.DbType.String) {Value = id});
+                cmd.Parameters.Add(new SQLiteParameter("@PaymentId", System.Data.DbType.String) { Value = id });
                 using (var results = await cmd.ExecuteReaderAsync())
                 {
                     if (!results.HasRows)
@@ -246,6 +263,16 @@ namespace Mute.Services
                     return parsed.Single();
                 }
             }
+        }
+        #endregion
+
+        #region settlement
+        public void TrySettle(IUser root, string currency)
+        {
+            //Find everything this user owes (in this currency)
+            var owed = GetOwed(root);
+
+
         }
         #endregion
     }

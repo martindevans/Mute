@@ -95,7 +95,22 @@ namespace Mute.Modules
         }
         #endregion
 
-        #region payments
+        #region payments/demands
+        [Command("uoi"), Summary("I will notify someone that they owe you money")]
+        public async Task CreateDebtDemand([NotNull] IUser debter, decimal amount, [NotNull] string unit, [CanBeNull] [Remainder] string note = null)
+        {
+            if (amount < 0)
+                await this.TypingReplyAsync("You cannot demand a negative amount!");
+
+            using (Context.Channel.EnterTypingState())
+            {
+                var id = unchecked((uint)_random.Next()).MeaninglessString();
+
+                await _database.InsertUnconfirmedPayment(Context.User, debter, amount, unit, note, id);
+                await this.TypingReplyAsync($"{debter.Mention} type `!confirm {id}` to confirm that you owe this");
+            }
+        }
+        
         [Command("pay"), Summary("I will record that you have paid someone else some money")]
         public async Task CreatePendingPayment([NotNull] IUser receiver, decimal amount, string unit, [CanBeNull] [Remainder] string note = null)
         {
@@ -111,7 +126,7 @@ namespace Mute.Modules
             }
         }
 
-        [Command("confirm"), Summary("I will record that you have received the pending payment")]
+        [Command("confirm"), Summary("I will record that you confirm the pending transaction")]
         public async Task ConfirmPendingPayment(string id)
         {
             using (Context.Channel.EnterTypingState())
@@ -119,7 +134,7 @@ namespace Mute.Modules
                 var result = await _database.ConfirmPending(id);
 
                 if (result.HasValue)
-                    await ReplyAsync($"{Context.User.Mention} Confirmed receipt of {FormatCurrency(result.Value.Amount, result.Value.Unit)} from {Context.Client.GetUser(result.Value.PayerId).Mention}");
+                    await ReplyAsync($"{Context.User.Mention} Confirmed transaction of {FormatCurrency(result.Value.Amount, result.Value.Unit)} from {Context.Client.GetUser(result.Value.PayerId).Mention} to {Context.Client.GetUser(result.Value.ReceiverId).Mention}");
                 else
                     await ReplyAsync($"{Context.User.Mention} I can't find a pending payment with that ID");
             }
@@ -143,13 +158,15 @@ namespace Mute.Modules
                 await SpeakItems(
                     pending,
                     () => "You have no pending payments to confirm",
-                    p => $"Type `!confirm {p.Id}` to confirm receipt of {FormatCurrency(p.Amount, p.Unit)} from {Context.Client.GetUser(p.PayerId).Mention}{Note(p)}",
+                    p => $"Type `!confirm {p.Id}` to confirm transaction of {FormatCurrency(p.Amount, p.Unit)} from {Context.Client.GetUser(p.PayerId).Mention}{Note(p)}",
                     null,
                     ps => $"You have {ps.Count} payments to confirm. Type `!confirm $id` for each payment you have received",
                     (p, i) => $"{p.Id}: {Context.Client.GetUser(p.PayerId).Mention} paid you {FormatCurrency(p.Amount, p.Unit)}, '{p.Note}'"
                 );
             }
         }
+
+
         #endregion
 
         #region helpers
