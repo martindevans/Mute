@@ -32,12 +32,14 @@ namespace Mute.Modules
         private readonly AudioPlayerService _audio;
         private readonly YoutubeService _youtube;
         private readonly MusicRatingService _ratings;
+        private readonly Random _random;
 
-        public Music(AudioPlayerService audio, YoutubeService youtube, MusicRatingService ratings)
+        public Music(AudioPlayerService audio, YoutubeService youtube, MusicRatingService ratings, Random random)
         {
             _audio = audio;
             _youtube = youtube;
             _ratings = ratings;
+            _random = random;
         }
 
         [Command("leave-voice")]
@@ -240,7 +242,7 @@ namespace Mute.Modules
             Console.WriteLine($"{rated.Length} tracks can be selected to play randomly");
 
             //Select one (weighted by rating)
-            var vid = SelectWeightedItem(rated, new Random());
+            var vid = SelectWeightedItem(rated, _random);
 
             if (vid != null)
             {

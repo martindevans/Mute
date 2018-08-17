@@ -14,6 +14,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Services;
 using Mute.Services.Audio;
+using Mute.Services.Conversation;
 using Mute.Services.Games;
 using Newtonsoft.Json;
 
@@ -61,6 +62,7 @@ namespace Mute
             _client = new DiscordSocketClient();
 
             var serviceCollection = new ServiceCollection()
+                .AddScoped<Random>()
                 .AddSingleton(_config)
                 .AddSingleton(_commands)
                 .AddSingleton(_client)
@@ -71,17 +73,17 @@ namespace Mute
                 .AddSingleton<CryptoCurrencyService>()
                 .AddSingleton<IStockService>(new AlphaAdvantageService(config.AlphaAdvantage))
                 .AddSingleton<IouDatabaseService>()
-                .AddSingleton<FileSystemService>()
                 .AddSingleton<AudioPlayerService>()
                 .AddSingleton<YoutubeService>()
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
-                .AddScoped<Random>();
-
+                .AddSingleton<GreetingService>();
+            
             _services = serviceCollection.BuildServiceProvider();
 
             //Force creation of active services
             _services.GetService<GameService>();
+            _services.GetService<GreetingService>();
         }
 
         private async Task MainAsync(string[] args)
