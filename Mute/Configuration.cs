@@ -2,15 +2,27 @@
 {
     public class Configuration
     {
-        public AuthConfig Auth;
         public AlphaAdvantageConfig AlphaAdvantage;
         public DatabaseConfig Database;
         public YoutubeDlConfig YoutubeDl;
+
+        public HandlerConfiguration Handler;
     }
 
-    public class AuthConfig
+    public class HandlerConfiguration
+    {
+        public DiscordProviderConfiguration Discord;
+        public LocalProviderConfiguration Local;
+    }
+
+    public class DiscordProviderConfiguration
     {
         public string Token;
+    }
+
+    public class LocalProviderConfiguration
+    {
+
     }
 
     public class AlphaAdvantageConfig
