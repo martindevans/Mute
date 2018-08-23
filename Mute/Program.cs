@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -22,11 +23,10 @@ namespace Mute
 {
     class Program
     {
-        private readonly CommandService _commands;
-        private readonly DiscordSocketClient _client;
+        private readonly ICommandHandler _commands;
         private readonly IServiceProvider _services;
-
         private readonly Configuration _config;
+        private List<ICommandHandler> _handlers;
 
         #region static main
         static void Main(string[] args) 
@@ -53,19 +53,11 @@ namespace Mute
         private Program([NotNull] Configuration config)
         {
             _config = config;
-
-            _commands = new CommandService(new CommandServiceConfig {
-                CaseSensitiveCommands = false,
-                DefaultRunMode = RunMode.Async,
-                ThrowOnError = true
-            });
-            _client = new DiscordSocketClient();
+            List<ICommandHandler> handlers = new List<ICommandHandler>();
 
             var serviceCollection = new ServiceCollection()
                 .AddScoped<Random>()
                 .AddSingleton(_config)
-                .AddSingleton(_commands)
-                .AddSingleton(_client)
                 .AddSingleton(new DatabaseService(_config.Database))
                 .AddSingleton<InteractiveService>()
                 .AddSingleton<CatPictureService>()
@@ -78,116 +70,65 @@ namespace Mute
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
                 .AddSingleton<GreetingService>();
-            
+
             _services = serviceCollection.BuildServiceProvider();
 
             //Force creation of active services
             _services.GetService<GameService>();
             _services.GetService<GreetingService>();
+
+            // Populate our providers
+            if (_config.Handler.Discord != null)
+            {
+                handlers.Add(
+                    new DiscordCommandHandler(new CommandServiceConfig
+                    {
+                        CaseSensitiveCommands = false,
+                        DefaultRunMode = RunMode.Async,
+                        ThrowOnError = true
+                    }, 
+                    _config.Handler.Discord,
+                    _services)
+                );
+            }
+
+            if (_config.Handler.Local != null)
+            {
+                handlers.Add(
+                    new LocalCommandHandler(
+                        _config.Handler.Local,
+                        _services
+                        ));
+            }
+
+            if (handlers.Count == 0)
+            {
+                // No providers given, so lets blow up
+                throw new Exception("No Handlers given in config.");
+            }
+
+            _handlers = handlers;
         }
 
-        private async Task MainAsync(string[] args)
+        public Task MainAsync(string[] args)
         {
-            DependencyHelper.TestDependencies();
-
-            await SetupModules();
-
-            // Log the bot in
-            await _client.LogoutAsync();
-            await _client.LoginAsync(TokenType.Bot, _config.Auth.Token);
-            await _client.StartAsync();
-
-            // Set presence
-            if (Debugger.IsAttached)
-                await _client.SetGameAsync("Debug Mode");
-
-            // Type exit to exit
-            Console.WriteLine("type 'exit' to exit");
-            while (true)
+            // Yolo, how do threads even work in C#
+            List<TaskAwaiter> _awaiters = new List<TaskAwaiter>();
+            for (var i = 0; i < _handlers.Count; i++)
             {
-                var line = Console.ReadLine();
-                if (line != null && line.ToLowerInvariant() == "exit")
-                {
-                    await _client.LogoutAsync();
-                    await _client.StopAsync();
-                    _client.Dispose();
-                    break;
-                }
+                // go _providers[i].Main();
+                _awaiters.Add(_handlers[i].MainAsync(
+                    new string[0]).GetAwaiter());
             }
-        }
 
-        private async Task SetupModules()
-        {
-            // Hook the MessageReceived Event into our Command Handler
-            _client.MessageReceived += HandleMessage;
-
-            // Discover all of the commands in this assembly and load them.
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
-            
-            // Print loaded modules
-            Console.WriteLine($"Loaded Modules ({_commands.Modules.Count()}):");
-            foreach (var module in _commands.Modules)
-                Console.WriteLine($" - {module.Name}");
-        }
-
-        private async Task HandleMessage(SocketMessage messageParam)
-        {
-            // Don't process the command if it was a System Message
-            if (!(messageParam is SocketUserMessage message))
-                return;
-
-            //Ignore messages from self
-            if (message.Author.Id == _client.CurrentUser.Id)
-                return;
-
-            // Check if the message starts with the command prefix character
-            var prefixPos = 0;
-            var hasPrefix = message.HasCharPrefix('!', ref prefixPos);
-
-            // Check if the bot is mentioned in a prefix
-            var prefixMentionPos = 0;
-            var hasPrefixMention = message.HasMentionPrefix(_client.CurrentUser, ref prefixMentionPos);
-
-            // Check if the bot is mentioned at all
-            var mentionsBot = ((IUserMessage)message).MentionedUserIds.Contains(_client.CurrentUser.Id);
-
-            if (hasPrefix || hasPrefixMention)
+            for (var a = 0; a < _awaiters.Count; a++)
             {
-                //It's a command, process it as such
-                await ProcessAsCommand(message, Math.Max(prefixPos, prefixMentionPos));
+                _awaiters[a].GetResult();
             }
-            else if (mentionsBot)
-            {
-                //It's not a command, but the bot was mentioned
-                Console.WriteLine($"I was mentioned in: '{message.Content}'");
-            }
-        }
 
-        private async Task ProcessAsCommand(SocketUserMessage message, int offset)
-        {
-            // Create a Command Context
-            var context = new SocketCommandContext(_client, message);
-
-            // When there's a mention the command may or may not include the prefix. Check if it does include it and skip over it if so
-            if (context.Message.Content[offset] == '!')
-                offset++;
-
-            // Execute the command
-            try
-            {
-                var result = await _commands.ExecuteAsync(context, offset, _services);
-
-                //Don't print error message in response to messages from self
-                if (!result.IsSuccess && message.Author.Id != _client.CurrentUser.Id)
-                    await context.Channel.SendMessageAsync(result.ErrorReason);
-
-                if (result.ErrorReason != null)
-                    Console.WriteLine(result.ErrorReason);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            // Yeah, Fuck yeah
+            // Im sure this wont come back to bite me later
+            return null;
         }
     }
 
