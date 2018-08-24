@@ -30,9 +30,18 @@ namespace Mute.Services
             _random = random;
             _client = client;
 
-            _database.Exec("CREATE TABLE IF NOT EXISTS `Reminders` (`UID` TEXT NOT NULL PRIMARY KEY, `UtcTime` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `Message` TEXT NOT NULL, `Sent` NUMERIC NOT NULL)");
+            try
+            {
+                _database.Exec("CREATE TABLE IF NOT EXISTS `Reminders` (`UID` TEXT NOT NULL PRIMARY KEY, `UtcTime` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `Message` TEXT NOT NULL, `Sent` NUMERIC NOT NULL)");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
             _thread = Task.Run(ThreadEntry);
+
+            Console.WriteLine("Started Reminder Service");
         }
 
         private async Task LoadFromDatabase()
@@ -57,6 +66,9 @@ namespace Mute.Services
                     }
                 }
             }
+
+            lock (_notifications)
+                Console.WriteLine($"Loaded {_notifications.Count} reminders from database");
         }
 
         public async Task Create(DateTime utcTime, string message, ulong channelId)
@@ -93,49 +105,65 @@ namespace Mute.Services
 
         private async Task ThreadEntry()
         {
-            await LoadFromDatabase();
-
-            while (true)
+            try
             {
-                //Check if there are any waiting events
-                DateTime? next = null;
-                lock (_notifications)
-                {
-                    if (_notifications.Count > 0)
-                    {
-                        _notifications.Sort();
-                        next = _notifications[0].TriggerTime;
-                    }
-                }
+                await LoadFromDatabase();
 
-                if (!next.HasValue)
+                while (true)
                 {
-                    //no pending events, wait for a while
-                    _event.WaitOne(10000);
-                }
-                else if (next.Value <= DateTime.UtcNow)
-                {
-                    //Send event
-                    Notification n;
+                    //Check if there are any waiting events
+                    DateTime? next = null;
                     lock (_notifications)
                     {
-                        n = _notifications[0];
-                        _notifications.RemoveAt(0);
+                        if (_notifications.Count > 0)
+                        {
+                            _notifications.Sort();
+                            next = _notifications[0].TriggerTime;
+                        }
                     }
-                    await SendNotification(n);
+
+                    if (!next.HasValue)
+                    {
+                        //no pending events, wait for a while
+                        _event.WaitOne(10000);
+                    }
+                    else if (next.Value <= DateTime.UtcNow)
+                    {
+                        //Send event
+                        Notification n;
+                        lock (_notifications)
+                        {
+                            n = _notifications[0];
+                            _notifications.RemoveAt(0);
+                        }
+
+                        await SendNotification(n);
+                    }
+                    else
+                    {
+                        //Wait until event should be sent or another event happens
+                        _event.WaitOne(Math.Max(0, (int)(next.Value - DateTime.UtcNow).TotalMilliseconds));
+                    }
                 }
-                else
-                {
-                    //Wait until event should be sent or another event happens
-                    _event.WaitOne((int)(next.Value - DateTime.UtcNow).TotalMilliseconds);
-                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Reminder service killed: " + e);
             }
         }
 
         private async Task SendNotification([NotNull] Notification notification)
         {
+            Console.WriteLine($"Sending notification: C:{notification.ChannelId}, UID:{notification.UID}, Msg:{notification.Message}");
+
             //Send message
-            var channel = (ISocketMessageChannel)_client.GetChannel(notification.ChannelId);
+            var channel = (ISocketMessageChannel)_client.GetGuild(415655090842763265)?.GetChannel(notification.ChannelId);
+            if (channel == null)
+            {
+                Console.WriteLine($"Cannot send reminder: Channel {notification.ChannelId} is null");
+                return;
+            }
+
             await channel.SendMessageAsync(notification.Message);
             
             //Mark as sent in the database

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -23,21 +24,28 @@ namespace Mute.Modules
         [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder")]
         public async Task CreateReminder([CanBeNull] string time, [CanBeNull, Remainder] string message = null)
         {
-            var parsed = time == null ? null : TryParse(time);
-            if (!parsed.HasValue)
+            try
             {
-                await this.TypingReplyAsync("I don't understand that time format. Use e.g. '3d2h4m12s'");
-                return;
+                var parsed = time == null ? null : TryParse(time);
+                if (!parsed.HasValue)
+                {
+                    await this.TypingReplyAsync("I don't understand that time format. Use e.g. '3d2h4m12s'");
+                    return;
+                }
+
+                await this.TypingReplyAsync($"I will remind you in {parsed.Value.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)}");
+
+                var triggerTime = DateTime.UtcNow + parsed.Value;
+
+                //Add some context to the message
+                message = $"{Context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerTime, culture: CultureInfo.GetCultureInfo("en-gn"))}: `{message}`";
+
+                await _reminder.Create(triggerTime, message, Context.Message.Channel.Id);
             }
-
-            await this.TypingReplyAsync($"I will remind you in {parsed.Value.Humanize(2, maxUnit:TimeUnit.Year, minUnit:TimeUnit.Second, toWords: true)}");
-
-            var triggerTime = DateTime.UtcNow + parsed.Value;
-
-            //Add some context to the message
-            message = $"{Context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst:triggerTime)}: `{message}`";
-
-            await _reminder.Create(triggerTime, message, Context.Message.Channel.Id);
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         private static TimeSpan? TryParse([NotNull] string str)
