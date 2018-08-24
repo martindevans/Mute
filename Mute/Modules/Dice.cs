@@ -34,7 +34,6 @@ namespace Mute.Modules
             "My sources say no",
             "Outlook not so good.",
             "Very doubtful."
-
         };
 
         private byte Random(byte numberSides)

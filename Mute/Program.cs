@@ -77,13 +77,15 @@ namespace Mute
                 .AddSingleton<YoutubeService>()
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
-                .AddSingleton<GreetingService>();
+                .AddSingleton<GreetingService>()
+                .AddSingleton<ReminderService>();
             
             _services = serviceCollection.BuildServiceProvider();
 
             //Force creation of active services
             _services.GetService<GameService>();
             _services.GetService<GreetingService>();
+            _services.GetService<ReminderService>();
         }
 
         private async Task MainAsync(string[] args)
