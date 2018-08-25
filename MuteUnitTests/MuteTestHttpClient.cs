@@ -1,30 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using Mute;
 
 namespace Mute
 {
-    class MuteTestHttpClient : IHttpClient
+    class MuteTestHttpClient
+        : IHttpClient
     {
-        string _uri;
-        // Am I living in the fucking twilight zone?
-        private HttpResponseMessage _generateResponse()
-        {
-            var responses = new HttpResponseMessage();
-            responses.Content = new StringContent(_uri);
+        private readonly Dictionary<string, string> _responses = new Dictionary<string, string>();
+        private static string _defaultResponse;
 
-            return responses;
+        public MuteTestHttpClient(Dictionary<string, string> responses, string defaultResponse = "")
+        {
+            _responses = responses;
+            _defaultResponse = defaultResponse;            
         }
 
         public Task<HttpResponseMessage> GetAsync(string uri)
         {
-            _uri = "";
-            Func<HttpResponseMessage> generateResponse = _generateResponse;
-            return new Task<HttpResponseMessage>(generateResponse);
+            HttpResponseMessage GenerateResponse()
+            {
+                if (!_responses.TryGetValue(uri, out var response))
+                    response = _defaultResponse;
+                return new HttpResponseMessage { Content = new StringContent(response) };
+            }
+            return Task.Run((Func<HttpResponseMessage>)GenerateResponse);
         }
     }
 }

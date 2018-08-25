@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 
 namespace Mute.Services
 {
-    public class CatPictureService {
+    public class CatPictureService
+    {
         private readonly string _url;
         private readonly IHttpClient _client;
 

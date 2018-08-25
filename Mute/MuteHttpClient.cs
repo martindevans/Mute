@@ -10,9 +10,9 @@ namespace Mute
     {
         HttpClient _client;
 
-        public Task<HttpResponseMessage> GetAsync(string uri)
+        public async Task<HttpResponseMessage> GetAsync(string uri)
         {
-            return _client.GetAsync(uri);
+            return await _client.GetAsync(uri);
         }
     }
 }

@@ -7,18 +7,25 @@ namespace Mute.Services
 {
     public class DogPictureService
     {
+        private readonly string _url;
+        private readonly IHttpClient _client;
+
+        public DogPictureService(IHttpClient client, string url = "https://dog.ceo/api/breeds/image/random")
+        {
+            this._url = url;
+            this._client = client;
+        }
+
         public async Task<Stream> GetDogPictureAsync()
         {
-            using (var http = new HttpClient())
-            {
                 //Ask API for a dog image
-                var httpResp = await http.GetAsync("https://dog.ceo/api/breeds/image/random");
+                var httpResp = await _client.GetAsync(_url);
                 var jsonResp = JsonConvert.DeserializeObject<Response>(await httpResp.Content.ReadAsStringAsync());
 
-                // Fetch dog image
-                var imgHttpResp = await http.GetAsync(jsonResp.message);
+                // Fetch dog image, If there is no message, 
+                // return a default image. (From their api)
+                var imgHttpResp = await _client.GetAsync(jsonResp?.message ?? "https://images.dog.ceo/breeds/elkhound-norwegian/n02091467_4951.jpg");
                 return await imgHttpResp.Content.ReadAsStreamAsync();
-            }
         }
 
         // ReSharper disable once ClassNeverInstantiated.Local
@@ -27,8 +34,8 @@ namespace Mute.Services
             // ReSharper disable once InconsistentNaming
             public string status;
 
-            // ReSharper disable once InconsistentNaming
             public string message;
+            // ReSharper disable once InconsistentNaming
         }
     }
 }
