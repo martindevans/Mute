@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Mute.Services
@@ -11,13 +10,13 @@ namespace Mute.Services
 
         public CatPictureService(IHttpClient client, string url = "https://cataas.com/cat")
         {
-            this._url = url;
-            this._client = client;
+            _url = url;
+            _client = client;
         }
 
         public async Task<Stream> GetCatPictureAsync()
         {
-            var resp = await this._client.GetAsync(_url);
+            var resp = await _client.GetAsync(_url);
             return await resp.Content.ReadAsStreamAsync();
         }
     }

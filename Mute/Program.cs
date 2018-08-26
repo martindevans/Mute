@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -62,7 +63,8 @@ namespace Mute
             _client = new DiscordSocketClient();
 
             var serviceCollection = new ServiceCollection()
-                .AddScoped<Random>()
+                .AddTransient<Random>()
+                .AddTransient<IHttpClient>(_ => new MuteHttpClient())
                 .AddSingleton(_config)
                 .AddSingleton(_commands)
                 .AddSingleton(_client)

@@ -1,15 +1,15 @@
 .vs
 _ReSharper.Caches
+_NCrunch_Mute
 
 *.user
+*.ncrunchsolution
 
 Mute/bin
 Mute/obj
 Mute/config.json
 /Mute/Properties/PublishProfiles
 
-MuteUnitTests/bin
-MuteUnitTests/obj
-MuteUnitTests/config.json
-/MuteUnitTests/Properties/PublishProfiles
+Mute.Tests/bin
+Mute.Tests/obj
 

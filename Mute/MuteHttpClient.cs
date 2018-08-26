@@ -1,18 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Http;
 
 namespace Mute
 {
-    class MuteHttpClient : IHttpClient
+    public class MuteHttpClient
+        : HttpClient, IHttpClient
     {
-        HttpClient _client;
-
-        public async Task<HttpResponseMessage> GetAsync(string uri)
-        {
-            return await _client.GetAsync(uri);
-        }
     }
 }

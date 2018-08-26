@@ -12,8 +12,8 @@ namespace Mute.Services
 
         public DogPictureService(IHttpClient client, string url = "https://dog.ceo/api/breeds/image/random")
         {
-            this._url = url;
-            this._client = client;
+            _url = url;
+            _client = client;
         }
 
         public async Task<Stream> GetDogPictureAsync()
