@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -13,9 +14,10 @@ using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Mute.Extensions;
+using Mute.Responses;
 using Mute.Services;
 using Mute.Services.Audio;
-using Mute.Services.Conversation;
 using Mute.Services.Games;
 using Newtonsoft.Json;
 
@@ -26,8 +28,11 @@ namespace Mute
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
+        private readonly List<IResponse> _responses = new List<IResponse>();
 
         private readonly Configuration _config;
+
+        private readonly Random _random = new Random();
 
         #region static main
         static void Main(string[] args) 
@@ -79,15 +84,28 @@ namespace Mute
                 .AddSingleton<YoutubeService>()
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
-                .AddSingleton<GreetingService>()
                 .AddSingleton<ReminderService>();
             
             _services = serviceCollection.BuildServiceProvider();
 
             //Force creation of active services
             _services.GetService<GameService>();
-            _services.GetService<GreetingService>();
             _services.GetService<ReminderService>();
+
+            //Get response generators
+            var types = Assembly.GetExecutingAssembly()
+                            .GetTypes()
+                            .Where(t => typeof(IResponse).IsAssignableFrom(t))
+                            .Where(t => t.IsClass)
+                            .ToArray();
+            _responses.AddRange(types
+                .Select(t => ActivatorUtilities.CreateInstance(_services, t))
+                .OfType<IResponse>()
+            );
+
+            Console.WriteLine($"Loaded Responses ({_responses.Count}):");
+            foreach (var response in _responses)
+                Console.WriteLine($" - {response.GetType().Name}");
         }
 
         private async Task MainAsync(string[] args)
@@ -160,10 +178,27 @@ namespace Mute
                 //It's a command, process it as such
                 await ProcessAsCommand(message, Math.Max(prefixPos, prefixMentionPos));
             }
-            else if (mentionsBot)
+            else
             {
                 //It's not a command, but the bot was mentioned
-                Console.WriteLine($"I was mentioned in: '{message.Content}'");
+                if (mentionsBot)
+                    Console.WriteLine($"I was mentioned in: '{message.Content}'");
+
+                //See if there is a response generator which can respond to this message
+                var response = _responses
+                    .AsParallel()
+                    .Where(r => mentionsBot || !r.RequiresMention)
+                    .Where(r => r.MayRespond(message, mentionsBot))
+                    .RandomElement(_random)
+                    ?.Respond(message, mentionsBot, CancellationToken.None);
+
+                //If there was and if it generated a non null response send it
+                if (response != null)
+                {
+                    var msg = await response;
+                    if (msg != null)
+                        await message.Channel.SendMessageAsync(msg);
+                }
             }
         }
 

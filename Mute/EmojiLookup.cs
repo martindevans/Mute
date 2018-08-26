@@ -9,6 +9,7 @@ namespace Mute
         public static readonly Emoji Expressionless = new Emoji("😑");
         public static readonly Emoji RollingEyes = new Emoji("🙄");
         public static readonly Emoji Worried = new Emoji("😟");
+        public static readonly Emoji Thinking = new Emoji("🤔");
         public static readonly Emoji ThumbsUp = new Emoji("👍");
         public static readonly Emoji ThumbsDown = new Emoji("👎");
         public static readonly Emoji Heart = new Emoji("❤");

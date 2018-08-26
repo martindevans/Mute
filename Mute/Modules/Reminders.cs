@@ -15,10 +15,12 @@ namespace Mute.Modules
         : ModuleBase
     {
         private readonly ReminderService _reminder;
+        private readonly Random _random;
 
-        public Reminders(ReminderService reminder)
+        public Reminders(ReminderService reminder, Random random)
         {
             _reminder = reminder;
+            _random = random;
         }
 
         [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder")]
@@ -30,6 +32,16 @@ namespace Mute.Modules
                 if (!parsed.HasValue)
                 {
                     await this.TypingReplyAsync("I don't understand that time format. Use e.g. '3d2h4m12s'");
+                    return;
+                }
+
+                if (parsed.Value.Ticks < 0)
+                {
+                    var msg = await this.TypingReplyAsync($"You want me to remind you {parsed.Value.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} in the past?");
+
+                    if (_random.NextDouble() < 0.05f)
+                        await msg.AddReactionAsync(EmojiLookup.Thinking);
+
                     return;
                 }
 
@@ -50,7 +62,7 @@ namespace Mute.Modules
 
         private static TimeSpan? TryParse([NotNull] string str)
         {
-            var match = Regex.Match(str, "((?<days>[0-9]+)d)?((?<hours>[0-9]+)h)?((?<mins>[0-9]+)m)?((?<secs>[0-9]+)s)?");
+            var match = Regex.Match(str, "^((?<days>-?[0-9]+)d)?((?<hours>-?[0-9]+)h)?((?<mins>-?[0-9]+)m)?((?<secs>-?[0-9]+)s)?$");
 
             if (!match.Success)
                 return null;

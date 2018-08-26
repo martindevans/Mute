@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using JetBrains.Annotations;
 using Mute.Extensions;
 
 namespace Mute.Responses
@@ -41,18 +42,18 @@ namespace Mute.Responses
         }
 
         #region response generator
-        private static string Plural(string noun)
+        [NotNull] private static string Plural([NotNull] string noun)
         {
             var suffix = (noun.EndsWith('s') || noun.EndsWith("sh")) ? "es" : "s";
             return noun + suffix;
         }
 
-        private static string Article(string word)
+        [NotNull] private static string Article([NotNull] string word)
         {
             return Regex.IsMatch(word, "^[aeiou]") ? "an" : "a";
         }
 
-        private string Sarcasm()
+        [NotNull] private string Sarcasm()
         {
             var intro = _intros.Random(_random);
             var thirdPerson = intro.Contains("Hoon");
