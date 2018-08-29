@@ -6,7 +6,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Services;
 using Mute.Tests.Mocks;
 
-namespace Mute.Tests
+namespace Mute.Tests.Services
 {
     [TestClass]
     public class DogPictureServiceTests

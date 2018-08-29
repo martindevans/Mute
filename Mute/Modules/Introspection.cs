@@ -56,7 +56,7 @@ namespace Mute.Modules
                 var preconditionSuccess = true;
                 foreach (var precondition in command.Preconditions)
                 {
-                    preconditionSuccess &= (await precondition.CheckPermissions(Context, command, _services)).IsSuccess;
+                    preconditionSuccess &= (await precondition.CheckPermissionsAsync(Context, command, _services)).IsSuccess;
                     if (!preconditionSuccess)
                         break;
                 }

@@ -28,9 +28,9 @@ namespace Mute.Modules
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
         [RequireOwner]
-        public async Task Say([Remainder] string s)
+        public async Task Say([Remainder] string s2)
         {
-            await this.TypingReplyAsync(s);
+            await this.TypingReplyAsync(s2);
         }
 
         [Command("sql"), Summary("I will execute an arbitrary SQL statement. Please be very careful x_x")]

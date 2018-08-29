@@ -15,7 +15,7 @@ namespace Mute.Services
         #region SQL debts
         private const string InsertDebtSql = "INSERT INTO `IOU_Debts` (`LenderId`, `BorrowerId`, `Amount`, `Unit`, `Note`) VALUES (@LenderId, @BorrowerId, @Amount, @Unit, @Note)";
 
-        private const string FindOwedByPerson = @"SELECT *
+        private const string FindOwedByPerson = @"SELECT *, '' as `Note`
             FROM (
                 SELECT `lent`.`Unit`, `lent`.`Amount` - ifnull(`borrowed`.`Amount`, 0) AS 'Amount', `LenderId`, @PersonId as `BorrowerId`
             FROM (
@@ -35,7 +35,7 @@ namespace Mute.Services
             )
             WHERE `Amount` > 0";
 
-        private const string FindLentByPerson = @"SELECT *
+        private const string FindLentByPerson = @"SELECT *, '' as `Note`
             FROM (
                 SELECT `lent`.`Unit`, `lent`.`Amount` - ifnull(`borrowed`.`Amount`, 0) AS 'Amount', `BorrowerId`, @PersonId as `LenderId`
             FROM (
@@ -54,6 +54,10 @@ namespace Mute.Services
                 WHERE (`lent`.`Unit` = @Unit or @Unit is NULL)
             )
             WHERE `Amount` > 0";
+
+        private const string FindAllTransactionsByPerson = @"SELECT `Unit`, `Amount`, `BorrowerId`, `LenderId`, `Note` FROM IOU_Debts WHERE LenderId = @PersonId OR BorrowerId = @PersonId";
+
+        private const string FindAllTransactionsByPersonWithOther = @"SELECT `Unit`, `Amount`, `BorrowerId`, `LenderId`, `Note` FROM IOU_Debts WHERE (LenderId = @PersonId AND BorrowerId = @OtherId) OR (LenderId = @OtherId AND BorrowerId = @PersonId)";
         #endregion
 
         #region sql payments
@@ -120,8 +124,9 @@ namespace Mute.Services
                     ulong.Parse((string)reader["LenderId"]),
                     ulong.Parse((string)reader["BorrowerId"]),
                     decimal.Parse(reader["Amount"].ToString()),
-                    (string)reader["Unit"])
-                );
+                    (string)reader["Unit"],
+                    (string)reader["Note"]
+                ));
             }
 
             return debts;
@@ -275,6 +280,47 @@ namespace Mute.Services
 
         }
         #endregion
+
+        [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetTransactions(ulong lenderId)
+        {
+            try
+            {
+                using (var cmd = _database.CreateCommand())
+                {
+                    cmd.CommandText = FindAllTransactionsByPerson;
+                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = lenderId.ToString() });
+
+                    using (var results = await cmd.ExecuteReaderAsync())
+                        return await ParseOwed(results);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetTransactions(ulong lenderId, ulong borrowerId)
+        {
+            try
+            {
+                using (var cmd = _database.CreateCommand())
+                {
+                    cmd.CommandText = FindAllTransactionsByPersonWithOther;
+                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = lenderId.ToString() });
+                    cmd.Parameters.Add(new SQLiteParameter("@OtherId", System.Data.DbType.String) { Value = borrowerId.ToString() });
+
+                    using (var results = await cmd.ExecuteReaderAsync())
+                        return await ParseOwed(results);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
     }
 
     public struct Owed
@@ -283,13 +329,15 @@ namespace Mute.Services
         public readonly ulong BorrowerId;
         public readonly decimal Amount;
         public readonly string Unit;
+        [CanBeNull] public readonly string Note;
 
-        public Owed(ulong lenderId, ulong borrowerId, decimal amount, string unit)
+        public Owed(ulong lenderId, ulong borrowerId, decimal amount, string unit, [CanBeNull] string note)
         {
             LenderId = lenderId;
             BorrowerId = borrowerId;
             Amount = amount;
             Unit = unit;
+            Note = note;
         }
     }
 

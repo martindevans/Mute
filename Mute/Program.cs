@@ -121,7 +121,15 @@ namespace Mute
 
             // Set presence
             if (Debugger.IsAttached)
-                await _client.SetGameAsync("Debug Mode");
+            {
+                await _client.SetActivityAsync(new Game("Debug Mode", ActivityType.Playing));
+                await _client.SetStatusAsync(UserStatus.DoNotDisturb);
+            }
+            else
+            {
+                await _client.SetActivityAsync(null);
+                await _client.SetStatusAsync(UserStatus.Online);
+            }
 
             // Type exit to exit
             Console.WriteLine("type 'exit' to exit");

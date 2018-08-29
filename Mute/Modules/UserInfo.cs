@@ -48,8 +48,8 @@ namespace Mute.Modules
             if (user.IsBot && !user.Username.StartsWith('*'))
                 str += " is a bot";
 
-            if (gu?.Game != null)
-                str += $" (playing {gu.Game.Value.Name})";
+            if (gu?.Activity != null)
+                str += $" ({gu.Activity.Type} {gu.Activity.Name})";
 
             await this.TypingReplyAsync(str);
         }

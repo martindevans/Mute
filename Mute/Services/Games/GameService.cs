@@ -1,5 +1,6 @@
 ﻿using System.Data.SQLite;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 
@@ -26,22 +27,25 @@ namespace Mute.Services.Games
 
         private async Task Updated([NotNull] SocketUser a, [NotNull] SocketUser b)
         {
-            if (b.Game.HasValue)
+            if (b.Activity.Type != ActivityType.Playing)
+                return;
+
+            if (string.IsNullOrWhiteSpace(b.Activity.Name))
+                return;
+
+            using (var cmd = _database.CreateCommand())
             {
-                using (var cmd = _database.CreateCommand())
+                cmd.CommandText = InsertGamePlayed;
+                cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = b.Id});
+                cmd.Parameters.Add(new SQLiteParameter("@GameId", System.Data.DbType.String) {Value = b.Activity.Name});
+
+                var count = await cmd.ExecuteNonQueryAsync();
+
+                if (count > 0)
                 {
-                    cmd.CommandText = InsertGamePlayed;
-                    cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = b.Id});
-                    cmd.Parameters.Add(new SQLiteParameter("@GameId", System.Data.DbType.String) {Value = b.Game.Value.Name});
-
-                    var count = await cmd.ExecuteNonQueryAsync();
-
-                    if (count > 0)
-                    {
-                        //Get `unlimited-bot-works` channel
-                        var c = _client.GetGuild(415655090842763265).GetChannel(445018769622958091);
-                        await ((ISocketMessageChannel)c).SendMessageAsync($"{b.Username} is playing a new game: `{b.Game.Value.Name}`");
-                    }
+                    //Get `unlimited-bot-works` channel
+                    var c = _client.GetGuild(415655090842763265).GetChannel(445018769622958091);
+                    await ((ISocketMessageChannel)c).SendMessageAsync($"{b.Username} is playing a new game: `{b.Activity.Name}`");
                 }
             }
         }

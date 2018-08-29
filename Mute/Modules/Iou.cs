@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
+using Discord.WebSocket;
 using JetBrains.Annotations;
+using MoreLinq;
 using Mute.Extensions;
 using Mute.Services;
 
@@ -16,19 +19,23 @@ namespace Mute.Modules
     {
         private readonly IouDatabaseService _database;
         private readonly Random _random;
+        private readonly DiscordSocketClient _client;
 
-        public Iou(IouDatabaseService database, Random random)
+        public Iou(IouDatabaseService database, Random random, DiscordSocketClient client)
         {
             _database = database;
             _random = random;
+            _client = client;
         }
 
         #region debts
         [Command("iou"), Summary("I will remember that you owe something to another user")]
-        public async Task CreateDebt([NotNull] IUser user, decimal amount, string unit, [CanBeNull, Remainder] string note = null)
+        public async Task CreateDebt([NotNull] IUser user, decimal amount, [NotNull] string unit, [CanBeNull, Remainder] string note = null)
         {
             if (amount < 0)
                 await this.TypingReplyAsync("You cannot owe a negative amount!");
+
+            await CheckDebugger();
 
             using (Context.Channel.EnterTypingState())
             {
@@ -50,6 +57,8 @@ namespace Mute.Modules
                 var lenderUser = Context.Client.GetUser(owe.LenderId);
                 return $"{lenderUser.Mention} {FormatCurrency(owe.Amount, owe.Unit)}";
             }
+
+            await CheckDebugger();
 
             using (Context.Channel.EnterTypingState())
             {
@@ -77,6 +86,8 @@ namespace Mute.Modules
                 return $"{FormatCurrency(owe.Amount, owe.Unit)} by {borrowerUser.Mention}";
             }
 
+            await CheckDebugger();
+
             using (Context.Channel.EnterTypingState())
             {
                 var owed = (await _database.GetLent(Context.User))
@@ -102,6 +113,8 @@ namespace Mute.Modules
             if (amount < 0)
                 await this.TypingReplyAsync("You cannot demand a negative amount!");
 
+            await CheckDebugger();
+
             using (Context.Channel.EnterTypingState())
             {
                 var id = unchecked((uint)_random.Next()).MeaninglessString();
@@ -117,6 +130,8 @@ namespace Mute.Modules
             if (amount < 0)
                 await this.TypingReplyAsync("You cannot pay a negative amount!");
 
+            await CheckDebugger();
+
             using (Context.Channel.EnterTypingState())
             {
                 var id = unchecked((uint)_random.Next()).MeaninglessString();
@@ -129,6 +144,8 @@ namespace Mute.Modules
         [Command("confirm"), Summary("I will record that you confirm the pending transaction")]
         public async Task ConfirmPendingPayment(string id)
         {
+            await CheckDebugger();
+
             using (Context.Channel.EnterTypingState())
             {
                 var result = await _database.ConfirmPending(id);
@@ -151,6 +168,8 @@ namespace Mute.Modules
                     return $" for `{pending.Note}`";
             }
 
+            await CheckDebugger();
+
             using (Context.Channel.EnterTypingState())
             {
                 var pending = await _database.GetPending(Context.User);
@@ -165,18 +184,68 @@ namespace Mute.Modules
                 );
             }
         }
+        #endregion
 
+        #region transaction list
+        private async Task PaginatedTransactions([NotNull] IEnumerable<Owed> owed)
+        {
+            string Name(ulong id)
+            {
+                var user = _client.GetUser(id);
 
+                if (user == null)
+                    return $"?{id}?";
+
+                if (user is IGuildUser gu)
+                    return gu.Nickname;
+
+                return user.Username;
+            }
+
+            string FormatSingleTsx(Owed d)
+            {
+                var symbol = d.Unit.TryGetCurrencySymbol();
+                var borrower = Name(d.BorrowerId);
+                var lender = Name(d.LenderId);
+
+                if (symbol != d.Unit)
+                    return $"{lender} => {borrower} {symbol}{d.Amount} {d.Note}";
+                else
+                    return $"{lender} => {borrower} {d.Amount}({d.Unit}) {d.Note}";
+            }
+
+            await PagedReplyAsync(new PaginatedMessage {
+                Pages = owed.Batch(5).Select(d => string.Join("\n", d.Select(FormatSingleTsx)))
+            });
+        }
+
+        [Command("transactions"), Summary("I will show all your transactions, optionally filtered to only with another user")]
+        public async Task ListTransactions([CanBeNull] IUser other = null)
+        {
+            await CheckDebugger();
+
+            var tsx = other == null
+                ? _database.GetTransactions(Context.Message.Author.Id)
+                : _database.GetTransactions(Context.Message.Author.Id, other.Id);
+
+            await PaginatedTransactions(await tsx);
+        }
         #endregion
 
         #region helpers
+        private async Task CheckDebugger()
+        {
+            if (Debugger.IsAttached)
+                await ReplyAsync("**Warning - Debugger is attached. This is likely not the main version of mute!**");
+        }
+
         /// <summary>
         /// Generate a human readable string to represent the given amount/currency pair
         /// </summary>
         /// <param name="amount"></param>
         /// <param name="unit"></param>
         /// <returns></returns>
-        [NotNull] private static string FormatCurrency(decimal amount, string unit)
+        [NotNull] private static string FormatCurrency(decimal amount, [NotNull] string unit)
         {
             var sym = unit.TryGetCurrencySymbol();
 
