@@ -214,9 +214,14 @@ namespace Mute.Modules
                     return $"{lender} => {borrower} {d.Amount}({d.Unit}) {d.Note}";
             }
 
-            await PagedReplyAsync(new PaginatedMessage {
-                Pages = owed.Batch(5).Select(d => string.Join("\n", d.Select(FormatSingleTsx)))
-            });
+            var owedArr = owed.ToArray();
+
+            //If the number of transactions is small, display them all.
+            //Otherwise batch and show them in pages
+            if (owedArr.Length < 8)
+                await ReplyAsync(string.Join("\n", owedArr.Select(FormatSingleTsx)));
+            else
+                await PagedReplyAsync(new PaginatedMessage {Pages = owedArr.Batch(5).Select(d => string.Join("\n", d.Select(FormatSingleTsx)))});
         }
 
         [Command("transactions"), Summary("I will show all your transactions, optionally filtered to only with another user")]

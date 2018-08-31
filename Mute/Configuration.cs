@@ -6,6 +6,7 @@
         public AlphaAdvantageConfig AlphaAdvantage;
         public DatabaseConfig Database;
         public YoutubeDlConfig YoutubeDl;
+        public MlConfig MlConfig;
     }
 
     public class AuthConfig
@@ -31,5 +32,21 @@
 
         public string YoutubeDlBinaryPath;
         public string FprobeBinaryPath;
+    }
+
+    public class MlConfig
+    {
+        public string BaseModelPath;
+        public string BaseDatasetsPath;
+        public string TempTrainingCache;
+
+        public SentimentConfig Sentiment;
+    }
+
+    public class SentimentConfig
+    {
+        public string ModelDirectory;
+        public string TrainingDatasetDirectory;
+        public string EvalDatasetDirectory;
     }
 }

@@ -12,10 +12,12 @@ namespace Mute.Modules
         : ModuleBase
     {
         private readonly DatabaseService _database;
+        private readonly SentimentService _sentiment;
 
-        public Administration(DatabaseService database)
+        public Administration(DatabaseService database, SentimentService sentiment)
         {
             _database = database;
+            _sentiment = sentiment;
         }
 
         [Command("hostinfo"), Summary("I Will tell you where I am being hosted")]

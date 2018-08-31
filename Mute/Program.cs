@@ -84,13 +84,15 @@ namespace Mute
                 .AddSingleton<YoutubeService>()
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
-                .AddSingleton<ReminderService>();
+                .AddSingleton<ReminderService>()
+                .AddSingleton<SentimentService>();
             
             _services = serviceCollection.BuildServiceProvider();
 
             //Force creation of active services
             _services.GetService<GameService>();
             _services.GetService<ReminderService>();
+            _services.GetService<SentimentService>();
 
             //Get response generators
             var types = Assembly.GetExecutingAssembly()
