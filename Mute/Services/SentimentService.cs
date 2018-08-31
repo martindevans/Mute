@@ -43,7 +43,7 @@ namespace Mute.Services
                 {
                     var model = Train();
                     await model.WriteAsync(_modelPath);
-                    Console.WriteLine("Trained sentiment model. Accuracy:" + (await EvaluateModelMetrics()).Accuracy);
+                    Console.WriteLine("Trained sentiment model. Accuracy:" + EvaluateModel(model).Accuracy);
                 }
                 else
                 {
@@ -110,6 +110,32 @@ namespace Mute.Services
             });
 
             await _model;
+        }
+
+        private BinaryClassificationMetrics EvaluateModel(PredictionModel model)
+        {
+            var evalDataTemp = Path.Combine(_config.TempTrainingCache, Guid.NewGuid().ToString());
+
+            try
+            {
+                //Get all the evaluation files and concat into one big file of training data
+                using (var evalData = new StreamWriter(File.OpenWrite(evalDataTemp)))
+                    foreach (var file in Directory.EnumerateFiles(_evalDataDirectory))
+                    foreach (var line in File.ReadAllLines(file))
+                        evalData.WriteLine(line);
+
+                //Evaluate the model
+                var testData = new TextLoader(evalDataTemp).CreateFrom<SentimentData>();
+                var evaluator = new BinaryClassificationEvaluator();
+                var metrics = evaluator.Evaluate(model, testData);
+
+                return metrics;
+            }
+            finally
+            {
+                //Delete temp file
+                File.Delete(evalDataTemp);
+            }
         }
 
         public async Task<BinaryClassificationMetrics> EvaluateModelMetrics()

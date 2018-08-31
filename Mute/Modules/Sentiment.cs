@@ -6,7 +6,7 @@ using Mute.Services;
 
 namespace Mute.Modules
 {
-    class Sentiment
+    public class Sentiment
         : ModuleBase
     {
         private readonly SentimentService _sentiment;
