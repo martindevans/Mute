@@ -64,41 +64,48 @@ namespace Mute.Services
 
         private PredictionModel<SentimentData, SentimentPrediction> Train()
         {
-            //Get all the training files and concat into one big file of training data
-            var trainingDataTempFileName = Path.Combine(_config.TempTrainingCache, Guid.NewGuid().ToString());
-            using (var trainingData = new StreamWriter(File.OpenWrite(trainingDataTempFileName)))
+            try
             {
-                foreach (var file in Directory.EnumerateFiles(_trainingDataDirectory))
+                //Get all the training files and concat into one big file of training data
+                var trainingDataTempFileName = Path.Combine(_config.TempTrainingCache, Guid.NewGuid().ToString());
+                using (var trainingData = new StreamWriter(File.OpenWrite(trainingDataTempFileName)))
                 {
-                    foreach (var line in File.ReadAllLines(file))
-                        trainingData.WriteLine(line);
+                    foreach (var file in Directory.EnumerateFiles(_trainingDataDirectory))
+                    {
+                        foreach (var line in File.ReadAllLines(file))
+                            trainingData.WriteLine(line);
+                    }
                 }
+
+                //Create a training pipeline
+                var pipeline = new LearningPipeline();
+                pipeline.Add(new TextLoader(trainingDataTempFileName).CreateFrom<SentimentData>());
+                pipeline.Add(new TextFeaturizer("Features", "SentimentText") {
+                    KeepDiacritics = false,
+                    KeepPunctuations = false,
+                    TextCase = TextNormalizerTransformCaseNormalizationMode.Lower,
+                    OutputTokens = true,
+                    StopWordsRemover = new PredefinedStopWordsRemover(),
+                    VectorNormalizer = TextTransformTextNormKind.L2,
+                    CharFeatureExtractor = new NGramNgramExtractor {NgramLength = 3, AllLengths = false},
+                    WordFeatureExtractor = new NGramNgramExtractor {NgramLength = 3, AllLengths = true}
+                });
+                pipeline.Add(new AveragedPerceptronBinaryClassifier());
+                pipeline.Add(new PredictedLabelColumnOriginalValueConverter {PredictedLabelColumn = "PredictedLabel"});
+
+                //Train the model
+                var model = pipeline.Train<SentimentData, SentimentPrediction>();
+
+                //Delete the concatenated training data file
+                File.Delete(trainingDataTempFileName);
+
+                return model;
             }
-
-            //Create a training pipeline
-            var pipeline = new LearningPipeline();
-            pipeline.Add(new TextLoader(trainingDataTempFileName).CreateFrom<SentimentData>());
-            //pipeline.Add(new TextLoader(Path.Combine(_dataDirectory, "yelp-sentiment.txt")).CreateFrom<SentimentData>());
-            pipeline.Add(new TextFeaturizer("Features", "SentimentText") {
-                KeepDiacritics = false,
-                KeepPunctuations = false,
-                TextCase = TextNormalizerTransformCaseNormalizationMode.Lower,
-                OutputTokens = true,
-                StopWordsRemover = new PredefinedStopWordsRemover(),
-                VectorNormalizer = TextTransformTextNormKind.L2,
-                CharFeatureExtractor = new NGramNgramExtractor() { NgramLength = 3, AllLengths = false },
-                WordFeatureExtractor = new NGramNgramExtractor() { NgramLength = 2, AllLengths = true }
-            });
-            pipeline.Add(new AveragedPerceptronBinaryClassifier());
-            pipeline.Add(new PredictedLabelColumnOriginalValueConverter {PredictedLabelColumn = "PredictedLabel"});
-
-            //Train the model
-            var model = pipeline.Train<SentimentData, SentimentPrediction>();
-
-            //Delete the concatenated training data file
-            File.Delete(trainingDataTempFileName);
-
-            return model;
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
+            }
         }
 
         public async Task ForceRetrain()
@@ -140,31 +147,14 @@ namespace Mute.Services
 
         public async Task<BinaryClassificationMetrics> EvaluateModelMetrics()
         {
-            var model = await _model;
-
-            //Get all the evaluation files and concat into one big file of training data
-            var evalDataTemp = Path.Combine(_config.TempTrainingCache, Guid.NewGuid().ToString());
-            using (var evalData = new StreamWriter(File.OpenWrite(evalDataTemp)))
-                foreach (var file in Directory.EnumerateFiles(_evalDataDirectory))
-                    foreach (var line in File.ReadAllLines(file))
-                        evalData.WriteLine(line);
-
-            //Evaluate the model
-            var testData = new TextLoader(evalDataTemp).CreateFrom<SentimentData>();
-            var evaluator = new BinaryClassificationEvaluator();
-            var metrics = evaluator.Evaluate(model, testData);
-
-            //Delete temp file
-            File.Delete(evalDataTemp);
-
-            return metrics;
+            return EvaluateModel(await _model);
         }
 
-        public async Task<bool> Sentiment([NotNull] string message)
+        public async Task<float> Sentiment([NotNull] string message)
         {
             var model = await _model;
             var result = model.Predict(new SentimentData { SentimentText = message });
-            return result.Sentiment.IsTrue;
+            return result.Score;
         }
         
         #region helper classes
@@ -180,6 +170,9 @@ namespace Mute.Services
         {
             [UsedImplicitly, ColumnName("PredictedLabel")]
             public DvBool Sentiment;
+
+            [UsedImplicitly, ColumnName("Score")]
+            public float Score;
         }
         #endregion
     }

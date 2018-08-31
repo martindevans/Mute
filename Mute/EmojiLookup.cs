@@ -14,6 +14,7 @@ namespace Mute
         public static readonly Emoji ThumbsDown = new Emoji("👎");
         public static readonly Emoji Heart = new Emoji("❤");
         public static readonly Emoji BrokenHeart = new Emoji("💔");
+        public static readonly Emoji Confused = new Emoji("😕");
 
         public static readonly Emoji Shuffle = new Emoji("🔀");
         public static readonly Emoji Play = new Emoji("▶");

@@ -19,7 +19,7 @@ namespace Mute.Responses
         public bool RequiresMention => false;
 
         private readonly List<string> _greetings = new List<string> {
-            "hello", "hi", "hiya", "heya", "howdy", "こんにちは"
+            "hello", "hi", "hiya", "heya", "howdy"
         };
 
         private const float GreetingResponseChance = 0.25f;
@@ -33,11 +33,20 @@ namespace Mute.Responses
         public bool MayRespond([NotNull] IMessage message, bool containsMention)
         {
             var isGreeting = message.Content.Split(' ')
-                                    .Select(w => w.ToLowerInvariant())
+                                    .Select(CleanWord)
                                     .Any(_greetings.Contains);
 
             var direct = ((IUserMessage)message).MentionedUserIds.Contains(_client.CurrentUser.Id);
             return isGreeting && (direct || _random.NextDouble() < GreetingResponseChance);
+        }
+
+        [NotNull] private static string CleanWord([NotNull] string word)
+        {
+            return new string(word
+                .ToLowerInvariant()
+                .Where(c => !char.IsPunctuation(c))
+                .ToArray()
+            );
         }
 
         public Task<string> Respond([NotNull] IMessage message, bool containsMention, CancellationToken ct)
