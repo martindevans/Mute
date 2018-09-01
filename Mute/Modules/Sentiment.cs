@@ -27,9 +27,11 @@ namespace Mute.Modules
         {
             var result = await _sentiment.Sentiment(message);
 
-            await Context.Message.AddReactionAsync(result > 0 ? EmojiLookup.ThumbsUp : EmojiLookup.ThumbsDown);
-
-            if (Math.Abs(result) < 0.5f)
+            if (result > 0.75)
+                await Context.Message.AddReactionAsync(EmojiLookup.ThumbsUp);
+            else if (result < 0.25)
+                await Context.Message.AddReactionAsync(EmojiLookup.ThumbsDown);
+            else
                 await Context.Message.AddReactionAsync(EmojiLookup.Confused);
         }
 
