@@ -15,7 +15,7 @@ namespace Mute.Services
             _dbConnection.Open();
         }
 
-        public DbCommand CreateCommand()
+        [NotNull] public DbCommand CreateCommand()
         {
             return new SQLiteCommand(_dbConnection);
         }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
+using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
 
@@ -12,12 +14,12 @@ namespace Mute.Modules
         : ModuleBase
     {
         private readonly DatabaseService _database;
-        private readonly SentimentService _sentiment;
+        private readonly HistoryLoggingService _history;
 
-        public Administration(DatabaseService database, SentimentService sentiment)
+        public Administration(DatabaseService database, HistoryLoggingService history)
         {
             _database = database;
-            _sentiment = sentiment;
+            _history = history;
         }
 
         [Command("hostinfo"), Summary("I Will tell you where I am being hosted")]
@@ -41,6 +43,19 @@ namespace Mute.Modules
         {
             using (var result = await _database.ExecReader(sql))
                 await this.TypingReplyAsync($"SQL affected {result.RecordsAffected} rows");
+        }
+
+        [Command("subscribe")]
+        public async Task Scrape([NotNull] ITextChannel channel)
+        {
+            try
+            {
+                await _history.BeginMonitoring(channel);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
     }
 }

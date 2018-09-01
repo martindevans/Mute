@@ -37,7 +37,7 @@ namespace Mute.Modules
         public async Task AskSentimentScore([NotNull, Remainder] string message)
         {
             var result = await _sentiment.Sentiment(message);
-            await this.TypingReplyAsync(result.ToString("#0.##"));
+            await ReplyAsync(result.ToString("#0.##"));
         }
 
         [Command("sentiment-metrics")]

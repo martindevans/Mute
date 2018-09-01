@@ -15,7 +15,7 @@ namespace Mute.Services
 
         private readonly AsyncLock _mutex = new AsyncLock();
 
-        public YoutubeService([NotNull] Configuration config, [NotNull] DatabaseService database)
+        public YoutubeService([NotNull] Configuration config)
         {
             _config = config.YoutubeDl;
         }

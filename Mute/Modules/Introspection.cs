@@ -77,5 +77,11 @@ namespace Mute.Modules
         {
             await this.TypingReplyAsync("My code is here: https://github.com/martindevans/Mute");
         }
+
+        [Command("shard"), Summary("I will tell you what shard ID I have")]
+        public async Task Shard()
+        {
+            await this.TypingReplyAsync($"Hello from shard {_client.ShardId}");
+        }
     }
 }

@@ -84,7 +84,8 @@ namespace Mute
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
                 .AddSingleton<ReminderService>()
-                .AddSingleton<SentimentService>();
+                .AddSingleton<SentimentService>()
+                .AddSingleton<HistoryLoggingService>();
             
             _services = serviceCollection.BuildServiceProvider();
 
@@ -92,6 +93,7 @@ namespace Mute
             _services.GetService<GameService>();
             _services.GetService<ReminderService>();
             _services.GetService<SentimentService>();
+            _services.GetService<HistoryLoggingService>();
 
             //Get response generators
             var types = Assembly.GetExecutingAssembly()
