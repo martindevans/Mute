@@ -16,13 +16,14 @@ namespace Mute.Responses
         private readonly DiscordSocketClient _client;
         private readonly Random _random;
 
+        private const double ChanceOfIndirectResponse = 0.25;
+
         public bool RequiresMention => false;
+        public double Chance => 1;
 
         private readonly List<string> _greetings = new List<string> {
             "hello", "hi", "hiya", "heya", "howdy"
         };
-
-        private const float GreetingResponseChance = 0.25f;
 
         public HelloResponse(DiscordSocketClient client, Random random)
         {
@@ -30,14 +31,14 @@ namespace Mute.Responses
             _random = random;
         }
 
-        public bool MayRespond([NotNull] IMessage message, bool containsMention)
+        public Task<bool> MayRespond(IMessage message, bool containsMention)
         {
             var isGreeting = message.Content.Split(' ')
                                     .Select(CleanWord)
                                     .Any(_greetings.Contains);
 
             var direct = ((IUserMessage)message).MentionedUserIds.Contains(_client.CurrentUser.Id);
-            return isGreeting && (direct || _random.NextDouble() < GreetingResponseChance);
+            return Task.FromResult(isGreeting && (direct || _random.NextDouble() < ChanceOfIndirectResponse));
         }
 
         [NotNull] private static string CleanWord([NotNull] string word)
@@ -49,7 +50,7 @@ namespace Mute.Responses
             );
         }
 
-        public Task<string> Respond([NotNull] IMessage message, bool containsMention, CancellationToken ct)
+        public Task<string> Respond(IMessage message, bool containsMention, CancellationToken ct)
         {
             var name = ((SocketGuildUser)message.Author).Nickname;
             var greeting = RandomGreeting();

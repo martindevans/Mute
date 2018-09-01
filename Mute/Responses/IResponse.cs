@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using JetBrains.Annotations;
 
 namespace Mute.Responses
 {
@@ -12,17 +13,22 @@ namespace Mute.Responses
         bool RequiresMention { get; }
 
         /// <summary>
+        /// Chance that this response will happen when valid
+        /// </summary>
+        double Chance { get; }
+
+        /// <summary>
         /// Quickly check if this response generator may want to respond to the given message
         /// </summary>
         /// <param name="message"></param>
         /// <param name="containsMention"></param>
         /// <returns></returns>
-        bool MayRespond(IMessage message, bool containsMention);
+        Task<bool> MayRespond([NotNull] IMessage message, bool containsMention);
 
         /// <summary>
         /// Generate a response for the given message
         /// </summary>
         /// <returns></returns>
-        Task<string> Respond(IMessage message, bool containsMention, CancellationToken ct);
+        [ItemCanBeNull] Task<string> Respond([NotNull] IMessage message, bool containsMention, CancellationToken ct);
     }
 }

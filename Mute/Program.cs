@@ -195,11 +195,17 @@ namespace Mute
                 if (mentionsBot)
                     Console.WriteLine($"I was mentioned in: '{message.Content}'");
 
+                var random = new Random(message.Id.GetHashCode());
+
                 //See if there is a response generator which can respond to this message
-                var response = _responses
-                    .AsParallel()
-                    .Where(r => mentionsBot || !r.RequiresMention)
-                    .Where(r => r.MayRespond(message, mentionsBot))
+                //If there are several pick a random one
+                var candidates = new List<IResponse>();
+                foreach (var generator in _responses.AsParallel().Where(r => mentionsBot || !r.RequiresMention))
+                    if (await generator.MayRespond(message, mentionsBot))
+                        if (random.NextDouble() < generator.Chance)
+                            candidates.Add(generator);
+
+                var response = candidates
                     .RandomElement(_random)
                     ?.Respond(message, mentionsBot, CancellationToken.None);
 

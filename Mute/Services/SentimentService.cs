@@ -154,7 +154,7 @@ namespace Mute.Services
         {
             var model = await _model;
             var result = model.Predict(new SentimentData { SentimentText = message });
-            return result.Score;
+            return result.Probability;
         }
         
         #region helper classes
@@ -171,8 +171,8 @@ namespace Mute.Services
             [UsedImplicitly, ColumnName("PredictedLabel")]
             public DvBool Sentiment;
 
-            [UsedImplicitly, ColumnName("Score")]
-            public float Score;
+            [UsedImplicitly, ColumnName("Probability")]
+            public float Probability;
         }
         #endregion
     }

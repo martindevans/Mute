@@ -14,8 +14,8 @@ namespace Mute.Responses
         : ModuleBase, IResponse
     {
         public bool RequiresMention => false;
+        public double Chance => 0.15;
 
-        private const double Chance = 0.05;
         private readonly Random _random;
 
         public UrbitSarcasm(Random random)
@@ -23,10 +23,9 @@ namespace Mute.Responses
             _random = random;
         }
 
-        public bool MayRespond(IMessage message, bool containsMention)
+        public Task<bool> MayRespond(IMessage message, bool containsMention)
         {
-            return (containsMention || _random.NextDouble() < Chance)
-                && (message.Content.Contains("urbit") || message.Content.Contains("Urbit"));
+            return Task.FromResult(message.Content.Contains("urbit") || message.Content.Contains("Urbit"));
         }
 
         public Task<string> Respond(IMessage message, bool containsMention, CancellationToken ct)
