@@ -16,7 +16,8 @@ namespace Mute
         public static readonly Emoji BrokenHeart = new Emoji("💔");
         public static readonly Emoji Confused = new Emoji("😕");
         public static readonly Emoji Grin = new Emoji("😀");
-        public static readonly Emoji Smile = new Emoji("🙂");
+        public static readonly Emoji Smile = new Emoji("😄");
+        public static readonly Emoji SlightSmile = new Emoji("🙂");
         public static readonly Emoji Pensive = new Emoji("😔");
         public static readonly Emoji SlightlyFrowning = new Emoji("🙁");
         public static readonly Emoji Crying = new Emoji("😢");

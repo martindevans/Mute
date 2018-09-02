@@ -85,7 +85,8 @@ namespace Mute
                 .AddSingleton<GameService>()
                 .AddSingleton<ReminderService>()
                 .AddSingleton<SentimentService>()
-                .AddSingleton<HistoryLoggingService>();
+                .AddSingleton<HistoryLoggingService>()
+                .AddSingleton<ReactionSentimentTrainer>();
             
             _services = serviceCollection.BuildServiceProvider();
 
@@ -94,6 +95,7 @@ namespace Mute
             _services.GetService<ReminderService>();
             _services.GetService<SentimentService>();
             _services.GetService<HistoryLoggingService>();
+            _services.GetService<ReactionSentimentTrainer>();
 
             //Get response generators
             var types = Assembly.GetExecutingAssembly()
@@ -195,10 +197,9 @@ namespace Mute
                 if (mentionsBot)
                     Console.WriteLine($"I was mentioned in: '{message.Content}'");
 
-                var random = new Random(message.Id.GetHashCode());
-
                 //See if there is a response generator which can respond to this message
                 //If there are several pick a random one
+                var random = new Random(message.Id.GetHashCode());
                 var candidates = new List<IResponse>();
                 foreach (var generator in _responses.AsParallel().Where(r => mentionsBot || !r.RequiresMention))
                     if (await generator.MayRespond(message, mentionsBot))

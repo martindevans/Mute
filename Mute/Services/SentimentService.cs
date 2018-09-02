@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.SQLite;
 using System.IO;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -15,6 +16,7 @@ namespace Mute.Services
 {
     public class SentimentService
     {
+        private readonly DatabaseService _database;
         private readonly MlConfig _config;
 
         private readonly string _modelPath;
@@ -23,13 +25,27 @@ namespace Mute.Services
 
         private Task<PredictionModel<SentimentData, SentimentPrediction>> _model;
 
-        public SentimentService([NotNull] Configuration config)
+        private const string InsertTaggedSentimentData = "INSERT INTO TaggedSentimentData (Content, Score) values(@Content, @Score)";
+        private const string SelectTaggedSentimentData = "SELECT * FROM TaggedSentimentData";
+
+        public SentimentService([NotNull] Configuration config, DatabaseService database)
         {
+            _database = database;
             _config = config.MlConfig;
 
             _modelPath = Path.Combine(_config.BaseModelPath, _config.Sentiment.ModelDirectory, "model.m");
             _trainingDataDirectory = Path.Combine(_config.BaseDatasetsPath, _config.Sentiment.TrainingDatasetDirectory);
             _evalDataDirectory = Path.Combine(_config.BaseDatasetsPath, _config.Sentiment.EvalDatasetDirectory);
+
+            // Create database structure
+            try
+            {
+                _database.Exec("CREATE TABLE IF NOT EXISTS `TaggedSentimentData` (`Content` TEXT NOT NULL UNIQUE, `Score` TEXT NOT NULL)");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
             _model = Task.Run(GetOrCreateModel);
         }
@@ -41,7 +57,7 @@ namespace Mute.Services
                 //Check if the model already exists on disk. If not then train it
                 if (!File.Exists(_modelPath))
                 {
-                    var model = Train();
+                    var model = await Train();
                     await model.WriteAsync(_modelPath);
                     Console.WriteLine("Trained sentiment model. Accuracy:" + EvaluateModel(model).Accuracy);
                 }
@@ -62,7 +78,7 @@ namespace Mute.Services
             }
         }
 
-        private PredictionModel<SentimentData, SentimentPrediction> Train()
+        private async Task<PredictionModel<SentimentData, SentimentPrediction>> Train()
         {
             try
             {
@@ -74,6 +90,29 @@ namespace Mute.Services
                     {
                         foreach (var line in File.ReadAllLines(file))
                             trainingData.WriteLine(line);
+                    }
+
+                    //Get training data from database
+                    try
+                    {
+                        using (var cmd = _database.CreateCommand())
+                        {
+                            cmd.CommandText = SelectTaggedSentimentData;
+                            var reader = await cmd.ExecuteReaderAsync();
+                            while (reader.Read())
+                            {
+                                var content = (string)reader["Content"];
+                                var score = bool.Parse((string)reader["Score"]) ? 1 : 0;
+
+                                trainingData.WriteLine($"{content}\t{score}");
+                            }
+
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                    }
+                    catch (SQLiteException e)
+                    {
+                        Console.WriteLine(e);
                     }
                 }
 
@@ -111,7 +150,7 @@ namespace Mute.Services
         public async Task ForceRetrain()
         {
             _model = Task.Run(async () => {
-                var model = Train();
+                var model = await Train();
                 await model.WriteAsync(_modelPath);
                 return model;
             });
@@ -155,6 +194,19 @@ namespace Mute.Services
             var model = await _model;
             var result = model.Predict(new SentimentData { SentimentText = message });
             return result.Probability;
+        }
+
+        public async Task Teach([NotNull] string text, bool sentiment)
+        {
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = InsertTaggedSentimentData;
+                cmd.Parameters.Add(new SQLiteParameter("@Content", System.Data.DbType.String) { Value = text.ToLowerInvariant() });
+                cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) { Value = sentiment.ToString() });
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            Console.WriteLine($"Sentiment learned: `{text}` == {sentiment}");
         }
         
         #region helper classes

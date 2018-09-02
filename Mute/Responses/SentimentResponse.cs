@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -13,12 +14,12 @@ namespace Mute.Responses
         private readonly SentimentService _sentiment;
         private readonly Random _random;
 
-        private const double Bracket = 0.2;
+        private const double Bracket = 0.1;
 
         public bool RequiresMention => false;
         public double Chance => 0.1;
 
-        private readonly Emoji[] _sad = {
+        public static readonly IReadOnlyList<Emoji> Sad = new[] {
             EmojiLookup.BrokenHeart,
             EmojiLookup.ThumbsDown,
             EmojiLookup.Worried,
@@ -27,11 +28,12 @@ namespace Mute.Responses
             EmojiLookup.Crying
         };
 
-        private readonly Emoji[] _happy = {
+        public static readonly IReadOnlyList<Emoji> Happy = new[] {
             EmojiLookup.Heart,
             EmojiLookup.ThumbsUp,
             EmojiLookup.Grin,
             EmojiLookup.Smile,
+            EmojiLookup.SlightSmile
         };
 
         public SentimentResponse(SentimentService sentiment, Random random)
@@ -53,9 +55,9 @@ namespace Mute.Responses
                 var s = await _sentiment.Sentiment(message.Content);
 
                 if (s < Bracket)
-                    await umsg.AddReactionAsync(_sad.Random(_random));
+                    await umsg.AddReactionAsync(Sad.Random(_random));
                 else if (s > (1 - Bracket))
-                    await umsg.AddReactionAsync(_happy.Random(_random));
+                    await umsg.AddReactionAsync(Happy.Random(_random));
             }
 
             return null;
