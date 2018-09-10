@@ -1,41 +1,21 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
+using JetBrains.Annotations;
 
 namespace Mute.Extensions
 {
     public static class ModuleBaseExtensions
     {
-        const float WordsPerMinute = 360;
-        private const float CharactersPerSecond = 12;
-
-        public static async Task<IUserMessage> TypingReplyAsync(this ModuleBase module, string message, bool isTTS = false, Embed embed = null, RequestOptions options = null)
+        public static async Task<IUserMessage> TypingReplyAsync([NotNull] this ModuleBase module, [NotNull] string message, bool isTTS = false, [CanBeNull] Embed embed = null, [CanBeNull] RequestOptions options = null)
         {
-            using (module.Context.Channel.EnterTypingState())
-            {
-                await Task.Delay(Delay(message));
-                return await module.Context.Channel.SendMessageAsync(message, isTTS, embed, options).ConfigureAwait(false);
-            }
+            return await module.Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
         }
 
-        public static async Task<IUserMessage> TypingReplyAsync(this InteractiveBase module, string message, bool isTTS = false, Embed embed = null, RequestOptions options = null)
+        public static async Task<IUserMessage> TypingReplyAsync([NotNull] this InteractiveBase module, [NotNull] string message, bool isTTS = false, [CanBeNull] Embed embed = null, [CanBeNull] RequestOptions options = null)
         {
-            using (module.Context.Channel.EnterTypingState())
-            {
-                await Task.Delay(Delay(message));
-                return await module.Context.Channel.SendMessageAsync(message, isTTS, embed, options).ConfigureAwait(false);
-            }
-        }
-
-        private static TimeSpan Delay(string message)
-        {
-            var wordTime = message.Count(c => c == ' ') / WordsPerMinute;
-            var symbTime = (message.Length - message.Count(char.IsLetter)) / (CharactersPerSecond * 180);
-
-            return TimeSpan.FromMinutes(wordTime + symbTime);
+            return await module.Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
         }
     }
 }

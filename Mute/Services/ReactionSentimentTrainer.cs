@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using JetBrains.Annotations;
-using Mute.Responses;
+using Mute.Services.Responses;
 
 namespace Mute.Services
 {

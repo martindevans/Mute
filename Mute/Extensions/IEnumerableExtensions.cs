@@ -15,7 +15,7 @@ namespace Mute.Extensions
             var i = 0;
             foreach (var item in items)
             {
-                if (random.NextDouble() < 1.0 / i)
+                if (random.NextDouble() < 1.0 / (i + 1))
                     result = item;
                 i++;
             }

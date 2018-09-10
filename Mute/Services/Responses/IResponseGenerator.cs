@@ -3,19 +3,19 @@ using System.Threading.Tasks;
 using Discord;
 using JetBrains.Annotations;
 
-namespace Mute.Responses
+namespace Mute.Services.Responses
 {
     public interface IResponse
     {
         /// <summary>
-        /// Get a value indicating if this response only runs when the bot is explicitly mentioned in the message
-        /// </summary>
-        bool RequiresMention { get; }
-
-        /// <summary>
         /// Chance that this response will happen when valid
         /// </summary>
-        double Chance { get; }
+        double BaseChance { get; }
+
+        /// <summary>
+        /// Chance that this response will happen when mentioned directly
+        /// </summary>
+        double MentionedChance { get; }
 
         /// <summary>
         /// Quickly check if this response generator may want to respond to the given message
@@ -23,7 +23,15 @@ namespace Mute.Responses
         /// <param name="message"></param>
         /// <param name="containsMention"></param>
         /// <returns></returns>
-        Task<bool> MayRespond([NotNull] IMessage message, bool containsMention);
+        [ItemCanBeNull] Task<IConversation> TryRespond([NotNull] IMessage message, bool containsMention);
+    }
+
+    public interface IConversation
+    {
+        /// <summary>
+        /// Get a value indicating if this conversation is finished
+        /// </summary>
+        bool IsComplete { get; }
 
         /// <summary>
         /// Generate a response for the given message

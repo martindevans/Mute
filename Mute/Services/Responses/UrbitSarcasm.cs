@@ -1,43 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Extensions;
 
-namespace Mute.Responses
+namespace Mute.Services.Responses
 {
     public class UrbitSarcasm
-        : ModuleBase, IResponse
+        : IResponse
     {
-        public bool RequiresMention => false;
-        public double Chance => 0.15;
+        public double BaseChance => 0.15;
+        public double MentionedChance => 1;
 
         private readonly Random _random;
+
+        private readonly HashSet<string> _triggerWords = new HashSet<string> {
+            "urbit", "hoon", "arvo", "nock"
+        };
 
         public UrbitSarcasm(Random random)
         {
             _random = random;
         }
 
-        public Task<bool> MayRespond(IMessage message, bool containsMention)
+        public Task<IConversation> TryRespond(IMessage message, bool containsMention)
         {
-            return Task.FromResult(message.Content.Contains("urbit") || message.Content.Contains("Urbit"));
+            var rgx = new Regex("[^a-zA-Z0-9 -]");
+            var msg = rgx.Replace(message.Content, "");
+
+            var words = msg.ToLowerInvariant().Split(' ');
+            if (_triggerWords.Overlaps(words))
+                return Task.FromResult<IConversation>(new UrbitConversation(Sarcasm()));
+            else
+                return Task.FromResult<IConversation>(null);
         }
 
-        public Task<string> Respond(IMessage message, bool containsMention, CancellationToken ct)
+        private class UrbitConversation
+            : TerminalConversation
         {
-            return Task.FromResult(Sarcasm());
-        }
-
-        [Command("urbit"), Summary("Urbit Is Easy!")]
-        [RequireOwner]
-        public async Task UrbitResponse()
-        {
-            await ReplyAsync(Sarcasm());
+            public UrbitConversation(string response)
+                : base(response)
+            {
+            }
         }
 
         #region response generator

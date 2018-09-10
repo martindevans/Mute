@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -13,31 +11,27 @@ using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using Mute.Extensions;
-using Mute.Responses;
 using Mute.Services;
 using Mute.Services.Audio;
 using Mute.Services.Games;
+using Mute.Services.Responses;
 using Newtonsoft.Json;
 
 namespace Mute
 {
-    class Program
+    public class Program
     {
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
-        private readonly List<IResponse> _responses = new List<IResponse>();
 
         private readonly Configuration _config;
 
-        private readonly Random _random = new Random();
-
         #region static main
-        static void Main(string[] args) 
+        private static void Main(string[] args) 
         {
             //Sanity check config file exists and early exit
-            if (!File.Exists(@"config.json"))
+            if (!File.Exists("config.json"))
             {
                 Console.Write(Directory.GetCurrentDirectory());
                 Console.Error.WriteLine("No config file found");
@@ -45,7 +39,7 @@ namespace Mute
             }
 
             //Read config file
-            var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(@"config.json"));
+            var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText("config.json"));
 
             //Run the program
             new Program(config)
@@ -86,7 +80,8 @@ namespace Mute
                 .AddSingleton<ReminderService>()
                 .AddSingleton<SentimentService>()
                 .AddSingleton<HistoryLoggingService>()
-                .AddSingleton<ReactionSentimentTrainer>();
+                .AddSingleton<ReactionSentimentTrainer>()
+                .AddSingleton<ConversationalResponseService>();
             
             _services = serviceCollection.BuildServiceProvider();
 
@@ -96,21 +91,6 @@ namespace Mute
             _services.GetService<SentimentService>();
             _services.GetService<HistoryLoggingService>();
             _services.GetService<ReactionSentimentTrainer>();
-
-            //Get response generators
-            var types = Assembly.GetExecutingAssembly()
-                            .GetTypes()
-                            .Where(t => typeof(IResponse).IsAssignableFrom(t))
-                            .Where(t => t.IsClass)
-                            .ToArray();
-            _responses.AddRange(types
-                .Select(t => ActivatorUtilities.CreateInstance(_services, t))
-                .OfType<IResponse>()
-            );
-
-            Console.WriteLine($"Loaded Responses ({_responses.Count}):");
-            foreach (var response in _responses)
-                Console.WriteLine($" - {response.GetType().Name}");
         }
 
         private async Task MainAsync(string[] args)
@@ -179,44 +159,14 @@ namespace Mute
             var prefixPos = 0;
             var hasPrefix = message.HasCharPrefix('!', ref prefixPos);
 
-            // Check if the bot is mentioned in a prefix
-            var prefixMentionPos = 0;
-            var hasPrefixMention = message.HasMentionPrefix(_client.CurrentUser, ref prefixMentionPos);
-
-            // Check if the bot is mentioned at all
-            var mentionsBot = ((IUserMessage)message).MentionedUserIds.Contains(_client.CurrentUser.Id);
-
-            if (hasPrefix || hasPrefixMention)
+            if (hasPrefix)
             {
                 //It's a command, process it as such
-                await ProcessAsCommand(message, Math.Max(prefixPos, prefixMentionPos));
+                await ProcessAsCommand(message, prefixPos);
             }
             else
             {
-                //It's not a command, but the bot was mentioned
-                if (mentionsBot)
-                    Console.WriteLine($"I was mentioned in: '{message.Content}'");
-
-                //See if there is a response generator which can respond to this message
-                //If there are several pick a random one
-                var random = new Random(message.Id.GetHashCode());
-                var candidates = new List<IResponse>();
-                foreach (var generator in _responses.AsParallel().Where(r => mentionsBot || !r.RequiresMention))
-                    if (await generator.MayRespond(message, mentionsBot))
-                        if (random.NextDouble() < generator.Chance)
-                            candidates.Add(generator);
-
-                var response = candidates
-                    .RandomElement(_random)
-                    ?.Respond(message, mentionsBot, CancellationToken.None);
-
-                //If there was and if it generated a non null response send it
-                if (response != null)
-                {
-                    var msg = await response;
-                    if (msg != null)
-                        await message.Channel.SendMessageAsync(msg);
-                }
+                await _services.GetService<ConversationalResponseService>().Respond(message);
             }
         }
 
@@ -248,18 +198,20 @@ namespace Mute
         }
     }
 
-    class DependencyHelper
+    internal class DependencyHelper
     {
         [DllImport("opus", EntryPoint = "opus_get_version_string", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr OpusVersionString();
+
         [DllImport("libsodium", EntryPoint = "sodium_version_string", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr SodiumVersionString();
         
         public static void TestDependencies()
         {
-            string opusVersion = Marshal.PtrToStringAnsi(OpusVersionString());
+            var opusVersion = Marshal.PtrToStringAnsi(OpusVersionString());
             Console.WriteLine($"Loaded opus with version string: {opusVersion}");
-            string sodiumVersion = Marshal.PtrToStringAnsi(SodiumVersionString());
+
+            var sodiumVersion = Marshal.PtrToStringAnsi(SodiumVersionString());
             Console.WriteLine($"Loaded sodium with version string: {sodiumVersion}");
         }
     }

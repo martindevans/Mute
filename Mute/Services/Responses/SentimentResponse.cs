@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using JetBrains.Annotations;
 using Mute.Extensions;
-using Mute.Services;
 
-namespace Mute.Responses
+namespace Mute.Services.Responses
 {
     public class SentimentResponse
         : IResponse
@@ -16,8 +15,8 @@ namespace Mute.Responses
 
         private const double Bracket = 0.1;
 
-        public bool RequiresMention => false;
-        public double Chance => 0.1;
+        public double BaseChance => 0.1;
+        public double MentionedChance => 0.25;
 
         public static readonly IReadOnlyList<Emoji> Sad = new[] {
             EmojiLookup.BrokenHeart,
@@ -42,25 +41,25 @@ namespace Mute.Responses
             _random = random;
         }
 
-        public async Task<bool> MayRespond(IMessage message, bool containsMention)
+        public async Task<IConversation> TryRespond(IMessage message, bool containsMention)
         {
             var s = await _sentiment.Sentiment(message.Content);
-            return s < Bracket || s > (1 - Bracket);
+
+            if (s < Bracket)
+                return new SentimentConversation(Sad.Random(_random));
+            else if (s > (1 - Bracket))
+                return new SentimentConversation(Happy.Random(_random));
+            else
+                return null;
         }
 
-        public async Task<string> Respond(IMessage message, bool containsMention, CancellationToken ct)
+        private class SentimentConversation
+            : TerminalConversation
         {
-            if (message is IUserMessage umsg)
+            public SentimentConversation([CanBeNull] params IEmote[] reactions)
+                : base(null, reactions)
             {
-                var s = await _sentiment.Sentiment(message.Content);
-
-                if (s < Bracket)
-                    await umsg.AddReactionAsync(Sad.Random(_random));
-                else if (s > (1 - Bracket))
-                    await umsg.AddReactionAsync(Happy.Random(_random));
             }
-
-            return null;
         }
     }
 }

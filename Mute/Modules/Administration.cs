@@ -5,6 +5,7 @@ using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
+using Mute.Services.Responses;
 
 namespace Mute.Modules
 {
@@ -15,11 +16,13 @@ namespace Mute.Modules
     {
         private readonly DatabaseService _database;
         private readonly HistoryLoggingService _history;
+        private readonly ConversationalResponseService _conversations;
 
-        public Administration(DatabaseService database, HistoryLoggingService history)
+        public Administration(DatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations)
         {
             _database = database;
             _history = history;
+            _conversations = conversations;
         }
 
         [Command("hostinfo"), Summary("I Will tell you where I am being hosted")]
@@ -32,9 +35,12 @@ namespace Mute.Modules
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
         [RequireOwner]
-        public async Task Say([Remainder] string s2)
+        public async Task Say([NotNull] string message, IMessageChannel channel = null)
         {
-            await this.TypingReplyAsync(s2);
+            if (channel == null)
+                channel = Context.Channel;
+
+            await channel.TypingReplyAsync(message);
         }
 
         [Command("sql"), Summary("I will execute an arbitrary SQL statement. Please be very careful x_x")]
@@ -55,6 +61,29 @@ namespace Mute.Modules
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
+            }
+        }
+
+        [Command("conversation-status")]
+        public async Task ConversationState([NotNull] IGuildUser user = null)
+        {
+            if (user == null)
+                user = Context.Message.Author as IGuildUser;
+
+            if (user == null)
+                await this.TypingReplyAsync("No user!");
+            else
+            {
+                var c = _conversations.GetConversation(user);
+                if (c == null)
+                    await this.TypingReplyAsync("No active conversation");
+                else if (c.IsComplete)
+                    await this.TypingReplyAsync($"Conversation is complete `{c.GetType()}`");
+                else
+                {
+                    await this.TypingReplyAsync($"Conversation is active `{c.GetType()}`...");
+                    await ReplyAsync(c.ToString());
+                }
             }
         }
     }

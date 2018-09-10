@@ -82,15 +82,14 @@ namespace Mute.Services
         {
             try
             {
-                //Get all the training files and concat into one big file of training data
+                //Create a single file with all training data
                 var trainingDataTempFileName = Path.Combine(_config.TempTrainingCache, Guid.NewGuid().ToString());
                 using (var trainingData = new StreamWriter(File.OpenWrite(trainingDataTempFileName)))
                 {
+                    //Get training data from files
                     foreach (var file in Directory.EnumerateFiles(_trainingDataDirectory))
-                    {
                         foreach (var line in File.ReadAllLines(file))
                             trainingData.WriteLine(line);
-                    }
 
                     //Get training data from database
                     try
@@ -106,8 +105,6 @@ namespace Mute.Services
 
                                 trainingData.WriteLine($"{content}\t{score}");
                             }
-
-                            await cmd.ExecuteNonQueryAsync();
                         }
                     }
                     catch (SQLiteException e)
@@ -142,7 +139,7 @@ namespace Mute.Services
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("Training failed: " + e);
                 throw;
             }
         }
@@ -173,6 +170,7 @@ namespace Mute.Services
                 //Evaluate the model
                 var testData = new TextLoader(evalDataTemp).CreateFrom<SentimentData>();
                 var evaluator = new BinaryClassificationEvaluator();
+                Console.WriteLine("Beginning sentiment model evaluation");
                 var metrics = evaluator.Evaluate(model, testData);
 
                 return metrics;

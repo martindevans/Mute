@@ -44,6 +44,7 @@ namespace Mute.Modules
         }
 
         [Command("commands"), Summary("I will respond with a list of commands that I understand")]
+        [Alias("help")]
         public async Task Commands()
         {
             foreach (var command in _commands.Commands)

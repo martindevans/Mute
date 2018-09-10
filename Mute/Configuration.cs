@@ -1,4 +1,6 @@
-﻿namespace Mute
+﻿using System.Collections.Generic;
+
+namespace Mute
 {
     public class Configuration
     {
@@ -7,6 +9,7 @@
         public DatabaseConfig Database;
         public YoutubeDlConfig YoutubeDl;
         public MlConfig MlConfig;
+        public ElizaConfig ElizaConfig;
     }
 
     public class AuthConfig
@@ -48,5 +51,10 @@
         public string ModelDirectory;
         public string TrainingDatasetDirectory;
         public string EvalDatasetDirectory;
+    }
+
+    public class ElizaConfig
+    {
+        public List<string> Scripts;
     }
 }

@@ -111,6 +111,9 @@ namespace Mute.Services
 
                 while (true)
                 {
+                    //Add in an unconditional sleep to keep things slow (we really don't need high resolution for reminders!)
+                    await Task.Delay(1000);
+
                     //Check if there are any waiting events
                     DateTime? next = null;
                     lock (_notifications)
@@ -125,7 +128,7 @@ namespace Mute.Services
                     if (!next.HasValue)
                     {
                         //no pending events, wait for a while
-                        _event.WaitOne(10000);
+                        _event.WaitOne();
                     }
                     else if (next.Value <= DateTime.UtcNow)
                     {
@@ -142,7 +145,10 @@ namespace Mute.Services
                     else
                     {
                         //Wait until event should be sent or another event happens
-                        _event.WaitOne(Math.Max(0, (int)(next.Value - DateTime.UtcNow).TotalMilliseconds));
+                        var duration = (next.Value - DateTime.UtcNow);
+                        var durationMillis = Math.Max(0, Math.Round(duration.TotalMilliseconds));
+                        var intDurationMillis = durationMillis > int.MaxValue ? int.MaxValue : (int)durationMillis;
+                        _event.WaitOne(intDurationMillis);
                     }
                 }
             }
