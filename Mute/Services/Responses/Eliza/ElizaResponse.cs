@@ -14,8 +14,8 @@ namespace Mute.Services.Responses.Eliza
     public class ElizaResponse
         : IResponse
     {
-        public double BaseChance => 10.15;
-        public double MentionedChance => 1;
+        public double BaseChance => 0.0;
+        public double MentionedChance => 0.9;
 
         private readonly List<string> _greetings = new List<string> {
             "hello", "hi", "hiya", "heya", "howdy"
@@ -92,9 +92,22 @@ namespace Mute.Services.Responses.Eliza
 
             public Task<string> Respond(IMessage message, bool containsMention, CancellationToken ct)
             {
-                var response = _eliza.ProcessInput(message.Content);
-                IsComplete = _eliza.Finished;
-                return Task.FromResult(response);
+                return Task.Run(() => {
+                    lock (_eliza)
+                    {
+                        var response = _eliza.ProcessInput(message.Content);
+                        IsComplete = _eliza.Finished;
+                        return response;
+                    }
+                }, ct);
+            }
+
+            public override string ToString()
+            {
+                lock (_eliza)
+                {
+                    return _eliza.ToString();
+                }
             }
         }
     }

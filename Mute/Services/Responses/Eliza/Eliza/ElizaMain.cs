@@ -13,12 +13,10 @@ namespace Mute.Services.Responses.Eliza.Eliza
 	public sealed class ElizaMain
 	{
 	    private readonly Script _script;
-
-		private readonly List<Key> _keyStack = new List<Key>();
-		private readonly Stack<string> _mem = new Stack<string>();
-
 	    private readonly Key _xnone;
 	    private readonly Random _random;
+	    private readonly Stack<string> _mem = new Stack<string>();
+	    private readonly Dictionary<Decomposition, int> _decompositionCount = new Dictionary<Decomposition, int>();
 
 	    public bool Finished { get; private set; }
 
@@ -27,160 +25,49 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		    _random = new Random(seed);
 		    _script = script;
 
-		    _script.Keys.TryGetValue("xnon", out _xnone);
+		    _script.Keys.TryGetValue("xnone", out _xnone);
 		}
-
-	    private static string CleanInput([NotNull] string input)
-	    {
-	        void Compress(StringBuilder str)
-	        {
-	            if (str.Length == 0)
-	                return;
-
-                //Keep replacing runs of 2 spaces with a single space until we don't do any more
-	            int l;
-	            do
-	            {
-	                l = str.Length;
-	                str.Replace("  ", " ");
-	            } while (l != str.Length);
-	        }
-
-	        var builder = new StringBuilder(input.ToLowerInvariant());
-
-	        foreach (var character in "@#$%^&*()_-+=~`{[}]|:;<>\\\"")
-	            builder.Replace(character, ' ');
-
-	        foreach (var c in ",?!")
-	            builder.Replace(c, '.');
-
-	        Compress(builder);
-
-	        return builder.ToString();
-	    }
 
 	    [NotNull] public string ProcessInput(string input)
 	    {
 	        input = CleanInput(input);
 
-			var lines = new string[2];
-
-			// Break apart sentences, and do each separately.
-			while (EString.Match(input, "*.*", lines))
-			{
-				var reply = Sentence(lines[0]);
-				if (reply != null)
-					return reply;
-
-			    input = lines[1].TrimStart();
-			}
-
-			if (input.Length != 0)
-			{
-				var reply = Sentence(input);
-				if (reply != null)
-					return reply;
-			}
-
-			// Nothing matched, so try memory.
-			var m = _mem.Pop();
-			if (m != null)
-				return m;
-
-			// No memory, reply with xnone.
-			if (_xnone != null)
-			{
-				Key dummy = null;
-				var reply = Decompose(_xnone, input, ref dummy);
-				if (reply != null)
-					return reply;
-			}
-
-			// No xnone, just say anything.
-			return "I am at a loss for words.";
-		}
-
-	    /// <summary>Break the string s into words.</summary>
-	    /// <remarks>
-	    /// Break the string s into words.
-	    /// For each word, if isKey is true, then push the key
-	    /// into the stack.
-	    /// </remarks>
-	    private void BuildKeyStack([NotNull] List<Key> stack, string s)
-	    {
-	        stack.Clear();
-	        s = s.TrimStart();
-	        var lines = new string[2];
-
-	        Key k;
-	        while (EString.Match(s, "* *", lines))
-	        {
-                if (_script.Keys.TryGetValue(lines[0], out k) && k != null)
-	                stack.Add(k);
-
-	            s = lines[1];
-	        }
-
-            if (_script.Keys.TryGetValue(s, out k) && k != null)
-	            stack.Add(k);
-
-	        stack.Sort((a, b) => -a.Rank.CompareTo(b.Rank));
+            return ProcessSentences(input)      //Try to create a reply to one of the sentences of the input
+                ?? _mem.PopOrDefault()          //Fall back to a reply we saved earlier
+                ?? Decompose(_xnone, input)     //Make a default reply
+                ?? "I am at a loss for words";  //Return default default
 	    }
 
-	    [NotNull] private static string Translate([NotNull] IReadOnlyList<Transform> list, string s)
+	    [CanBeNull] private string ProcessSentences([NotNull] string input)
 	    {
-	        string Xlate(string str)
-	        {
-	            return  list.SingleOrDefault(a => a.Source == str)?.Destination ?? str;
-	        }
-
-	        var lines = new string[2];
-	        var work = s.TrimStart();
-	        s = string.Empty;
-	        while (EString.Match(work, "* *", lines))
-	        {
-	            s += Xlate(lines[0]) + " ";
-	            work = lines[1].TrimStart();
-	        }
-	        s += Xlate(work);
-	        return s;
+	        return (from sentence in input.Split('.', StringSplitOptions.RemoveEmptyEntries)
+                    let transformed = Transform(_script.Pre, sentence).Trim()
+	                let r = Sentence(sentence)
+	                where r != null
+	                select r).FirstOrDefault();
 	    }
 
-	    /// <summary>Process a sentence.</summary>
-		/// <remarks>
-		/// Process a sentence. (1) Make pre transformations. (2) Check for quit
-		/// word. (3) Scan sentence for keys, build key stack. (4) Try decompositions
-		/// for each key.
-		/// </remarks>
-		private string Sentence(string s)
+		[CanBeNull] private string Sentence([NotNull] string s)
 		{
-			s = Translate(_script.Pre, s);
-			s = EString.Pad(s);
-			if (_script.Quit.Contains(s))
-			{
-				Finished = true;
-			    return _script.Final.Random(new Random(s.GetHashCode()));
-			}
-		    BuildKeyStack(_keyStack, s);
-			for (var i = 0; i < _keyStack.Count; i++)
-			{
-			    Key gotoKey = null;
-				var reply = Decompose(_keyStack[i], s, ref gotoKey);
-				if (reply != null)
-				{
-					return reply;
-				}
-				// If decomposition returned gotoKey, try it
-				while (gotoKey.Keyword != null)
-				{
-					reply = Decompose(gotoKey, s, ref gotoKey);
-					if (reply != null)
-					{
-						return reply;
-					}
-				}
-			}
-			return null;
+            //Split sentence into words
+		    var words = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+		    //Check if there are any exit words, if so immediately terminate
+		    if (words.Any(_script.Quit.Contains))
+		    {
+		        Finished = true;
+		        return _script.Final.Random(_random);
+		    }
+
+            //Get key for each word in the sentence, ordered by rank
+            //Get a reply for each key and take the first non-null reply
+		    return (from word in words
+		            let key = _script.Keys.GetValueOrDefault(word)
+		            where key != null
+		            orderby key.Rank descending
+		            let reply = Decompose(key, s)
+		            where reply != null
+		            select reply).FirstOrDefault();
 		}
 
 		/// <summary>Decompose a string according to the given key.</summary>
@@ -190,7 +77,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		/// fails, try another decomposition rule. If assembly is a goto rule, return
 		/// null and give the key. If assembly succeeds, return the reply;
 		/// </remarks>
-		[CanBeNull] private string Decompose([NotNull] Key key, string s, ref Key gotoKey)
+		[CanBeNull] private string Decompose([NotNull] Key key, string s)
 		{
 		    // Decomposition match, If decomp has no synonyms, do a regular match.
 		    bool MatchDecomp(string str, string pat, string[] lines)
@@ -238,15 +125,12 @@ namespace Mute.Services.Responses.Eliza.Eliza
 				var pat = d.Pattern;
 				if (MatchDecomp(s, pat, reply))
 				{
-					var rep = Assemble(d, reply, ref gotoKey);
+				    var rep = Assemble(d, reply, out var gotoKey);
 					if (rep != null)
-					{
 						return rep;
-					}
-					if (gotoKey.Keyword != null)
-					{
-						return null;
-					}
+
+				    if (gotoKey?.Keyword != null)
+				        return Decompose(gotoKey, s);
 				}
 			}
 			return null;
@@ -258,36 +142,52 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		/// is goto, return null and give the gotoKey to use. Otherwise return the
 		/// response.
 		/// </remarks>
-		[CanBeNull] private string Assemble([NotNull] Decomposition d, string[] reply, ref Key gotoKey)
-		{
+		[CanBeNull] private string Assemble([NotNull] Decomposition d, string[] reply, [CanBeNull] out Key gotoKey)
+	    {
+            //Cycle through the rules in order
+	        if (!_decompositionCount.ContainsKey(d))
+	            _decompositionCount[d] = 0;
+	        var rule = d.Reassemblies[_decompositionCount[d] % d.Reassemblies.Count];
+	        _decompositionCount[d]++;
+
+
 			var lines = new string[3];
-		    var rule = d.Reassemblies.RandomElement(_random);
-			if (EString.Match(rule, "goto *", lines))
-			{
-				// goto rule -- set gotoKey and return false.
-			    if (_script.Keys.TryGetValue(lines[0], out gotoKey))
-				    if (gotoKey?.Keyword != null)
-					    return null;
-				return null;
-			}
-			var work = string.Empty;
+
+	        if (EString.Match(rule, "goto *", lines))
+	        {
+	            // goto rule -- set gotoKey and return false.
+	            if (_script.Keys.TryGetValue(lines[0], out gotoKey))
+	                if (gotoKey?.Keyword != null)
+	                    return null;
+	            return null;
+	        }
+	        else
+	            gotoKey = null;
+
+			var work = "";
 			while (EString.Match(rule, "* (#)*", lines))
 			{
 				// reassembly rule with number substitution
 				rule = lines[2];
 
-				// there might be more
-			    if (int.TryParse(lines[1], out var n))
-				    n--;
-                else
-				    Console.WriteLine("Number is wrong in reassembly rule " + lines[1]);
+                //Parse the number
+                if (!int.TryParse(lines[1], out var n))
+                {
+                    Console.WriteLine("Number is wrong in reassembly rule " + lines[1]);
+                    return null;
+                }
 
-				if (n < 0 || n >= reply.Length)
+                //move back from 1 based indexing to zero indexing
+			    n--;
+
+                //Check if idnex is out of range
+			    if (n < 0 || n >= reply.Length)
 					return null;
 
-				reply[n] = Translate(_script.Post, reply[n]);
+				reply[n] = Transform(_script.Post, reply[n]);
 				work += lines[0] + " " + reply[n];
 			}
+
 			work += rule;
 			if (d.Memorise)
 			{
@@ -296,5 +196,57 @@ namespace Mute.Services.Responses.Eliza.Eliza
 			}
 			return work;
 		}
+
+        #region static helpers
+	    private static string CleanInput([NotNull] string input)
+	    {
+	        void Compress(StringBuilder str)
+	        {
+	            if (str.Length == 0)
+	                return;
+
+	            //Keep replacing runs of 2 spaces with a single space until we don't do any more
+	            int l;
+	            do
+	            {
+	                l = str.Length;
+	                str.Replace("  ", " ");
+	            } while (l != str.Length);
+	        }
+
+	        var builder = new StringBuilder(input.ToLowerInvariant());
+
+	        foreach (var character in "@#$%^&*()_-+=~`{[}]|:;<>\\\"")
+	            builder.Replace(character, ' ');
+
+	        foreach (var c in ",?!")
+	            builder.Replace(c, '.');
+
+	        Compress(builder);
+
+	        return builder.ToString();
+	    }
+
+	    [NotNull] private static string Transform([NotNull] IReadOnlyDictionary<string, Transform> transformations, [NotNull] string s)
+	    {
+	        return string.Join(" ",
+	            from word in s.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+	            let tx = transformations.GetValueOrDefault(word)?.Destination ?? word
+	            select tx
+	        );
+	    }
+        #endregion
+
+	    public override string ToString()
+	    {
+	        var b = new StringBuilder();
+
+	        b.AppendLine($"Script:{_script}\n");
+	        b.AppendLine($"Memory:{_mem.Count} items:");
+	        foreach (var item in _mem)
+	            b.AppendLine($" - {item}");
+
+	        return b.ToString();
+	    }
 	}
 }

@@ -64,8 +64,8 @@ namespace Mute.Services.Responses
             //Use the existing conversation if it is not over, or else replace it with the new conversation
             return _conversations.AddOrUpdate(
                 message.Author,
-                u => newConv,
-                (u, c) => (c?.IsComplete ?? true) ? newConv : c
+                _ => newConv,
+                (_, c) => (c?.IsComplete ?? true) ? newConv : c
             );
         }
 

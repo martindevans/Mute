@@ -11,10 +11,6 @@ namespace Mute.Services.Responses.Eliza.Eliza
 	/// <remarks>Eliza string functions.</remarks>
 	public class EString
 	{
-	    /// <summary>The digits.</summary>
-	    /// <remarks>The digits.</remarks>
-	    private const string Num = "0123456789";
-
 	    /// <summary>Look for a match between the string and the pattern.</summary>
 		/// <remarks>
 		/// Look for a match between the string and the pattern.
@@ -63,10 +59,9 @@ namespace Mute.Services.Responses.Eliza.Eliza
 			var count = 0;
 			for (var i = 0; i < str.Length; i++)
 			{
-				if (Amatch(str.Substring( i), pat) >= 0)
-				{
+				if (Amatch(str.Substring(i), pat) >= 0)
 					return count;
-				}
+
 				count++;
 			}
 			return -1;
@@ -82,82 +77,14 @@ namespace Mute.Services.Responses.Eliza.Eliza
 			var count = 0;
 			for (var i = 0; i < str.Length; i++)
 			{
-				if (Num.IndexOf(str[i]) == -1)
-				{
+				if ("0123456789".IndexOf(str[i]) == -1)
 					return count;
-				}
+
 				count++;
 			}
+
 			return count;
 		}
-
-		/// <summary>
-		/// Match the string against a pattern and fills in
-		/// matches array with the pieces that matched * and #
-		/// </summary>
-		private static bool MatchA([NotNull] string str, [NotNull] string pat, string[] matches)
-		{
-			var i = 0;
-			//  move through str
-			var j = 0;
-			//  move through matches
-			var pos = 0;
-			//  move through pat
-			while (pos < pat.Length && j < matches.Length)
-			{
-				var p = pat[pos];
-				if (p == '*')
-				{
-					int n;
-					if (pos + 1 == pat.Length)
-					{
-						//  * is the last thing in pat
-						//  n is remaining string length
-						n = str.Length - i;
-					}
-					else
-					{
-						//  * is not last in pat
-						//  find using remaining pat
-						n = FindPat(str.Substring( i), pat.Substring( pos + 1));
-					}
-					if (n < 0)
-					{
-						return false;
-					}
-
-				    matches[j++] = str.Substring(i, n);
-					i += n;
-					pos++;
-				}
-				else
-				{
-					if (p == '#')
-					{
-						var n = FindNum(str.Substring( i));
-						matches[j++] = str.Substring(i, n);
-						i += n;
-						pos++;
-					}
-					else
-					{
-						var n = Amatch(str.Substring( i), pat.Substring( pos));
-						if (n <= 0)
-						{
-							return false;
-						}
-						i += n;
-						pos += n;
-					}
-				}
-			}
-			if (i >= str.Length && pos >= pat.Length)
-			{
-				return true;
-			}
-			return false;
-		}
-
 		internal static bool MatchB(string strIn, string patIn, string[] matches)
 		{
 			var str = strIn;
@@ -221,41 +148,71 @@ namespace Mute.Services.Responses.Eliza.Eliza
 			return false;
 		}
 
+	    /// <summary>
+	    /// Match the string against a pattern and fills in
+	    /// matches array with the pieces that matched * and #
+	    /// </summary>
 		public static bool Match([NotNull] string str, [NotNull] string pat, string[] matches)
 		{
-			return MatchA(str, pat, matches);
-		}
+		    var i = 0;
+		    //  move through str
+		    var j = 0;
+		    //  move through matches
+		    var pos = 0;
+		    //  move through pat
+		    while (pos < pat.Length && j < matches.Length)
+		    {
+		        var p = pat[pos];
+		        if (p == '*')
+		        {
+		            int n;
+		            if (pos + 1 == pat.Length)
+		            {
+		                //  * is the last thing in pat
+		                //  n is remaining string length
+		                n = str.Length - i;
+		            }
+		            else
+		            {
+		                //  * is not last in pat
+		                //  find using remaining pat
+		                n = FindPat(str.Substring( i), pat.Substring( pos + 1));
+		            }
+		            if (n < 0)
+		            {
+		                return false;
+		            }
 
-		
-
-		/// <summary>Pad by ensuring there are spaces before and after the sentence.</summary>
-		[NotNull]
-		public static string Pad([NotNull] string s)
-		{
-			if (s.Length == 0)
-			{
-				return " ";
-			}
-			var first = s[0];
-			var last = s[s.Length - 1];
-			if (first == ' ' && last == ' ')
-			{
-				return s;
-			}
-			if (first == ' ' && last != ' ')
-			{
-				return s + " ";
-			}
-			if (first != ' ' && last == ' ')
-			{
-				return " " + s;
-			}
-			if (first != ' ' && last != ' ')
-			{
-				return " " + s + " ";
-			}
-			// impossible
-			return s;
+		            matches[j++] = str.Substring(i, n);
+		            i += n;
+		            pos++;
+		        }
+		        else
+		        {
+		            if (p == '#')
+		            {
+		                var n = FindNum(str.Substring( i));
+		                matches[j++] = str.Substring(i, n);
+		                i += n;
+		                pos++;
+		            }
+		            else
+		            {
+		                var n = Amatch(str.Substring( i), pat.Substring( pos));
+		                if (n <= 0)
+		                {
+		                    return false;
+		                }
+		                i += n;
+		                pos += n;
+		            }
+		        }
+		    }
+		    if (i >= str.Length && pos >= pat.Length)
+		    {
+		        return true;
+		    }
+		    return false;
 		}
 	}
 }

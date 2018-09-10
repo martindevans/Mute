@@ -11,44 +11,43 @@ namespace Mute.Services.Responses.Eliza
     {
         public IReadOnlyDictionary<string, Key> Keys { get; }
 
-        /// <summary>The syn list</summary>
         private readonly List<IReadOnlyList<string>> _syns = new List<IReadOnlyList<string>>();
         public IReadOnlyList<IReadOnlyList<string>> Syns => _syns;
 
-        /// <summary>The pre list</summary>
-        private readonly List<Transform> _pre = new List<Transform>();
-        public IReadOnlyList<Transform> Pre => _pre;
+        public IReadOnlyDictionary<string, Transform> Pre { get; }
 
-        /// <summary>The post list</summary>
-        private readonly List<Transform> _post = new List<Transform>();
-        public IReadOnlyList<Transform> Post => _post;
+        public IReadOnlyDictionary<string, Transform> Post { get; }
 
-        /// <summary>Final string</summary>
         private readonly List<string> _final = new List<string>();
         public IReadOnlyList<string> Final => _final;
 
-        /// <summary>Quit list</summary>
-        private readonly List<string> _quit = new List<string>();
-
-        
-        public IReadOnlyList<string> Quit => _quit;
+        public IReadOnlyList<string> Quit { get; }
 
         public Script([NotNull] IEnumerable<string> lines)
         {
             List<Decomposition> lastDecomp = null;
             List<string> lastReasemb = null;
             var keysList = new List<Key>();
+            var pre = new List<Transform>();
+            var post = new List<Transform>();
+            var quit = new List<string>();
 
             foreach (var line in lines)    
-                Collect(line, ref lastReasemb, ref lastDecomp, keysList);
+                Collect(line, ref lastReasemb, ref lastDecomp, keysList, pre, post, quit);
 
             Keys = new ReadOnlyDictionary<string, Key>(keysList.ToDictionary(a => a.Keyword, a => a));
+            Pre = new ReadOnlyDictionary<string, Transform>(pre.ToDictionary(a => a.Source, a => a));
+            Post = new ReadOnlyDictionary<string, Transform>(post.ToDictionary(a => a.Source, a => a));
+            Quit = quit;
         }
 
         /// <summary>Process a line of script input.</summary>
 		/// <remarks>Process a line of script input.</remarks>
-		private void Collect(string s, ref List<string> lastReasemb, ref List<Decomposition> lastDecomp, List<Key> keys)
-		{
+		private void Collect(string s, ref List<string> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+                return;
+
 			var lines = new string[4];
 			if (EString.Match(s, "*reasmb: *", lines))
 			{
@@ -124,13 +123,13 @@ namespace Mute.Services.Responses.Eliza
 							{
 								if (EString.Match(s, "*pre: * *", lines))
 								{
-								    _pre.Add(new Transform(lines[1], lines[2]));
+								    pre.Add(new Transform(lines[1], lines[2]));
 								}
 								else
 								{
 									if (EString.Match(s, "*post: * *", lines))
 									{
-									    _post.Add(new Transform(lines[1], lines[2]));
+									    post.Add(new Transform(lines[1], lines[2]));
 									}
 									else
 									{
@@ -142,7 +141,7 @@ namespace Mute.Services.Responses.Eliza
 										{
 											if (EString.Match(s, "*quit: *", lines))
 											{
-												_quit.Add(" " + lines[1] + " ");
+												quit.Add(lines[1]);
 											}
 											else
 											{
