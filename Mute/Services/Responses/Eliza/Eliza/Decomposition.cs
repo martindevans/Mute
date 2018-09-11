@@ -11,12 +11,15 @@ namespace Mute.Services.Responses.Eliza.Eliza
 
 	    public bool Memorise { get; }
 
+	    public bool Randomise { get; }
+
 	    public IReadOnlyList<string> Reassemblies { get; }
 
-		internal Decomposition(string pattern, bool memorise, IReadOnlyList<string> reassemblies)
+		internal Decomposition(string pattern, bool memorise, bool randomise, IReadOnlyList<string> reassemblies)
 		{
 			Pattern = pattern;
 			Memorise = memorise;
+		    Randomise = randomise;
 			Reassemblies = reassemblies;
 		}
 	}

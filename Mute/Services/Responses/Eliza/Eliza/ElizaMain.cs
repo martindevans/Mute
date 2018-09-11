@@ -147,15 +147,16 @@ namespace Mute.Services.Responses.Eliza.Eliza
             //Cycle through the rules in order
 	        if (!_decompositionCount.ContainsKey(d))
 	            _decompositionCount[d] = 0;
-	        var rule = d.Reassemblies[_decompositionCount[d] % d.Reassemblies.Count];
+            var rule = d.Randomise
+                     ? d.Reassemblies.Random(_random)
+                     : d.Reassemblies[_decompositionCount[d] % d.Reassemblies.Count];
 	        _decompositionCount[d]++;
-
 
 			var lines = new string[3];
 
+            //Early exit if this is a goto rule
 	        if (EString.Match(rule, "goto *", lines))
 	        {
-	            // goto rule -- set gotoKey and return false.
 	            if (_script.Keys.TryGetValue(lines[0], out gotoKey))
 	                if (gotoKey?.Keyword != null)
 	                    return null;
@@ -164,7 +165,14 @@ namespace Mute.Services.Responses.Eliza.Eliza
 	        else
 	            gotoKey = null;
 
-			var work = "";
+            //Substitute synonyms
+	        var words = rule.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+	        for (var i = 0; i < words.Length; i++)
+	            if (words[i].Contains('@'))
+	                words[i] = _script.Syns.FirstOrDefault(w => w.Contains(words[i].TrimStart('@'))).Random(_random);
+	        rule = string.Join(" ", words);
+
+	        var work = "";
 			while (EString.Match(rule, "* (#)*", lines))
 			{
 				// reassembly rule with number substitution
@@ -188,8 +196,9 @@ namespace Mute.Services.Responses.Eliza.Eliza
 				work += lines[0] + " " + reply[n];
 			}
 
-			work += rule;
-			if (d.Memorise)
+	        work += rule;
+
+	        if (d.Memorise)
 			{
 				_mem.Push(work);
 				return null;

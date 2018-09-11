@@ -32,8 +32,31 @@ namespace Mute.Services.Responses.Eliza
             var post = new List<Transform>();
             var quit = new List<string>();
 
+            //Parse all the lines of the script
             foreach (var line in lines)    
                 Collect(line, ref lastReasemb, ref lastDecomp, keysList, pre, post, quit);
+
+            //Expand keys which have synonym keys
+            for (var i = keysList.Count - 1; i >= 0; i--)
+            {
+                //Find out if this key uses a synonym as it's keyword
+                var k = keysList[i];
+                if (!keysList[i].Keyword.StartsWith('@'))
+                    continue;
+
+                //It does, so remove it
+                keysList.RemoveAt(i);
+
+                //Find synonyms of keyword
+                var kw = k.Keyword.Substring(1);
+                var synonyms = Syns.FirstOrDefault(a => a.Contains(kw));
+                if (synonyms == null)
+                    continue;
+
+                //create concrete keys, one for each synonym
+                foreach (var synonym in synonyms)
+                    keysList.Add(new Key(synonym, k.Rank, k.Decompositions));
+            }
 
             Keys = new ReadOnlyDictionary<string, Key>(keysList.ToDictionary(a => a.Keyword, a => a));
             Pre = new ReadOnlyDictionary<string, Transform>(pre.ToDictionary(a => a.Source, a => a));
@@ -62,19 +85,19 @@ namespace Mute.Services.Responses.Eliza
 				if (EString.Match(s, "*decomp: *", lines))
 				{
 					if (lastDecomp == null)
-					{
 						return;
-					}
+
 				    lastReasemb = new List<string>();
-					string temp = lines[1];
-					if (EString.Match(temp, "$ *", lines))
-					{
-					    lastDecomp.Add(new Decomposition(lines[0], true, lastReasemb));
-					}
+					var temp = lines[1];
+					
+				    if (EString.Match(temp, "$ ~ *", lines))
+				        lastDecomp.Add(new Decomposition(lines[0], true, true, lastReasemb));
+				    else if (EString.Match(temp, "~ *", lines))
+				        lastDecomp.Add(new Decomposition(lines[0], false, true, lastReasemb));
+				    else if (EString.Match(temp, "$ *", lines))
+					    lastDecomp.Add(new Decomposition(lines[0], true, false, lastReasemb));
 					else
-					{
-					    lastDecomp.Add(new Decomposition(temp, false, lastReasemb));
-					}
+					    lastDecomp.Add(new Decomposition(temp, false, false, lastReasemb));
 				}
 				else
 				{
