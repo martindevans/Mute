@@ -34,7 +34,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 
             return ProcessSentences(input)      //Try to create a reply to one of the sentences of the input
                 ?? _mem.PopOrDefault()          //Fall back to a reply we saved earlier
-                ?? Decompose(_xnone, input)     //Make a default reply
+                ?? TryKey(_xnone, input)     //Make a default reply
                 ?? "I am at a loss for words";  //Return default default
 	    }
 
@@ -47,10 +47,10 @@ namespace Mute.Services.Responses.Eliza.Eliza
 	                select r).FirstOrDefault();
 	    }
 
-		[CanBeNull] private string Sentence([NotNull] string s)
+		[CanBeNull] private string Sentence([NotNull] string sentence)
 		{
             //Split sentence into words
-		    var words = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+		    var words = sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
 		    //Check if there are any exit words, if so immediately terminate
 		    if (words.Any(_script.Quit.Contains))
@@ -65,7 +65,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		            let key = _script.Keys.GetValueOrDefault(word)
 		            where key != null
 		            orderby key.Rank descending
-		            let reply = Decompose(key, s)
+		            let reply = TryKey(key, sentence)
 		            where reply != null
 		            select reply).FirstOrDefault();
 		}
@@ -77,15 +77,15 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		/// fails, try another decomposition rule. If assembly is a goto rule, return
 		/// null and give the key. If assembly succeeds, return the reply;
 		/// </remarks>
-		[CanBeNull] private string Decompose([NotNull] Key key, string s)
+		[CanBeNull] private string TryKey([NotNull] Key key, string sentence)
 		{
 		    // Decomposition match, If decomp has no synonyms, do a regular match.
 		    bool MatchDecomp(string str, string pat, string[] lines)
 		    {
-		        if (!EString.Match(pat, "*@* *", lines))
+		        if (!Patterns.Match(pat, "*@* *", lines))
 		        {
 		            //  no synonyms in decomp pattern
-		            return EString.Match(str, pat, lines);
+		            return Patterns.Match(str, pat, lines);
 		        }
 		        //  Decomp pattern has synonym -- isolate the synonym
 		        var first = lines[0];
@@ -102,7 +102,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		        {
 		            //  Make a modified pattern
 		            pat = first + syn[i] + theRest;
-		            if (EString.Match(str, pat, lines))
+		            if (Patterns.Match(str, pat, lines))
 		            {
 		                var n = first.Count(a => a == '*');
 		                //  Make room for the synonym in the match list.
@@ -123,14 +123,14 @@ namespace Mute.Services.Responses.Eliza.Eliza
 			{
 				var d = key.Decompositions[i];
 				var pat = d.Pattern;
-				if (MatchDecomp(s, pat, reply))
+				if (MatchDecomp(sentence, pat, reply))
 				{
 				    var rep = Assemble(d, reply, out var gotoKey);
 					if (rep != null)
 						return rep;
 
 				    if (gotoKey?.Keyword != null)
-				        return Decompose(gotoKey, s);
+				        return TryKey(gotoKey, sentence);
 				}
 			}
 			return null;
@@ -155,7 +155,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 			var lines = new string[3];
 
             //Early exit if this is a goto rule
-	        if (EString.Match(rule, "goto *", lines))
+	        if (Patterns.Match(rule, "goto *", lines))
 	        {
 	            if (_script.Keys.TryGetValue(lines[0], out gotoKey))
 	                if (gotoKey?.Keyword != null)
@@ -173,7 +173,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 	        rule = string.Join(" ", words);
 
 	        var work = "";
-			while (EString.Match(rule, "* (#)*", lines))
+			while (Patterns.Match(rule, "* (#)*", lines))
 			{
 				// reassembly rule with number substitution
 				rule = lines[2];
@@ -250,8 +250,8 @@ namespace Mute.Services.Responses.Eliza.Eliza
 	    {
 	        var b = new StringBuilder();
 
-	        b.AppendLine($"Script:{_script}\n");
-	        b.AppendLine($"Memory:{_mem.Count} items:");
+	        b.AppendLine($"Script:{_script}");
+	        b.AppendLine($"Memory ({_mem.Count} items):");
 	        foreach (var item in _mem)
 	            b.AppendLine($" - {item}");
 

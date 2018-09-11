@@ -72,7 +72,7 @@ namespace Mute.Services.Responses.Eliza
                 return;
 
 			var lines = new string[4];
-			if (EString.Match(s, "*reasmb: *", lines))
+			if (Patterns.Match(s, "*reasmb: *", lines))
 			{
 				if (lastReasemb == null)
 				{
@@ -82,7 +82,7 @@ namespace Mute.Services.Responses.Eliza
 			}
 			else
 			{
-				if (EString.Match(s, "*decomp: *", lines))
+				if (Patterns.Match(s, "*decomp: *", lines))
 				{
 					if (lastDecomp == null)
 						return;
@@ -90,18 +90,18 @@ namespace Mute.Services.Responses.Eliza
 				    lastReasemb = new List<string>();
 					var temp = lines[1];
 					
-				    if (EString.Match(temp, "$ ~ *", lines))
+				    if (Patterns.Match(temp, "$ ~ *", lines))
 				        lastDecomp.Add(new Decomposition(lines[0], true, true, lastReasemb));
-				    else if (EString.Match(temp, "~ *", lines))
+				    else if (Patterns.Match(temp, "~ *", lines))
 				        lastDecomp.Add(new Decomposition(lines[0], false, true, lastReasemb));
-				    else if (EString.Match(temp, "$ *", lines))
+				    else if (Patterns.Match(temp, "$ *", lines))
 					    lastDecomp.Add(new Decomposition(lines[0], true, false, lastReasemb));
 					else
 					    lastDecomp.Add(new Decomposition(temp, false, false, lastReasemb));
 				}
 				else
 				{
-					if (EString.Match(s, "*key: * #*", lines))
+					if (Patterns.Match(s, "*key: * #*", lines))
 					{
 						lastDecomp = new List<Decomposition>();
 						lastReasemb = null;
@@ -121,7 +121,7 @@ namespace Mute.Services.Responses.Eliza
 					}
 					else
 					{
-						if (EString.Match(s, "*key: *", lines))
+						if (Patterns.Match(s, "*key: *", lines))
 						{
 							lastDecomp = new List<Decomposition>();
 							lastReasemb = null;
@@ -129,12 +129,12 @@ namespace Mute.Services.Responses.Eliza
 						}
 						else
 						{
-							if (EString.Match(s, "*synon: * *", lines))
+							if (Patterns.Match(s, "*synon: * *", lines))
 							{
 								var words = new List<string>();
 								words.Add(lines[1]);
 								s = lines[2];
-								while (EString.Match(s, "* *", lines))
+								while (Patterns.Match(s, "* *", lines))
 								{
 									words.Add(lines[0]);
 									s = lines[1];
@@ -144,25 +144,25 @@ namespace Mute.Services.Responses.Eliza
 							}
 							else
 							{
-								if (EString.Match(s, "*pre: * *", lines))
+								if (Patterns.Match(s, "*pre: * *", lines))
 								{
 								    pre.Add(new Transform(lines[1], lines[2]));
 								}
 								else
 								{
-									if (EString.Match(s, "*post: * *", lines))
+									if (Patterns.Match(s, "*post: * *", lines))
 									{
 									    post.Add(new Transform(lines[1], lines[2]));
 									}
 									else
 									{
-										if (EString.Match(s, "*final: *", lines))
+										if (Patterns.Match(s, "*final: *", lines))
 										{
 										    _final.Add(lines[1]);
 										}
 										else
 										{
-											if (EString.Match(s, "*quit: *", lines))
+											if (Patterns.Match(s, "*quit: *", lines))
 											{
 												quit.Add(lines[1]);
 											}

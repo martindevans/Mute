@@ -1,15 +1,12 @@
 // class translated from Java
 // Credit goes to Charles Hayden http://www.chayden.net/eliza/Eliza.html
 
-using System;
-using System.Linq;
+using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 
 namespace Mute.Services.Responses.Eliza.Eliza
 {
-	/// <summary>Eliza string functions.</summary>
-	/// <remarks>Eliza string functions.</remarks>
-	public class EString
+	public class Patterns
 	{
 	    /// <summary>Look for a match between the string and the pattern.</summary>
 		/// <remarks>
@@ -17,30 +14,28 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		/// Return count of maching characters before * or #.
 		/// Return -1 if strings do not match.
 		/// </remarks>
-	    private static int Amatch([NotNull] string str, string pat)
+	    private static int Amatch(int strOffset, [NotNull] string str, int patOffset, string pat)
 		{
 			var count = 0;
-			var i = 0;
-			// march through str
-			var j = 0;
-			// march through pat
+
+			var i = strOffset;
+			var j = patOffset;
 			while (i < str.Length && j < pat.Length)
 			{
 				var p = pat[j];
+
 				// stop if pattern is * or #
 				if (p == '*' || p == '#')
-				{
 					return count;
-				}
+
 				if (str[i] != p)
-				{
 					return -1;
-				}
-				// they are still equal
+
 				i++;
 				j++;
 				count++;
 			}
+
 			return count;
 		}
 
@@ -54,12 +49,12 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		/// Return the string position in str of the match,
 		/// or -1 for no match.
 		/// </remarks>
-		private static int FindPat([NotNull] string str, string pat)
+		private static int FindPat(int strOffset, [NotNull] string str, int patOffset, string pat)
 		{
 			var count = 0;
-			for (var i = 0; i < str.Length; i++)
+			for (var i = strOffset; i < str.Length; i++)
 			{
-				if (Amatch(str.Substring(i), pat) >= 0)
+				if (Amatch(i, str, patOffset, pat) >= 0)
 					return count;
 
 				count++;
@@ -74,16 +69,11 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		/// </remarks>
 		private static int FindNum([NotNull] string str)
 		{
-			var count = 0;
-			for (var i = 0; i < str.Length; i++)
-			{
-				if ("0123456789".IndexOf(str[i]) == -1)
-					return count;
+		    var match = Regex.Match(str, "[0-9]+");
+		    if (match.Success)
+		        return match.Length;
 
-				count++;
-			}
-
-			return count;
+		    return -1;
 		}
 		internal static bool MatchB(string strIn, string patIn, string[] matches)
 		{
@@ -107,7 +97,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 					{
 						//  * is not last in pat
 						//  find using remaining pat
-						n = FindPat(str, pat.Substring( 1));
+						n = FindPat(0, str, 1, pat);
 					}
 					if (n < 0)
 					{
@@ -131,7 +121,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 					{
 						//           } else if (p == ' ' && str.length() > 0 && str.charAt(0) != ' ') {
 						//               pat = pat.substring(1);
-						var n = Amatch(str, pat);
+						var n = Amatch(0, str, 0, pat);
 						if (n <= 0)
 						{
 							return false;
@@ -176,7 +166,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		            {
 		                //  * is not last in pat
 		                //  find using remaining pat
-		                n = FindPat(str.Substring( i), pat.Substring( pos + 1));
+		                n = FindPat(i, str, pos + 1, pat);
 		            }
 		            if (n < 0)
 		            {
@@ -191,14 +181,14 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		        {
 		            if (p == '#')
 		            {
-		                var n = FindNum(str.Substring( i));
+		                var n = FindNum(str.Substring(i));
 		                matches[j++] = str.Substring(i, n);
 		                i += n;
 		                pos++;
 		            }
 		            else
 		            {
-		                var n = Amatch(str.Substring( i), pat.Substring( pos));
+		                var n = Amatch(i, str, pos, pat);
 		                if (n <= 0)
 		                {
 		                    return false;

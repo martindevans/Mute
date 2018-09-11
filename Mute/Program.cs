@@ -71,7 +71,7 @@ namespace Mute
                 .AddSingleton<CatPictureService>()
                 .AddSingleton<DogPictureService>()
                 .AddSingleton<CryptoCurrencyService>()
-                .AddSingleton<IStockService>(new AlphaAdvantageService(config.AlphaAdvantage))
+                .AddSingleton(new AlphaAdvantageService(config.AlphaAdvantage))
                 .AddSingleton<IouDatabaseService>()
                 .AddSingleton<AudioPlayerService>()
                 .AddSingleton<YoutubeService>()

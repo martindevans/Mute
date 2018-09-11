@@ -10,9 +10,9 @@ namespace Mute.Modules
         : ModuleBase
     {
         private readonly CryptoCurrencyService _cryptoService;
-        private readonly IStockService _stockService;
+        private readonly AlphaAdvantageService _stockService;
 
-        public Finance(CryptoCurrencyService cryptoService, IStockService stockService)
+        public Finance(CryptoCurrencyService cryptoService, AlphaAdvantageService stockService)
         {
             _cryptoService = cryptoService;
             _stockService = stockService;
@@ -24,7 +24,7 @@ namespace Mute.Modules
             if (await TickerAsCrypto(symbolOrName, quote))
                 return;
 
-            if (await TickerAsStock(symbolOrName, quote))
+            if (await TickerAsStock(symbolOrName))
                 return;
 
             if (await TickerAsForex(symbolOrName, quote))
@@ -33,13 +33,37 @@ namespace Mute.Modules
             await this.TypingReplyAsync($"I can't find a stock or a currency called '{symbolOrName}'");
         }
 
-        private async Task<bool> TickerAsStock(string symbolOrName, string quote)
+        private async Task<bool> TickerAsStock(string symbolOrName)
         {
+            var result = await _stockService.StockQuote(symbolOrName);
+
+            if (result != null)
+            {
+                var change = "";
+                var delta = result.Price - result.Open;
+                if (delta > 0)
+                    change += "up ";
+                else
+                    change += "down";
+                change += $"{(delta / result.Price):P}";
+
+                await this.TypingReplyAsync($"{result.Symbol} is trading at {result.Price:0.00}, {change} since opening today");
+                return true;
+            }
+
             return false;
         }
 
         private async Task<bool> TickerAsForex(string symbolOrName, string quote)
         {
+            var result = await _stockService.CurrencyExchangeRate(symbolOrName, quote);
+
+            if (result != null)
+            {
+                await this.TypingReplyAsync($"{result.FromName} ({result.FromCode}) is worth {result.ToCode.TryGetCurrencySymbol()}{result.ExchangeRate.ToString("0.00", CultureInfo.InvariantCulture)}");
+                return true;
+            }
+
             return false;
         }
 
@@ -68,15 +92,18 @@ namespace Mute.Modules
             //Format the value part of the quote
             if (val != null)
             {
-                var price = val.Price.ToString("C", CultureInfo.InvariantCulture);
-                reply += $" is worth {quote.TryGetCurrencySymbol().ToUpperInvariant()}{price} (";
+                var price = val.Price.ToString("0.00", CultureInfo.InvariantCulture);
+                reply += $" is worth {quote.TryGetCurrencySymbol().ToUpperInvariant()}{price}";
 
-                if (val.PctChange24H > 0)
-                    reply += "up";
-                else
-                    reply += "down";
+                if (val.PctChange24H.HasValue)
+                {
+                    if (val.PctChange24H > 0)
+                        reply += " (up";
+                    else
+                        reply += " (down";
 
-                reply += $" {val.PctChange24H}% in 24H)";
+                    reply += $" {val.PctChange24H}% in 24H)";
+                }
             }
 
             //If we were typing a previous response, wait for that to complete

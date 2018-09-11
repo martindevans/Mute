@@ -26,11 +26,11 @@ namespace Mute.Services
         public class Quote
         {
             [JsonProperty("price")] public decimal Price { get; private set; }
-            [JsonProperty("volume_24h")] public decimal Volume { get; private set; }
+            [JsonProperty("volume_24h")] public decimal? Volume { get; private set; }
             [JsonProperty("market_cap")] public decimal MarketCap { get; private set; }
-            [JsonProperty("percent_change_1h")] public decimal PctChange1H { get; private set; }
-            [JsonProperty("percent_change_24h")] public decimal PctChange24H { get; private set; }
-            [JsonProperty("percent_change_7d")] public decimal PctChange7D { get; private set; }
+            [JsonProperty("percent_change_1h")] public decimal? PctChange1H { get; private set; }
+            [JsonProperty("percent_change_24h")] public decimal? PctChange24H { get; private set; }
+            [JsonProperty("percent_change_7d")] public decimal? PctChange7D { get; private set; }
         }
 
         public class Ticker
