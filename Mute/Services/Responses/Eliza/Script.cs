@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
@@ -12,7 +11,7 @@ namespace Mute.Services.Responses.Eliza
     public class Script
     {
         public IReadOnlyDictionary<string, Key> Keys { get; }
-        public IReadOnlyList<IReadOnlyList<string>> Syns { get; }
+        public IReadOnlyList<IReadOnlyCollection<string>> Syns { get; }
         public IReadOnlyDictionary<string, Transform> Pre { get; }
         public IReadOnlyDictionary<string, Transform> Post { get; }
         public IReadOnlyList<string> Final { get; }
@@ -26,7 +25,7 @@ namespace Mute.Services.Responses.Eliza
             var pre = new List<Transform>();
             var post = new List<Transform>();
             var quit = new List<string>();
-            var syns = new List<IReadOnlyList<string>>();
+            var syns = new List<HashSet<string>>();
             var final = new List<string>();
 
             //Parse all the lines of the script
@@ -39,7 +38,14 @@ namespace Mute.Services.Responses.Eliza
             Quit = quit;
             Final = final;
 
-            //Expand keys which have synonym keys
+            // Expand `@foo` in the keyword position into N rules, one for each synonym of `foo`
+            DuplicateSynonymKeys(keysList);
+
+            Keys = new ReadOnlyDictionary<string, Key>(keysList.ToDictionary(a => a.Keyword, a => a));
+        }
+        
+        private void DuplicateSynonymKeys([NotNull] IList<Key> keysList)
+        {
             for (var i = keysList.Count - 1; i >= 0; i--)
             {
                 //Find out if this key uses a synonym as it's keyword
@@ -60,8 +66,6 @@ namespace Mute.Services.Responses.Eliza
                 foreach (var synonym in synonyms)
                     keysList.Add(new Key(synonym, k.Rank, k.Decompositions));
             }
-
-            Keys = new ReadOnlyDictionary<string, Key>(keysList.ToDictionary(a => a.Keyword, a => a));
         }
 
         private static bool DecompositionRule([NotNull] string s, ref List<Decomposition> lastDecomp, ref List<string> lastReasemb)
@@ -114,13 +118,13 @@ namespace Mute.Services.Responses.Eliza
             return true;
         }
 
-        private static bool SynonymRule([NotNull] string s, ICollection<IReadOnlyList<string>> synonyms)
+        private static bool SynonymRule([NotNull] string s, ICollection<HashSet<string>> synonyms)
         {
             var m = Regex.Match(s, "^.*?synon:( )+(?<value>.*)$");
             if (!m.Success)
                 return false;
 
-            synonyms.Add(m.Groups["value"].Value.Split(' '));
+            synonyms.Add(new HashSet<string>(m.Groups["value"].Value.Split(' ')));
             return true;
         }
 
@@ -166,7 +170,7 @@ namespace Mute.Services.Responses.Eliza
 
         /// <summary>Process a line of script input.</summary>
 		/// <remarks>Process a line of script input.</remarks>
-		private static bool ParseLine([CanBeNull] string line, ref List<string> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, List<IReadOnlyList<string>> syns, List<string> final)
+		private static bool ParseLine([CanBeNull] string line, ref List<string> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, List<HashSet<string>> syns, List<string> final)
         {
             if (string.IsNullOrWhiteSpace(line))
                 return false;

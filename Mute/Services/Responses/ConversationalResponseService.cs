@@ -86,7 +86,7 @@ namespace Mute.Services.Responses
             }
 
             //If there are several pick a random one
-            return candidates.RandomElement(_random);
+            return IEnumerableExtensions.Random(candidates, _random);
         }
 
         public IConversation GetConversation(IGuildUser user)

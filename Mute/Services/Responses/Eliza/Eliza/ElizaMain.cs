@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 using Mute.Extensions;
 
@@ -68,7 +69,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 
 		    //Get a reply for each key
 		    var replies = from key in keys
-		                  let reply = TryKey(key, sentence)
+		                  let reply = TryKey(key, sentence.PadLeft(1).PadRight(1))
 		                  where reply != null
 		                  select reply;
 
@@ -85,62 +86,54 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		/// </remarks>
 		[CanBeNull] private string TryKey([NotNull] Key key, string sentence)
 		{
-		    // Decomposition match, If decomp has no synonyms, do a regular match.
-		    bool MatchDecomp(string str, string pat, string[] lines)
-		    {
-		        if (!Patterns.Match(pat, "*@* *", lines))
-		        {
-		            //  no synonyms in decomp pattern
-		            return Patterns.Match(str, pat, lines);
-		        }
-		        //  Decomp pattern has synonym -- isolate the synonym
-		        var first = lines[0];
-		        var synWord = lines[1];
-		        var theRest = " " + lines[2];
-		        //  Look up the synonym
-		        var syn = _script.Syns.FirstOrDefault(w => w.Contains(synWord));
-		        if (syn == null)
-		        {
-		            return false;
-		        }
-		        //  Try each synonym individually
-		        for (var i = 0; i < syn.Count; i++)
-		        {
-		            //  Make a modified pattern
-		            pat = first + syn[i] + theRest;
-		            if (Patterns.Match(str, pat, lines))
-		            {
-		                var n = first.Count(a => a == '*');
-		                //  Make room for the synonym in the match list.
-		                for (var j = lines.Length - 2; j >= n; j--)
-		                {
-		                    lines[j + 1] = lines[j];
-		                }
-		                //  The synonym goes in the match list.
-		                lines[n] = syn[i];
-		                return true;
-		            }
-		        }
-		        return false;
-		    }
+            //Select reassembly rules which match the input
+		    var decompositions = from decomp in key.Decompositions
+		                         let decomposed = Patterns.Match(sentence, decomp.Pattern, _script.Syns)
+		                         where decomposed != null
+                                 let rule = ChooseReassembly(decomp)
+		                         select (decomp, rule, decomposed);
 
-			var reply = new string[10];
-			for (var i = 0; i < key.Decompositions.Count; i++)
-			{
-				var d = key.Decompositions[i];
-				var pat = d.Pattern;
-				if (MatchDecomp(sentence, pat, reply))
-				{
-				    var rep = Assemble(d, reply, out var gotoKey);
-					if (rep != null)
-						return rep;
+            foreach (var (decomposition, rule, decomposed) in decompositions)
+            {
+                //If it's a goto rule follow it
+                if (rule.StartsWith("goto "))
+                {
+                    if (_script.Keys.TryGetValue(rule.Substring(5), out var gotoKey))
+                        return TryKey(gotoKey, sentence);
+                    else
+                        return null;
+                }
 
-				    if (gotoKey?.Keyword != null)
-				        return TryKey(gotoKey, sentence);
-				}
-			}
+                //Try to assemble a reply using this reassembly rule
+                var rep = Assemble(rule, decomposed);
+                if (rep != null)
+                {
+                    if (decomposition.Memorise)
+                        _mem.Push(rep);
+                    else
+                        return rep;
+                }
+            }
+
 			return null;
 		}
+
+	    private string ChooseReassembly([NotNull] Decomposition d)
+	    {
+	        //Initialize index for this rule if it's not already set
+	        if (!_decompositionCount.ContainsKey(d))
+	            _decompositionCount[d] = 0;
+
+	        //Choose the rule (either cycle in order, or choose a random one)
+	        var rule = d.Randomise
+	            ? d.Reassemblies.Random(_random)
+	            : d.Reassemblies[_decompositionCount[d] % d.Reassemblies.Count];
+
+	        //Inc index so that next time we select a different rule
+	        _decompositionCount[d]++;
+
+	        return rule;
+	    }
 
 	    /// <summary>Assembly a reply from a decomp rule and the input.</summary>
 		/// <remarks>
@@ -148,69 +141,33 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		/// is goto, return null and give the gotoKey to use. Otherwise return the
 		/// response.
 		/// </remarks>
-		[CanBeNull] private string Assemble([NotNull] Decomposition d, string[] reply, [CanBeNull] out Key gotoKey)
+		[CanBeNull] private string Assemble(string reassembly, IReadOnlyList<string> decomposed)
 	    {
-            //Cycle through the rules in order
-	        if (!_decompositionCount.ContainsKey(d))
-	            _decompositionCount[d] = 0;
-            var rule = d.Randomise
-                     ? d.Reassemblies.Random(_random)
-                     : d.Reassemblies[_decompositionCount[d] % d.Reassemblies.Count];
-	        _decompositionCount[d]++;
+	        var response = new StringBuilder(reassembly);
 
-			var lines = new string[3];
-
-            //Early exit if this is a goto rule
-	        if (Patterns.Match(rule, "goto *", lines))
+            //Find substitutions `(n)` and replace them with the correct parts from the decomposed string
+	        const string r = "\\((?<num>\\d+)\\)";
+	        Match m;
+	        do
 	        {
-	            if (_script.Keys.TryGetValue(lines[0], out gotoKey))
-	                if (gotoKey?.Keyword != null)
+	            m = Regex.Match(response.ToString(), r);
+	            if (m.Success)
+	            {
+	                if (!int.TryParse(m.Groups["num"].Value, out var n) || n > decomposed.Count)
 	                    return null;
-	            return null;
-	        }
-	        else
-	            gotoKey = null;
 
-            //Substitute synonyms
-	        var words = rule.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-	        for (var i = 0; i < words.Length; i++)
-	            if (words[i].Contains('@'))
-	                words[i] = _script.Syns.FirstOrDefault(w => w.Contains(words[i].TrimStart('@'))).Random(_random);
-	        rule = string.Join(" ", words);
+	                var replacement = decomposed[n - 1];
+	                if (replacement == null)
+	                    return null;
 
-	        var work = "";
-			while (Patterns.Match(rule, "* (#)*", lines))
-			{
-				// reassembly rule with number substitution
-				rule = lines[2];
+	                var transformed = Transform(_script.Post, replacement);
 
-                //Parse the number
-                if (!int.TryParse(lines[1], out var n))
-                {
-                    Console.WriteLine("Number is wrong in reassembly rule " + lines[1]);
-                    return null;
-                }
+	                response.Replace(m.Value, transformed, m.Index, m.Length);
+	            }
+	        } while (m.Success);
 
-                //move back from 1 based indexing to zero indexing
-			    n--;
-
-                //Check if idnex is out of range
-			    if (n < 0 || n >= reply.Length)
-					return null;
-
-				reply[n] = Transform(_script.Post, reply[n]);
-				work += lines[0] + " " + reply[n];
-			}
-
-	        work += rule;
-
-	        if (d.Memorise)
-			{
-				_mem.Push(work);
-				return null;
-			}
-			return work;
-		}
+	        return response.ToString();
+	    }
 
         #region static helpers
 	    private static string CleanInput([NotNull] string input)

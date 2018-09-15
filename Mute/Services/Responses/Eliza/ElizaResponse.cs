@@ -73,7 +73,7 @@ namespace Mute.Services.Responses.Eliza
                 {
                     var seed = message.CreatedAt.UtcTicks.GetHashCode();
                     var rand = new Random(seed);
-                    return new ElizaConversation(_scripts.RandomElement(rand), seed);
+                    return new ElizaConversation(IEnumerableExtensions.Random(_scripts, rand), seed);
                 }
                 else
                     return null;

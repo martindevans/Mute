@@ -23,9 +23,11 @@ pre: certainly yes
 pre: machine computer
 pre: computers computer
 pre: were was
-pre: you're you are
-pre: i'm i am
 pre: same alike
+pre: i'm i am
+pre: you're you are
+pre: we're we are
+pre: they're they are
 
 post: am are
 post: your my
@@ -36,6 +38,9 @@ post: i you
 post: you I
 post: my your
 post: i'm you are
+post: you're i am
+post: we're you are
+post: they're they are
 
 synon: belief feel think believe wish
 synon: family mother mom father dad sister brother wife children child
@@ -47,6 +52,7 @@ synon: everyone everybody nobody noone
 synon: be am is are was
 synon: thankyou thanks ty
 synon: hello hi howdy hiya heya
+synon: fight wrestle
 
 key: xnone
   decomp: *
@@ -56,9 +62,9 @@ key: xnone
     reasmb: Do you feel strongly about discussing such things ?
 
 key: @thanks
-  decomp: * @thanks for *
-    reasmb: You're welcome for (2).
-    reasmb: Why do you thank me for (2) ?
+  decomp: *@thanks for *
+    reasmb: You're welcome for (3).
+    reasmb: Why do you thank me for (3) ?
     reasmb: That's ok.
     reasmb: Any time.
     reasmb: goto what
@@ -158,6 +164,19 @@ key: @hello
     reasmb: What seems to be the problem?
     reasmb: @hello
 
+key: @fight 10
+  decomp: ~ *you * i * @fight*
+    reasmb: I don't want to (1) you.
+    reasmb: Don't resort to violence.
+    reasmb: Don't make me hurt you.
+    reasmb: Bite me.
+  decomp: *@fight *
+    reasmb: Violence is uncalled for!
+    reasmb: You can't (2) in here, this is the war room!
+  decomp: *@fight
+    reasmb: Violence is uncalled for!
+    reasmb: You can't (2) in here, this is the war room!
+    
 key: computer 50
   decomp: *
     reasmb: Do computers worry you ?
@@ -276,7 +295,7 @@ key: i
     reasmb: That's quite interesting.
 
 key: you
-  decomp: * you remind me of *
+  decomp: *you remind me of *
     reasmb: goto alike
   decomp: *you are *
     reasmb: What makes you think I am (2) ?
@@ -419,5 +438,5 @@ key: alike 10
     reasmb: How ?
 
 key: like 10
-  decomp: * @be *like *
+  decomp: *@be *like *
     reasmb: goto alike
