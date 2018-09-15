@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 using Mute.Extensions;
 using Mute.Services.Responses.Eliza.Eliza;
 
@@ -23,8 +25,18 @@ namespace Mute.Services.Responses.Eliza
 
         private readonly IReadOnlyList<Script> _scripts;
 
-        public ElizaResponse([NotNull] Configuration config)
+        private readonly IReadOnlyList<ITopic> _topics;
+
+        public ElizaResponse([NotNull] Configuration config, IServiceProvider services)
         {
+            //Get topics
+            _topics = (from t in Assembly.GetExecutingAssembly().GetTypes()
+                       where t.IsClass
+                       where typeof(ITopic).IsAssignableFrom(t)
+                       let i = ActivatorUtilities.CreateInstance(services, t) as ITopic
+                       where i != null
+                       select i).ToArray();
+
             foreach (var path in config.ElizaConfig.Scripts)
             {
                 if (!File.Exists(path))

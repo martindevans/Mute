@@ -81,7 +81,9 @@ namespace Mute
                 .AddSingleton<SentimentService>()
                 .AddSingleton<HistoryLoggingService>()
                 .AddSingleton<ReactionSentimentTrainer>()
-                .AddSingleton<ConversationalResponseService>();
+                .AddSingleton<ConversationalResponseService>()
+                .AddSingleton<WikipediaService>()
+                .AddSingleton<TimeService>();
             
             _services = serviceCollection.BuildServiceProvider();
 
@@ -107,7 +109,7 @@ namespace Mute
             // Set presence
             if (Debugger.IsAttached)
             {
-                await _client.SetActivityAsync(new Game("Debug Mode", ActivityType.Playing));
+                await _client.SetActivityAsync(new Game("Debug Mode"));
                 await _client.SetStatusAsync(UserStatus.DoNotDisturb);
             }
             else

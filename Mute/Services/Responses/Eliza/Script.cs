@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 using Mute.Services.Responses.Eliza.Eliza;
 
@@ -10,17 +12,10 @@ namespace Mute.Services.Responses.Eliza
     public class Script
     {
         public IReadOnlyDictionary<string, Key> Keys { get; }
-
-        private readonly List<IReadOnlyList<string>> _syns = new List<IReadOnlyList<string>>();
-        public IReadOnlyList<IReadOnlyList<string>> Syns => _syns;
-
+        public IReadOnlyList<IReadOnlyList<string>> Syns { get; }
         public IReadOnlyDictionary<string, Transform> Pre { get; }
-
         public IReadOnlyDictionary<string, Transform> Post { get; }
-
-        private readonly List<string> _final = new List<string>();
-        public IReadOnlyList<string> Final => _final;
-
+        public IReadOnlyList<string> Final { get; }
         public IReadOnlyList<string> Quit { get; }
 
         public Script([NotNull] IEnumerable<string> lines)
@@ -31,10 +26,18 @@ namespace Mute.Services.Responses.Eliza
             var pre = new List<Transform>();
             var post = new List<Transform>();
             var quit = new List<string>();
+            var syns = new List<IReadOnlyList<string>>();
+            var final = new List<string>();
 
             //Parse all the lines of the script
             foreach (var line in lines)    
-                Collect(line, ref lastReasemb, ref lastDecomp, keysList, pre, post, quit);
+                ParseLine(line, ref lastReasemb, ref lastDecomp, keysList, pre, post, quit, syns, final);
+
+            Syns = syns;
+            Pre = new ReadOnlyDictionary<string, Transform>(pre.ToDictionary(a => a.Source, a => a));
+            Post = new ReadOnlyDictionary<string, Transform>(post.ToDictionary(a => a.Source, a => a));
+            Quit = quit;
+            Final = final;
 
             //Expand keys which have synonym keys
             for (var i = keysList.Count - 1; i >= 0; i--)
@@ -59,125 +62,123 @@ namespace Mute.Services.Responses.Eliza
             }
 
             Keys = new ReadOnlyDictionary<string, Key>(keysList.ToDictionary(a => a.Keyword, a => a));
-            Pre = new ReadOnlyDictionary<string, Transform>(pre.ToDictionary(a => a.Source, a => a));
-            Post = new ReadOnlyDictionary<string, Transform>(post.ToDictionary(a => a.Source, a => a));
-            Quit = quit;
+        }
+
+        private static bool DecompositionRule([NotNull] string s, ref List<Decomposition> lastDecomp, ref List<string> lastReasemb)
+        {
+            var m = Regex.Match(s, "^.*?decomp:(?<modifiers>[~\\$ ]*)(?<value>.*)$");
+            if (!m.Success)
+                return false;
+
+            if (lastDecomp != null)
+            {
+                lastReasemb = new List<string>();
+
+                var val = m.Groups["value"].Value;
+                var mod = m.Groups["modifiers"].Value;
+
+                lastDecomp.Add(new Decomposition(val, mod.Contains('$'), mod.Contains('~'), lastReasemb));
+            }
+
+            return true;
+        }
+
+        private static bool ReassemblyRule([NotNull] string s, ICollection<string> lr)
+        {
+            var m = Regex.Match(s, "^.*?reasmb:( )+(?<value>.*)$");
+            if (m.Success)
+            {
+                lr?.Add(m.Groups["value"].Value);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool KeysRule([NotNull] string s, ICollection<Key> keys, [NotNull] ref List<Decomposition> lastDecomp, ref List<string> lastReasemb)
+        {
+            var m = Regex.Match(s, "^.*?key:( )+(?<value>.*?)( )*(?<rank>\\d*)$");
+            if (!m.Success)
+                return false;
+
+            var val = m.Groups["value"].Value;
+            var rank = m.Groups["rank"].Value;
+
+            int.TryParse(rank, out var rankValue);
+
+            lastDecomp = new List<Decomposition>();
+            lastReasemb = null;
+
+            keys.Add(new Key(val, rankValue, lastDecomp));
+
+            return true;
+        }
+
+        private static bool SynonymRule([NotNull] string s, ICollection<IReadOnlyList<string>> synonyms)
+        {
+            var m = Regex.Match(s, "^.*?synon:( )+(?<value>.*)$");
+            if (!m.Success)
+                return false;
+
+            synonyms.Add(m.Groups["value"].Value.Split(' '));
+            return true;
+        }
+
+        private static bool PreRule([NotNull] string s, ICollection<Transform> pre)
+        {
+            var m = Regex.Match(s, "^.*?pre:( )+(?<a>.*?)( )+(?<b>.*?)$");
+            if (!m.Success)
+                return false;
+
+            pre.Add(new Transform(m.Groups["a"].Value, m.Groups["b"].Value));
+            return true;
+        }
+
+        private static bool PostRule([NotNull] string s, ICollection<Transform> post)
+        {
+            var m = Regex.Match(s, "^.*?post:( )+(?<a>.*?)( )+(?<b>.*?)$");
+            if (!m.Success)
+                return false;
+
+            post.Add(new Transform(m.Groups["a"].Value, m.Groups["b"].Value));
+            return true;
+        }
+
+        private static bool FinalRule([NotNull] string s, ICollection<string> final)
+        {
+            var m = Regex.Match(s, "^.*?final:( )+(?<value>.*)$");
+            if (!m.Success)
+                return false;
+
+            final.Add(m.Groups["value"].Value);
+            return true;
+        }
+
+        private static bool QuitRule([NotNull] string s, ICollection<string> quit)
+        {
+            var m = Regex.Match(s, "^.*?quit:( )+(?<value>.*)$");
+            if (!m.Success)
+                return false;
+
+            quit.Add(m.Groups["value"].Value);
+            return true;
         }
 
         /// <summary>Process a line of script input.</summary>
 		/// <remarks>Process a line of script input.</remarks>
-		private void Collect(string s, ref List<string> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit)
+		private static bool ParseLine([CanBeNull] string line, ref List<string> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, List<IReadOnlyList<string>> syns, List<string> final)
         {
-            if (string.IsNullOrWhiteSpace(s))
-                return;
+            if (string.IsNullOrWhiteSpace(line))
+                return false;
 
-			var lines = new string[4];
-			if (Patterns.Match(s, "*reasmb: *", lines))
-			{
-				if (lastReasemb == null)
-				{
-					return;
-				}
-				lastReasemb.Add(lines[1]);
-			}
-			else
-			{
-				if (Patterns.Match(s, "*decomp: *", lines))
-				{
-					if (lastDecomp == null)
-						return;
-
-				    lastReasemb = new List<string>();
-					var temp = lines[1];
-					
-				    if (Patterns.Match(temp, "$ ~ *", lines))
-				        lastDecomp.Add(new Decomposition(lines[0], true, true, lastReasemb));
-				    else if (Patterns.Match(temp, "~ *", lines))
-				        lastDecomp.Add(new Decomposition(lines[0], false, true, lastReasemb));
-				    else if (Patterns.Match(temp, "$ *", lines))
-					    lastDecomp.Add(new Decomposition(lines[0], true, false, lastReasemb));
-					else
-					    lastDecomp.Add(new Decomposition(temp, false, false, lastReasemb));
-				}
-				else
-				{
-					if (Patterns.Match(s, "*key: * #*", lines))
-					{
-						lastDecomp = new List<Decomposition>();
-						lastReasemb = null;
-						int n = 0;
-						if (lines[2].Length != 0)
-						{
-							try
-							{
-								n = int.Parse(lines[2]);
-							}
-							catch (FormatException)
-							{
-								Console.WriteLine("Number is wrong in key: " + lines[2]);
-							}
-						}
-					    keys.Add(new Key(lines[1], n, lastDecomp));
-					}
-					else
-					{
-						if (Patterns.Match(s, "*key: *", lines))
-						{
-							lastDecomp = new List<Decomposition>();
-							lastReasemb = null;
-						    keys.Add(new Key(lines[1], 0, lastDecomp));
-						}
-						else
-						{
-							if (Patterns.Match(s, "*synon: * *", lines))
-							{
-								var words = new List<string>();
-								words.Add(lines[1]);
-								s = lines[2];
-								while (Patterns.Match(s, "* *", lines))
-								{
-									words.Add(lines[0]);
-									s = lines[1];
-								}
-								words.Add(s);
-							    _syns.Add(words);
-							}
-							else
-							{
-								if (Patterns.Match(s, "*pre: * *", lines))
-								{
-								    pre.Add(new Transform(lines[1], lines[2]));
-								}
-								else
-								{
-									if (Patterns.Match(s, "*post: * *", lines))
-									{
-									    post.Add(new Transform(lines[1], lines[2]));
-									}
-									else
-									{
-										if (Patterns.Match(s, "*final: *", lines))
-										{
-										    _final.Add(lines[1]);
-										}
-										else
-										{
-											if (Patterns.Match(s, "*quit: *", lines))
-											{
-												quit.Add(lines[1]);
-											}
-											else
-											{
-												Console.WriteLine("Unrecognized input: " + s);
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+            return ReassemblyRule(line, lastReasemb)
+                   || DecompositionRule(line, ref lastDecomp, ref lastReasemb)
+                   || KeysRule(line, keys, ref lastDecomp, ref lastReasemb)
+                   || SynonymRule(line, syns)
+                   || PreRule(line, pre)
+                   || PostRule(line, post)
+                   || FinalRule(line, final)
+                   || QuitRule(line, quit);
 		}
     }
 }

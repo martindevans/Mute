@@ -15,11 +15,21 @@ namespace Mute.Services.Responses
         private readonly Random _random;
 
         public double BaseChance => 0.25;
-        public double MentionedChance => 1;
+        public double MentionedChance => 0;
 
-        private readonly List<string> _greetings = new List<string> {
-            "hello", "hi", "hiya", "heya", "howdy", "good day"
+        private static readonly IReadOnlyList<string> GeneralGreetings = new List<string> {
+            "Hello {0}", "Hi", "Hiya {0}", "Heya {0}", "Howdy {0}", "\\o", "o/", "Greetings {0}"
         };
+
+        private static readonly IReadOnlyList<string> MorningGreetings = new List<string> {
+            "Good morning {0}", "Morning"
+        };
+
+        private static readonly IReadOnlyList<string> EveningGreetings = new List<string> {
+            "Good evening {0}", "Evening"
+        };
+
+        private static readonly IReadOnlyList<string> AllGreetings = GeneralGreetings.Concat(MorningGreetings).Concat(EveningGreetings).Select(a => string.Format(a, "").Trim().ToLowerInvariant()).ToArray();
 
         public HelloResponse(Random random)
         {
@@ -28,33 +38,36 @@ namespace Mute.Services.Responses
 
         public Task<IConversation> TryRespond(IMessage message, bool containsMention)
         {
-            return Task.Run<IConversation>(() => {
+            //Determine if thie message is a greeting
+            var isGreeting = message.Content.Split(' ').Select(CleanWord).Any(AllGreetings.Contains);
 
-                //Determine if thie message is a greeting
-                var isGreeting = message.Content.Split(' ').Select(CleanWord).Any(_greetings.Contains);
+            return Task.FromResult<IConversation>(isGreeting
+                ? new HelloConversation(string.Format(ChooseGreeting(), ((SocketGuildUser)message.Author).Nickname))
+                : null
+            );
+        }
 
-                if (isGreeting)
-                    return new HelloConversation($"{RandomGreeting()} {((SocketGuildUser)message.Author).Nickname}");
-                else
-                    return null;
+        private string ChooseGreeting()
+        {
+            var hour = DateTime.UtcNow.Hour;
 
-            });
+            if (hour > 5 && hour <= 12 && _random.NextDouble() < 0.25f)
+                return MorningGreetings.Random(_random);
+
+            if (hour > 18 && hour <= 24 && _random.NextDouble() < 0.25f)
+                return EveningGreetings.Random(_random);
+
+            return GeneralGreetings.Random(_random);
         }
 
         [NotNull] private static string CleanWord([NotNull] string word)
         {
             return new string(word
                 .ToLowerInvariant()
+                .Trim()
                 .Where(c => !char.IsPunctuation(c))
                 .ToArray()
             );
-        }
-
-        [NotNull] private string RandomGreeting()
-        {
-            var g = _greetings.Random(_random);
-
-            return char.ToUpper(g[0]) + g.Substring(1);
         }
 
         private class HelloConversation
