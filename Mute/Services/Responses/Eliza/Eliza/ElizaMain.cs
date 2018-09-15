@@ -59,15 +59,21 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		        return _script.Final.Random(_random);
 		    }
 
-            //Get key for each word in the sentence, ordered by rank
-            //Get a reply for each key and take the first non-null reply
-		    return (from word in words
-		            let key = _script.Keys.GetValueOrDefault(word)
-		            where key != null
-		            orderby key.Rank descending
-		            let reply = TryKey(key, sentence)
-		            where reply != null
-		            select reply).FirstOrDefault();
+		    //Get key for each word in the sentence, ordered by rank
+		    var keys = from word in words
+		               let key = _script.Keys.GetValueOrDefault(word)
+		               where key != null
+		               orderby key.Rank descending
+		               select key;
+
+		    //Get a reply for each key
+		    var replies = from key in keys
+		                  let reply = TryKey(key, sentence)
+		                  where reply != null
+		                  select reply;
+
+		    //take the first non-null reply
+		    return replies.FirstOrDefault();
 		}
 
 		/// <summary>Decompose a string according to the given key.</summary>
@@ -228,7 +234,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 	        foreach (var character in "@#$%^&*()_-+=~`{[}]|:;<>\\\"")
 	            builder.Replace(character, ' ');
 
-	        foreach (var c in ",?!")
+	        foreach (var c in ",?!-")
 	            builder.Replace(c, '.');
 
 	        Compress(builder);
