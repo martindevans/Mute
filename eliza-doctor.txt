@@ -28,6 +28,8 @@ pre: i'm i am
 pre: you're you are
 pre: we're we are
 pre: they're they are
+pre: what's what is
+pre: who's who is
 
 post: am are
 post: your my

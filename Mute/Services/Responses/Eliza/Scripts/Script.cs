@@ -4,23 +4,24 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
-using Mute.Services.Responses.Eliza.Eliza;
+using Mute.Services.Responses.Eliza.Engine;
 
-namespace Mute.Services.Responses.Eliza
+namespace Mute.Services.Responses.Eliza.Scripts
 {
     public class Script
     {
-        public IReadOnlyDictionary<string, Key> Keys { get; }
+        private readonly IReadOnlyDictionary<string, IReadOnlyList<Key>> _keys;
+
         public IReadOnlyList<IReadOnlyCollection<string>> Syns { get; }
         public IReadOnlyDictionary<string, Transform> Pre { get; }
         public IReadOnlyDictionary<string, Transform> Post { get; }
         public IReadOnlyList<string> Final { get; }
         public IReadOnlyList<string> Quit { get; }
 
-        public Script([NotNull] IEnumerable<string> lines)
+        public Script([NotNull] IEnumerable<string> lines, [NotNull] IEnumerable<IKeyProvider> keyProviders)
         {
             List<Decomposition> lastDecomp = null;
-            List<string> lastReasemb = null;
+            List<IReassembly> lastReasemb = null;
             var keysList = new List<Key>();
             var pre = new List<Transform>();
             var post = new List<Transform>();
@@ -38,13 +39,32 @@ namespace Mute.Services.Responses.Eliza
             Quit = quit;
             Final = final;
 
-            // Expand `@foo` in the keyword position into N rules, one for each synonym of `foo`
-            DuplicateSynonymKeys(keysList);
+            //Get keys from all external providers
+            keysList.AddRange(keyProviders.SelectMany(kp => kp.Keys));
 
-            Keys = new ReadOnlyDictionary<string, Key>(keysList.ToDictionary(a => a.Keyword, a => a));
+            // Expand `@foo` in the keyword position into N rules, one for each synonym of `foo`
+            ExpandSynonymKeys(keysList, syns);
+
+            _keys = new ReadOnlyDictionary<string, IReadOnlyList<Key>>((
+                from key in keysList
+                group key by key.Keyword
+                into kgroup
+                select kgroup).ToDictionary(a => a.Key, a => (IReadOnlyList<Key>)a.ToArray()
+            ));
         }
-        
-        private void DuplicateSynonymKeys([NotNull] IList<Key> keysList)
+
+        [NotNull] public IEnumerable<Key> GetKeys(string keyword)
+        {
+            //Get keys from script
+            if (!_keys.TryGetValue(keyword, out var results))
+                return Array.Empty<Key>();
+            else
+                return results;
+
+        }
+
+        #region parsing
+        private static void ExpandSynonymKeys([NotNull] IList<Key> keysList, IReadOnlyList<IReadOnlyCollection<string>> syns)
         {
             for (var i = keysList.Count - 1; i >= 0; i--)
             {
@@ -58,7 +78,7 @@ namespace Mute.Services.Responses.Eliza
 
                 //Find synonyms of keyword
                 var kw = k.Keyword.Substring(1);
-                var synonyms = Syns.FirstOrDefault(a => a.Contains(kw));
+                var synonyms = syns.FirstOrDefault(a => a.Contains(kw));
                 if (synonyms == null)
                     continue;
 
@@ -68,7 +88,7 @@ namespace Mute.Services.Responses.Eliza
             }
         }
 
-        private static bool DecompositionRule([NotNull] string s, ref List<Decomposition> lastDecomp, ref List<string> lastReasemb)
+        private static bool DecompositionRule([NotNull] string s, ref List<Decomposition> lastDecomp, ref List<IReassembly> lastReasemb)
         {
             var m = Regex.Match(s, "^.*?decomp:(?<modifiers>[~\\$ ]*)(?<value>.*)$");
             if (!m.Success)
@@ -76,7 +96,7 @@ namespace Mute.Services.Responses.Eliza
 
             if (lastDecomp != null)
             {
-                lastReasemb = new List<string>();
+                lastReasemb = new List<IReassembly>();
 
                 var val = m.Groups["value"].Value;
                 var mod = m.Groups["modifiers"].Value;
@@ -87,19 +107,19 @@ namespace Mute.Services.Responses.Eliza
             return true;
         }
 
-        private static bool ReassemblyRule([NotNull] string s, ICollection<string> lr)
+        private static bool ReassemblyRule([NotNull] string s, List<IReassembly> lr)
         {
             var m = Regex.Match(s, "^.*?reasmb:( )+(?<value>.*)$");
             if (m.Success)
             {
-                lr?.Add(m.Groups["value"].Value);
+                lr?.Add(new ConstantReassembly(m.Groups["value"].Value));
                 return true;
             }
 
             return false;
         }
 
-        private static bool KeysRule([NotNull] string s, ICollection<Key> keys, [NotNull] ref List<Decomposition> lastDecomp, ref List<string> lastReasemb)
+        private static bool KeysRule([NotNull] string s, ICollection<Key> keys, [NotNull] ref List<Decomposition> lastDecomp, ref List<IReassembly> lastReasemb)
         {
             var m = Regex.Match(s, "^.*?key:( )+(?<value>.*?)( )*(?<rank>\\d*)$");
             if (!m.Success)
@@ -170,7 +190,7 @@ namespace Mute.Services.Responses.Eliza
 
         /// <summary>Process a line of script input.</summary>
 		/// <remarks>Process a line of script input.</remarks>
-		private static bool ParseLine([CanBeNull] string line, ref List<string> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, List<HashSet<string>> syns, List<string> final)
+		private static bool ParseLine([CanBeNull] string line, ref List<IReassembly> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, List<HashSet<string>> syns, List<string> final)
         {
             if (string.IsNullOrWhiteSpace(line))
                 return false;
@@ -184,5 +204,6 @@ namespace Mute.Services.Responses.Eliza
                    || FinalRule(line, final)
                    || QuitRule(line, quit);
 		}
+        #endregion
     }
 }

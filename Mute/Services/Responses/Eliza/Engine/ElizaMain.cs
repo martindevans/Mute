@@ -1,6 +1,3 @@
-// class translated from Java
-// Credit goes to Charles Hayden http://www.chayden.net/eliza/Eliza.html
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,13 +5,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 using Mute.Extensions;
+using Mute.Services.Responses.Eliza.Scripts;
 
-namespace Mute.Services.Responses.Eliza.Eliza
+namespace Mute.Services.Responses.Eliza.Engine
 {
 	public sealed class ElizaMain
 	{
 	    private readonly Script _script;
-	    private readonly Key _xnone;
+	    private readonly IReadOnlyList<Key> _xnone;
 	    private readonly Random _random;
 	    private readonly Stack<string> _mem = new Stack<string>();
 	    private readonly Dictionary<Decomposition, int> _decompositionCount = new Dictionary<Decomposition, int>();
@@ -26,7 +24,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		    _random = new Random(seed);
 		    _script = script;
 
-		    _script.Keys.TryGetValue("xnone", out _xnone);
+		    _xnone = _script.GetKeys("xnone").ToArray();
 		}
 
 	    [NotNull] public string ProcessInput(string input)
@@ -35,7 +33,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 
             return ProcessSentences(input)      //Try to create a reply to one of the sentences of the input
                 ?? _mem.PopOrDefault()          //Fall back to a reply we saved earlier
-                ?? TryKey(_xnone, input)     //Make a default reply
+                ?? TryKey(_xnone.Random(_random), input)     //Make a default reply
                 ?? "I am at a loss for words";  //Return default default
 	    }
 
@@ -43,7 +41,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 	    {
 	        return (from sentence in input.Split('.', StringSplitOptions.RemoveEmptyEntries)
                     let transformed = Transform(_script.Pre, sentence).Trim()
-	                let r = Sentence(sentence)
+	                let r = Sentence(transformed)
 	                where r != null
 	                select r).FirstOrDefault();
 	    }
@@ -62,7 +60,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 
 		    //Get key for each word in the sentence, ordered by rank
 		    var keys = from word in words
-		               let key = _script.Keys.GetValueOrDefault(word)
+                       from key in _script.GetKeys(word)
 		               where key != null
 		               orderby key.Rank descending
 		               select key;
@@ -84,13 +82,17 @@ namespace Mute.Services.Responses.Eliza.Eliza
 		/// fails, try another decomposition rule. If assembly is a goto rule, return
 		/// null and give the key. If assembly succeeds, return the reply;
 		/// </remarks>
-		[CanBeNull] private string TryKey([NotNull] Key key, string sentence)
+		[CanBeNull] private string TryKey([CanBeNull] Key key, string sentence)
 		{
+		    if (key == null)
+		        return null;
+
             //Select reassembly rules which match the input
 		    var decompositions = from decomp in key.Decompositions
 		                         let decomposed = Patterns.Match(sentence, decomp.Pattern, _script.Syns)
 		                         where decomposed != null
-                                 let rule = ChooseReassembly(decomp)
+                                 let rule = ChooseReassembly(decomp).Rule(decomposed)
+                                 where !string.IsNullOrWhiteSpace(rule)
 		                         select (decomp, rule, decomposed);
 
             foreach (var (decomposition, rule, decomposed) in decompositions)
@@ -98,10 +100,12 @@ namespace Mute.Services.Responses.Eliza.Eliza
                 //If it's a goto rule follow it
                 if (rule.StartsWith("goto "))
                 {
-                    if (_script.Keys.TryGetValue(rule.Substring(5), out var gotoKey))
-                        return TryKey(gotoKey, sentence);
-                    else
-                        return null;
+                    var gotos = _script.GetKeys(rule.Substring(5));
+                    return (from g in gotos
+                            orderby g.Rank descending
+                            let r = TryKey(g, sentence)
+                            where r != null
+                            select r).FirstOrDefault();
                 }
 
                 //Try to assemble a reply using this reassembly rule
@@ -118,7 +122,7 @@ namespace Mute.Services.Responses.Eliza.Eliza
 			return null;
 		}
 
-	    private string ChooseReassembly([NotNull] Decomposition d)
+	    private IReassembly ChooseReassembly([NotNull] Decomposition d)
 	    {
 	        //Initialize index for this rule if it's not already set
 	        if (!_decompositionCount.ContainsKey(d))
@@ -201,11 +205,14 @@ namespace Mute.Services.Responses.Eliza.Eliza
 
 	    [NotNull] private static string Transform([NotNull] IReadOnlyDictionary<string, Transform> transformations, [NotNull] string s)
 	    {
-	        return string.Join(" ",
-	            from word in s.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-	            let tx = transformations.GetValueOrDefault(word)?.Destination ?? word
-	            select tx
-	        );
+	        var txs = from word in s.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+	                  let tx = transformations.GetValueOrDefault(word)
+	                  select (word, tx);
+
+	        var result = from tx in txs
+	                     select tx.Item2?.Destination ?? tx.Item1;
+
+	        return string.Join(" ", result);
 	    }
         #endregion
 

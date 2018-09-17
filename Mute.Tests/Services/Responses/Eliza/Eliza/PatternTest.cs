@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Mute.Services.Responses.Eliza.Eliza;
+using Mute.Services.Responses.Eliza.Engine;
 
 namespace Mute.Tests.Services.Responses.Eliza.Eliza
 {

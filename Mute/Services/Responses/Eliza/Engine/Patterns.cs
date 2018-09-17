@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 
-namespace Mute.Services.Responses.Eliza.Eliza
+namespace Mute.Services.Responses.Eliza.Engine
 {
     /// <summary>
     /// Decompose strings according to patterns

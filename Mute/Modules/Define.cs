@@ -1,47 +1,64 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Discord.Addons.Interactive;
 using Discord.Commands;
-using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
-using Mute.Services.Responses.Eliza.Eliza;
+using Mute.Services.Responses.Eliza.Topics;
 
 namespace Mute.Modules
 {
     public class Define
-        : ModuleBase, ITopic
+        : InteractiveBase //, ITopic
     {
         private readonly WikipediaService _wikipedia;
-        private readonly TimeService _time;
 
-        public Define(WikipediaService wiki, TimeService time)
+        public Define(WikipediaService wiki)
         {
             _wikipedia = wiki;
-            _time = time;
         }
 
         [Command("define"), Summary("I will briefly explain what a thing is")]
         public async Task DefineAsync([Remainder] string thing)
         {
-            var definition = await _wikipedia.GetDefinition(thing, 3);
-            await this.TypingReplyAsync(definition ?? "I don't know what that is");
-        }
+            var definition = await _wikipedia.SearchData(thing);
 
-        [Command("time"), Summary("I will tell you the time")]
-        public async Task TimeAsync([CanBeNull] string tz = null)
-        {
-            var time = DateTime.UtcNow;
+            var count = definition?.Search?.Count ?? 0;
 
-            if (tz != null)
+            if (count == 0)
             {
-                var t = _time.TimeNow(tz);
-                if (t == null)
-                    await this.TypingReplyAsync("Unknown time zone. Assuming Zulu (UTC)");
-                else
-                    time = t.Value;
+                await this.TypingReplyAsync("I don't know anything about that, sorry");
             }
+            else if (count == 1)
+            {
+                await this.TypingReplyAsync(definition.Search.Single().Description);
+            }
+            else
+            {
+                await this.TypingReplyAsync($"I have found {count} possible items, could you be more specific?");
 
-            await this.TypingReplyAsync($"The time is {time}");
+                var r = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                if (r == null)
+                    return;
+
+                var rr = r.Content.ToLowerInvariant();
+                if (rr.Contains("list") || rr.Contains("what"))
+                {
+                    foreach (var item in definition.Search)
+                        await this.TypingReplyAsync($" - {item.Description ?? item.Title ?? item.Label} ([{item.Id}]({item.Uri}))");
+                }
+            }
         }
+
+        /* #region conversation
+        public IEnumerable<string> Keywords => new[] { "define" };
+
+        public ITopicDiscussion TryOpen(IUtterance message)
+        {
+            return new SingleMessageContext("`Define` context is not implemented yet, sorry :(");
+        }
+        #endregion */
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Mute.Services
 {
@@ -49,9 +48,29 @@ namespace Mute.Services
             new MiliaryTz("Zulu", 'Z', 0),
         };
 
+        private static readonly Dictionary<string, char> Abbreviations = new Dictionary<string, char> {
+            { "UTC", 'Z' },
+            { "GMT", 'Z' },
+            { "BST", 'A' },
+            { "CET", 'A' },
+            { "CEST", 'A' },
+            { "EST", 'R' },
+            { "EDT", 'Q' },
+            { "CST", 'S' },
+            { "CDT", 'R' },
+            { "PST", 'U' },
+            { "PDT", 'T' }
+        };
+
         public DateTime? TimeNow(string tzid)
         {
             var tz = Timezones.SingleOrDefault(t => t.Name.Equals(tzid, StringComparison.InvariantCultureIgnoreCase) || t.Letter.ToString().Equals(tzid, StringComparison.InvariantCultureIgnoreCase));
+            if (tz == null)
+            {
+                if (Abbreviations.TryGetValue(tzid.ToUpperInvariant(), out var code))
+                    tz = Timezones.SingleOrDefault(t => t.Letter.Equals(code));
+            }
+
             if (tz == null)
                 return null;
 

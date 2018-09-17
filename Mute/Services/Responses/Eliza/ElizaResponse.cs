@@ -9,7 +9,8 @@ using Discord;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Extensions;
-using Mute.Services.Responses.Eliza.Eliza;
+using Mute.Services.Responses.Eliza.Engine;
+using Mute.Services.Responses.Eliza.Scripts;
 
 namespace Mute.Services.Responses.Eliza
 {
@@ -25,17 +26,25 @@ namespace Mute.Services.Responses.Eliza
 
         private readonly IReadOnlyList<Script> _scripts;
 
-        private readonly IReadOnlyList<ITopic> _topics;
+        //private readonly IReadOnlyList<ITopic> _topics;
 
         public ElizaResponse([NotNull] Configuration config, IServiceProvider services)
         {
-            //Get topics
-            _topics = (from t in Assembly.GetExecutingAssembly().GetTypes()
-                       where t.IsClass
-                       where typeof(ITopic).IsAssignableFrom(t)
-                       let i = ActivatorUtilities.CreateInstance(services, t) as ITopic
-                       where i != null
-                       select i).ToArray();
+            ////Get topics
+            //_topics = (from t in Assembly.GetExecutingAssembly().GetTypes()
+            //           where t.IsClass
+            //           where typeof(ITopic).IsAssignableFrom(t)
+            //           let i = ActivatorUtilities.CreateInstance(services, t) as ITopic
+            //           where i != null
+            //           select i).ToArray();
+
+            //Get extra keys
+            var keys = (from t in Assembly.GetExecutingAssembly().GetTypes()
+                        where t.IsClass
+                        where typeof(IKeyProvider).IsAssignableFrom(t)
+                        let kp = ActivatorUtilities.CreateInstance(services, t) as IKeyProvider
+                        where kp != null
+                       select kp).ToArray();
 
             foreach (var path in config.ElizaConfig.Scripts)
             {
@@ -49,7 +58,7 @@ namespace Mute.Services.Responses.Eliza
                 var scripts = new List<Script>();
                 try
                 {
-                    scripts.Add(new Script(txt));
+                    scripts.Add(new Script(txt, keys));
                 }
                 catch (Exception e)
                 {
