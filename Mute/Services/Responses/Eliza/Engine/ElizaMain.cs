@@ -11,6 +11,9 @@ namespace Mute.Services.Responses.Eliza.Engine
 {
 	public sealed class ElizaMain
 	{
+        private readonly HashSet<char> _replaceWithSpace = new HashSet<char>("<>#$%^&*()_-+=~`{[}]|:;\\\"");
+	    private readonly HashSet<char> _replaceWithDot = new HashSet<char>(".?!-");
+
 	    private readonly Script _script;
 	    private readonly IReadOnlyList<Key> _xnone;
 	    private readonly Random _random;
@@ -174,12 +177,12 @@ namespace Mute.Services.Responses.Eliza.Engine
 	    }
 
         #region static helpers
-	    private static string CleanInput([NotNull] string input)
+	    private string CleanInput([NotNull] string input)
 	    {
-	        void Compress(StringBuilder str)
+	        StringBuilder Compress(StringBuilder str)
 	        {
 	            if (str.Length == 0)
-	                return;
+	                return str;
 
 	            //Keep replacing runs of 2 spaces with a single space until we don't do any more
 	            int l;
@@ -188,19 +191,44 @@ namespace Mute.Services.Responses.Eliza.Engine
 	                l = str.Length;
 	                str.Replace("  ", " ");
 	            } while (l != str.Length);
+
+	            return str;
 	        }
 
-	        var builder = new StringBuilder(input.ToLowerInvariant());
+	        var builder = new StringBuilder(input.Length);
 
-	        foreach (var character in "@#$%^&*()_-+=~`{[}]|:;<>\\\"")
-	            builder.Replace(character, ' ');
+	        for (var i = 0; i < input.Length; i++)
+	        {
+	            var c = input[i];
 
-	        foreach (var c in ",?!-")
-	            builder.Replace(c, '.');
+                if (c == '<')
+                {
+                    if (input.Length > i + 2)
+                    {
+                        var next = input[i + 1];
+                        if (next == '@' || next == '#')
+                        {
+                            while (i < input.Length && input[i] != '>')
+                            {
+                                builder.Append(input[i]);
+                                i++;
+                            }
+                            builder.Append('>');
+                            continue;
+                        }
+                    }
 
-	        Compress(builder);
+                    builder.Append(' ');
+                }
+	            else if (_replaceWithSpace.Contains(c))
+	                builder.Append(' ');
+                else if (_replaceWithDot.Contains(c))
+                    builder.Append('.');
+                else
+                    builder.Append(char.ToLowerInvariant(c));
+	        }
 
-	        return builder.ToString();
+	        return Compress(builder).ToString();
 	    }
 
 	    [NotNull] private static string Transform([NotNull] IReadOnlyDictionary<string, Transform> transformations, [NotNull] string s)

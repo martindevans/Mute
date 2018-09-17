@@ -1,28 +1,25 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using JetBrains.Annotations;
 using Mute.Extensions;
+using Mute.Services.Responses.Eliza;
+using Mute.Services.Responses.Eliza.Engine;
 
 namespace Mute.Modules
 {
     public class UserInfo
-        : ModuleBase
+        : ModuleBase, IKeyProvider
     {
         private readonly DiscordSocketClient _client;
 
         public UserInfo(DiscordSocketClient client)
         {
             _client = client;
-        }
-
-        [Command("introduce"), Summary("I will introduce myself")]
-        [RequireOwner]
-        public async Task Intro(string _)
-        {
-            await this.TypingReplyAsync("Hello everyone, I'm *Mute");
-            await this.TypingReplyAsync("The * means I'm an AI, I hope you won't hold that against me though");
-            await this.TypingReplyAsync("I don't really know what I'm doing here yet...");
         }
 
         [Command("userid"), Summary("I will type out the ID of the specified user")]
@@ -34,24 +31,53 @@ namespace Mute.Modules
         }
 
         [Command("whois"), Summary("I will print out a summary of information about the given user")]
-        public async Task Whois(IUser user = null)
+        public async Task Whois([CanBeNull] IUser user = null)
         {
-            user = user ?? Context.User;
+            await this.TypingReplyAsync(GetUserInfo(user ?? Context.User));
+        }
 
-            var str = $"{user.Username}";
+        private string GetUserInfo(string userid)
+        {
+            if (!MentionUtils.TryParseUser(userid, out var id))
+                return "I don't know who that is";
+
+            var users = (from g in _client.Guilds
+                         let gu = g.GetUser(id)
+                         select gu).ToArray();
+
+            if (users.Length == 1)
+                return GetUserInfo(users.Single());
+            else
+                return GetUserInfo(_client.GetUser(id));
+        }
+
+        private string GetUserInfo([NotNull] IUser user)
+        {
+            var str = new StringBuilder($"{user.Username}");
 
             var gu = user as IGuildUser;
 
             if (gu?.Nickname != null)
-                str += $" AKA {gu.Nickname}";
+                str.Append($" AKA {gu.Nickname}");
 
             if (user.IsBot && !user.Username.StartsWith('*'))
-                str += " is a bot";
+                str.Append(" is a bot");
 
             if (gu?.Activity != null)
-                str += $" ({gu.Activity.Type} {gu.Activity.Name})";
+                str.Append($" ({gu.Activity.Type} {gu.Activity.Name})");
 
-            await this.TypingReplyAsync(str);
+            return str.ToString();
+        }
+
+        public IEnumerable<Key> Keys
+        {
+            get
+            {
+                yield return new Key("who", 10,
+                    new Decomposition("who is *", false, true, d => GetUserInfo(d[0])),
+                    new Decomposition("who * is *", false, true, d => GetUserInfo(d[1]))
+                );
+            }
         }
     }
 }

@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Extensions;
+using Mute.Services.Responses.Eliza;
+using Mute.Services.Responses.Eliza.Engine;
 
 namespace Mute.Modules
 {
     public class Dice
-        : ModuleBase
+        : ModuleBase, IKeyProvider
     {
         private readonly RNGCryptoServiceProvider _random = new RNGCryptoServiceProvider();
 
@@ -73,22 +75,15 @@ namespace Mute.Modules
         }
 
         [Command("roll"), Alias("dice"), Summary("I will roll a dice")]
-        public async Task Roll(byte max = 6)
+        public async Task RollCmd(byte max = 6)
         {
-            var value = Random(max);
-
-            await this.TypingReplyAsync(value.ToString());
+            await this.TypingReplyAsync(Roll(max));
         }
 
         [Command("flip"), Summary("I will flip a coin")]
-        public async Task Flip()
+        public async Task FlipCmd()
         {
-            var r = Random(2);
-
-            if (r == 1)
-                await this.TypingReplyAsync("Heads");
-            else
-                await this.TypingReplyAsync("Tails");
+            await this.TypingReplyAsync(Flip());
         }
 
         [Command("8ball"), Summary("I will reach into the hazy mists of the future to determine the truth")]
@@ -100,9 +95,53 @@ namespace Mute.Modules
                 return;
             }
 
+            await this.TypingReplyAsync(Magic8Ball());
+        }
+
+        [NotNull] private string Flip()
+        {
+            var r = Random(2);
+
+            if (r == 1)
+                return "Heads";
+            else
+                return "Tails";
+        }
+
+        [CanBeNull] private string Roll(string sides)
+        {
+            if (!byte.TryParse(sides, out var value))
+                return null;
+            return Roll(value);
+        }
+
+        [NotNull] private string Roll(byte sides)
+        {
+            return Random(sides).ToString();
+        }
+
+        [NotNull] private string Magic8Ball()
+        {
             var index = Random(20) - 1;
-            var choice = Ball8Replies[index];
-            await this.TypingReplyAsync(choice);
+            return Ball8Replies[index];
+        }
+
+        public IEnumerable<Key> Keys
+        {
+            get
+            {
+                yield return new Key("flip", 10,
+                    new Decomposition("*", false, true, d => Flip())
+                );
+
+                yield return new Key("roll", 10,
+                    new Decomposition("*roll *#*", false, true, d => Roll(d[2]))
+                );
+
+                yield return new Key("8ball", 10,
+                    new Decomposition("*8ball *", false, true, d => Magic8Ball())
+                );
+            }
         }
     }
 }
