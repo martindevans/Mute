@@ -59,7 +59,10 @@ namespace Mute.Services
             { "CST", 'S' },
             { "CDT", 'R' },
             { "PST", 'U' },
-            { "PDT", 'T' }
+            { "PDT", 'T' },
+            { "HKT", 'H' },
+            { "HKST", 'I' },
+            { "JST", 'I' }
         };
 
         public DateTime? TimeNow(string tzid)
