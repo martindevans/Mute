@@ -40,11 +40,11 @@ namespace Mute.Modules
                 if (!result.IsValid)
                     error = result.ErrorMessage;
                 else if (result.Value < DateTime.UtcNow)
-                    error = PastValueErrorMessage;
+                    error = PastValueErrorMessage.Replace("$moment$", result.Value.ToString(CultureInfo.InvariantCulture));
 
                 if (error != null)
                 {
-                    var msg = await this.TypingReplyAsync(result.ErrorMessage);
+                    var msg = await this.TypingReplyAsync(error);
                     if (_random.NextDouble() < 0.05f)
                         await msg.AddReactionAsync(EmojiLookup.Confused);
                 }
@@ -71,6 +71,17 @@ namespace Mute.Modules
         #region parsing
         [NotNull] private static Extraction ValidateAndExtract(string input, string culture)
         {
+            TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
+            {
+                if (values.TryGetValue("utcOffsetMins", out var utcOff))
+                {
+                    var offset = int.Parse(utcOff);
+                    return -TimeSpan.FromMinutes(offset);
+                }
+
+                return TimeSpan.Zero;
+            }
+
             Extraction Extract()
             {
                 // Get DateTime for the specified culture
@@ -81,43 +92,36 @@ namespace Mute.Modules
                 if (dt == null)
                     return null;
 
-                var resolutionValues = (IList<Dictionary<string, string>>)dt.Resolution["values"];
+                var resolutionValues = ((IList<Dictionary<string, string>>)dt.Resolution["values"])?.FirstOrDefault();
+                if (resolutionValues == null)
+                    return null;
 
                 //The time result could be one of several types
                 var subType = dt.TypeName.Split('.').Last();
 
                 //Check if it's a date/time, but not a range
-                if (subType.Contains("date") && !subType.Contains("range"))
+                if ((subType.Contains("date") && !subType.Contains("range")) || subType.Contains("time"))
                 {
-                    var moment = resolutionValues.Select(v => DateTime.Parse(v["value"])).FirstOrDefault();
-                    return new Extraction {IsValid = true, Value = moment};
+                    if (!resolutionValues.TryGetValue("value", out var value))
+                        return null;
+
+                    if (!DateTime.TryParse(value, out var moment))
+                        return null;
+
+                    moment += ApplyTimezone(resolutionValues);
+                    return new Extraction { IsValid = true, Value = moment };
                 }
 
                 //Check if it's a range of times, in which case return the start of the range
                 if (subType.Contains("date") && subType.Contains("range"))
                 {
-                    var from = DateTime.Parse(resolutionValues.First()["start"]);
-
-                    return new Extraction {IsValid = true, Value = from};
-                }
-
-                //Check if it's just a plain time
-                if (subType.Contains("time"))
-                {
-                    var values = resolutionValues.FirstOrDefault();
-                    if (values == null)
+                    if (!resolutionValues.TryGetValue("start", out var value))
                         return null;
 
-                    if (!values.TryGetValue("value", out var value))
+                    if (!DateTime.TryParse(value, out var moment))
                         return null;
 
-                    var moment = DateTime.Parse(value);
-
-                    if (values.TryGetValue("utcOffsetMins", out var utcOff))
-                    {
-                        var offset = int.Parse(utcOff);
-                        moment -= TimeSpan.FromMinutes(offset);
-                    }
+                    moment += ApplyTimezone(resolutionValues);
 
                     return new Extraction {IsValid = true, Value = moment};
                 }
