@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Mute.Extensions;
@@ -8,6 +9,8 @@ using Mute.Services;
 using Humanizer;
 using Humanizer.Localisation;
 using JetBrains.Annotations;
+using Microsoft.Recognizers.Text;
+using Microsoft.Recognizers.Text.DateTime;
 
 namespace Mute.Modules
 {
@@ -17,6 +20,9 @@ namespace Mute.Modules
         private readonly ReminderService _reminder;
         private readonly Random _random;
 
+        private const string PastValueErrorMessage = "I'm sorry, but $moment$ is in the past.";
+        private const string CannotParseErrorMessage = "That doesn't seem to be a valid date and time.";
+
         public Reminders(ReminderService reminder, Random random)
         {
             _reminder = reminder;
@@ -24,35 +30,37 @@ namespace Mute.Modules
         }
 
         [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder")]
-        public async Task CreateReminder([CanBeNull] string time, [CanBeNull, Remainder] string message = null)
+        public async Task CreateReminder([CanBeNull, Remainder] string message)
         {
             try
             {
-                var parsed = time == null ? null : TryParse(time);
-                if (!parsed.HasValue)
-                {
-                    await this.TypingReplyAsync("I don't understand that time format. Use e.g. '3d2h4m12s'");
-                    return;
-                }
+                var result = ValidateAndExtract(message, Culture.EnglishOthers);
 
-                if (parsed.Value.Ticks < 0)
-                {
-                    var msg = await this.TypingReplyAsync($"You want me to remind you {parsed.Value.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} in the past?");
+                string error = null;
+                if (!result.IsValid)
+                    error = result.ErrorMessage;
+                else if (result.Value < DateTime.UtcNow)
+                    error = PastValueErrorMessage;
 
+                if (error != null)
+                {
+                    var msg = await this.TypingReplyAsync(result.ErrorMessage);
                     if (_random.NextDouble() < 0.05f)
-                        await msg.AddReactionAsync(EmojiLookup.Thinking);
-
-                    return;
+                        await msg.AddReactionAsync(EmojiLookup.Confused);
                 }
+                else
+                {
 
-                await this.TypingReplyAsync($"I will remind you in {parsed.Value.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)}");
+                    var triggerTime = result.Value;
+                    var duration = triggerTime - DateTime.UtcNow;
 
-                var triggerTime = DateTime.UtcNow + parsed.Value;
+                    await this.TypingReplyAsync($"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)}");
 
-                //Add some context to the message
-                message = $"{Context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerTime, culture: CultureInfo.GetCultureInfo("en-gn"))}: `{message}`";
+                    //Add some context to the message
+                    message = $"{Context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerTime, culture: CultureInfo.GetCultureInfo("en-gn"))}: `remind me {message}`";
 
-                await _reminder.Create(triggerTime, message, Context.Message.Channel.Id);
+                    await _reminder.Create(triggerTime, message, Context.Message.Channel.Id);
+                }
             }
             catch (Exception e)
             {
@@ -60,49 +68,79 @@ namespace Mute.Modules
             }
         }
 
-        private static TimeSpan? TryParse([NotNull] string str)
+        #region parsing
+        [NotNull] private static Extraction ValidateAndExtract(string input, string culture)
         {
-            var match = Regex.Match(str, "^((?<days>-?[0-9]+)d)?((?<hours>-?[0-9]+)h)?((?<mins>-?[0-9]+)m)?((?<secs>-?[0-9]+)s)?$");
+            Extraction Extract()
+            {
+                // Get DateTime for the specified culture
+                var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview, DateTime.UtcNow);
 
-            if (!match.Success)
+                //Try to get the date/time
+                var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2"));
+                if (dt == null)
+                    return null;
+
+                var resolutionValues = (IList<Dictionary<string, string>>)dt.Resolution["values"];
+
+                //The time result could be one of several types
+                var subType = dt.TypeName.Split('.').Last();
+
+                //Check if it's a date/time, but not a range
+                if (subType.Contains("date") && !subType.Contains("range"))
+                {
+                    var moment = resolutionValues.Select(v => DateTime.Parse(v["value"])).FirstOrDefault();
+                    return new Extraction {IsValid = true, Value = moment};
+                }
+
+                //Check if it's a range of times, in which case return the start of the range
+                if (subType.Contains("date") && subType.Contains("range"))
+                {
+                    var from = DateTime.Parse(resolutionValues.First()["start"]);
+
+                    return new Extraction {IsValid = true, Value = from};
+                }
+
+                //Check if it's just a plain time
+                if (subType.Contains("time"))
+                {
+                    var values = resolutionValues.FirstOrDefault();
+                    if (values == null)
+                        return null;
+
+                    if (!values.TryGetValue("value", out var value))
+                        return null;
+
+                    var moment = DateTime.Parse(value);
+
+                    if (values.TryGetValue("utcOffsetMins", out var utcOff))
+                    {
+                        var offset = int.Parse(utcOff);
+                        moment -= TimeSpan.FromMinutes(offset);
+                    }
+
+                    return new Extraction {IsValid = true, Value = moment};
+                }
+
                 return null;
-
-            var days = match.Groups["days"];
-            var hours = match.Groups["hours"];
-            var mins = match.Groups["mins"];
-            var secs = match.Groups["secs"];
-
-            var result = TimeSpan.Zero;
-
-            if (days.Success && days.Captures.Count > 0)
-            {
-                if (!int.TryParse(days.Captures[0].Value, out var d))
-                    return null;
-                result += TimeSpan.FromDays(d);
             }
 
-            if (hours.Success && hours.Captures.Count > 0)
+            return Extract() ?? new Extraction
             {
-                if (!int.TryParse(hours.Captures[0].Value, out var h))
-                    return null;
-                result += TimeSpan.FromHours(h);
-            }
-
-            if (mins.Success && mins.Captures.Count > 0)
-            {
-                if (!int.TryParse(mins.Captures[0].Value, out var m))
-                    return null;
-                result += TimeSpan.FromMinutes(m);
-            }
-
-            if (secs.Success && secs.Captures.Count > 0)
-            {
-                if (!int.TryParse(secs.Captures[0].Value, out var s))
-                    return null;
-                result += TimeSpan.FromSeconds(s);
-            }
-
-            return result;
+                IsValid = false,
+                Value = DateTime.MinValue,
+                ErrorMessage = CannotParseErrorMessage
+            };
         }
+
+        private class Extraction
+        {
+            public bool IsValid { get; set; }
+
+            public DateTime Value { get; set; }
+
+            public string ErrorMessage { get; set; }
+        }
+        #endregion
     }
 }

@@ -71,7 +71,7 @@ namespace Mute.Services
                 Console.WriteLine($"Loaded {_notifications.Count} reminders from database");
         }
 
-        public async Task Create(DateTime utcTime, string message, ulong channelId)
+        public async Task<string> Create(DateTime utcTime, string message, ulong channelId)
         {
             var id = unchecked((uint)_random.Next()).MeaninglessString();
 
@@ -101,6 +101,8 @@ namespace Mute.Services
 
             //awake thread
             _event.Set();
+
+            return id;
         }
 
         private async Task ThreadEntry()
