@@ -29,18 +29,19 @@ namespace Mute
         private readonly Configuration _config;
 
         #region static main
-        private static void Main(string[] args) 
+        private static void Main([NotNull] string[] args)
         {
             //Sanity check config file exists and early exit
-            if (!File.Exists("config.json"))
+            var configPath = args.Length < 1 ? "config.json" : args[0];
+            if (!File.Exists(configPath))
             {
-                Console.Write(Directory.GetCurrentDirectory());
+                Console.Write(Path.GetFullPath(configPath));
                 Console.Error.WriteLine("No config file found");
                 return;
             }
 
             //Read config file
-            var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText("config.json"));
+            var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(configPath));
 
             //Run the program
             new Program(config)
