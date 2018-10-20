@@ -19,19 +19,20 @@ namespace Mute.Services
         public async Task<WikidataResponseContainer> SearchData(string topic)
         {
             var escTopic = Uri.EscapeUriString(topic);
-            var httpResponse = await _client.GetAsync($"https://www.wikidata.org/w/api.php?action=wbsearchentities&utf8=1&format=json&language=en&type=item&continue=0&search={escTopic}");
-
-            if (!httpResponse.IsSuccessStatusCode)
-                return null;
-
-            try
+            using (var httpResponse = await _client.GetAsync($"https://www.wikidata.org/w/api.php?action=wbsearchentities&utf8=1&format=json&language=en&type=item&continue=0&search={escTopic}"))
             {
-                var response = await httpResponse.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<WikidataResponseContainer>(response);
-            }
-            catch (JsonException)
-            {
-                return null;
+                if (!httpResponse.IsSuccessStatusCode)
+                    return null;
+
+                try
+                {
+                    var response = await httpResponse.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<WikidataResponseContainer>(response);
+                }
+                catch (JsonException)
+                {
+                    return null;
+                }
             }
         }
 
@@ -68,19 +69,20 @@ namespace Mute.Services
         [ItemCanBeNull] public async Task<string> GetDefinition(string topic, int length = 3)
         {
             var escTopic = Uri.EscapeUriString(topic);
-            var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles={escTopic}&exsentences={length}");
-
-            if (!httpResponse.IsSuccessStatusCode)
-                return null;
-
-            try
+            using (var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles={escTopic}&exsentences={length}"))
             {
-                var response = JsonConvert.DeserializeObject<DefinitionResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
-                return response?.Query?.Pages?.FirstOrDefault().Value?.Extract;
-            }
-            catch (JsonException)
-            {
-                return null;
+                if (!httpResponse.IsSuccessStatusCode)
+                    return null;
+
+                try
+                {
+                    var response = JsonConvert.DeserializeObject<DefinitionResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
+                    return response?.Query?.Pages?.FirstOrDefault().Value?.Extract;
+                }
+                catch (JsonException)
+                {
+                    return null;
+                }
             }
         }
 

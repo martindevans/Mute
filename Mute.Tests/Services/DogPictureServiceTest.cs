@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Services;
 using Mute.Tests.Mocks;
@@ -18,6 +19,7 @@ namespace Mute.Tests.Services
             { "test_dog_response", S("a picture of a dog") }
         };
 
+        [NotNull]
         private static HttpResponseMessage S(string str)
         {
             return new HttpResponseMessage { Content = new StringContent(str) };
@@ -29,9 +31,9 @@ namespace Mute.Tests.Services
             var httpClient = new MockHttpClient(Responses);
             var dogs = new DogPictureService(httpClient, "test_dog_url");
             var stream = await dogs.GetDogPictureAsync();
-            var response = new StreamReader(stream).ReadToEnd();
 
-            Assert.AreEqual(await Responses["test_dog_response"].Content.ReadAsStringAsync(), response);
+            var actual = new StreamReader(stream).ReadToEnd();
+            Assert.AreEqual("a picture of a dog", actual);
         }
 
         [TestMethod]

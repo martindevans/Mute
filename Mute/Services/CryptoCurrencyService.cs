@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Mute.Services
@@ -62,7 +62,7 @@ namespace Mute.Services
             public IReadOnlyDictionary<string, Currency> NameToListing { get; }
             public IReadOnlyDictionary<string, Currency> SymbolToListing { get; }
 
-            public ListingsData(Currency[] data)
+            public ListingsData([NotNull] Currency[] data)
             {
                 DataFetchedAtUtc = DateTime.UtcNow;
 
@@ -73,15 +73,20 @@ namespace Mute.Services
         }
 
         private ListingsData _listings;
+        private readonly IHttpClient _http;
+
+        public CryptoCurrencyService(IHttpClient http)
+        {
+            _http = http;
+        }
 
         private async Task RefreshListing()
         {
             var prev = _listings;
             if (prev == null || (DateTime.UtcNow - prev.DataFetchedAtUtc > TimeSpan.FromDays(1)))
             {
-                using (var httpClient = new HttpClient())
+                using (var getResult = await _http.GetAsync("https://api.coinmarketcap.com/v2/listings/"))
                 {
-                    var getResult = await httpClient.GetAsync("https://api.coinmarketcap.com/v2/listings/");
                     var jsonResult = JsonConvert.DeserializeObject<Listings>(await getResult.Content.ReadAsStringAsync());
 
                     Interlocked.CompareExchange(ref _listings, new ListingsData(jsonResult.Data), prev);
@@ -89,7 +94,7 @@ namespace Mute.Services
             }
         }
 
-        public async Task<Currency> FindBySymbol(string symbol)
+        public async Task<Currency> FindBySymbol([NotNull] string symbol)
         {
             await RefreshListing();
 
@@ -98,7 +103,7 @@ namespace Mute.Services
             return null;
         }
 
-        public async Task<Currency> FindByName(string name)
+        public async Task<Currency> FindByName([NotNull] string name)
         {
             await RefreshListing();
 
@@ -116,19 +121,17 @@ namespace Mute.Services
             return null;
         }
 
-        public async Task<Ticker> GetTicker(Currency currency, string quote = null)
+        public async Task<Ticker> GetTicker([NotNull] Currency currency, [CanBeNull] string quote = null)
         {
-            using (var httpClient = new HttpClient())
+            using (var getResult = await _http.GetAsync($"https://api.coinmarketcap.com/v2/ticker/{currency.Id}/?convert={quote ?? "btc"}"))
             {
-                var getResult = await httpClient.GetAsync($"https://api.coinmarketcap.com/v2/ticker/{currency.Id}/?convert={quote ?? "btc"}");
-
                 var jsonString = await getResult.Content.ReadAsStringAsync();
                 var jsonResult = JsonConvert.DeserializeObject<TickerContainer>(jsonString);
                 return jsonResult.Data;
             }
         }
 
-        public async Task<Currency> Find(string symbolOrName)
+        public async Task<Currency> Find([NotNull] string symbolOrName)
         {
             return await FindByName(symbolOrName)
                 ?? await FindBySymbol(symbolOrName);

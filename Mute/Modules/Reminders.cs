@@ -29,7 +29,7 @@ namespace Mute.Modules
             _random = random;
         }
 
-        [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder")]
+        [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder"), Summary("I will remind you of something after a period of time")]
         public async Task CreateReminder([CanBeNull, Remainder] string message)
         {
             try

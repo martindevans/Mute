@@ -8,6 +8,8 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
+using Microsoft.Recognizers.Text;
+using Microsoft.Recognizers.Text.NumberWithUnit;
 using MoreLinq;
 using Mute.Extensions;
 using Mute.Services;
@@ -297,6 +299,63 @@ namespace Mute.Modules
                 var index = 0;
                 foreach (var debt in items)
                     await this.TypingReplyAsync(itemToString(debt, index++));
+            }
+        }
+
+        [NotNull]
+        private static Extraction ExtractCurrencyAndAmount(string input)
+        {
+            Extraction Extract()
+            {
+                var results = NumberWithUnitRecognizer.RecognizeCurrency(input, Culture.EnglishOthers);
+
+                //Try to get the result
+                var cur = results.FirstOrDefault(d => d.TypeName.StartsWith("currency"));
+                if (cur == null)
+                    return null;
+
+                var values = cur.Resolution;
+
+                if (!values.TryGetValue("unit", out var unitObj) || !(unitObj is string unit))
+                    return new Extraction("unit");
+
+                if (!values.TryGetValue("value", out var valueObj) || !(valueObj is string value))
+                    return new Extraction("value");
+
+                if (!decimal.TryParse(value, out var deci))
+                    return new Extraction("value");
+
+                return new Extraction(unit, deci);
+            }
+
+            return Extract() ?? new Extraction("value,unit");
+        }
+
+        private class Extraction
+        {
+            public bool IsValid { get; }
+
+            public string Currency { get; }
+            public decimal Amount { get; }
+
+            public string ErrorMessage { get; }
+
+            public Extraction(string error)
+            {
+                IsValid = false;
+                ErrorMessage = error;
+
+                Currency = null;
+                Amount = 0;
+            }
+
+            public Extraction(string currency, decimal amount)
+            {
+                IsValid = true;
+                Currency = currency;
+                Amount = amount;
+
+                ErrorMessage = null;
             }
         }
         #endregion

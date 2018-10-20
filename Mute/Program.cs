@@ -72,7 +72,7 @@ namespace Mute
                 .AddSingleton<CatPictureService>()
                 .AddSingleton<DogPictureService>()
                 .AddSingleton<CryptoCurrencyService>()
-                .AddSingleton(new AlphaAdvantageService(config.AlphaAdvantage))
+                .AddSingleton<AlphaAdvantageService>()
                 .AddSingleton<IouDatabaseService>()
                 .AddSingleton<AudioPlayerService>()
                 .AddSingleton<YoutubeService>()
@@ -84,7 +84,9 @@ namespace Mute
                 .AddSingleton<ReactionSentimentTrainer>()
                 .AddSingleton<ConversationalResponseService>()
                 .AddSingleton<WikipediaService>()
-                .AddSingleton<TimeService>();
+                .AddSingleton<TimeService>()
+                .AddSingleton<SteamApi>()
+                .AddSingleton<SoundEffectService>();
             
             _services = serviceCollection.BuildServiceProvider();
 

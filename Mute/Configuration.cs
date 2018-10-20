@@ -10,6 +10,7 @@ namespace Mute
         public YoutubeDlConfig YoutubeDl;
         public MlConfig MlConfig;
         public ElizaConfig ElizaConfig;
+        public Steam Steam;
     }
 
     public class AuthConfig
@@ -56,5 +57,10 @@ namespace Mute
     public class ElizaConfig
     {
         public List<string> Scripts;
+    }
+
+    public class Steam
+    {
+        public string WebApiKey;
     }
 }

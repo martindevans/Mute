@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Mute.Services
 {
@@ -14,10 +15,16 @@ namespace Mute.Services
             _client = client;
         }
 
+        [ItemNotNull]
         public async Task<Stream> GetCatPictureAsync()
         {
-            var resp = await _client.GetAsync(_url);
-            return await resp.Content.ReadAsStreamAsync();
+            using (var resp = await _client.GetAsync(_url))
+            {
+                var m = new MemoryStream();
+                await resp.Content.CopyToAsync(m);
+                m.Position = 0;
+                return m;
+            }
         }
     }
 }

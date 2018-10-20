@@ -21,7 +21,7 @@ namespace Mute.Modules
             _client = client;
         }
 
-        [Command("sentiment")]
+        [Command("sentiment"), Summary("I will show my opinion of a message")]
         public async Task AskSentiment([NotNull, Remainder] string message)
         {
             var result = await _sentiment.Sentiment(message);
@@ -34,14 +34,14 @@ namespace Mute.Modules
                 await Context.Message.AddReactionAsync(EmojiLookup.Confused);
         }
 
-        [Command("sentiment-score")]
+        [Command("sentiment-score"), Summary("I will show my opinion of a message numerically")]
         public async Task AskSentimentScore([NotNull, Remainder] string message)
         {
             var result = await _sentiment.Sentiment(message);
             await ReplyAsync(result.ToString("#0.##"));
         }
 
-        [Command("sentiment-metrics")]
+        [Command("sentiment-metrics"), Summary("I will show statistics on the accuracy of my opinion")]
         public async Task SentimentMetrics()
         {
             BinaryClassificationMetrics result;
@@ -65,7 +65,7 @@ namespace Mute.Modules
             );
         }
 
-        [RequireOwner, Command("sentiment-retrain")]
+        [RequireOwner, Command("sentiment-retrain"), Summary("I will retrain the ML models for sentiment analysis")]
         public async Task SentimentRetrain()
         {
             var w = new System.Diagnostics.Stopwatch();

@@ -42,13 +42,15 @@ namespace Mute.Modules
             _random = random;
         }
 
-        [Command("leave-voice")]
+        [Command("leave-voice"), Summary("I will immediately leave the voice channel (if you are in one)")]
         public async Task LeaveVoice()
         {
             if (Context.User is IVoiceState v)
             {
                 using (await v.VoiceChannel.ConnectAsync())
                     await Task.Delay(100);
+
+                await _audio.Stop();
             }
             else
             {
@@ -56,7 +58,7 @@ namespace Mute.Modules
             }
         }
 
-        [Command("skip")]
+        [Command("skip"), Summary("Skip the currently playing track")]
         public Task Skip()
         {
             _audio.Skip();
@@ -64,13 +66,13 @@ namespace Mute.Modules
             return Task.CompletedTask;
         }
 
-        [Command("stop")]
+        [Command("stop"), Summary("Stop playing audio and clear the queue")]
         public async Task StopPlayback()
         {
             await _audio.Stop();
         }
 
-        [Command("playing")]
+        [Command("playing"), Summary("Get information about the currently playing track")]
         public async Task NowPlaying()
         {
             var playing = _audio.Playing;
@@ -226,7 +228,7 @@ namespace Mute.Modules
             await this.TypingReplyAsync($"Shuffled {_audio.Queue.Count} items");
         }
 
-        [Command("play-random")]
+        [Command("play-random"), Summary("I will play a random track which has previously been played and rated")]
         public async Task PlayRandom()
         {
             //Get a set of youtube items currently in the play queue

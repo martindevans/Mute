@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Mute.Tests.Mocks
 {
@@ -12,7 +13,7 @@ namespace Mute.Tests.Mocks
         private readonly Dictionary<string, HttpResponseMessage> _responses;
         private static HttpResponseMessage _defaultResponse;
 
-        public MockHttpClient(Dictionary<string, HttpResponseMessage> responses, HttpResponseMessage defaultResponse = null)
+        public MockHttpClient(Dictionary<string, HttpResponseMessage> responses, [CanBeNull] HttpResponseMessage defaultResponse = null)
         {
             _responses = responses;
             _defaultResponse = defaultResponse ?? new HttpResponseMessage(HttpStatusCode.NotFound);            
@@ -26,6 +27,7 @@ namespace Mute.Tests.Mocks
                     response = _defaultResponse;
                 return response;
             }
+
             return Task.Run((Func<HttpResponseMessage>)GenerateResponse);
         }
     }

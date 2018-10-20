@@ -11,23 +11,23 @@ namespace Mute.Services
     public class AlphaAdvantageService
     {
         private readonly AlphaAdvantageConfig _config;
+        private readonly IHttpClient _http;
 
-        public AlphaAdvantageService(AlphaAdvantageConfig config)
+        public AlphaAdvantageService([NotNull] Configuration config, [NotNull] IHttpClient http)
         {
-            _config = config;
+            _config = config.AlphaAdvantage;
+            _http = http;
         }
 
         [ItemCanBeNull] public async Task<ExchangeRateResponse> CurrencyExchangeRate(string currencyFrom, string currencyTo)
         {
             //https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=BTC&to_currency=CNY&apikey=demo
 
-            using (var httpClient = new HttpClient())
+            var from = Uri.EscapeUriString(currencyFrom);
+            var to = Uri.EscapeUriString(currencyTo);
+
+            using (var getResult = await _http.GetAsync($"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={from}&to_currency={to}&apikey={_config.Key}"))
             {
-                var from = Uri.EscapeUriString(currencyFrom);
-                var to = Uri.EscapeUriString(currencyTo);
-
-                var getResult = await httpClient.GetAsync($"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={from}&to_currency={to}&apikey={_config.Key}");
-
                 try
                 {
                     var jsonString = await getResult.Content.ReadAsStringAsync();
@@ -65,10 +65,8 @@ namespace Mute.Services
         {
             //https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=msft&apikey=demo
 
-            using (var httpClient = new HttpClient())
+            using (var getResult = await _http.GetAsync($"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={Uri.EscapeUriString(stock)}&apikey={_config.Key}"))
             {
-                var getResult = await httpClient.GetAsync($"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={Uri.EscapeUriString(stock)}&apikey={_config.Key}");
-
                 try
                 {
                     var jsonString = await getResult.Content.ReadAsStringAsync();

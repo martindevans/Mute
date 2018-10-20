@@ -51,7 +51,7 @@ namespace Mute.Modules
                 await this.TypingReplyAsync($"SQL affected {result.RecordsAffected} rows");
         }
 
-        [Command("subscribe")]
+        [Command("subscribe"), Summary("I will wubscribe history logging to a new channel")]
         public async Task Scrape([NotNull] ITextChannel channel)
         {
             try
@@ -64,8 +64,8 @@ namespace Mute.Modules
             }
         }
 
-        [Command("conversation-status")]
-        public async Task ConversationState([NotNull] IGuildUser user = null)
+        [Command("conversation-status"), Summary("I will show the status of my current conversation with a user")]
+        public async Task ConversationState([CanBeNull] IGuildUser user = null)
         {
             if (user == null)
                 user = Context.Message.Author as IGuildUser;
