@@ -200,24 +200,26 @@ namespace Mute.Services
             var model = await _model;
             var result = model.Predict(new SentimentData { SentimentText = message });
 
-            var pos = result.Score[0];
-            var neut = result.Score[1];
-            var neg = result.Score[2];
+            var pos = result.Score[(int)Sentiment.Positive];
+            var neg = result.Score[(int)Sentiment.Negative];
+            var neut = result.Score[(int)Sentiment.Neutral];
 
             var max = Math.Max(pos, Math.Max(neut, neg));
 
-            // ReSharper disable CompareOfFloatsByEqualityOperator
-            var classification = Sentiment.Positive;
-            if (pos == max)
-                classification = Sentiment.Positive;
-            else if (neut == max)
-                classification = Sentiment.Neutral;
-            else if (neut == neg)
-                classification = Sentiment.Negative;
-            // ReSharper restore CompareOfFloatsByEqualityOperator
+            var largestScore = float.MinValue;
+            var largestIndex = -1;
+            for (var i = 0; i < 3; i++)
+            {
+                var score = result.Score[i];
+                if (score > largestScore)
+                {
+                    largestScore = score;
+                    largestIndex = i;
+                }
+            }
 
             return new SentimentResult {
-                Classification = classification,
+                Classification = (Sentiment)largestIndex,
                 Score = max,
                 Text = message,
                 PositiveScore = pos,

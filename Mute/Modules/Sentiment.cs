@@ -48,7 +48,11 @@ namespace Mute.Modules
         public async Task AskSentimentScore([NotNull, Remainder] string message)
         {
             var result = await _sentiment.Predict(message);
-            await ReplyAsync($"`{result.Classification}` (confidence: {result.Score:#0.##})");
+
+            await ReplyAsync($"`{result.Classification}`");
+            await ReplyAsync($"`Positive` (confidence: {result.PositiveScore:#0.##})");
+            await ReplyAsync($"`Negative` (confidence: {result.NegativeScore:#0.##})");
+            await ReplyAsync($"`Neutral` (confidence: {result.NeutralScore:#0.##})");
         }
 
         [Command("sentiment-metrics"), Summary("I will show statistics on the accuracy of my opinion")]
