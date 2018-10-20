@@ -13,26 +13,29 @@ namespace Mute.Services.Responses
         private readonly SentimentService _sentiment;
         private readonly Random _random;
 
-        private const double Bracket = 0.1;
+        private const double Bracket = 0.95;
 
-        public double BaseChance => 0.1;
+        public double BaseChance => 0.05;
         public double MentionedChance => 0.25;
 
         public static readonly IReadOnlyList<Emoji> Sad = new[] {
             EmojiLookup.BrokenHeart,
             EmojiLookup.ThumbsDown,
             EmojiLookup.Worried,
-            EmojiLookup.Pensive,
             EmojiLookup.SlightlyFrowning,
             EmojiLookup.Crying
         };
-
         public static readonly IReadOnlyList<Emoji> Happy = new[] {
             EmojiLookup.Heart,
             EmojiLookup.ThumbsUp,
             EmojiLookup.Grin,
             EmojiLookup.Smile,
             EmojiLookup.SlightSmile
+        };
+        public static readonly IReadOnlyList<Emoji> Neutral = new[] {
+            EmojiLookup.Expressionless,
+            EmojiLookup.Pensive,
+            EmojiLookup.Confused
         };
 
         public SentimentResponse(SentimentService sentiment, Random random)
@@ -43,14 +46,15 @@ namespace Mute.Services.Responses
 
         public async Task<IConversation> TryRespond(IMessage message, bool containsMention)
         {
-            var s = await _sentiment.Sentiment(message.Content);
+            var s = await _sentiment.Predict(message.Content);
 
-            if (s < Bracket)
-                return new SentimentConversation(Sad.Random(_random));
-            else if (s > (1 - Bracket))
+            if (s.Score < Bracket || s.Classification == SentimentService.Sentiment.Neutral)
+                return null;
+
+            if (s.Classification == SentimentService.Sentiment.Positive)
                 return new SentimentConversation(Happy.Random(_random));
             else
-                return null;
+                return new SentimentConversation(Sad.Random(_random));
         }
 
         private class SentimentConversation

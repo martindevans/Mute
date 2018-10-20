@@ -24,27 +24,37 @@ namespace Mute.Modules
         [Command("sentiment"), Summary("I will show my opinion of a message")]
         public async Task AskSentiment([NotNull, Remainder] string message)
         {
-            var result = await _sentiment.Sentiment(message);
+            var result = await _sentiment.Predict(message);
 
-            if (result > 0.75)
-                await Context.Message.AddReactionAsync(EmojiLookup.ThumbsUp);
-            else if (result < 0.25)
-                await Context.Message.AddReactionAsync(EmojiLookup.ThumbsDown);
-            else
+            if (result.Score < 0.75)
                 await Context.Message.AddReactionAsync(EmojiLookup.Confused);
+
+            switch (result.Classification)
+            {
+                case SentimentService.Sentiment.Positive:
+                    await Context.Message.AddReactionAsync(EmojiLookup.ThumbsUp);
+                    break;
+                case SentimentService.Sentiment.Neutral:
+                    await Context.Message.AddReactionAsync(EmojiLookup.Expressionless);
+                    break;
+                case SentimentService.Sentiment.Negative:
+                    await Context.Message.AddReactionAsync(EmojiLookup.ThumbsDown);
+                    break;
+            }
+
         }
 
         [Command("sentiment-score"), Summary("I will show my opinion of a message numerically")]
         public async Task AskSentimentScore([NotNull, Remainder] string message)
         {
-            var result = await _sentiment.Sentiment(message);
-            await ReplyAsync(result.ToString("#0.##"));
+            var result = await _sentiment.Predict(message);
+            await ReplyAsync($"`{result.Classification}` (confidence: {result.Score:#0.##})");
         }
 
         [Command("sentiment-metrics"), Summary("I will show statistics on the accuracy of my opinion")]
         public async Task SentimentMetrics()
         {
-            BinaryClassificationMetrics result;
+            ClassificationMetrics result;
             using (Context.Channel.EnterTypingState())
             {
                 //Add a thinking emoji and then evaluate the model
@@ -58,9 +68,8 @@ namespace Mute.Modules
 
             //Type out the model metrics
             await ReplyAsync(
-                $"```Accuracy: {result.Accuracy}\n" +
-                $"Negative Precision: {result.NegativePrecision}\n" +
-                $"Positive Precision: {result.PositivePrecision}\n" +
+                $"```Micro Accuracy: {result.AccuracyMicro}\n" +
+                $"Macro Accuracy: {result.AccuracyMacro}\n" +
                 $"Log Loss Reduction: {result.LogLossReduction}```"
             );
         }

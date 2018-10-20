@@ -7,7 +7,6 @@ using Microsoft.ML;
 using Microsoft.ML.Models;
 using Microsoft.ML.Runtime;
 using Microsoft.ML.Runtime.Api;
-using Microsoft.ML.Runtime.Data;
 using Microsoft.ML.Trainers;
 using Microsoft.ML.Transforms;
 using TextLoader = Microsoft.ML.Data.TextLoader;
@@ -59,7 +58,7 @@ namespace Mute.Services
                 {
                     var model = await Train();
                     await model.WriteAsync(_modelPath);
-                    Console.WriteLine("Trained sentiment model. Accuracy:" + EvaluateModel(model).Accuracy);
+                    Console.WriteLine("Trained sentiment model. Accuracy:" + EvaluateModel(model).AccuracyMicro);
                 }
                 else
                 {
@@ -80,16 +79,18 @@ namespace Mute.Services
 
         private async Task<PredictionModel<SentimentData, SentimentPrediction>> Train()
         {
+            //A temp file to put all training data into
+            var trainingDataTempFileName = Path.Combine(_config.TempTrainingCache, Guid.NewGuid().ToString());
+
             try
             {
                 //Create a single file with all training data
-                var trainingDataTempFileName = Path.Combine(_config.TempTrainingCache, Guid.NewGuid().ToString());
                 using (var trainingData = new StreamWriter(File.OpenWrite(trainingDataTempFileName)))
                 {
                     //Get training data from files
                     foreach (var file in Directory.EnumerateFiles(_trainingDataDirectory))
-                        foreach (var line in File.ReadAllLines(file))
-                            trainingData.WriteLine(line);
+                    foreach (var line in File.ReadAllLines(file))
+                        trainingData.WriteLine(line);
 
                     //Get training data from database
                     try
@@ -114,33 +115,40 @@ namespace Mute.Services
                 }
 
                 //Create a training pipeline
-                var pipeline = new LearningPipeline();
-                pipeline.Add(new TextLoader(trainingDataTempFileName).CreateFrom<SentimentData>());
-                pipeline.Add(new TextFeaturizer("Features", "SentimentText") {
-                    KeepDiacritics = false,
-                    KeepPunctuations = false,
-                    TextCase = TextNormalizerTransformCaseNormalizationMode.Lower,
-                    OutputTokens = true,
-                    StopWordsRemover = new PredefinedStopWordsRemover(),
-                    VectorNormalizer = TextTransformTextNormKind.L2,
-                    CharFeatureExtractor = new NGramNgramExtractor {NgramLength = 3, AllLengths = false},
-                    WordFeatureExtractor = new NGramNgramExtractor {NgramLength = 3, AllLengths = true}
-                });
-                pipeline.Add(new AveragedPerceptronBinaryClassifier());
-                pipeline.Add(new PredictedLabelColumnOriginalValueConverter {PredictedLabelColumn = "PredictedLabel"});
+                var pipeline = new LearningPipeline {
+                    new TextLoader(trainingDataTempFileName).CreateFrom<SentimentData>(),
+                    new TextFeaturizer("Features", "SentimentText") {
+                        KeepDiacritics = false,
+                        KeepPunctuations = false,
+                        TextCase = TextNormalizerTransformCaseNormalizationMode.Lower,
+                        OutputTokens = true,
+                        StopWordsRemover = new PredefinedStopWordsRemover(),
+                        VectorNormalizer = TextTransformTextNormKind.L2,
+                        CharFeatureExtractor = new NGramNgramExtractor {NgramLength = 3, AllLengths = false},
+                        WordFeatureExtractor = new NGramNgramExtractor {NgramLength = 3, AllLengths = true}
+                    },
+                    //new AveragedPerceptronBinaryClassifier(),
+                    new StochasticDualCoordinateAscentClassifier(),
+                    //new PredictedLabelColumnOriginalValueConverter { PredictedLabelColumn = "PredictedLabel" }
+                };
+
 
                 //Train the model
                 var model = pipeline.Train<SentimentData, SentimentPrediction>();
 
-                //Delete the concatenated training data file
-                File.Delete(trainingDataTempFileName);
-
+                Console.WriteLine("Training complete");
                 return model;
             }
             catch (Exception e)
             {
                 Console.WriteLine("Training failed: " + e);
                 throw;
+            }
+            finally
+            {
+                //Delete the temp file
+                if (File.Exists(trainingDataTempFileName))
+                    File.Delete(trainingDataTempFileName);
             }
         }
 
@@ -155,7 +163,7 @@ namespace Mute.Services
             await _model;
         }
 
-        private BinaryClassificationMetrics EvaluateModel(PredictionModel model)
+        private ClassificationMetrics EvaluateModel(PredictionModel model)
         {
             var evalDataTemp = Path.Combine(_config.TempTrainingCache, Guid.NewGuid().ToString());
 
@@ -169,7 +177,7 @@ namespace Mute.Services
 
                 //Evaluate the model
                 var testData = new TextLoader(evalDataTemp).CreateFrom<SentimentData>();
-                var evaluator = new BinaryClassificationEvaluator();
+                var evaluator = new ClassificationEvaluator();
                 Console.WriteLine("Beginning sentiment model evaluation");
                 var metrics = evaluator.Evaluate(model, testData);
 
@@ -182,47 +190,88 @@ namespace Mute.Services
             }
         }
 
-        public async Task<BinaryClassificationMetrics> EvaluateModelMetrics()
+        public async Task<ClassificationMetrics> EvaluateModelMetrics()
         {
             return EvaluateModel(await _model);
         }
 
-        public async Task<float> Sentiment([NotNull] string message)
+        public async Task<SentimentResult> Predict([NotNull] string message)
         {
             var model = await _model;
             var result = model.Predict(new SentimentData { SentimentText = message });
-            return result.Probability;
+
+            var pos = result.Score[0];
+            var neut = result.Score[1];
+            var neg = result.Score[2];
+
+            var max = Math.Max(pos, Math.Max(neut, neg));
+
+            // ReSharper disable CompareOfFloatsByEqualityOperator
+            var classification = Sentiment.Positive;
+            if (pos == max)
+                classification = Sentiment.Positive;
+            else if (neut == max)
+                classification = Sentiment.Neutral;
+            else if (neut == neg)
+                classification = Sentiment.Negative;
+            // ReSharper restore CompareOfFloatsByEqualityOperator
+
+            return new SentimentResult {
+                Classification = classification,
+                Score = max,
+                Text = message,
+                PositiveScore = pos,
+                NegativeScore = neg,
+                NeutralScore = neut
+            };
         }
 
-        public async Task Teach([NotNull] string text, bool sentiment)
+        public async Task Teach([NotNull] string text, Sentiment sentiment)
         {
             using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = InsertTaggedSentimentData;
                 cmd.Parameters.Add(new SQLiteParameter("@Content", System.Data.DbType.String) { Value = text.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) { Value = sentiment.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) { Value = ((int)sentiment).ToString() });
                 await cmd.ExecuteNonQueryAsync();
             }
 
             Console.WriteLine($"Sentiment learned: `{text}` == {sentiment}");
         }
-        
+
         #region helper classes
+        public enum Sentiment
+        {
+            Negative = 0,
+            Positive = 1,
+            Neutral = 2
+        }
+
+        public struct SentimentResult
+        {
+            public string Text;
+
+            public float Score;
+            public Sentiment Classification;
+
+            public float PositiveScore;
+            public float NeutralScore;
+            public float NegativeScore;
+        }
+
         private class SentimentData
         {
-            [UsedImplicitly, Column(ordinal: "1", name: "Label")]
-            public float Sentiment;
+            [UsedImplicitly, Column(ordinal: "1")]
+            public float Label;
+
             [UsedImplicitly, Column(ordinal: "0")]
             public string SentimentText;
         }
 
         private class SentimentPrediction
         {
-            [UsedImplicitly, ColumnName("PredictedLabel")]
-            public DvBool Sentiment;
-
-            [UsedImplicitly, ColumnName("Probability")]
-            public float Probability;
+            [UsedImplicitly, ColumnName("Score")]
+            public float[] Score;
         }
         #endregion
     }

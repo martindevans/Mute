@@ -23,12 +23,14 @@ namespace Mute.Services
         private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> message, [NotNull] ISocketMessageChannel channel, [NotNull] SocketReaction reaction)
         {
             if (SentimentResponse.Happy.Contains(reaction.Emote))
-                await TryLearn(await message.DownloadAsync(), reaction, true);
+                await TryLearn(await message.DownloadAsync(), reaction, SentimentService.Sentiment.Positive);
             else if (SentimentResponse.Sad.Contains(reaction.Emote))
-                await TryLearn(await message.DownloadAsync(), reaction, false);
+                await TryLearn(await message.DownloadAsync(), reaction, SentimentService.Sentiment.Negative);
+            else if (SentimentResponse.Neutral.Contains(reaction.Emote))
+                await TryLearn(await message.DownloadAsync(), reaction, SentimentService.Sentiment.Neutral);
         }
 
-        private async Task TryLearn([NotNull] IUserMessage message, [NotNull] IReaction reaction, bool sentiment)
+        private async Task TryLearn([NotNull] IUserMessage message, [NotNull] IReaction reaction, SentimentService.Sentiment sentiment)
         {
             var users = await message.GetReactionUsersAsync(reaction.Emote);
             if (users.Count >= 3 || users.Any(IsTeacher))
