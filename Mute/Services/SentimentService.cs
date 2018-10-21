@@ -102,7 +102,7 @@ namespace Mute.Services
                             while (reader.Read())
                             {
                                 var content = (string)reader["Content"];
-                                var score = bool.Parse((string)reader["Score"]) ? 1 : 0;
+                                var score = int.Parse((string)reader["Score"]);
 
                                 trainingData.WriteLine($"{content}\t{score}");
                             }
