@@ -124,12 +124,9 @@ namespace Mute.Services
                         OutputTokens = true,
                         StopWordsRemover = new PredefinedStopWordsRemover(),
                         VectorNormalizer = TextTransformTextNormKind.L2,
-                        CharFeatureExtractor = new NGramNgramExtractor {NgramLength = 3, AllLengths = false},
-                        WordFeatureExtractor = new NGramNgramExtractor {NgramLength = 3, AllLengths = true}
+                        WordFeatureExtractor = new NGramNgramExtractor {NgramLength = 4, AllLengths = true}
                     },
-                    //new AveragedPerceptronBinaryClassifier(),
                     new StochasticDualCoordinateAscentClassifier(),
-                    //new PredictedLabelColumnOriginalValueConverter { PredictedLabelColumn = "PredictedLabel" }
                 };
 
 
