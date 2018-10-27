@@ -29,7 +29,7 @@ namespace Mute
         private readonly Configuration _config;
 
         #region static main
-        private static void Main([NotNull] string[] args)
+        private static int Main([NotNull] string[] args)
         {
             //Sanity check config file exists and early exit
             var configPath = args.Length < 1 ? "config.json" : args[0];
@@ -37,14 +37,14 @@ namespace Mute
             {
                 Console.Write(Path.GetFullPath(configPath));
                 Console.Error.WriteLine("No config file found");
-                return;
+                return -1;
             }
 
             //Read config file
             var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(configPath));
 
             //Run the program
-            new Program(config)
+            return new Program(config)
                 .MainAsync(args)
                 .GetAwaiter()
                 .GetResult();
@@ -99,7 +99,7 @@ namespace Mute
             _services.GetService<ReactionSentimentTrainer>();
         }
 
-        private async Task MainAsync(string[] args)
+        private async Task<int> MainAsync(string[] args)
         {
             DependencyHelper.TestDependencies();
 
@@ -135,6 +135,8 @@ namespace Mute
                     break;
                 }
             }
+
+            return 0;
         }
 
         private async Task SetupModules()
