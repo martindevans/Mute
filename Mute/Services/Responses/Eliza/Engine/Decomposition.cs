@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 
 namespace Mute.Services.Responses.Eliza.Engine
@@ -30,15 +31,40 @@ namespace Mute.Services.Responses.Eliza.Engine
 	    {
 	    }
 
-	    public Decomposition(string pattern, bool memorise, bool randomise, [NotNull] params Func<IReadOnlyList<string>, string>[] reassemblies)
+	    public Decomposition(string pattern, bool memorise, bool randomise, [NotNull] params Func<IReadOnlyList<string>, Task<string>>[] reassemblies)
 	        : this(pattern, memorise, randomise, reassemblies.Select(f => new FuncReassembly(f)).ToArray<IReassembly>())
+	    {
+	    }
+
+	    private Decomposition(string pattern, IReadOnlyList<IReassembly> reassemblies)
+            : this(pattern, false, false, reassemblies)
+	    {
+	    }
+
+	    private Decomposition(string pattern, params IReassembly[] reassemblies)
+	        : this(pattern, (IReadOnlyList<IReassembly>)reassemblies)
+	    {
+	    }
+
+	    public Decomposition(string pattern, [NotNull] params string[] reassemblies)
+	        : this(pattern, reassemblies.Select(r => new ConstantReassembly(r)).ToArray<IReassembly>())
+	    {
+	    }
+
+	    public Decomposition(string pattern, [NotNull] params Func<IReadOnlyList<string>, Task<string>>[] reassemblies)
+	        : this(pattern, reassemblies.Select(f => new FuncReassembly(f)).ToArray<IReassembly>())
+	    {
+	    }
+
+	    public Decomposition(string pattern, bool memorise, bool randomise, [NotNull] params Func<IReadOnlyList<string>, string>[] reassemblies)
+	        : this(pattern, memorise, randomise, reassemblies.Select(f => new FuncReassembly(s => Task.FromResult(f(s)))).ToArray<IReassembly>())
 	    {
 	    }
 	}
 
     public interface IReassembly
     {
-        string Rule(IReadOnlyList<string> decomposition);
+        Task<string> Rule(IReadOnlyList<string> decomposition);
     }
 
     public class ConstantReassembly
@@ -51,19 +77,19 @@ namespace Mute.Services.Responses.Eliza.Engine
             _value = value;
         }
 
-        public string Rule(IReadOnlyList<string> decomposition) => _value;
+        public Task<string> Rule(IReadOnlyList<string> decomposition) => Task.FromResult(_value);
     }
 
     public class FuncReassembly
         : IReassembly
     {
-        private Func<IReadOnlyList<string>, string> _func;
+        private readonly Func<IReadOnlyList<string>, Task<string>> _func;
 
-        public FuncReassembly(Func<IReadOnlyList<string>, string> func)
+        public FuncReassembly(Func<IReadOnlyList<string>, Task<string>> func)
         {
             _func = func;
         }
 
-        public string Rule(IReadOnlyList<string> decomposition) => _func(decomposition);
+        public Task<string> Rule(IReadOnlyList<string> decomposition) => _func(decomposition);
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services.Responses.Eliza.Scripts;
@@ -94,7 +95,7 @@ namespace Mute.Services.Responses.Eliza.Engine
 		    var decompositions = from decomp in key.Decompositions
 		                         let decomposed = Patterns.Match(sentence, decomp.Pattern, _script.Syns)
 		                         where decomposed != null
-                                 let rule = ChooseReassembly(decomp).Rule(decomposed)
+                                 let rule = Task.Run(async () => await ChooseReassembly(decomp).Rule(decomposed)).Result
                                  where !string.IsNullOrWhiteSpace(rule)
 		                         select (decomp, rule, decomposed);
 

@@ -18,10 +18,10 @@ namespace Mute.Modules
         [Command("time"), Summary("I will tell you the time")]
         public async Task TimeAsync([Remainder, CanBeNull] string tz = null)
         {
-            await this.TypingReplyAsync(GetTime(tz));
+            await this.TypingReplyAsync(await GetTime(tz));
         }
 
-        [NotNull] private string GetTime([CanBeNull] string tz = null)
+        [ItemNotNull] private async Task<string> GetTime([CanBeNull] string tz = null)
         {
             var extract = ValidateAndExtract(tz ?? "");
             var offset = extract.IsValid ? extract.UtcOffset : TimeSpan.Zero;
@@ -95,12 +95,12 @@ namespace Mute.Modules
             get
             {
                 yield return new Key("time", 10,
-                    new Decomposition("what * time in *", false, true, d => GetTime(d[1])),
-                    new Decomposition("what * time * in *", false, true, d => GetTime(d[2])),
-                    new Decomposition("what is * time", false, true, _ => GetTime()),
-                    new Decomposition("what time * in * *", false, true, d => GetTime(d[1])),
-                    new Decomposition("what time * in *", false, true, d => GetTime(d[1])),
-                    new Decomposition("what time *", false, true, _ => GetTime())
+                    new Decomposition("what * time in *", d => GetTime(d[1])),
+                    new Decomposition("what * time * in *", d => GetTime(d[2])),
+                    new Decomposition("what is * time", _ => GetTime()),
+                    new Decomposition("what time * in * *", d => GetTime(d[1])),
+                    new Decomposition("what time * in *", d => GetTime(d[1])),
+                    new Decomposition("what time *", _ => GetTime())
                 );
             }
         }

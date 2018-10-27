@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Mute.Extensions;
 using Mute.Services;
@@ -11,61 +12,75 @@ using Humanizer.Localisation;
 using JetBrains.Annotations;
 using Microsoft.Recognizers.Text;
 using Microsoft.Recognizers.Text.DateTime;
+using Mute.Services.Responses.Eliza;
+using Mute.Services.Responses.Eliza.Engine;
 
 namespace Mute.Modules
 {
     public class Reminders
-        : ModuleBase
+        : BaseModule, IKeyProvider
     {
+        private static readonly Color Color = Color.Purple;
+
         private readonly ReminderService _reminder;
-        private readonly Random _random;
 
         private const string PastValueErrorMessage = "I'm sorry, but $moment$ is in the past.";
         private const string CannotParseErrorMessage = "That doesn't seem to be a valid date and time.";
 
-        public Reminders(ReminderService reminder, Random random)
+        public Reminders(ReminderService reminder)
         {
             _reminder = reminder;
-            _random = random;
         }
 
         [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder"), Summary("I will remind you of something after a period of time")]
-        public async Task CreateReminder([CanBeNull, Remainder] string message)
+        public async Task CreateReminderCmd([CanBeNull, Remainder] string message)
         {
-            try
-            {
-                var result = ValidateAndExtract(message, Culture.EnglishOthers);
+            var msg = await CreateReminder(message);
+            if (msg != null)
+                await this.TypingReplyAsync(msg);
+        }
 
-                string error = null;
-                if (!result.IsValid)
-                    error = result.ErrorMessage;
-                else if (result.Value < DateTime.UtcNow)
-                    error = PastValueErrorMessage.Replace("$moment$", result.Value.ToString(CultureInfo.InvariantCulture));
+        [Command("reminders"), Summary("I will give you a list of all your pending reminders")]
+        public async Task ListReminders()
+        {
+            await ListReminders(Context.User);
+        }
 
-                if (error != null)
-                {
-                    var msg = await this.TypingReplyAsync(error);
-                    if (_random.NextDouble() < 0.05f)
-                        await msg.AddReactionAsync(EmojiLookup.Confused);
-                }
-                else
-                {
+        [Command("reminders"), Summary("I will give you a list of all pending reminders for a user"), RequireOwner]
+        public async Task ListReminders([NotNull] IUser user)
+        {
+            var items = _reminder.Get(user.Id).OrderBy(a => a.TriggerTime).ToArray();
 
-                    var triggerTime = result.Value;
-                    var duration = triggerTime - DateTime.UtcNow;
+            await DisplayItemList(items,
+                async () => await ReplyAsync("No pending reminders"),
+                async i => {
+                    await ReplyAsync("One pending reminder:");
+                    await DisplayReminder(i);
+                },
+                async l => await ReplyAsync($"{l.Count} pending reminders:"),
+                async (n, _) => await DisplayReminder(n)
+            );
+        }
 
-                    await this.TypingReplyAsync($"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)}");
+        private async Task DisplayReminder([NotNull] ReminderService.Notification n)
+        {
+            var embed = new EmbedBuilder()
+                 .WithColor(Color)
+                 .WithDescription(n.Message.Replace("`", "'"))
+                 .WithTimestamp(new DateTimeOffset(n.TriggerTime))
+                 .WithFooter(n.UID)
+                 .Build();
 
-                    //Add some context to the message
-                    message = $"{Context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerTime, culture: CultureInfo.GetCultureInfo("en-gn"))}: `remind me {message}`";
+            await ReplyAsync("", false, embed);
+        }
 
-                    await _reminder.Create(triggerTime, message, Context.Message.Channel.Id);
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+        [Command("cancel-reminder"), Alias("reminder-cancel", "remind-cancel", "cancel-remind", "unremind"), Summary("I will delete a reminder with the given ID")]
+        public async Task CancelReminder([NotNull] string id)
+        {
+            if (await _reminder.Delete(id))
+                await this.TypingReplyAsync($"Deleted reminder `{id}`");
+            else
+                await this.TypingReplyAsync($"I can't find a reminder with id `{id}`");
         }
 
         #region parsing
@@ -146,5 +161,54 @@ namespace Mute.Modules
             public string ErrorMessage { get; set; }
         }
         #endregion
+
+        [ItemCanBeNull]
+        private async Task<string> CreateReminder(string message)
+        {
+            try
+            {
+                var result = ValidateAndExtract(message, Culture.EnglishOthers);
+
+                string error = null;
+                if (!result.IsValid)
+                    error = result.ErrorMessage;
+                else if (result.Value < DateTime.UtcNow)
+                    error = PastValueErrorMessage.Replace("$moment$", result.Value.ToString(CultureInfo.InvariantCulture));
+
+                if (error != null)
+                {
+                    return error;
+                }
+                else
+                {
+                    var triggerTime = result.Value;
+                    var duration = triggerTime - DateTime.UtcNow;
+
+                    //Add some context to the message
+                    var prelude = $"{Context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerTime, culture: CultureInfo.GetCultureInfo("en-gn"))}...";
+                    var msg = $"remind me {message}";
+
+                    //Save to database
+                    var n = await _reminder.Create(triggerTime, prelude, msg, Context.Message.Channel.Id, Context.User.Id);
+
+                    return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{n.UID}`)";
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return null;
+            }
+        }
+
+        public IEnumerable<Key> Keys
+        {
+            get
+            {
+                yield return new Key("remind", 10,
+                    new Decomposition("remind me *", d => Task.FromResult("Remind Nyarlathothep to setup Module Context in conversations"))// CreateReminder(d[0]))
+                );
+            }
+        }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Extensions;
@@ -11,9 +13,10 @@ namespace Mute.Services
 {
     public class ReminderService
     {
-        private const string InsertReminder = "INSERT into Reminders (UID, UtcTime, ChannelId, Message, Sent) values(@Uid, @UtcTime, @ChannelId, @Message, \"False\")";
+        private const string InsertReminder = "INSERT into Reminders (UID, UtcTime, ChannelId, Prelude, Message, Sent, UserId) values(@Uid, @UtcTime, @ChannelId, @Prelude, @Message, \"False\", @UserId)";
         private const string UpdateSent = "UPDATE Reminders SET Sent = \"true\" Where UID = @Uid";
         private const string UnsentReminders = "SELECT * FROM Reminders where not Sent = \"true\"";
+        private const string DeleteReminder = "DELETE FROM Reminders WHERE UID = @Uid";
 
         [NotNull] private readonly DatabaseService _database;
         [NotNull] private readonly Random _random;
@@ -32,7 +35,7 @@ namespace Mute.Services
 
             try
             {
-                _database.Exec("CREATE TABLE IF NOT EXISTS `Reminders` (`UID` TEXT NOT NULL PRIMARY KEY, `UtcTime` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `Message` TEXT NOT NULL, `Sent` NUMERIC NOT NULL)");
+                _database.Exec("CREATE TABLE IF NOT EXISTS `Reminders` (`UID` TEXT NOT NULL PRIMARY KEY, `UtcTime` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `Prelude` TEXT, `Message` TEXT NOT NULL, `Sent` NUMERIC NOT NULL, `UserId` TEXT NOT NULL)");
             }
             catch (Exception e)
             {
@@ -42,6 +45,12 @@ namespace Mute.Services
             _thread = Task.Run(ThreadEntry);
 
             Console.WriteLine("Started Reminder Service");
+        }
+
+        [NotNull] public IReadOnlyList<Notification> Get(ulong userId)
+        {
+            lock (_notifications)
+                return _notifications.Where(n => n.UserId == userId).ToArray();
         }
 
         private async Task LoadFromDatabase()
@@ -57,8 +66,10 @@ namespace Mute.Services
                         var n = new Notification(
                             (string)reader["UID"],
                             DateTime.FromFileTimeUtc(long.Parse((string)reader["UtcTime"])),
+                            (string)reader["Prelude"],
                             (string)reader["Message"],
-                            ulong.Parse((string)reader["ChannelId"])
+                            ulong.Parse((string)reader["ChannelId"]),
+                            ulong.Parse((string)reader["UserId"])
                         );
 
                         lock (_notifications)
@@ -71,7 +82,7 @@ namespace Mute.Services
                 Console.WriteLine($"Loaded {_notifications.Count} reminders from database");
         }
 
-        public async Task<string> Create(DateTime utcTime, string message, ulong channelId)
+        [ItemNotNull] public async Task<Notification> Create(DateTime utcTime, [CanBeNull] string prelude, string message, ulong channelId, ulong ownerId)
         {
             var id = unchecked((uint)_random.Next()).MeaninglessString();
 
@@ -84,7 +95,9 @@ namespace Mute.Services
                     cmd.Parameters.Add(new SQLiteParameter("@Uid", System.Data.DbType.String) { Value = id });
                     cmd.Parameters.Add(new SQLiteParameter("@UtcTime", System.Data.DbType.String) { Value = utcTime.ToFileTimeUtc() });
                     cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = channelId.ToString() });
+                    cmd.Parameters.Add(new SQLiteParameter("@Prelude", System.Data.DbType.String) { Value = prelude });
                     cmd.Parameters.Add(new SQLiteParameter("@Message", System.Data.DbType.String) { Value = message });
+                    cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = ownerId.ToString() });
 
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -96,13 +109,14 @@ namespace Mute.Services
             }
 
             //Insert reminder into in memory cache
+            var n = new Notification(id, utcTime, prelude, message, channelId, ownerId);
             lock (_notifications)
-                _notifications.Add(new Notification(id, utcTime, message, channelId));
+                _notifications.Add(n);
 
             //awake thread
             _event.Set();
 
-            return id;
+            return n;
         }
 
         private async Task ThreadEntry()
@@ -172,8 +186,10 @@ namespace Mute.Services
                 return;
             }
 
+            if (!string.IsNullOrWhiteSpace(notification.Prelude))
+                await channel.SendMessageAsync(notification.Prelude);
             await channel.SendMessageAsync(notification.Message);
-            
+
             //Mark as sent in the database
             try
             {
@@ -192,20 +208,54 @@ namespace Mute.Services
             }
         }
 
-        private class Notification
+        public async Task<bool> Delete(string id)
+        {
+            //Delete from cache
+            lock (_notifications)
+            {
+                var index = _notifications.FindIndex(n => n.UID == id);
+                if (index == -1)
+                    return false;
+            }
+
+            //if we found it, delete from database
+            try
+            {
+                using (var cmd = _database.CreateCommand())
+                {
+                    cmd.CommandText = DeleteReminder;
+                    cmd.Parameters.Add(new SQLiteParameter("@Uid", System.Data.DbType.String) { Value = id });
+
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            return true;
+        }
+
+        public class Notification
             : IComparable<Notification>
         {
             public readonly string UID;
             public readonly DateTime TriggerTime;
+            public readonly string Prelude;
             public readonly string Message;
             public readonly ulong ChannelId;
+            public readonly ulong UserId;
 
-            public Notification(string uid, DateTime triggerTime, string message, ulong channelId)
+            public Notification(string uid, DateTime triggerTime, string prelude, string message, ulong channelId, ulong userId)
             {
                 UID = uid;
                 TriggerTime = triggerTime;
+                Prelude = prelude;
                 Message = message;
                 ChannelId = channelId;
+                UserId = userId;
             }
 
             public int CompareTo(Notification other)

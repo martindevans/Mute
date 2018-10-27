@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mute", "Mute\Mute.csproj", "{6C545CB8-841D-4D79-856F-B8BDE5F5AF0C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mute.Tests", "Mute.Tests\Mute.Tests.csproj", "{A00E0A75-BB9C-47A8-BBBA-6D70BD43F660}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mute.Tests", "Mute.Tests\Mute.Tests.csproj", "{A00E0A75-BB9C-47A8-BBBA-6D70BD43F660}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
