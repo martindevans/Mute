@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
-using Mute.Extensions;
 using Mute.Services.Responses.Eliza;
 using Mute.Services.Responses.Eliza.Engine;
 
 namespace Mute.Modules
 {
     public class Dice
-        : ModuleBase, IKeyProvider
+        : BaseModule, IKeyProvider
     {
         private readonly RNGCryptoServiceProvider _random = new RNGCryptoServiceProvider();
 
@@ -56,34 +57,55 @@ namespace Mute.Modules
             }
 
             if (numberSides == 0)
-                throw new ArgumentOutOfRangeException(nameof(numberSides));
+                return 0;
 
             // Create a byte array to hold the random value.
             var randomNumber = new byte[1];
 
-            //Keep re-reolling until the roll is fair.
-            do
+            lock (_random)
             {
-                _random.GetBytes(randomNumber);
-            }
-            while (!IsFairRoll(randomNumber[0]));
+                //Keep re-reolling until the roll is fair.
+                do
+                {
+                    _random.GetBytes(randomNumber);
+                } while (!IsFairRoll(randomNumber[0]));
 
-            // Return the random number mod the number
-            // of sides.  The possible values are zero-
-            // based, so we add one.
-            return (byte)((randomNumber[0] % numberSides) + 1);
+                // Return the random number mod the number
+                // of sides.  The possible values are zero-
+                // based, so we add one.
+                return (byte)((randomNumber[0] % numberSides) + 1);
+            }
         }
 
         [Command("roll"), Alias("dice"), Summary("I will roll a dice")]
-        public async Task RollCmd(byte max = 6)
+        public async Task RollCmd(string command)
         {
-            await this.TypingReplyAsync(Roll(max));
+            if (byte.TryParse(command, out var byt))
+            {
+                await TypingReplyAsync(Roll(1, byt));
+                return;
+            }
+
+            if (command.Contains("d"))
+            {
+                var parts = command.Split('d');
+                if (parts.Length == 2)
+                {
+                    if (byte.TryParse(parts[0], out var count) && byte.TryParse(parts[1], out var max))
+                    {
+                        await TypingReplyAsync(Roll(count, max));
+                        return;
+                    }
+                }
+            }
+
+            await TypingReplyAsync("Sorry I'm not sure what you mean, use something like 3d7 (max 255 dice with 255 sides)");
         }
 
         [Command("flip"), Summary("I will flip a coin")]
         public async Task FlipCmd()
         {
-            await this.TypingReplyAsync(Flip());
+            await TypingReplyAsync(Flip());
         }
 
         [Command("8ball"), Summary("I will reach into the hazy mists of the future to determine the truth")]
@@ -91,11 +113,11 @@ namespace Mute.Modules
         {
             if (question == null || question.Length == 0)
             {
-                await this.TypingReplyAsync("You must ask a question");
+                await TypingReplyAsync("You must ask a question");
                 return;
             }
 
-            await this.TypingReplyAsync(Magic8Ball());
+            await TypingReplyAsync(Magic8Ball());
         }
 
         [NotNull] private string Flip()
@@ -108,16 +130,21 @@ namespace Mute.Modules
                 return "Tails";
         }
 
-        [CanBeNull] private string Roll(string sides)
+        [CanBeNull] private string Roll(string dice, string sides)
         {
-            if (!byte.TryParse(sides, out var value))
+            if (!byte.TryParse(dice, out var pdice))
                 return null;
-            return Roll(value);
+            if (!byte.TryParse(sides, out var psides))
+                return null;
+            return Roll(pdice, psides);
         }
 
-        [NotNull] private string Roll(byte sides)
+        [NotNull] private string Roll(byte dice, byte sides)
         {
-            return Random(sides).ToString();
+            var results = Enumerable.Range(0, dice).Select(_ => Random(sides)).ToArray();
+            var total = results.Select(a => (int)a).Sum();
+
+            return $"{string.Join('+', results)} = {total}";
         }
 
         [NotNull] private string Magic8Ball()
@@ -131,15 +158,17 @@ namespace Mute.Modules
             get
             {
                 yield return new Key("flip", 10,
-                    new Decomposition("*", false, true, d => Flip())
+                    new Decomposition("*", d => Flip())
                 );
 
                 yield return new Key("roll", 10,
-                    new Decomposition("*roll *#*", false, true, d => Roll(d[2]))
+                    new Decomposition("*roll #d#", d => Roll(d[1], d[2])),
+                    new Decomposition("*roll #d# *", d => Roll(d[1], d[2])),
+                    new Decomposition("*roll *#*", d => Roll("1", d[2]))
                 );
 
                 yield return new Key("8ball", 10,
-                    new Decomposition("*8ball *", false, true, d => Magic8Ball())
+                    new Decomposition("*8ball *", d => Magic8Ball())
                 );
             }
         }

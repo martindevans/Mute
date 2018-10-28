@@ -35,7 +35,7 @@ namespace Mute.Modules
         public async Task CreateDebt([NotNull] IUser user, decimal amount, [NotNull] string unit, [CanBeNull, Remainder] string note = null)
         {
             if (amount < 0)
-                await this.TypingReplyAsync("You cannot owe a negative amount!");
+                await TypingReplyAsync("You cannot owe a negative amount!");
 
             await CheckDebugger();
 
@@ -113,7 +113,7 @@ namespace Mute.Modules
         public async Task CreateDebtDemand([NotNull] IUser debter, decimal amount, [NotNull] string unit, [CanBeNull] [Remainder] string note = null)
         {
             if (amount < 0)
-                await this.TypingReplyAsync("You cannot demand a negative amount!");
+                await TypingReplyAsync("You cannot demand a negative amount!");
 
             await CheckDebugger();
 
@@ -122,7 +122,7 @@ namespace Mute.Modules
                 var id = unchecked((uint)_random.Next()).MeaninglessString();
 
                 await _database.InsertUnconfirmedPayment(Context.User, debter, amount, unit, note, id);
-                await this.TypingReplyAsync($"{debter.Mention} type `!confirm {id}` to confirm that you owe this");
+                await TypingReplyAsync($"{debter.Mention} type `!confirm {id}` to confirm that you owe this");
             }
         }
         
@@ -130,7 +130,7 @@ namespace Mute.Modules
         public async Task CreatePendingPayment([NotNull] IUser receiver, decimal amount, [NotNull] string unit, [CanBeNull] [Remainder] string note = null)
         {
             if (amount < 0)
-                await this.TypingReplyAsync("You cannot pay a negative amount!");
+                await TypingReplyAsync("You cannot pay a negative amount!");
 
             await CheckDebugger();
 
@@ -139,7 +139,7 @@ namespace Mute.Modules
                 var id = unchecked((uint)_random.Next()).MeaninglessString();
 
                 await _database.InsertUnconfirmedPayment(Context.User, receiver, amount, unit, note, id);
-                await this.TypingReplyAsync($"{receiver.Mention} type `!confirm {id}` to confirm that you have received this payment");
+                await TypingReplyAsync($"{receiver.Mention} type `!confirm {id}` to confirm that you have received this payment");
             }
         }
 

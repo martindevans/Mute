@@ -8,7 +8,6 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
-using Mute.Extensions;
 using Mute.Services;
 using Mute.Services.Audio;
 using Mute.Services.Audio.Clips;
@@ -17,7 +16,7 @@ namespace Mute.Modules
 {
     [Group]
     public class Music
-        : InteractiveBase
+        : BaseModule
     {
         private static readonly TimeSpan ReactionTimeout = TimeSpan.FromSeconds(15);
 
@@ -77,10 +76,10 @@ namespace Mute.Modules
         {
             var playing = _audio.Playing;
             if (!playing.HasValue)
-                await this.TypingReplyAsync("Nothing is currently playing");
+                await TypingReplyAsync("Nothing is currently playing");
             else
             {
-                var msg = await this.TypingReplyAsync("Now playing: " + playing.Value.Clip.Name);
+                var msg = await TypingReplyAsync("Now playing: " + playing.Value.Clip.Name);
 
                 if (playing.Value.Clip is YoutubeAsyncFileAudio youtube)
                 {
@@ -187,7 +186,7 @@ namespace Mute.Modules
             //Check that the user is in a channel
             if (Context.User is IVoiceState vs && vs.VoiceChannel == null)
             {
-                await this.TypingReplyAsync("You're not in a voice channel!");
+                await TypingReplyAsync("You're not in a voice channel!");
                 return;
             }
 
@@ -198,7 +197,7 @@ namespace Mute.Modules
             }
             catch (Exception e)
             {
-                await this.TypingReplyAsync(e.Message);
+                await TypingReplyAsync(e.Message);
                 return;
             }
 
@@ -207,7 +206,7 @@ namespace Mute.Modules
             var vid = queryDictionary["v"];
             if (vid == null)
             {
-                await this.TypingReplyAsync("I'm sorry, I don't recognise this video URL");
+                await TypingReplyAsync("I'm sorry, I don't recognise this video URL");
                 return;
             }
 
@@ -225,7 +224,7 @@ namespace Mute.Modules
         {
             _audio.Shuffle();
 
-            await this.TypingReplyAsync($"Shuffled {_audio.Queue.Count} items");
+            await TypingReplyAsync($"Shuffled {_audio.Queue.Count} items");
         }
 
         [Command("play-random"), Summary("I will play a random track which has previously been played and rated")]

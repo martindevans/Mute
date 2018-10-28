@@ -2,12 +2,11 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Mute.Extensions;
 
 namespace Mute.Modules
 {
     public class Hugot
-        : ModuleBase
+        : BaseModule
     {
         private readonly Random _random;
 
@@ -36,7 +35,7 @@ namespace Mute.Modules
             if (_random.NextDouble() < 0.05f)
                 await Context.Message.AddReactionAsync(_reactions[_random.Next(_responses.Length)]);
             else if (_random.NextDouble() <= 0.01f)
-                await this.TypingReplyAsync(_responses[_random.Next(_responses.Length)]);
+                await TypingReplyAsync(_responses[_random.Next(_responses.Length)]);
         }
     }
 }

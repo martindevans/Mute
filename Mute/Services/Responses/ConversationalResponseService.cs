@@ -6,10 +6,12 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Extensions;
+using IEnumerableExtensions = Mute.Extensions.IEnumerableExtensions;
 
 namespace Mute.Services.Responses
 {
@@ -39,44 +41,44 @@ namespace Mute.Services.Responses
                 Console.WriteLine($" - {response.GetType().Name}");
         }
 
-        public async Task Respond([NotNull] IUserMessage message)
+        public async Task Respond([NotNull] ICommandContext context)
         {
             // Check if the bot is directly mentioned
-            var mentionsBot = message.MentionedUserIds.Contains(_client.CurrentUser.Id);
+            var mentionsBot = context.Message.MentionedUserIds.Contains(_client.CurrentUser.Id);
 
             //Try to get a conversation with this user (either continued from before, or starting with a new one)
-            var c = await GetOrCreateConversation(message, mentionsBot);
+            var c = await GetOrCreateConversation(context, mentionsBot);
 
             //If we have a conversation, try to reply to this message
             if (c != null)
             {
-                var r = await c.Respond(message, mentionsBot, CancellationToken.None);
+                var r = await c.Respond(context, mentionsBot, CancellationToken.None);
                 if (r != null)
-                    await message.Channel.TypingReplyAsync(r);
+                    await context.Channel.TypingReplyAsync(r);
             }
         }
 
-        private async Task<IConversation> GetOrCreateConversation([NotNull] IUserMessage message, bool mentionsBot)
+        private async Task<IConversation> GetOrCreateConversation([NotNull] ICommandContext context, bool mentionsBot)
         {
             //Create a new conversation starting with this message
-            var newConv = await TryCreateConversation(message, mentionsBot);
+            var newConv = await TryCreateConversation(context, mentionsBot);
 
             //Use the existing conversation if it is not over, or else replace it with the new conversation
             return _conversations.AddOrUpdate(
-                message.Author,
+                context.User,
                 _ => newConv,
                 (_, c) => (c?.IsComplete ?? true) ? newConv : c
             );
         }
 
-        [ItemCanBeNull] private async Task<IConversation> TryCreateConversation([NotNull] IUserMessage message, bool mentionsBot)
+        [ItemCanBeNull] private async Task<IConversation> TryCreateConversation([NotNull] ICommandContext context, bool mentionsBot)
         {
             //Find generators which can respond to this message
-            var random = new Random(message.Id.GetHashCode());
+            var random = new Random(context.Message.Id.GetHashCode());
             var candidates = new List<IConversation>();
             foreach (var generator in _responses.AsParallel())
             {
-                var conversation = await generator.TryRespond(message, mentionsBot);
+                var conversation = await generator.TryRespond(context, mentionsBot);
                 if (conversation == null)
                     continue;
 

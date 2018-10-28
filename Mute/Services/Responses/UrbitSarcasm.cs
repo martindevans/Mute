@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Discord;
+using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Extensions;
 
@@ -26,10 +25,10 @@ namespace Mute.Services.Responses
             _random = random;
         }
 
-        public Task<IConversation> TryRespond(IMessage message, bool containsMention)
+        public Task<IConversation> TryRespond(ICommandContext context, bool containsMention)
         {
             var rgx = new Regex("[^a-zA-Z0-9 -]");
-            var msg = rgx.Replace(message.Content, "");
+            var msg = rgx.Replace(context.Message.Content, "");
 
             var words = msg.ToLowerInvariant().Split(' ');
             if (_triggerWords.Overlaps(words))

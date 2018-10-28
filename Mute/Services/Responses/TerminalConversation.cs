@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using JetBrains.Annotations;
 
 namespace Mute.Services.Responses
@@ -19,15 +20,15 @@ namespace Mute.Services.Responses
             _reactions = reactions;
         }
 
-        public Task<string> Respond(IMessage message, bool containsMention, CancellationToken ct)
+        public Task<string> Respond(ICommandContext context, bool containsMention, CancellationToken ct)
         {
             IsComplete = true;
 
-            if (_reactions != null && _reactions.Length > 0 && message is IUserMessage umsg)
+            if (_reactions != null && _reactions.Length > 0)
             {
                 Task.Run(async () => {
                     foreach (var reaction in _reactions)
-                        await umsg.AddReactionAsync(reaction);
+                        await context.Message.AddReactionAsync(reaction);
                 }, ct);
             }
 

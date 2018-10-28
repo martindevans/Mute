@@ -6,11 +6,12 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using Mute.Extensions;
 using Mute.Services.Responses.Eliza.Engine;
 using Mute.Services.Responses.Eliza.Scripts;
+using IEnumerableExtensions = Mute.Extensions.IEnumerableExtensions;
 
 namespace Mute.Services.Responses.Eliza
 {
@@ -38,7 +39,7 @@ namespace Mute.Services.Responses.Eliza
             //           where i != null
             //           select i).ToArray();
 
-            //Get extra keys
+            //Get basic key providers
             var keys = (from t in Assembly.GetExecutingAssembly().GetTypes()
                         where t.IsClass
                         where typeof(IKeyProvider).IsAssignableFrom(t)
@@ -68,7 +69,7 @@ namespace Mute.Services.Responses.Eliza
             }
         }
 
-        public Task<IConversation> TryRespond(IMessage message, bool containsMention)
+        public Task<IConversation> TryRespond(ICommandContext context, bool containsMention)
         {
             return Task.Run<IConversation>(() => {
 
@@ -76,11 +77,11 @@ namespace Mute.Services.Responses.Eliza
                     return null;
 
                 //Determine if thie message is a greeting
-                var isGreeting = message.Content.Split(' ').Select(CleanWord).Any(_greetings.Contains);
+                var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(_greetings.Contains);
 
                 if (isGreeting)
                 {
-                    var seed = message.CreatedAt.UtcTicks.GetHashCode();
+                    var seed = context.Message.Id.GetHashCode();
                     var rand = new Random(seed);
                     return new ElizaConversation(IEnumerableExtensions.Random(_scripts, rand), seed);
                 }
@@ -111,12 +112,12 @@ namespace Mute.Services.Responses.Eliza
 
             public bool IsComplete { get; private set; }
 
-            public Task<string> Respond(IMessage message, bool containsMention, CancellationToken ct)
+            public Task<string> Respond(ICommandContext context, bool containsMention, CancellationToken ct)
             {
                 return Task.Run(() => {
                     lock (_eliza)
                     {
-                        var response = _eliza.ProcessInput(message.Content);
+                        var response = _eliza.ProcessInput(context);
                         IsComplete = _eliza.Finished;
                         return response;
                     }

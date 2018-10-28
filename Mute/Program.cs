@@ -122,7 +122,7 @@ namespace Mute
                 await _client.SetStatusAsync(UserStatus.Online);
             }
 
-            // Type exit to exit
+            // Type `exit` to exit
             Console.WriteLine("type 'exit' to exit");
             while (true)
             {
@@ -167,22 +167,18 @@ namespace Mute
             var prefixPos = 0;
             var hasPrefix = message.HasCharPrefix('!', ref prefixPos);
 
-            if (hasPrefix)
-            {
-                //It's a command, process it as such
-                await ProcessAsCommand(message, prefixPos);
-            }
-            else
-            {
-                await _services.GetService<ConversationalResponseService>().Respond(message);
-            }
-        }
-
-        private async Task ProcessAsCommand(SocketUserMessage message, int offset)
-        {
-            // Create a Command Context
+            // Create a context for this message
             var context = new SocketCommandContext(_client, message);
 
+            //Either process as command or try to process conversationally
+            if (hasPrefix)
+                await ProcessAsCommand(prefixPos, context);
+            else
+                await _services.GetService<ConversationalResponseService>().Respond(context);
+        }
+
+        private async Task ProcessAsCommand(int offset, [NotNull] ICommandContext context)
+        {
             // When there's a mention the command may or may not include the prefix. Check if it does include it and skip over it if so
             if (context.Message.Content[offset] == '!')
                 offset++;
@@ -193,7 +189,7 @@ namespace Mute
                 var result = await _commands.ExecuteAsync(context, offset, _services);
 
                 //Don't print error message in response to messages from self
-                if (!result.IsSuccess && message.Author.Id != _client.CurrentUser.Id)
+                if (!result.IsSuccess && context.User.Id != _client.CurrentUser.Id)
                     await context.Channel.SendMessageAsync(result.ErrorReason);
 
                 if (result.ErrorReason != null)

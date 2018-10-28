@@ -4,7 +4,6 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Discord;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Extensions;
@@ -47,7 +46,7 @@ namespace Mute.Services
             Console.WriteLine("Started Reminder Service");
         }
 
-        [NotNull] public IReadOnlyList<Notification> Get(ulong userId)
+        [NotNull] public IEnumerable<Notification> Get(ulong userId)
         {
             lock (_notifications)
                 return _notifications.Where(n => n.UserId == userId).ToArray();

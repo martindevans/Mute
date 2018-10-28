@@ -6,19 +6,18 @@ using Discord.Commands;
 using JetBrains.Annotations;
 using Microsoft.Recognizers.Text;
 using Microsoft.Recognizers.Text.DateTime;
-using Mute.Extensions;
 using Mute.Services.Responses.Eliza;
 using Mute.Services.Responses.Eliza.Engine;
 
 namespace Mute.Modules
 {
     public class Time
-        : ModuleBase, IKeyProvider
+        : BaseModule, IKeyProvider
     {
         [Command("time"), Summary("I will tell you the time")]
         public async Task TimeAsync([Remainder, CanBeNull] string tz = null)
         {
-            await this.TypingReplyAsync(await GetTime(tz));
+            await TypingReplyAsync(await GetTime(tz));
         }
 
         [ItemNotNull] private async Task<string> GetTime([CanBeNull] string tz = null)

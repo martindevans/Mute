@@ -1,19 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Humanizer;
 using JetBrains.Annotations;
-using Mute.Extensions;
 using Mute.Services.Responses.Eliza;
 using Mute.Services.Responses.Eliza.Engine;
 
 namespace Mute.Modules
 {
     public class UserInfo
-        : ModuleBase, IKeyProvider
+        : BaseModule, IKeyProvider
     {
         private readonly DiscordSocketClient _client;
 
@@ -27,13 +28,13 @@ namespace Mute.Modules
         {
             user = user ?? Context.User;
 
-            await this.TypingReplyAsync($"User ID for {Context.User.Username} is '{user.Id}'");
+            await TypingReplyAsync($"User ID for {Context.User.Username} is '{user.Id}'");
         }
 
         [Command("whois"), Summary("I will print out a summary of information about the given user")]
         public async Task Whois([CanBeNull] IUser user = null)
         {
-            await this.TypingReplyAsync(GetUserInfo(user ?? Context.User));
+            await TypingReplyAsync(GetUserInfo(user ?? Context.User));
         }
 
         private string GetUserInfo(string userid)
@@ -60,11 +61,28 @@ namespace Mute.Modules
             if (gu?.Nickname != null)
                 str.Append($" AKA {gu.Nickname}");
 
+            int clause = 0;
             if (user.IsBot && !user.Username.StartsWith('*'))
+            {
                 str.Append(" is a bot");
+                clause++;
+            }
 
             if (gu?.Activity != null)
-                str.Append($" ({gu.Activity.Type} {gu.Activity.Name})");
+            {
+                str.Append($" is currently {gu.Activity.Type} {gu.Activity.Name}");
+                clause++;
+            }
+
+            if (gu?.JoinedAt != null)
+            {
+                if (clause > 0)
+                    str.Append(" and");
+
+                var duration = (DateTime.UtcNow - gu.JoinedAt.Value.UtcDateTime).Humanize();
+
+                str.Append($" has been a member for {duration}");
+            }
 
             return str.ToString();
         }
@@ -74,8 +92,8 @@ namespace Mute.Modules
             get
             {
                 yield return new Key("who", 10,
-                    new Decomposition("who is *", false, true, d => GetUserInfo(d[0])),
-                    new Decomposition("who * is *", false, true, d => GetUserInfo(d[1]))
+                    new Decomposition("who is *", d => GetUserInfo(d[0])),
+                    new Decomposition("who * is *", d => GetUserInfo(d[1]))
                 );
             }
         }

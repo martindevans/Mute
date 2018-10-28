@@ -4,13 +4,12 @@ using Discord.WebSocket;
 using Humanizer;
 using JetBrains.Annotations;
 using Microsoft.ML.Models;
-using Mute.Extensions;
 using Mute.Services;
 
 namespace Mute.Modules
 {
     public class Sentiment
-        : ModuleBase
+        : BaseModule
     {
         private readonly SentimentService _sentiment;
         private readonly DiscordSocketClient _client;
@@ -89,7 +88,7 @@ namespace Mute.Modules
             await _sentiment.ForceRetrain();
             await emoji;
 
-            await this.TypingReplyAsync($"Retrained in {w.Elapsed.Humanize(precision:2)}");
+            await TypingReplyAsync($"Retrained in {w.Elapsed.Humanize(precision:2)}");
             await SentimentMetrics();
         }
     }

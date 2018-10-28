@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord.Addons.Interactive;
+using Discord;
 using Discord.Commands;
 using Mute.Extensions;
 using Mute.Services;
-using Mute.Services.Responses.Eliza.Topics;
 
 namespace Mute.Modules
 {
     public class Define
-        : InteractiveBase //, ITopic
+        : BaseModule //, ITopic
     {
         private readonly WikipediaService _wikipedia;
 
@@ -27,17 +25,17 @@ namespace Mute.Modules
 
             var count = definition?.Search?.Count ?? 0;
 
-            if (count == 0)
+            if (definition?.Search == null || count == 0)
             {
-                await this.TypingReplyAsync("I don't know anything about that, sorry");
+                await TypingReplyAsync("I don't know anything about that, sorry");
             }
             else if (count == 1)
             {
-                await this.TypingReplyAsync(definition.Search.Single().Description);
+                await TypingReplyAsync(definition.Search.Single().Description);
             }
             else
             {
-                await this.TypingReplyAsync($"I have found {count} possible items, could you be more specific?");
+                await TypingReplyAsync($"I have found {count} possible items, could you be more specific?");
 
                 var r = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
                 if (r == null)
@@ -46,8 +44,16 @@ namespace Mute.Modules
                 var rr = r.Content.ToLowerInvariant();
                 if (rr.Contains("list") || rr.Contains("what"))
                 {
-                    foreach (var item in definition.Search)
-                        await this.TypingReplyAsync($" - {item.Description ?? item.Title ?? item.Label} ([{item.Id}]({item.Uri}))");
+                    await DisplayItemList(
+                        definition.Search,
+                        async () => await ReplyAsync("No items :("),
+                        async (item, index) => {
+                            var embed = new EmbedBuilder()
+                                        .WithTitle(item.Label ?? item.Title)
+                                        .WithDescription(item.Description)
+                                        .WithUrl(item.Uri ?? item.ConceptUri);
+                            await TypingReplyAsync(embed);
+                        });
                 }
             }
         }

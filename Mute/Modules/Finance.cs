@@ -1,13 +1,14 @@
 ﻿using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
+using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
 
 namespace Mute.Modules
 {
     public class Finance
-        : ModuleBase
+        : BaseModule
     {
         private readonly CryptoCurrencyService _cryptoService;
         private readonly AlphaAdvantageService _stockService;
@@ -19,7 +20,7 @@ namespace Mute.Modules
         }
 
         [Command("ticker"), Summary("I will find out information about a stock or currency")]
-        public async Task Ticker(string symbolOrName, string quote = "USD")
+        public async Task Ticker([NotNull] string symbolOrName, string quote = "USD")
         {
             if (await TickerAsCrypto(symbolOrName, quote))
                 return;
@@ -30,7 +31,7 @@ namespace Mute.Modules
             if (await TickerAsForex(symbolOrName, quote))
                 return;
 
-            await this.TypingReplyAsync($"I can't find a stock or a currency called '{symbolOrName}'");
+            await TypingReplyAsync($"I can't find a stock or a currency called '{symbolOrName}'");
         }
 
         private async Task<bool> TickerAsStock(string symbolOrName)
@@ -47,7 +48,7 @@ namespace Mute.Modules
                     change += "down";
                 change += $"{(delta / result.Price):P}";
 
-                await this.TypingReplyAsync($"{result.Symbol} is trading at {result.Price:0.00}, {change} since opening today");
+                await TypingReplyAsync($"{result.Symbol} is trading at {result.Price:0.00}, {change} since opening today");
                 return true;
             }
 
@@ -60,14 +61,14 @@ namespace Mute.Modules
 
             if (result != null)
             {
-                await this.TypingReplyAsync($"{result.FromName} ({result.FromCode}) is worth {result.ToCode.TryGetCurrencySymbol()}{result.ExchangeRate.ToString("0.00", CultureInfo.InvariantCulture)}");
+                await TypingReplyAsync($"{result.FromName} ({result.FromCode}) is worth {result.ToCode.TryGetCurrencySymbol()}{result.ExchangeRate.ToString("0.00", CultureInfo.InvariantCulture)}");
                 return true;
             }
 
             return false;
         }
 
-        private async Task<bool> TickerAsCrypto(string symbolOrName, string quote)
+        private async Task<bool> TickerAsCrypto([NotNull] string symbolOrName, string quote)
         {
             //Try to parse the sym/name as a cryptocurrency
             var currency = await _cryptoService.Find(symbolOrName);
@@ -83,7 +84,7 @@ namespace Mute.Modules
             Task ongoingTask = null;
             if (!ticker.Quotes.TryGetValue(quote.ToUpperInvariant(), out var val) && quote != "USD")
             {
-                ongoingTask = this.TypingReplyAsync($"I'm not sure what the value is in '{quote.ToUpperInvariant()}', I'll try 'USD' instead");
+                ongoingTask = TypingReplyAsync($"I'm not sure what the value is in '{quote.ToUpperInvariant()}', I'll try 'USD' instead");
 
                 quote = "USD";
                 ticker.Quotes.TryGetValue(quote, out val);
@@ -110,7 +111,7 @@ namespace Mute.Modules
             if (ongoingTask != null)
                 await ongoingTask;
 
-            await this.TypingReplyAsync(reply);
+            await TypingReplyAsync(reply);
 
             return true;
         }

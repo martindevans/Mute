@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Extensions;
@@ -36,13 +36,13 @@ namespace Mute.Services.Responses
             _random = random;
         }
 
-        public Task<IConversation> TryRespond(IMessage message, bool containsMention)
+        public Task<IConversation> TryRespond(ICommandContext context, bool containsMention)
         {
             //Determine if thie message is a greeting
-            var isGreeting = message.Content.Split(' ').Select(CleanWord).Any(AllGreetings.Contains);
+            var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(AllGreetings.Contains);
 
             return Task.FromResult<IConversation>(isGreeting
-                ? new HelloConversation(string.Format(ChooseGreeting(), ((SocketGuildUser)message.Author).Nickname))
+                ? new HelloConversation(string.Format(ChooseGreeting(), ((SocketGuildUser)context.User).Nickname))
                 : null
             );
         }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services.Responses.Eliza.Scripts;
@@ -31,29 +32,29 @@ namespace Mute.Services.Responses.Eliza.Engine
 		    _xnone = _script.GetKeys("xnone").ToArray();
 		}
 
-	    [NotNull] public string ProcessInput(string input)
+	    [NotNull] public string ProcessInput([NotNull] ICommandContext input)
 	    {
-	        input = CleanInput(input);
+	        var ctx = new ElizaContext(input, CleanInput(input.Message.Content));
 
-            return ProcessSentences(input)      //Try to create a reply to one of the sentences of the input
-                ?? _mem.PopOrDefault()          //Fall back to a reply we saved earlier
-                ?? TryKey(_xnone.Random(_random), input)     //Make a default reply
-                ?? "I am at a loss for words";  //Return default default
+            return ProcessSentences(ctx)                    //Try to create a reply to one of the sentences of the input
+                ?? _mem.PopOrDefault()                      //Fall back to a reply we saved earlier
+                ?? TryKey(_xnone.Random(_random), ctx)      //Default reply
+                ?? "I am at a loss for words";              //Return default default
 	    }
 
-	    [CanBeNull] private string ProcessSentences([NotNull] string input)
+	    [CanBeNull] private string ProcessSentences([NotNull] ElizaContext ctx)
 	    {
-	        return (from sentence in input.Split('.', StringSplitOptions.RemoveEmptyEntries)
-                    let transformed = Transform(_script.Pre, sentence).Trim()
+	        return (from sentence in ctx.Input.Split('.', StringSplitOptions.RemoveEmptyEntries)
+                    let transformed = new ElizaContext(ctx.Base, Transform(_script.Pre, sentence).Trim())
 	                let r = Sentence(transformed)
 	                where r != null
 	                select r).FirstOrDefault();
 	    }
 
-		[CanBeNull] private string Sentence([NotNull] string sentence)
+		[CanBeNull] private string Sentence([NotNull] ElizaContext ctx)
 		{
             //Split sentence into words
-		    var words = sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+		    var words = ctx.Input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
 		    //Check if there are any exit words, if so immediately terminate
 		    if (words.Any(_script.Quit.Contains))
@@ -71,7 +72,7 @@ namespace Mute.Services.Responses.Eliza.Engine
 
 		    //Get a reply for each key
 		    var replies = from key in keys
-		                  let reply = TryKey(key, sentence.PadLeft(1).PadRight(1))
+		                  let reply = TryKey(key, new ElizaContext(ctx, ctx.Input.PadLeft(1).PadRight(1)))
 		                  where reply != null
 		                  select reply;
 
@@ -86,16 +87,16 @@ namespace Mute.Services.Responses.Eliza.Engine
 		/// fails, try another decomposition rule. If assembly is a goto rule, return
 		/// null and give the key. If assembly succeeds, return the reply;
 		/// </remarks>
-		[CanBeNull] private string TryKey([CanBeNull] Key key, string sentence)
+		[CanBeNull] private string TryKey([CanBeNull] Key key, ElizaContext ctx)
 		{
 		    if (key == null)
 		        return null;
 
             //Select reassembly rules which match the input
 		    var decompositions = from decomp in key.Decompositions
-		                         let decomposed = Patterns.Match(sentence, decomp.Pattern, _script.Syns)
+		                         let decomposed = Patterns.Match(ctx.Input, decomp.Pattern, _script.Syns)
 		                         where decomposed != null
-                                 let rule = Task.Run(async () => await ChooseReassembly(decomp).Rule(decomposed)).Result
+                                 let rule = Task.Run(async () => await ChooseReassembly(decomp).Rule(ctx, decomposed)).Result
                                  where !string.IsNullOrWhiteSpace(rule)
 		                         select (decomp, rule, decomposed);
 
@@ -107,7 +108,7 @@ namespace Mute.Services.Responses.Eliza.Engine
                     var gotos = _script.GetKeys(rule.Substring(5));
                     return (from g in gotos
                             orderby g.Rank descending
-                            let r = TryKey(g, sentence)
+                            let r = TryKey(g, ctx)
                             where r != null
                             select r).FirstOrDefault();
                 }
@@ -126,6 +127,11 @@ namespace Mute.Services.Responses.Eliza.Engine
 			return null;
 		}
 
+        /// <summary>
+        /// Pick a reassembly rule from the given decomposition
+        /// </summary>
+        /// <param name="d"></param>
+        /// <returns></returns>
 	    private IReassembly ChooseReassembly([NotNull] Decomposition d)
 	    {
 	        //Initialize index for this rule if it's not already set
@@ -178,6 +184,11 @@ namespace Mute.Services.Responses.Eliza.Engine
 	    }
 
         #region static helpers
+        /// <summary>
+        /// "Clean" the string by removing characters the bot cannot handle (double spaces, most punctuation etc)
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
 	    private string CleanInput([NotNull] string input)
 	    {
 	        StringBuilder Compress(StringBuilder str)
@@ -232,9 +243,15 @@ namespace Mute.Services.Responses.Eliza.Engine
 	        return Compress(builder).ToString();
 	    }
 
-	    [NotNull] private static string Transform([NotNull] IReadOnlyDictionary<string, Transform> transformations, [NotNull] string s)
+        /// <summary>
+        /// Apply a set of transformation rules to all the words in a sentence
+        /// </summary>
+        /// <param name="transformations"></param>
+        /// <param name="sentence"></param>
+        /// <returns></returns>
+	    [NotNull] private static string Transform([NotNull] IReadOnlyDictionary<string, Transform> transformations, [NotNull] string sentence)
 	    {
-	        var txs = from word in s.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+	        var txs = from word in sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries)
 	                  let tx = transformations.GetValueOrDefault(word)
 	                  select (word, tx);
 

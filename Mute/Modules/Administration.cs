@@ -12,7 +12,7 @@ namespace Mute.Modules
     [Group]
     [RequireOwner]
     public class Administration
-        : ModuleBase
+        : BaseModule
     {
         private readonly DatabaseService _database;
         private readonly HistoryLoggingService _history;
@@ -28,9 +28,14 @@ namespace Mute.Modules
         [Command("hostinfo"), Summary("I Will tell you where I am being hosted")]
         public async Task HostName()
         {
-            await this.TypingReplyAsync($"Machine: {Environment.MachineName}");
-            await this.TypingReplyAsync($"User: {Environment.UserName}");
-            await this.TypingReplyAsync($"OS: {Environment.OSVersion}");
+            var embed = new EmbedBuilder()
+                .AddField("Machine", Environment.MachineName)
+                .AddField("User", Environment.UserName)
+                .AddField("OS", Environment.OSVersion)
+                .AddField("CPUs", Environment.ProcessorCount)
+                .Build();
+
+            await ReplyAsync("", false, embed);
         }
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -48,10 +53,10 @@ namespace Mute.Modules
         public async Task Sql([Remainder] string sql)
         {
             using (var result = await _database.ExecReader(sql))
-                await this.TypingReplyAsync($"SQL affected {result.RecordsAffected} rows");
+                await TypingReplyAsync($"SQL affected {result.RecordsAffected} rows");
         }
 
-        [Command("subscribe"), Summary("I will wubscribe history logging to a new channel")]
+        [Command("subscribe"), Summary("I will subscribe history logging to a new channel")]
         public async Task Scrape([NotNull] ITextChannel channel)
         {
             try
@@ -71,17 +76,17 @@ namespace Mute.Modules
                 user = Context.Message.Author as IGuildUser;
 
             if (user == null)
-                await this.TypingReplyAsync("No user!");
+                await TypingReplyAsync("No user!");
             else
             {
                 var c = _conversations.GetConversation(user);
                 if (c == null)
-                    await this.TypingReplyAsync("No active conversation");
+                    await TypingReplyAsync("No active conversation");
                 else if (c.IsComplete)
-                    await this.TypingReplyAsync($"Conversation is complete `{c.GetType()}`");
+                    await TypingReplyAsync($"Conversation is complete `{c.GetType()}`");
                 else
                 {
-                    await this.TypingReplyAsync($"Conversation is active `{c.GetType()}`...");
+                    await TypingReplyAsync($"Conversation is active `{c.GetType()}`...");
                     await ReplyAsync(c.ToString());
                 }
             }

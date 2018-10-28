@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Addons.Interactive;
 using JetBrains.Annotations;
 using Mute.Extensions;
@@ -11,6 +12,7 @@ namespace Mute.Modules
     public class BaseModule
         : InteractiveBase
     {
+        #region display lists
         /// <summary>
         /// Display a list of items. Will use different formats for none, few and many items.
         /// </summary>
@@ -23,11 +25,53 @@ namespace Mute.Modules
         /// <returns></returns>
         protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<Task> nothing, Func<T, Task> singleResult, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
         {
-            await DisplayItemList(items,
+            await DisplayItemList(
+                items,
                 nothing,
                 singleResult,
                 null,
                 manyPrelude,
+                displayItem
+            );
+        }
+
+        /// <summary>
+        /// Display a list of items. Will use different formats for none, few and many items.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="items">The list of items to speak</param>
+        /// <param name="nothing">Generate a string for no items</param>
+        /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
+        /// <param name="displayItem">Convert a single item (of many) to a string</param>
+        /// <returns></returns>
+        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<Task> nothing, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
+        {
+            await DisplayItemList(
+                items,
+                nothing,
+                null,
+                null,
+                manyPrelude,
+                displayItem
+            );
+        }
+
+        /// <summary>
+        /// Display a list of items. Will use different formats for none, few and many items.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="items">The list of items to speak</param>
+        /// <param name="nothing">Generate a string for no items</param>
+        /// <param name="displayItem">Convert a single item (of many) to a string</param>
+        /// <returns></returns>
+        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<Task> nothing, Func<T, int, Task> displayItem)
+        {
+            await DisplayItemList(
+                items,
+                nothing,
+                null,
+                null,
+                null,
                 displayItem
             );
         }
@@ -54,7 +98,7 @@ namespace Mute.Modules
             //Make sure we have a fresh user list to resolve users from IDs
             await Context.Guild.DownloadUsersAsync();
 
-            if (items.Count == 1)
+            if (items.Count == 1 && singleResult != null)
             {
                 await singleResult(items.Single());
             }
@@ -64,7 +108,8 @@ namespace Mute.Modules
             }
             else
             {
-                await manyPrelude(items);
+                if (manyPrelude != null)
+                    await manyPrelude(items);
 
                 var index = 0;
                 foreach (var item in items)
@@ -85,7 +130,7 @@ namespace Mute.Modules
         {
             if (items.Count == 0)
             {
-                await this.TypingReplyAsync(nothing());
+                await TypingReplyAsync(nothing());
             }
             else
             {
@@ -122,5 +167,23 @@ namespace Mute.Modules
                 async (t, i) => await ReplyAsync(itemToString(t, i))
             );
         }
+        #endregion
+
+        #region reply
+        protected async Task<IUserMessage> TypingReplyAsync([NotNull] string message, bool isTTS = false, [CanBeNull] Embed embed = null, [CanBeNull] RequestOptions options = null)
+        {
+            return await Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
+        }
+
+        public async Task<IUserMessage> TypingReplyAsync([NotNull] EmbedBuilder embed, [CanBeNull] RequestOptions options = null)
+        {
+            return await TypingReplyAsync("", false, embed.Build(), options);
+        }
+
+        public async Task<IUserMessage> ReplyAsync([NotNull] EmbedBuilder embed, [CanBeNull] RequestOptions options = null)
+        {
+            return await ReplyAsync("", false, embed.Build(), options);
+        }
+        #endregion
     }
 }

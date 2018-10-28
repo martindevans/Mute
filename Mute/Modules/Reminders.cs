@@ -35,9 +35,9 @@ namespace Mute.Modules
         [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder"), Summary("I will remind you of something after a period of time")]
         public async Task CreateReminderCmd([CanBeNull, Remainder] string message)
         {
-            var msg = await CreateReminder(message);
+            var msg = await CreateReminder(Context, message);
             if (msg != null)
-                await this.TypingReplyAsync(msg);
+                await TypingReplyAsync(msg);
         }
 
         [Command("reminders"), Summary("I will give you a list of all your pending reminders")]
@@ -78,9 +78,9 @@ namespace Mute.Modules
         public async Task CancelReminder([NotNull] string id)
         {
             if (await _reminder.Delete(id))
-                await this.TypingReplyAsync($"Deleted reminder `{id}`");
+                await TypingReplyAsync($"Deleted reminder `{id}`");
             else
-                await this.TypingReplyAsync($"I can't find a reminder with id `{id}`");
+                await TypingReplyAsync($"I can't find a reminder with id `{id}`");
         }
 
         #region parsing
@@ -163,7 +163,7 @@ namespace Mute.Modules
         #endregion
 
         [ItemCanBeNull]
-        private async Task<string> CreateReminder(string message)
+        private async Task<string> CreateReminder(ICommandContext context, string message)
         {
             try
             {
@@ -185,11 +185,11 @@ namespace Mute.Modules
                     var duration = triggerTime - DateTime.UtcNow;
 
                     //Add some context to the message
-                    var prelude = $"{Context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerTime, culture: CultureInfo.GetCultureInfo("en-gn"))}...";
+                    var prelude = $"{context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerTime, culture: CultureInfo.GetCultureInfo("en-gn"))}...";
                     var msg = $"remind me {message}";
 
                     //Save to database
-                    var n = await _reminder.Create(triggerTime, prelude, msg, Context.Message.Channel.Id, Context.User.Id);
+                    var n = await _reminder.Create(triggerTime, prelude, msg, context.Message.Channel.Id, context.User.Id);
 
                     return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{n.UID}`)";
                 }
@@ -206,7 +206,7 @@ namespace Mute.Modules
             get
             {
                 yield return new Key("remind", 10,
-                    new Decomposition("remind me *", d => Task.FromResult("Remind Nyarlathothep to setup Module Context in conversations"))// CreateReminder(d[0]))
+                    new Decomposition("remind me *", (c, d) => CreateReminder(c, d[0]))
                 );
             }
         }

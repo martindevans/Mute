@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Extensions;
 
@@ -44,9 +45,9 @@ namespace Mute.Services.Responses
             _random = random;
         }
 
-        public async Task<IConversation> TryRespond(IMessage message, bool containsMention)
+        public async Task<IConversation> TryRespond(ICommandContext context, bool containsMention)
         {
-            var s = await _sentiment.Predict(message.Content);
+            var s = await _sentiment.Predict(context.Message.Content);
 
             if (s.Score < Bracket || s.Classification == SentimentService.Sentiment.Neutral)
                 return null;
