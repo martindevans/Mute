@@ -8,6 +8,9 @@ namespace Mute.Modules
     public class Hugot
         : BaseModule
     {
+        private const double ReactionChance = 0.05;
+        private const double ReplyChance = 0.01;
+
         private readonly Random _random;
 
         private readonly string[] _responses = {
@@ -29,12 +32,12 @@ namespace Mute.Modules
             _random = random;
         }
 
-        [Command("hugot"), Summary("Nothing, I will ignore all !Hugot commands")]
-        public async Task DoNothing(params string[] nothing)
+        [Command("hugot"), Hidden]
+        public async Task DoNothing(params string[] _)
         {
-            if (_random.NextDouble() < 0.05f)
+            if (_random.NextDouble() < ReactionChance)
                 await Context.Message.AddReactionAsync(_reactions[_random.Next(_responses.Length)]);
-            else if (_random.NextDouble() <= 0.01f)
+            else if (_random.NextDouble() <= ReplyChance)
                 await TypingReplyAsync(_responses[_random.Next(_responses.Length)]);
         }
     }

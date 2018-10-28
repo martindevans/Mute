@@ -22,8 +22,7 @@ namespace Mute.Modules
             _services = services;
         }
 
-        [Command("ping"), Summary("I will respond with 'pong'")]
-        [Alias("test")]
+        [Command("ping"), Summary("I will respond with 'pong'"), Alias("test")]
         public async Task Ping()
         {
             await ReplyAsync("pong");
@@ -42,8 +41,7 @@ namespace Mute.Modules
                 await TypingReplyAsync($"My latency is {_client.Latency}ms, that's a bit slow");
         }
 
-        [Command("commands"), Summary("I will respond with a list of commands that I understand")]
-        [Alias("help")]
+        [Command("commands"), Summary("I will respond with a list of commands that I understand"), Alias("help")]
         public async Task Commands([NotNull, Remainder] string filter = "")
         {
             var filters = filter.Split(' ').Select(a => a.ToLowerInvariant()).Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();

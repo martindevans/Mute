@@ -54,12 +54,6 @@ namespace Mute.Modules
         [Command("io"), Summary("I will tell you what you currently owe")]
         public async Task ListDebtsByBorrower([CanBeNull] IUser lender = null)
         {
-            string FormatOwed(Owed owe)
-            {
-                var lenderUser = Context.Client.GetUser(owe.LenderId);
-                return $"{lenderUser.Mention} {FormatCurrency(owe.Amount, owe.Unit)}";
-            }
-
             await CheckDebugger();
 
             using (Context.Channel.EnterTypingState())
@@ -69,25 +63,13 @@ namespace Mute.Modules
                     .OrderBy(o => o.LenderId)
                     .ToArray();
 
-                await DisplayItemList(owed, 
-                    () => "You are debt free :D",
-                    o => $"{Context.User.Mention} owes {Context.Client.GetUser(o.LenderId).Mention} {FormatCurrency(o.Amount, o.Unit)}",
-                    os => $"{Context.User.Mention} owes {string.Join(", ", os.Select(FormatOwed))}",
-                    os => $"{Context.User.Mention} owes {os.Count} debts...",
-                    (o, i) => $"{i+1}. {FormatOwed(o)}"
-                );
+                await PaginatedTransactions(owed, "owes", false);
             }
         }
 
         [Command("oi"), Summary("I will tell you what you are currently owed")]
         public async Task ListDebtsByLender([CanBeNull] IUser borrower = null)
         {
-            string FormatBorrowed(Owed owe)
-            {
-                var borrowerUser = Context.Client.GetUser(owe.BorrowerId);
-                return $"{FormatCurrency(owe.Amount, owe.Unit)} by {borrowerUser.Mention}";
-            }
-
             await CheckDebugger();
 
             using (Context.Channel.EnterTypingState())
@@ -97,13 +79,7 @@ namespace Mute.Modules
                     .OrderBy(o => o.LenderId)
                     .ToArray();
 
-                await DisplayItemList(owed, 
-                    () => "You are owed nothing",
-                    o => $"{Context.Client.GetUser(o.BorrowerId).Mention} owes {Context.User.Mention} {FormatCurrency(o.Amount, o.Unit)}",
-                    os => $"{Context.User.Mention} is owed {string.Join(", ", os.Select(FormatBorrowed))}",
-                    os => $"{Context.User.Mention} is owed {os.Count} debts...",
-                    (o, i) => $"{i+1}. {FormatBorrowed(o)}"
-                );
+                await PaginatedTransactions(owed, "owes", false);
             }
         }
         #endregion
@@ -162,70 +138,14 @@ namespace Mute.Modules
         [Command("pending"), Summary("I will list all pending transactions you have yet to confirm")]
         public async Task ListPendingPayments()
         {
-            string Note(Pending pending)
-            {
-                if (string.IsNullOrEmpty(pending.Note))
-                    return "";
-                else
-                    return $" for `{pending.Note}`";
-            }
-
             await CheckDebugger();
 
             using (Context.Channel.EnterTypingState())
-            {
-                var pending = await _database.GetPending(Context.User);
-
-                await DisplayItemList(
-                    pending,
-                    () => "You have no pending payments to confirm",
-                    p => $"Type `!confirm {p.Id}` to confirm transaction of {FormatCurrency(p.Amount, p.Unit)} from {Context.Client.GetUser(p.PayerId).Mention}{Note(p)}",
-                    null,
-                    ps => $"You have {ps.Count} payments to confirm. Type `!confirm $id` for each payment you have received",
-                    (p, i) => $"{p.Id}: {Context.Client.GetUser(p.PayerId).Mention} paid you {FormatCurrency(p.Amount, p.Unit)}, '{p.Note}'"
-                );
-            }
+                await PaginatedPending(await _database.GetPending(Context.User));
         }
         #endregion
 
         #region transaction list
-        private async Task PaginatedTransactions([NotNull] IEnumerable<Owed> owed)
-        {
-            string Name(ulong id)
-            {
-                var user = _client.GetUser(id);
-
-                if (user == null)
-                    return $"?{id}?";
-
-                if (user is IGuildUser gu)
-                    return gu.Nickname;
-
-                return user.Username;
-            }
-
-            string FormatSingleTsx(Owed d)
-            {
-                var symbol = d.Unit.TryGetCurrencySymbol();
-                var borrower = Name(d.BorrowerId);
-                var lender = Name(d.LenderId);
-
-                if (symbol != d.Unit)
-                    return $"{lender} => {borrower} {symbol}{d.Amount} {d.Note}";
-                else
-                    return $"{lender} => {borrower} {d.Amount}({d.Unit}) {d.Note}";
-            }
-
-            var owedArr = owed.ToArray();
-
-            //If the number of transactions is small, display them all.
-            //Otherwise batch and show them in pages
-            if (owedArr.Length < 8)
-                await ReplyAsync(string.Join("\n", owedArr.Select(FormatSingleTsx)));
-            else
-                await PagedReplyAsync(new PaginatedMessage {Pages = owedArr.Batch(5).Select(d => string.Join("\n", d.Select(FormatSingleTsx)))});
-        }
-
         [Command("transactions"), Summary("I will show all your transactions, optionally filtered to only with another user")]
         public async Task ListTransactions([CanBeNull] IUser other = null)
         {
@@ -244,6 +164,67 @@ namespace Mute.Modules
         {
             if (Debugger.IsAttached)
                 await ReplyAsync("**Warning - Debugger is attached. This is likely not the main version of mute!**");
+        }
+
+        private string Name(ulong id)
+        {
+            var user = _client.GetUser(id);
+
+            if (user == null)
+                return $"?{id}?";
+
+            if (user is IGuildUser gu)
+                return gu.Nickname;
+
+            return user.Username;
+        }
+
+        private async Task PaginatedTransactions([NotNull] IEnumerable<Owed> owed, string connector = "➜", bool lenderFirst = true)
+        {
+            string FormatSingleTsx(Owed d)
+            {
+                var borrower = Name(d.BorrowerId);
+                var lender = Name(d.LenderId);
+                var note = string.IsNullOrEmpty(d.Note) ? "" : $"'{d.Note}'";
+
+                return $"{(lenderFirst ? lender : borrower)} {connector} {(lenderFirst ? borrower : lender)} {FormatCurrency(d.Amount, d.Unit)} {note}";
+            }
+
+            var owedArr = owed.ToArray();
+
+            //If the number of transactions is small, display them all.
+            //Otherwise batch and show them in pages
+            if (owedArr.Length < 10)
+                await ReplyAsync(string.Join("\n", owedArr.Select(FormatSingleTsx)));
+            else
+                await PagedReplyAsync(new PaginatedMessage {Pages = owedArr.Batch(7).Select(d => string.Join("\n", d.Select(FormatSingleTsx)))});
+        }
+
+        private async Task PaginatedPending([NotNull] IEnumerable<Pending> pending)
+        {
+            string FormatSinglePending(Pending p, bool longForm)
+            {
+                var payer = Name(p.PayerId);
+                var note = string.IsNullOrEmpty(p.Note) ? "" : $"'{p.Note}'";
+                var amount = FormatCurrency(p.Amount, p.Unit);
+
+                if (longForm)
+                    return $"Type `!confirm {p.Id}` to confirm transaction of {amount} from {payer} {note}";
+                else
+                    return $"`{p.Id}`: {payer} paid you {amount} {note}";
+            }
+
+            var pendingArr = pending.ToArray();
+
+            //If the number of transactions is small, display them all.
+            //Otherwise batch and show them in pages
+            if (pendingArr.Length < 7)
+                await ReplyAsync(string.Join("\n", pendingArr.Select(p => FormatSinglePending(p, true))));
+            else
+            {
+                await TypingReplyAsync($"You have {pendingArr.Length} payments to confirm. Type `!confirm $id` for each payment you have received");
+                await PagedReplyAsync(new PaginatedMessage {Pages = pendingArr.Batch(5).Select(d => string.Join("\n", d.Select(p => FormatSinglePending(p, false))))});
+            }
         }
 
         /// <summary>
