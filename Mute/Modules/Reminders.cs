@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Mute.Extensions;
 using Mute.Services;
 using Humanizer;
 using Humanizer.Localisation;
@@ -68,7 +67,7 @@ namespace Mute.Modules
                  .WithColor(Color)
                  .WithDescription(n.Message.Replace("`", "'"))
                  .WithTimestamp(new DateTimeOffset(n.TriggerTime))
-                 .WithFooter(n.UID)
+                 .WithFooter(n.ID)
                  .Build();
 
             await ReplyAsync("", false, embed);
@@ -191,7 +190,7 @@ namespace Mute.Modules
                     //Save to database
                     var n = await _reminder.Create(triggerTime, prelude, msg, context.Message.Channel.Id, context.User.Id);
 
-                    return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{n.UID}`)";
+                    return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{n.ID}`)";
                 }
             }
             catch (Exception e)

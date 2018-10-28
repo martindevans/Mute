@@ -8,9 +8,9 @@ namespace Mute.Services
     {
         private class MiliaryTz
         {
-            public string Name;
-            public char Letter;
-            public int Offset;
+            public readonly string Name;
+            public readonly char Letter;
+            public readonly int Offset;
 
             public MiliaryTz(string name, char letter, int offset)
             {

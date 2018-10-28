@@ -8,7 +8,7 @@ namespace Mute.Extensions
         public static T PopOrDefault<T>([NotNull] this Stack<T> stack)
         {
             if (stack.Count == 0)
-                return default(T);
+                return default;
 
             return stack.Pop();
         }

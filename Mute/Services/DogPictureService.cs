@@ -39,8 +39,8 @@ namespace Mute.Services
             // ReSharper disable once InconsistentNaming
             [UsedImplicitly] public string status;
 
-            [UsedImplicitly] public string message;
             // ReSharper disable once InconsistentNaming
+            [UsedImplicitly] public string message;
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Services;
 using Mute.Tests.Mocks;
@@ -10,10 +11,11 @@ namespace Mute.Tests.Services
     [TestClass]
     public class CatPictureServiceTests
     {
-        private static readonly Dictionary<string, HttpResponseMessage> _responses = new Dictionary<string, HttpResponseMessage> {
+        private static readonly Dictionary<string, HttpResponseMessage> Responses = new Dictionary<string, HttpResponseMessage> {
             { "cats", S("cats") }
         };
 
+        [NotNull]
         private static HttpResponseMessage S(string str)
         {
             return new HttpResponseMessage { Content = new StringContent(str) };
@@ -22,7 +24,7 @@ namespace Mute.Tests.Services
         [TestMethod]
         public async Task Service_Returns_NonZero()
         {
-            var httpClient = new MockHttpClient(_responses);
+            var httpClient = new MockHttpClient(Responses);
             var cats = new CatPictureService(httpClient, "cats");
             var stream = await cats.GetCatPictureAsync();
 

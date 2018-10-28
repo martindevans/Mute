@@ -38,7 +38,7 @@ namespace Mute
         /// <param name="cancellationToken">A cancellation token. If invoked, the task will return
         /// immediately as cancelled.</param>
         /// <returns>A Task representing waiting for the process to end.</returns>
-        private static Task WaitForExitAsync([NotNull] this Process process, CancellationToken cancellationToken = default(CancellationToken))
+        private static Task WaitForExitAsync([NotNull] this Process process, CancellationToken cancellationToken = default)
         {
             process.EnableRaisingEvents = true;
 
@@ -52,7 +52,7 @@ namespace Mute
 
             process.Exited += Handler;
 
-            if (cancellationToken != default(CancellationToken))
+            if (cancellationToken != default)
             {
                 cancellationToken.Register(
                     () => {

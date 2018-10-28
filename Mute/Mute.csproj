@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <StartupObject>Mute.Program</StartupObject>
     <Platforms>AnyCPU;x86;x64</Platforms>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -262,8 +262,7 @@ namespace Mute.Modules
                 return $"{sym}{amount}";
         }
 
-        [NotNull]
-        private static Extraction ExtractCurrencyAndAmount(string input)
+        [NotNull] private static Extraction ExtractCurrencyAndAmount(string input)
         {
             Extraction Extract()
             {

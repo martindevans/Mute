@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Mute.Extensions;
 using Mute.Services;
 
 namespace Mute.Modules

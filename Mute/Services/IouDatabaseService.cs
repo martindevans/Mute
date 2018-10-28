@@ -55,9 +55,9 @@ namespace Mute.Services
             )
             WHERE `Amount` > 0";
 
-        private const string FindAllTransactionsByPerson = @"SELECT `Unit`, `Amount`, `BorrowerId`, `LenderId`, `Note` FROM IOU_Debts WHERE LenderId = @PersonId OR BorrowerId = @PersonId";
+        private const string FindAllTransactionsByPerson = "SELECT `Unit`, `Amount`, `BorrowerId`, `LenderId`, `Note` FROM IOU_Debts WHERE LenderId = @PersonId OR BorrowerId = @PersonId";
 
-        private const string FindAllTransactionsByPersonWithOther = @"SELECT `Unit`, `Amount`, `BorrowerId`, `LenderId`, `Note` FROM IOU_Debts WHERE (LenderId = @PersonId AND BorrowerId = @OtherId) OR (LenderId = @OtherId AND BorrowerId = @PersonId)";
+        private const string FindAllTransactionsByPersonWithOther = "SELECT `Unit`, `Amount`, `BorrowerId`, `LenderId`, `Note` FROM IOU_Debts WHERE (LenderId = @PersonId AND BorrowerId = @OtherId) OR (LenderId = @OtherId AND BorrowerId = @PersonId)";
         #endregion
 
         #region sql payments
@@ -134,7 +134,7 @@ namespace Mute.Services
 
         [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetOwed([NotNull] IUser borrower)
         {
-            return await GetOwed(borrower.Id, null);
+            return await GetOwed(borrower.Id);
         }
 
         [ItemNotNull] private async Task<IReadOnlyList<Owed>> GetOwed(ulong borrowerId, [CanBeNull] string unit = null)
@@ -146,10 +146,8 @@ namespace Mute.Services
                     cmd.CommandText = FindOwedByPerson;
                     cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = borrowerId.ToString() });
 
-                    if (unit != null)
-                        cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit });
-                    else
-                        cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = DBNull.Value });
+                    var uObj = unit != null ? (object)unit : DBNull.Value;
+                    cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = uObj });
 
                     using (var results = await cmd.ExecuteReaderAsync())
                         return await ParseOwed(results);
@@ -274,10 +272,7 @@ namespace Mute.Services
         #region settlement
         public void TrySettle(IUser root, string currency)
         {
-            //Find everything this user owes (in this currency)
-            var owed = GetOwed(root);
-
-
+            throw new NotImplementedException();
         }
         #endregion
 

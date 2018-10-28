@@ -1,4 +1,6 @@
-﻿namespace Mute.Extensions
+﻿using JetBrains.Annotations;
+
+namespace Mute.Extensions
 {
     public static class UInt32Extensions
     {
@@ -72,7 +74,7 @@
             "mur", "tel", "rep", "teg", "pec", "nel", "nev", "fes"
         };
 
-        public static string MeaninglessString(this uint number)
+        [NotNull] public static string MeaninglessString(this uint number)
         {
             unchecked {
                 number += 1185671;

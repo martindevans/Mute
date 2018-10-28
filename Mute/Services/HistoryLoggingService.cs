@@ -158,7 +158,7 @@ namespace Mute.Services
             while (counter < max)
             {
                 //Get some messages
-                const int batchSize = 100;
+                const int batchSize = 99;
                 var messages = (await channel.GetMessagesAsync(start, Direction.Before, batchSize).FlattenAsync()).ToArray();
                 foreach (var message in messages)
                 {

@@ -175,7 +175,7 @@ namespace Mute.Services
 
         private async Task SendNotification([NotNull] Notification notification)
         {
-            Console.WriteLine($"Sending notification: C:{notification.ChannelId}, UID:{notification.UID}, Msg:{notification.Message}");
+            Console.WriteLine($"Sending notification: C:{notification.ChannelId}, UID:{notification.ID}, Msg:{notification.Message}");
 
             //Send message
             var channel = (ISocketMessageChannel)_client.GetGuild(415655090842763265)?.GetChannel(notification.ChannelId);
@@ -195,7 +195,7 @@ namespace Mute.Services
                 using (var cmd = _database.CreateCommand())
                 {
                     cmd.CommandText = UpdateSent;
-                    cmd.Parameters.Add(new SQLiteParameter("@Uid", System.Data.DbType.String) { Value = notification.UID });
+                    cmd.Parameters.Add(new SQLiteParameter("@Uid", System.Data.DbType.String) { Value = notification.ID });
 
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -212,7 +212,7 @@ namespace Mute.Services
             //Delete from cache
             lock (_notifications)
             {
-                var index = _notifications.FindIndex(n => n.UID == id);
+                var index = _notifications.FindIndex(n => n.ID == id);
                 if (index == -1)
                     return false;
             }
@@ -240,16 +240,16 @@ namespace Mute.Services
         public class Notification
             : IComparable<Notification>
         {
-            public readonly string UID;
+            public readonly string ID;
             public readonly DateTime TriggerTime;
             public readonly string Prelude;
             public readonly string Message;
             public readonly ulong ChannelId;
             public readonly ulong UserId;
 
-            public Notification(string uid, DateTime triggerTime, string prelude, string message, ulong channelId, ulong userId)
+            public Notification(string id, DateTime triggerTime, string prelude, string message, ulong channelId, ulong userId)
             {
-                UID = uid;
+                ID = id;
                 TriggerTime = triggerTime;
                 Prelude = prelude;
                 Message = message;

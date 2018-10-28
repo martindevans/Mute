@@ -28,7 +28,13 @@ namespace Mute.Modules
         {
             user = user ?? Context.User;
 
-            await TypingReplyAsync($"User ID for {Context.User.Username} is '{user.Id}'");
+            await TypingReplyAsync($"User ID for {user.Username} is `{user.Id}`");
+        }
+
+        [Command("roleid"), Summary("I will type out the ID of the specified role")]
+        public async Task RoleId([NotNull] IRole role)
+        {
+            await TypingReplyAsync($"User ID for {role.Name} is `{role.Id}`");
         }
 
         [Command("whois"), Summary("I will print out a summary of information about the given user")]
@@ -52,7 +58,7 @@ namespace Mute.Modules
                 return GetUserInfo(_client.GetUser(id));
         }
 
-        private string GetUserInfo([NotNull] IUser user)
+        private static string GetUserInfo([NotNull] IUser user)
         {
             var str = new StringBuilder($"{user.Username}");
 

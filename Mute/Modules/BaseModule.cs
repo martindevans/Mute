@@ -163,7 +163,7 @@ namespace Mute.Modules
                 async () => await ReplyAsync(nothing()),
                 async l => await ReplyAsync(singleResult(items.Single())),
                 fewResults != null ? async l => await ReplyAsync(fewResults(items)) : (Func<IReadOnlyList<T>, Task>)null,
-                async l => await this.TypingReplyAsync(manyPrelude(items)),
+                async l => await TypingReplyAsync(manyPrelude(items)),
                 async (t, i) => await ReplyAsync(itemToString(t, i))
             );
         }

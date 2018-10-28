@@ -1,66 +1,67 @@
 ﻿using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace Mute
 {
     public class Configuration
     {
-        public AuthConfig Auth;
-        public AlphaAdvantageConfig AlphaAdvantage;
-        public DatabaseConfig Database;
-        public YoutubeDlConfig YoutubeDl;
-        public MlConfig MlConfig;
-        public ElizaConfig ElizaConfig;
-        public Steam Steam;
+        [UsedImplicitly] public AuthConfig Auth;
+        [UsedImplicitly] public AlphaAdvantageConfig AlphaAdvantage;
+        [UsedImplicitly] public DatabaseConfig Database;
+        [UsedImplicitly] public YoutubeDlConfig YoutubeDl;
+        [UsedImplicitly] public MlConfig MlConfig;
+        [UsedImplicitly] public ElizaConfig ElizaConfig;
+        [UsedImplicitly] public Steam Steam;
     }
 
     public class AuthConfig
     {
-        public string Token;
+        [UsedImplicitly] public string Token;
     }
 
     public class AlphaAdvantageConfig
     {
-        public string Key;
+        [UsedImplicitly] public string Key;
     }
 
     public class DatabaseConfig
     {
-        public string ConnectionString;
+        [UsedImplicitly] public string ConnectionString;
     }
 
     public class YoutubeDlConfig
     {
-        public string RateLimit;
-        public string InProgressDownloadFolder;
-        public string CompleteDownloadFolder;
+        [UsedImplicitly] public string RateLimit;
+        [UsedImplicitly] public string InProgressDownloadFolder;
+        [UsedImplicitly] public string CompleteDownloadFolder;
 
-        public string YoutubeDlBinaryPath;
-        public string FprobeBinaryPath;
+        [UsedImplicitly] public string YoutubeDlBinaryPath;
+        [UsedImplicitly] public string FprobeBinaryPath;
     }
 
     public class MlConfig
     {
-        public string BaseModelPath;
-        public string BaseDatasetsPath;
-        public string TempTrainingCache;
+        [UsedImplicitly] public string BaseModelPath;
+        [UsedImplicitly] public string BaseDatasetsPath;
+        [UsedImplicitly] public string TempTrainingCache;
 
-        public SentimentConfig Sentiment;
+        [UsedImplicitly] public SentimentConfig Sentiment;
     }
 
     public class SentimentConfig
     {
-        public string ModelDirectory;
-        public string TrainingDatasetDirectory;
-        public string EvalDatasetDirectory;
+        [UsedImplicitly] public string ModelDirectory;
+        [UsedImplicitly] public string TrainingDatasetDirectory;
+        [UsedImplicitly] public string EvalDatasetDirectory;
     }
 
     public class ElizaConfig
     {
-        public List<string> Scripts;
+        [UsedImplicitly] public List<string> Scripts;
     }
 
     public class Steam
     {
-        public string WebApiKey;
+        [UsedImplicitly] public string WebApiKey;
     }
 }
