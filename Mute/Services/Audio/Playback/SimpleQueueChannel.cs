@@ -35,9 +35,7 @@ namespace Mute.Services.Audio.Playback
 
         public Task Enqueue(T metadata, ISampleProvider audio)
         {
-            var resampled = new WdlResamplingSampleProvider(audio, WaveFormat.SampleRate).ToMono();
-
-            var q = new QueueClip(metadata, resampled);
+            var q = new QueueClip(metadata, new WdlResamplingSampleProvider(audio, WaveFormat.SampleRate).ToMono());
 
             _queue.Enqueue(q);
 
@@ -70,14 +68,14 @@ namespace Mute.Services.Audio.Playback
             //Read audio from source
             var read = _playing.Samples.Read(buffer, offset, count);
 
-            //If nothing was read then this item is complete, remove it from _playing. Next time we'll start the next item in the queue
-            if (read == 0)
+            //If the entire buffer was not filled this this item is complete, remove it from _playing. Next time we'll start the next item in the queue
+            if (read < count)
             {
                 _playing.Dispose();
                 _playing = default;
             }
 
-            return read;
+            return count;
         }
 
         public void Skip()
