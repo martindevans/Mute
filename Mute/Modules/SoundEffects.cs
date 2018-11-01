@@ -6,6 +6,7 @@ using Mute.Services.Audio;
 using System.Linq;
 using Discord;
 using JetBrains.Annotations;
+using MoreLinq;
 
 namespace Mute.Modules
 {
@@ -49,7 +50,7 @@ namespace Mute.Modules
             else
             {
                 await PagedReplyAsync(new PaginatedMessage {
-                    Pages = sfx.Select(a => a.Name).ToArray(),
+                    Pages = sfx.Select(a => a.Name).Batch(10).Select(b => string.Join("\n", b)).ToArray(),
                     Color = Color.Green,
                     Title = $"Sfx \"{search}\""
                 });
