@@ -38,7 +38,7 @@ namespace Mute.Services.Audio.Playback
             _mixerInput = new MixingSampleProvider(MixingFormat) { ReadFully = true };
 
             //resample mix format to output format
-            _mixerOutput = new MediaFoundationResampler(_mixerInput.ToWaveProvider(), OutputFormat.SampleRate).ToSampleProvider().ToStereo().ToWaveProvider16();
+            _mixerOutput = new WdlResamplingSampleProvider(_mixerInput, OutputFormat.SampleRate).ToStereo().ToWaveProvider16();
             
             //Add all initial channels to the mixer
             foreach (var source in sources)

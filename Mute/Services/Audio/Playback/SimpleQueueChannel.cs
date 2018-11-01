@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using MoreLinq.Extensions;
+using NAudio.Wave.SampleProviders;
 
 namespace Mute.Services.Audio.Playback
 {
@@ -34,9 +35,9 @@ namespace Mute.Services.Audio.Playback
 
         public Task Enqueue(T metadata, ISampleProvider audio)
         {
-            var resampled = new MediaFoundationResampler(audio.ToWaveProvider(), WaveFormat);
+            var resampled = new WdlResamplingSampleProvider(audio, WaveFormat.SampleRate).ToMono();
 
-            var q = new QueueClip(metadata, resampled.ToSampleProvider(), resampled);
+            var q = new QueueClip(metadata, resampled);
 
             _queue.Enqueue(q);
 
@@ -109,14 +110,12 @@ namespace Mute.Services.Audio.Playback
             public readonly T Metadata;
             public readonly ISampleProvider Samples;
 
-            private readonly MediaFoundationResampler _resampler;
             private readonly TaskCompletionSource<bool> _onCompletion;
 
-            public QueueClip(T metadata, ISampleProvider samples, MediaFoundationResampler resampler)
+            public QueueClip(T metadata, ISampleProvider samples)
             {
                 Metadata = metadata;
                 Samples = samples;
-                _resampler = resampler;
                 _onCompletion = new TaskCompletionSource<bool>();
             }
 
@@ -124,7 +123,6 @@ namespace Mute.Services.Audio.Playback
 
             public void Dispose()
             {
-                _resampler?.Dispose();
                 _onCompletion.SetResult(true);
             }
         }
