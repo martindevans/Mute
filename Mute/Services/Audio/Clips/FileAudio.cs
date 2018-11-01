@@ -9,17 +9,14 @@ namespace Mute.Services.Audio.Clips
     {
         private readonly FileInfo _file;
 
-        public FileAudio([NotNull] FileInfo file, AudioClipType type)
+        public FileAudio([NotNull] FileInfo file)
         {
             _file = file;
 
-            Type = type;
             Name = file.Name;
         }
 
         public string Name { get; }
-
-        public AudioClipType Type { get; }
 
         public bool IsLoaded => true;
 

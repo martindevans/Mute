@@ -14,3 +14,4 @@ Mute.Tests/bin
 Mute.Tests/obj
 
 /ml-models/sentiment/*.m
+/sfx

@@ -11,7 +11,8 @@ namespace Mute
         [UsedImplicitly] public YoutubeDlConfig YoutubeDl;
         [UsedImplicitly] public MlConfig MlConfig;
         [UsedImplicitly] public ElizaConfig ElizaConfig;
-        [UsedImplicitly] public Steam Steam;
+        [UsedImplicitly] public SteamConfig Steam;
+        [UsedImplicitly] public SoundEffectConfig SoundEffects;
     }
 
     public class AuthConfig
@@ -60,8 +61,13 @@ namespace Mute
         [UsedImplicitly] public List<string> Scripts;
     }
 
-    public class Steam
+    public class SteamConfig
     {
         [UsedImplicitly] public string WebApiKey;
+    }
+
+    public class SoundEffectConfig
+    {
+        [UsedImplicitly] public string SfxFolder;
     }
 }

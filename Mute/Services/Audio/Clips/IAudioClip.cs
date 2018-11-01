@@ -10,11 +10,6 @@ namespace Mute.Services.Audio.Clips
         string Name { get; }
 
         /// <summary>
-        /// Get the type of clip this is
-        /// </summary>
-        AudioClipType Type { get; }
-
-        /// <summary>
         /// Check if this file is ready to be opened
         /// </summary>
         bool IsLoaded { get; }
@@ -24,12 +19,5 @@ namespace Mute.Services.Audio.Clips
         /// </summary>
         /// <returns></returns>
         ISampleProvider Open();
-    }
-
-    public enum AudioClipType
-    {
-        Music,
-        Voice,
-        Other
     }
 }

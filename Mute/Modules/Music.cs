@@ -11,6 +11,7 @@ using JetBrains.Annotations;
 using Mute.Services;
 using Mute.Services.Audio;
 using Mute.Services.Audio.Clips;
+using Mute.Services.Audio.Playback;
 
 namespace Mute.Modules
 {
@@ -28,96 +29,76 @@ namespace Mute.Modules
             { EmojiLookup.BrokenHeart, -2 }
         };
 
-        private readonly AudioPlayerService _audio;
+        private readonly MusicPlayerService _music;
+        private readonly MultichannelAudioService _audio;
         private readonly YoutubeService _youtube;
         private readonly MusicRatingService _ratings;
         private readonly Random _random;
 
-        public Music(AudioPlayerService audio, YoutubeService youtube, MusicRatingService ratings, Random random)
+        public Music(MusicPlayerService music, MultichannelAudioService audio, YoutubeService youtube, MusicRatingService ratings, Random random)
         {
+            _music = music;
             _audio = audio;
             _youtube = youtube;
             _ratings = ratings;
             _random = random;
         }
 
-        [Command("leave-voice"), Summary("I will immediately leave the voice channel (if you are in one)")]
-        public async Task LeaveVoice()
-        {
-            if (Context.User is IVoiceState v)
-            {
-                using (await v.VoiceChannel.ConnectAsync())
-                    await Task.Delay(100);
-
-                await _audio.Stop();
-            }
-            else
-            {
-                await ReplyAsync("You are not in a voice channel");
-            }
-        }
-
         [Command("skip"), Summary("Skip the currently playing track")]
         public Task Skip()
         {
-            _audio.Skip();
+            _music.Skip();
 
             return Task.CompletedTask;
         }
 
-        [Command("stop"), Summary("Stop playing audio and clear the queue")]
+        [Command("stop"), Summary("Clear the music queue")]
         public async Task StopPlayback()
         {
-            await _audio.Stop();
+            _music.Stop();
         }
 
         [Command("playing"), Summary("Get information about the currently playing track")]
         public async Task NowPlaying()
         {
-            var playing = _audio.Playing;
-            if (!playing.HasValue)
+            var playing = _music.Playing;
+            if (playing.Item1 == null)
                 await TypingReplyAsync("Nothing is currently playing");
             else
             {
-                var msg = await TypingReplyAsync("Now playing: " + playing.Value.Clip.Name);
-
-                if (playing.Value.Clip is YoutubeAsyncFileAudio youtube)
+                //Show a message about what's currently playing
+                IUserMessage msg;
+                if (playing.Item1 is YoutubeAsyncFileAudio youtube)
                 {
+                    msg = await ReplyAsync(new EmbedBuilder().WithUrl($"https://www.youtube.com/watch?v={youtube.ID}"));
+
                     await AddYoutubeReactions(msg, youtube.ID);
-
-                    //Wait for song to finish
-                    await playing.Value.TaskCompletion.Task;
-                    await Task.Delay(ReactionTimeout);
-
-                    //Delete playing message
-                    await msg.DeleteAsync();
                 }
+                else
+                {
+                    msg = await TypingReplyAsync("Now playing: " + playing.Item1.Name);
+                }
+
+                //Wait for song to finish
+                await playing.Item2;
+                await Task.Delay(ReactionTimeout);
+
+                //Delete playing message
+                await msg.DeleteAsync();
             }
         }
 
         [NotNull, ItemCanBeNull] private async Task<Task> EnqueueMusicClip(Func<IAudioClip> clip)
         {
-            if (Context.User is IVoiceState v)
+            if (!await _audio.MoveChannel(Context.User))
             {
-                try
-                {
-                    var playTask = _audio.Enqueue(clip());
-                    _audio.Channel = v.VoiceChannel;
-                    _audio.Play();
-
-                    return playTask;
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
+                await ReplyAsync("You are not in a voice channel");
+                return null;
             }
             else
             {
-                await ReplyAsync("You are not in a voice channel");
+                return _music.Enqueue(clip());
             }
-
-            return null;
         }
 
         [NotNull, ItemCanBeNull] private async Task<Task> EnqueueYoutubeClip(string vid, IUserMessage message)
@@ -130,7 +111,7 @@ namespace Mute.Modules
             if (cached != null)
             {
                 Console.WriteLine($"Retrieved {vid} from cache");
-                return await EnqueueMusicClip(() => new FileAudio(cached, AudioClipType.Music));
+                return await EnqueueMusicClip(() => new FileAudio(cached));
             }
             else
             {
@@ -152,7 +133,7 @@ namespace Mute.Modules
                 await message.RemoveReactionAsync(EmojiLookup.Loading, Context.Client.CurrentUser);
 
                 //Enqueue the track
-                return await EnqueueMusicClip(() => new YoutubeAsyncFileAudio(vid, download, AudioClipType.Music));
+                return await EnqueueMusicClip(() => new YoutubeAsyncFileAudio(vid, download));
             }
         }
 
@@ -222,16 +203,16 @@ namespace Mute.Modules
         [Command("shuffle"), Summary("I will randomise the order of the media player queue")]
         public async Task ShuffleQueue()
         {
-            _audio.Shuffle();
+            _music.Shuffle();
 
-            await TypingReplyAsync($"Shuffled {_audio.Queue.Count} items");
+            await TypingReplyAsync($"Shuffled {_music.Queue.Count()} items");
         }
 
         [Command("play-random"), Summary("I will play a random track which has previously been played and rated")]
         public async Task PlayRandom()
         {
             //Get a set of youtube items currently in the play queue
-            var queue = new HashSet<string>(_audio.Queue.OfType<YoutubeAsyncFileAudio>().Select(a => a.ID));
+            var queue = new HashSet<string>(_music.Queue.OfType<YoutubeAsyncFileAudio>().Select(a => a.ID));
 
             //Get a list of top rated tracks (best first) which are not already in the queue
             var rated = (await _ratings.GetAggregateTrackRatings())

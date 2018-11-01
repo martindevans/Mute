@@ -13,6 +13,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Services;
 using Mute.Services.Audio;
+using Mute.Services.Audio.Playback;
 using Mute.Services.Games;
 using Mute.Services.Responses;
 using Newtonsoft.Json;
@@ -74,7 +75,7 @@ namespace Mute
                 .AddSingleton<CryptoCurrencyService>()
                 .AddSingleton<AlphaAdvantageService>()
                 .AddSingleton<IouDatabaseService>()
-                .AddSingleton<AudioPlayerService>()
+                .AddSingleton<MusicPlayerService>()
                 .AddSingleton<YoutubeService>()
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
@@ -86,7 +87,8 @@ namespace Mute
                 .AddSingleton<WikipediaService>()
                 .AddSingleton<TimeService>()
                 .AddSingleton<SteamApi>()
-                .AddSingleton<SoundEffectService>();
+                .AddSingleton<SoundEffectService>()
+                .AddSingleton<MultichannelAudioService>();
             
             _services = serviceCollection.BuildServiceProvider();
 

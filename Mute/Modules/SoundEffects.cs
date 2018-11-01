@@ -25,7 +25,7 @@ namespace Mute.Modules
         public async Task Play(string id)
         {
             //Try to play a clip by the given ID
-            var (ok, msg) = await _sfx.Play(id);
+            var (ok, msg) = await _sfx.Play(Context.User, id);
             if (ok)
                 return;
 
@@ -87,9 +87,7 @@ namespace Mute.Modules
             if (attachment.Size > 1048576)
             {
                 await TypingReplyAsync($"The attachment is too large! I can't use that for sound effect `{name}`");
-
-                await ReplyAsync("todo: using it anyway for test purposes");
-                //return;
+                return;
             }
 
             //Download a local copy of the attachment

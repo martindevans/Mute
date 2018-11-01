@@ -4,13 +4,13 @@ using JetBrains.Annotations;
 
 namespace Mute.Services.Audio.Clips
 {
-    class YoutubeAsyncFileAudio
+    public class YoutubeAsyncFileAudio
         : AsyncFileAudio
     {
         public string ID { get; }
 
-        public YoutubeAsyncFileAudio(string id, [NotNull] Task<FileInfo> file, AudioClipType type)
-            : base(file, type)
+        public YoutubeAsyncFileAudio(string id, [NotNull] Task<FileInfo> file)
+            : base(file)
         {
             ID = id;
         }

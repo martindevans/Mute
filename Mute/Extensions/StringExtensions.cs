@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using JetBrains.Annotations;
 
 namespace Mute.Extensions
@@ -12,19 +15,15 @@ namespace Mute.Extensions
 
         static StringExtensions()
         {
-            CurrencyNameToSymbol = CultureInfo.GetCultures(CultureTypes.AllCultures)
-                             .Where(c => !c.IsNeutralCulture)
-                             .Select(culture => RegionInfo(culture.LCID))
-                             .Where(ri => ri != null)
-                             .GroupBy(ri => ri.ISOCurrencySymbol.ToLowerInvariant())
-                             .ToDictionary(x => x.Key, x => x.First().CurrencySymbol);
+            CurrencyNameToSymbol = CultureInfo.GetCultures(CultureTypes.AllCultures).Where(c => !c.IsNeutralCulture).Select(culture => RegionInfo(culture.LCID)).Where(ri => ri != null).GroupBy(ri => ri.ISOCurrencySymbol.ToLowerInvariant()).ToDictionary(x => x.Key, x => x.First().CurrencySymbol);
 
             CurrencySymbolToName = new Dictionary<string, string>();
             foreach (var kvp in CurrencyNameToSymbol)
                 CurrencySymbolToName[kvp.Value] = kvp.Key;
         }
 
-        [CanBeNull] private static RegionInfo RegionInfo(int lcid)
+        [CanBeNull]
+        private static RegionInfo RegionInfo(int lcid)
         {
             try
             {
@@ -48,6 +47,21 @@ namespace Mute.Extensions
             if (CurrencySymbolToName.TryGetValue(symbol, out var result))
                 return result;
             return null;
+        }
+
+        public static string SHA256(this string str)
+        {
+            var result = new StringBuilder();
+
+            using (var hash = System.Security.Cryptography.SHA256.Create())
+            {
+                var bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(str));
+
+                foreach (var b in bytes)
+                    result.Append(b.ToString("x2"));
+            }
+
+            return result.ToString();
         }
     }
 }

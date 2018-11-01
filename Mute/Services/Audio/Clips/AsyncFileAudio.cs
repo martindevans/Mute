@@ -10,14 +10,11 @@ namespace Mute.Services.Audio.Clips
     {
         public string Name { get; private set; }
 
-        public AudioClipType Type { get; }
-
         private readonly Task _fileTask;
         private FileInfo _file;
 
-        public AsyncFileAudio([NotNull] Task<FileInfo> file, AudioClipType type)
+        public AsyncFileAudio([NotNull] Task<FileInfo> file)
         {
-            Type = type;
             Name = "Loading...";
 
             _fileTask = Task.Factory.StartNew(async () => { _file = await file; });

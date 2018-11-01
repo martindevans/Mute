@@ -5,7 +5,9 @@ using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
+using Mute.Services.Audio.Playback;
 using Mute.Services.Responses;
+using NAudio.Wave;
 
 namespace Mute.Modules
 {
@@ -17,12 +19,14 @@ namespace Mute.Modules
         private readonly DatabaseService _database;
         private readonly HistoryLoggingService _history;
         private readonly ConversationalResponseService _conversations;
+        private readonly MultichannelAudioService _mAudio;
 
-        public Administration(DatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations)
+        public Administration(DatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations, MultichannelAudioService mAudio)
         {
             _database = database;
             _history = history;
             _conversations = conversations;
+            _mAudio = mAudio;
         }
 
         [Command("hostinfo"), Summary("I Will tell you where I am being hosted")]
@@ -89,6 +93,20 @@ namespace Mute.Modules
                     await TypingReplyAsync($"Conversation is active `{c.GetType()}`...");
                     await ReplyAsync(c.ToString());
                 }
+            }
+        }
+
+        [Command("leave-voice"), Summary("I will immediately leave the voice channel (if you are in one)")]
+        public async Task LeaveVoice()
+        {
+            if (Context.User is IVoiceState v)
+            {
+                using (await v.VoiceChannel.ConnectAsync())
+                    await Task.Delay(100);
+            }
+            else
+            {
+                await ReplyAsync("You are not in a voice channel");
             }
         }
     }

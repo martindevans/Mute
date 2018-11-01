@@ -1,45 +1,111 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Data.SQLite;
+using System.IO;
 using System.Threading.Tasks;
+using Discord;
 using JetBrains.Annotations;
+using Mute.Extensions;
+using Mute.Services.Audio.Playback;
+using NAudio.Wave;
 
 namespace Mute.Services.Audio
 {
     public class SoundEffectService
     {
-        public async Task<(bool, string)> Play(string searchstring)
-        {
-            // Interrupting or mixing with currently playing clips?
-            // Do we maintain a separate queue of sfx, so e.g. sfx interrupt/mix with music but wait for other sfx?
+        private const string InsertSfxSql = "INSERT INTO `Sfx` (`Name`, `FileId`) VALUES (@Name, @FileId)";
+        private const string FindSfxSql = "Select * from Sfx where Name like '%' || @Search || '%'";
 
-            return (false, "not implemented");
+        [NotNull] private readonly MultichannelAudioService _audio;
+        [NotNull] private readonly Random _random;
+        [NotNull] private readonly DatabaseService _database;
+        [NotNull] private readonly SimpleQueueChannel<SoundEffect> _queue;
+        [NotNull] private readonly SoundEffectConfig _config;
+
+        public SoundEffectService([NotNull] Configuration config, [NotNull] MultichannelAudioService audio, [NotNull] Random random, [NotNull] DatabaseService database)
+        {
+            _config = config.SoundEffects;
+            _audio = audio;
+            _random = random;
+            _database = database;
+            _queue = new SimpleQueueChannel<SoundEffect>();
+
+            audio.Open(_queue);
+
+            _database.Exec("CREATE TABLE IF NOT EXISTS `Sfx` (`Name` TEXT NOT NULL, `FileId` TEXT NOT NULL)");
+        }
+
+        public async Task<(bool, string)> Play(IUser user, string searchstring)
+        {
+            var items = await Find(searchstring);
+            if (items.Count == 0)
+                return (false, "Cannot find any items by search string");
+
+            var item = items.Random(_random);
+            if (!File.Exists(item.Path))
+                return (false, "The file for this sound effect is missing!");
+
+            if (!await _audio.MoveChannel(user))
+                return (false, "You are not in a voice channel!");
+
+#pragma warning disable 4014 //don't want to await this task - it completes _when the sfx finishes_
+            _queue.Enqueue(item, new AudioFileReader(item.Path));
+#pragma warning restore 4014
+            return (true, "ok");
         }
 
         [ItemNotNull]
         public async Task<IReadOnlyList<SoundEffect>> Find(string search)
         {
-            return new[] {
-                "sfx 1",
-                "sfx 2",
-                "sfx 3",
-                "sfx 4",
-                "sfx 5",
-                "sfx 6",
-                "sfx 7",
-                "sfx 8",
-                "sfx 9",
-            }.Select(a => new SoundEffect(a, a)).ToArray();
+            //Insert into the database
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = FindSfxSql;
+                cmd.Parameters.Add(new SQLiteParameter("@Search", System.Data.DbType.String) { Value = search.ToLowerInvariant() });
+
+                var results = new List<SoundEffect>();
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        results.Add(new SoundEffect(
+                            (string)reader["Name"],
+                            Path.Combine(_config.SfxFolder, (string)reader["FileId"])
+                        ));
+                    }
+                }
+
+                return results;
+            }
         }
 
-        public async Task<(bool, string)> Create(string name, byte[] data)
+        public async Task<(bool, string)> Create([NotNull] string name, [NotNull] byte[] data)
         {
-            return (false, "not implemented");
+            //Hash name so that the file name is not something the end user gets to choose
+            var hash = name.SHA256();
+
+            //Write file out to sfx folder (with hashed name)
+            var path = Path.Combine(_config.SfxFolder, hash);
+            using (var writer = File.OpenWrite(path))
+                writer.Write(data, 0, data.Length);
+
+            //Insert into the database
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = InsertSfxSql;
+                cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) { Value = name.ToLowerInvariant() });
+                cmd.Parameters.Add(new SQLiteParameter("@FileId", System.Data.DbType.String) { Value = hash });
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            return (true, "ok");
         }
 
         public struct SoundEffect
         {
-            public string Name;
-            public string Path;
+            public readonly string Name;
+            public readonly string Path;
 
             public SoundEffect(string name, string path)
             {
@@ -52,7 +118,5 @@ namespace Mute.Services.Audio
                 return Name;
             }
         }
-
-        
     }
 }

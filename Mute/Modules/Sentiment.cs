@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
@@ -23,35 +26,85 @@ namespace Mute.Modules
         [Command("sentiment"), Summary("I will show my opinion of a message")]
         public async Task AskSentiment([NotNull, Remainder] string message)
         {
-            var result = await _sentiment.Predict(message);
+            await ReactWithSentiment(Context.Message, await _sentiment.Predict(message));
+        }
 
+        [Command("sentiment"), Summary("I will show my opinion of the previous message")]
+        public async Task AskSentiment(byte offset = 0)
+        {
+            var msg = await GetPreviousMessage(offset);
+            if (msg == null)
+                return;
+
+            await ReactWithSentiment(msg);
+        }
+
+        private async Task ReactWithSentiment([NotNull] IUserMessage message, SentimentService.SentimentResult? score = null)
+        {
+            var result = score ?? await _sentiment.Predict(message.Content);
             if (result.Score < 0.75)
-                await Context.Message.AddReactionAsync(EmojiLookup.Confused);
+                await message.AddReactionAsync(EmojiLookup.Confused);
 
             switch (result.Classification)
             {
                 case SentimentService.Sentiment.Positive:
-                    await Context.Message.AddReactionAsync(EmojiLookup.ThumbsUp);
+                    await message.AddReactionAsync(EmojiLookup.ThumbsUp);
                     break;
                 case SentimentService.Sentiment.Neutral:
-                    await Context.Message.AddReactionAsync(EmojiLookup.Expressionless);
+                    await message.AddReactionAsync(EmojiLookup.Expressionless);
                     break;
                 case SentimentService.Sentiment.Negative:
-                    await Context.Message.AddReactionAsync(EmojiLookup.ThumbsDown);
+                    await message.AddReactionAsync(EmojiLookup.ThumbsDown);
                     break;
             }
-
         }
 
         [Command("sentiment-score"), Summary("I will show my opinion of a message numerically")]
         public async Task AskSentimentScore([NotNull, Remainder] string message)
         {
-            var result = await _sentiment.Predict(message);
+            await ShowSentimentScore(await _sentiment.Predict(message));
+        }
 
-            await ReplyAsync($"`{result.Classification}`");
-            await ReplyAsync($"`Positive` (confidence: {result.PositiveScore:#0.##})");
-            await ReplyAsync($"`Negative` (confidence: {result.NegativeScore:#0.##})");
-            await ReplyAsync($"`Neutral` (confidence: {result.NeutralScore:#0.##})");
+        [Command("sentiment-score"), Summary("I will show my opinion of the previous message numerically")]
+        public async Task AskSentimentScore(byte offset = 0)
+        {
+            var msg = await GetPreviousMessage(offset);
+            if (msg == null)
+                return;
+
+            await ShowSentimentScore(await _sentiment.Predict(msg.Content), msg.Content);
+        }
+
+        private async Task ShowSentimentScore(SentimentService.SentimentResult score, string quote = null)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle(quote)
+                .AddField("Positive", $"{score.PositiveScore:#0.##}")
+                .AddField("Neutral", $"{score.NeutralScore:#0.##}")
+                .AddField("Negative", $"{score.NegativeScore:#0.##}");
+
+            switch (score.Classification)
+            {
+                case SentimentService.Sentiment.Negative:
+                    embed = embed.WithColor(Color.Red);
+                    break;
+                case SentimentService.Sentiment.Positive:
+                    embed = embed.WithColor(Color.Blue);
+                    break;
+                case SentimentService.Sentiment.Neutral:
+                    embed = embed.WithColor(Color.DarkGrey);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            await ReplyAsync(embed);
+        }
+
+        [ItemCanBeNull] private async Task<IUserMessage> GetPreviousMessage(byte offset)
+        {
+            var messages = await Context.Channel.GetMessagesAsync(Context.Message, Direction.Before, byte.MaxValue).FlattenAsync();
+            return messages.Skip(offset).FirstOrDefault() as IUserMessage;
         }
 
         [Command("sentiment-metrics"), Summary("I will show statistics on the accuracy of my opinion")]
