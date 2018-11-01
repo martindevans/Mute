@@ -56,9 +56,10 @@ namespace Mute.Modules
             }
         }
 
-        [Command("sfx-create"), Summary("I will add a new sound effect to the database"), RequireOwner]
+        [Command("sfx-create"), Summary("I will add a new sound effect to the database")]
         public async Task Create(string name)
         {
+
             await TypingReplyAsync("Please upload an audio file for this sound effect. It must be under 15s and 1MiB!");
 
             //Wait for a reply with an attachment

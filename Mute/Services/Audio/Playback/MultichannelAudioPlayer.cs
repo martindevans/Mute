@@ -39,7 +39,7 @@ namespace Mute.Services.Audio.Playback
 
             //resample mix format to output format
             _mixerOutput = new WdlResamplingSampleProvider(_mixerInput, OutputFormat.SampleRate).ToStereo().ToWaveProvider16();
-            
+
             //Add all initial channels to the mixer
             foreach (var source in sources)
                 Add(source);
@@ -63,10 +63,7 @@ namespace Mute.Services.Audio.Playback
             lock (_mixerInput)
             {
                 if (_channels.TryGetValue(source, out var converter))
-                {
                     _mixerInput.RemoveMixerInput(converter);
-                    converter.Dispose();
-                }
             }
         }
 
@@ -86,13 +83,14 @@ namespace Mute.Services.Audio.Playback
             try
             {
                 using (var c = await _voiceChannel.ConnectAsync())
-                using (var s = c.CreatePCMStream(AudioApplication.Mixed, _voiceChannel.Bitrate, 250))
+                using (var s = c.CreatePCMStream(AudioApplication.Mixed, _voiceChannel.Bitrate))
                 {
                     var playing = false;
                     while (!_stopped)
                     {
                         //Wait for an event to happen to wake up the thread
-                        _threadEvent.WaitOne(playing ? 1 : 250);
+                        if (!playing)
+                            _threadEvent.WaitOne(250);
 
                         //Break out if stop flag has been set
                         if (_stopped)
@@ -128,11 +126,10 @@ namespace Mute.Services.Audio.Playback
         /// Resamples a source channels to the mixing rate (and mono)
         /// </summary>
         private class ChannelConverter
-            : ISampleProvider, IDisposable
+            : ISampleProvider
         {
             [NotNull] private readonly IChannel _channel;
 
-            [NotNull] private readonly MediaFoundationResampler _resampler;
             [NotNull] private readonly ISampleProvider _resampled;
 
             public bool IsPlaying => _channel.IsPlaying;
@@ -141,15 +138,14 @@ namespace Mute.Services.Audio.Playback
             {
                 _channel = channel;
 
-                _resampler = new MediaFoundationResampler(channel.ToWaveProvider(), MixingFormat);
-                _resampled = _resampler.ToSampleProvider().ToMono();
+                var resampler = new WdlResamplingSampleProvider(channel.ToMono(), MixingFormat.SampleRate);
+                _resampled = resampler;
             }
 
             public int Read(float[] buffer, int offset, int count)
             {
                 if (!IsPlaying)
                 {
-                    _resampler.Reposition();
                     Array.Clear(buffer, offset, count);
                     return count;
                 }
@@ -161,11 +157,6 @@ namespace Mute.Services.Audio.Playback
             }
 
             public WaveFormat WaveFormat => _resampled.WaveFormat;
-
-            public void Dispose()
-            {
-                _resampler.Dispose();
-            }
         }
     }
 }

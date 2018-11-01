@@ -46,6 +46,9 @@ namespace Mute.Services.Audio.Playback
 
         public int Read(float[] buffer, int offset, int count)
         {
+            //Clear the buffer before reading into it
+            Array.Clear(buffer, offset, count);
+
             //Skip track if requested
             if (_skip)
             {
@@ -60,33 +63,21 @@ namespace Mute.Services.Audio.Playback
             if (_playing.Samples == null)
                 _queue.TryDequeue(out _playing);
 
+            //If we're not playing anything, just return a buffer of zeroes
             if (_playing.Samples == null)
-            {
-                //Playback is complete return zeroes
-                Array.Clear(buffer, offset, count);
                 return count;
-            }
-            else
+            
+            //Read audio from source
+            var read = _playing.Samples.Read(buffer, offset, count);
+
+            //If nothing was read then this item is complete, remove it from _playing. Next time we'll start the next item in the queue
+            if (read == 0)
             {
-                //Read audio from source
-                var read = _playing.Samples.Read(buffer, offset, count);
-
-                //If nothing was read then this item is complete, remove it from _playing. Next time we'll start the next item in the queue
-                if (read == 0)
-                {
-                    _playing.Dispose();
-                    _playing = default;
-                }
-
-                //Zero out the rest of the array
-                if (read < count)
-                {
-                    Array.Clear(buffer, offset + read, offset + buffer.Length - read);
-                    read = count;
-                }
-
-                return read;
+                _playing.Dispose();
+                _playing = default;
             }
+
+            return read;
         }
 
         public void Skip()
