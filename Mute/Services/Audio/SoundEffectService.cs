@@ -81,11 +81,17 @@ namespace Mute.Services.Audio
 
         public async Task<(bool, string)> Create([NotNull] string name, [NotNull] byte[] data)
         {
-            //Hash name so that the file name is not something the end user gets to choose
-            var hash = name.SHA256();
-
-            //Write file out to sfx folder (with hashed name)
+            //Generate a unique name for this name+data combo
+            var hashName = name.SHA256();
+            var hashData = data.SHA256();
+            var hash = $"{hashName}{hashData}";
             var path = Path.Combine(_config.SfxFolder, hash);
+
+            //Check that there isn't a file collision
+            if (File.Exists(path))
+                return (false, "file already exists, use a different name");
+
+            //Write data to file
             using (var writer = File.OpenWrite(path))
                 writer.Write(data, 0, data.Length);
 
