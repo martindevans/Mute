@@ -23,7 +23,7 @@ namespace Mute.Modules
         }
 
         [Command("sfx"), Summary("I will join the voice channel you are in, play a sound effect and leave")]
-        public async Task Play(string id)
+        public async Task Play([NotNull] string id)
         {
             //Try to play a clip by the given ID
             var (ok, msg) = await _sfx.Play(Context.User, id);
@@ -35,7 +35,7 @@ namespace Mute.Modules
         }
 
         [Command("sfx-find"), Summary("I will list all available sfx")]
-        public async Task Find(string search)
+        public async Task Find([NotNull] string search)
         {
             var sfx = (await _sfx.Find(search)).OrderBy(a => a.Name).ToArray();
 
@@ -58,7 +58,7 @@ namespace Mute.Modules
         }
 
         [Command("sfx-create"), Summary("I will add a new sound effect to the database")]
-        public async Task Create(string name)
+        public async Task Create([NotNull] string name)
         {
             await TypingReplyAsync("Please upload an audio file for this sound effect. It must be under 15s and 1MiB!");
 
@@ -113,6 +113,36 @@ namespace Mute.Modules
             else
             {
                 await TypingReplyAsync($"Failed to create new sound effect. {msg}");
+            }
+        }
+
+        [Command("sfx-alias"), Summary("I will create an alias for another sound effect")]
+        public async Task Alias([NotNull] string name, [NotNull] string alias)
+        {
+            var a = await _sfx.Get(name);
+            var b = await _sfx.Get(alias);
+
+            if (a.HasValue && b.HasValue)
+            {
+                await TypingReplyAsync($"Cannot create an alias because `{name}` and `{alias}` both already exist");
+                return;
+            }
+
+            if (!a.HasValue && !b.HasValue)
+            {
+                await TypingReplyAsync($"Cannot create an alias because neither `{name}` nor `{alias}` exist");
+                return;
+            }
+
+            if (!a.HasValue)
+            {
+                await _sfx.Alias(b.Value, name);
+                await TypingReplyAsync($"Aliased `{b.Value.Name}` as `{name}`");
+            }
+            else
+            {
+                await _sfx.Alias(a.Value, alias);
+                await TypingReplyAsync($"Aliased `{a.Value.Name}` as `{alias}`");
             }
         }
     }

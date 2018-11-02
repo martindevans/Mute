@@ -5,9 +5,7 @@ using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
-using Mute.Services.Audio.Playback;
 using Mute.Services.Responses;
-using NAudio.Wave;
 
 namespace Mute.Modules
 {
@@ -19,14 +17,12 @@ namespace Mute.Modules
         private readonly DatabaseService _database;
         private readonly HistoryLoggingService _history;
         private readonly ConversationalResponseService _conversations;
-        private readonly MultichannelAudioService _mAudio;
 
-        public Administration(DatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations, MultichannelAudioService mAudio)
+        public Administration(DatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations)
         {
             _database = database;
             _history = history;
             _conversations = conversations;
-            _mAudio = mAudio;
         }
 
         [Command("hostinfo"), Summary("I Will tell you where I am being hosted")]
