@@ -10,19 +10,22 @@ using MoreLinq;
 
 namespace Mute.Modules
 {
+    [Group("sfx")]
     public class SoundEffects
         : BaseModule
     {
         private readonly SoundEffectService _sfx;
         private readonly IHttpClient _http;
+        private readonly IDiscordClient _client;
 
-        public SoundEffects([NotNull] SoundEffectService sfx, IHttpClient http)
+        public SoundEffects([NotNull] SoundEffectService sfx, IHttpClient http, IDiscordClient client)
         {
             _sfx = sfx;
             _http = http;
+            _client = client;
         }
 
-        [Command("sfx"), Summary("I will join the voice channel you are in, play a sound effect and leave")]
+        [Command, Summary("I will join the voice channel you are in, play a sound effect and leave"), Priority(0)]
         public async Task Play([NotNull] string id)
         {
             //Try to play a clip by the given ID
@@ -34,7 +37,7 @@ namespace Mute.Modules
             await TypingReplyAsync(msg);
         }
 
-        [Command("sfx-find"), Summary("I will list all available sfx")]
+        [Command("find"), Summary("I will list all available sfx"), Priority(1)]
         public async Task Find([NotNull] string search)
         {
             var sfx = (await _sfx.Find(search)).OrderBy(a => a.Name).ToArray();
@@ -57,7 +60,7 @@ namespace Mute.Modules
             }
         }
 
-        [Command("sfx-create"), Summary("I will add a new sound effect to the database")]
+        [Command("create"), Summary("I will add a new sound effect to the database"), Priority(1)]
         public async Task Create([NotNull] string name)
         {
             await TypingReplyAsync("Please upload an audio file for this sound effect. It must be under 15s and 1MiB!");
@@ -116,7 +119,7 @@ namespace Mute.Modules
             }
         }
 
-        [Command("sfx-alias"), Summary("I will create an alias for another sound effect")]
+        [Command("alias"), Summary("I will create an alias for another sound effect"), Priority(1)]
         public async Task Alias([NotNull] string name, [NotNull] string alias)
         {
             var a = await _sfx.Get(name);
@@ -144,6 +147,22 @@ namespace Mute.Modules
                 await _sfx.Alias(a.Value, alias);
                 await TypingReplyAsync($"Aliased `{a.Value.Name}` as `{alias}`");
             }
+        }
+
+        [Command("renormalize"), RequireOwner, Priority(1)]
+        public async Task Renormalize()
+        {
+            //Start work
+            var work = _sfx.NormalizeAllSfx();
+
+            //Add a reaction while work is ongoing
+            await Context.Message.AddReactionAsync(EmojiLookup.Thinking);
+
+            //Wait to finish work
+            await work;
+
+            //Remove the thinking indicator
+            await Context.Message.RemoveReactionAsync(EmojiLookup.Thinking, _client.CurrentUser);
         }
     }
 }

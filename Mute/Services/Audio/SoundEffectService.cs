@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using JetBrains.Annotations;
 using Mute.Extensions;
+using Mute.Services.Audio.Mixing;
 using Mute.Services.Audio.Playback;
 using NAudio.Wave;
 
@@ -81,31 +83,95 @@ namespace Mute.Services.Audio
 
         public async Task<(bool, string)> Create([NotNull] string name, [NotNull] byte[] data)
         {
-            //Generate a unique name for this name+data combo
-            var hashName = name.SHA256();
-            var hashData = data.SHA256();
-            var hash = $"{hashName}{hashData}";
-            var path = Path.Combine(_config.SfxFolder, hash);
-
-            //Check that there isn't a file collision
-            if (File.Exists(path))
-                return (false, "file already exists, use a different name");
-
-            //Write data to file
-            using (var writer = File.OpenWrite(path))
-                writer.Write(data, 0, data.Length);
-
-            //Insert into the database
-            using (var cmd = _database.CreateCommand())
+            try
             {
-                cmd.CommandText = InsertSfxSql;
-                cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) { Value = name.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@FileId", System.Data.DbType.String) { Value = hash });
+                //Generate a unique name for this name+data combo
+                var hashName = name.SHA256();
+                var hashData = data.SHA256();
+                var hash = $"{hashName}{hashData}".SHA256();
+                var path = Path.Combine(_config.SfxFolder, hash);
 
-                await cmd.ExecuteNonQueryAsync();
+                //Check that there isn't a file collision
+                if (File.Exists(path))
+                    return (false, "file already exists, use a different name");
+
+                //Normalize audio file so peak colume is 1.0 and write out to disk
+                WriteNormalizedAudio(path, data);
+
+                //Insert into the database
+                using (var cmd = _database.CreateCommand())
+                {
+                    cmd.CommandText = InsertSfxSql;
+                    cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) {Value = name.ToLowerInvariant()});
+                    cmd.Parameters.Add(new SQLiteParameter("@FileId", System.Data.DbType.String) {Value = hash});
+
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                return (true, "ok");
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return (false, "Exception!");
+            }
+        }
 
-            return (true, "ok");
+        public Task NormalizeAllSfx()
+        {
+            return Task.Run(() => {
+
+                var files = Directory.EnumerateFiles(_config.SfxFolder);
+                foreach (var file in files)
+                {
+                    //Read data and delete source file
+                    var data = File.ReadAllBytes(file);
+                    File.Delete(file);
+                    try
+                    {
+                        WriteNormalizedAudio(file, data);
+                    }
+                    catch (Exception e)
+                    {
+                        //If something went wrong write back the original data
+                        File.WriteAllBytes(file, data);
+                        Console.WriteLine($"Exception processing file {file}:");
+                        Console.WriteLine(e);
+                    }
+                }
+
+            });
+        }
+
+        private static void WriteNormalizedAudio(string path, [NotNull] WaveStream reader)
+        {
+            var sampleReader = reader.ToSampleProvider();
+
+            // find the max peak
+            float max = 0;
+            var buffer = new float[reader.WaveFormat.SampleRate];
+            int read;
+            do
+            {
+                read = sampleReader.Read(buffer, 0, buffer.Length);
+                if (read > 0)
+                    max = Math.Max(max, Enumerable.Range(0, read).Select(i => Math.Abs(buffer[i])).Max());
+            } while (read > 0);
+
+            if (Math.Abs(max) < float.Epsilon || max > 1.0f)
+                throw new InvalidOperationException("Audio normalization failed to find a reasonable peak volume");
+
+            // rewind and amplify
+            reader.Position = 0;
+
+            // write out to a new WAV file
+            WaveFileWriter.CreateWaveFile16(path, new GainSampleProvider(sampleReader, 1 / max - 0.05f));
+        }
+
+        private static void WriteNormalizedAudio(string path, byte[] data)
+        {
+            using (var reader = new StreamMediaFoundationReader(new MemoryStream(data)))
+                WriteNormalizedAudio(path, reader);
         }
 
         public async Task<(bool, string)> Alias(SoundEffect sfx, [NotNull] string alias)

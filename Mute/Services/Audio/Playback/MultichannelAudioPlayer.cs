@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using JetBrains.Annotations;
+using Mute.Services.Audio.Mixing;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
@@ -37,8 +38,11 @@ namespace Mute.Services.Audio.Playback
             //Sample provider which mixes together several sample providers
             _mixerInput = new MixingSampleProvider(MixingFormat) { ReadFully = true };
 
+            //Soft clip using opus
+            var clipper = new SoftClipSampleProvider(_mixerInput.ToMono());
+
             //resample mix format to output format
-            _mixerOutput = new WdlResamplingSampleProvider(_mixerInput, OutputFormat.SampleRate).ToStereo().ToWaveProvider16();
+            _mixerOutput = new WdlResamplingSampleProvider(clipper, OutputFormat.SampleRate).ToStereo().ToWaveProvider16();
 
             //Add all initial channels to the mixer
             foreach (var source in sources)

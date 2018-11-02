@@ -68,6 +68,7 @@ namespace Mute
                 .AddSingleton(_config)
                 .AddSingleton(_commands)
                 .AddSingleton(_client)
+                .AddSingleton<IDiscordClient>(_client)
                 .AddSingleton(new DatabaseService(_config.Database))
                 .AddSingleton<InteractiveService>()
                 .AddSingleton<CatPictureService>()
