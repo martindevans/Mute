@@ -41,7 +41,7 @@ namespace Mute.Modules
 
             using (Context.Channel.EnterTypingState())
             {
-                await _database.InsertDebt(user, Context.User, amount, unit, note);
+                await _database.InsertDebt(user.Id, Context.User.Id, amount, unit, note);
 
                 var symbol = unit.TryGetCurrencySymbol();
                 if (unit == symbol)
@@ -58,12 +58,15 @@ namespace Mute.Modules
 
             using (Context.Channel.EnterTypingState())
             {
-                var owed = (await _database.GetOwed(Context.User))
+                var owed = (await _database.GetOwed(Context.User.Id))
                     .Where(o => lender == null || o.LenderId == lender.Id)
                     .OrderBy(o => o.LenderId)
                     .ToArray();
 
-                await PaginatedTransactions(owed, "owes", false);
+                if (owed.Length == 0)
+                    await TypingReplyAsync("You are debt free");
+                else
+                    await PaginatedTransactions(owed, "owes", false);
             }
         }
 
@@ -79,7 +82,10 @@ namespace Mute.Modules
                     .OrderBy(o => o.LenderId)
                     .ToArray();
 
-                await PaginatedTransactions(owed, "owes", false);
+                if (owed.Length == 0)
+                    await TypingReplyAsync("No one owes you anything");
+                else
+                    await PaginatedTransactions(owed, "owes", false);
             }
         }
         #endregion
@@ -97,8 +103,9 @@ namespace Mute.Modules
             {
                 var id = unchecked((uint)_random.Next()).MeaninglessString();
 
-                await _database.InsertUnconfirmedPayment(Context.User, debter, amount, unit, note, id);
+                await _database.InsertUnconfirmedPayment(Context.User.Id, debter.Id, amount, unit, note, id);
                 await TypingReplyAsync($"{debter.Mention} type `!confirm {id}` to confirm that you owe this");
+                await TypingReplyAsync($"{debter.Mention} type `!deny {id}` to deny this request. Please talk to the other user about why!");
             }
         }
         
@@ -114,7 +121,7 @@ namespace Mute.Modules
             {
                 var id = unchecked((uint)_random.Next()).MeaninglessString();
 
-                await _database.InsertUnconfirmedPayment(Context.User, receiver, amount, unit, note, id);
+                await _database.InsertUnconfirmedPayment(Context.User.Id, receiver.Id, amount, unit, note, id);
                 await TypingReplyAsync($"{receiver.Mention} type `!confirm {id}` to confirm that you have received this payment");
             }
         }
@@ -126,7 +133,7 @@ namespace Mute.Modules
 
             using (Context.Channel.EnterTypingState())
             {
-                var result = await _database.ConfirmPending(id);
+                var result = await _database.ConfirmPending(id, Context.User.Id);
 
                 if (result.HasValue)
                     await ReplyAsync($"{Context.User.Mention} Confirmed transaction of {FormatCurrency(result.Value.Amount, result.Value.Unit)} from {Context.Client.GetUser(result.Value.PayerId).Mention} to {Context.Client.GetUser(result.Value.ReceiverId).Mention}");
@@ -135,13 +142,42 @@ namespace Mute.Modules
             }
         }
 
-        [Command("pending"), Summary("I will list all pending transactions you have yet to confirm")]
-        public async Task ListPendingPayments()
+        [Command("deny"), Summary("I will record that you denied the pending transaction")]
+        public async Task DenyPendingPayment(string id)
         {
             await CheckDebugger();
 
             using (Context.Channel.EnterTypingState())
-                await PaginatedPending(await _database.GetPending(Context.User));
+            {
+                var result = await _database.DenyPending(id, Context.User.Id);
+
+                if (result.HasValue)
+                {
+                    var note = string.IsNullOrWhiteSpace(result.Value.Note) ? "" : $" '{result.Value.Note}";
+                    await ReplyAsync($"{Context.User.Mention} *Denied* transaction of {FormatCurrency(result.Value.Amount, result.Value.Unit)} from {Context.Client.GetUser(result.Value.PayerId).Mention} to {Context.Client.GetUser(result.Value.ReceiverId).Mention} {note}");
+                }
+                else
+                    await ReplyAsync($"{Context.User.Mention} I can't find a pending payment with that ID");
+            }
+        }
+
+        [Command("pending"), Summary("I will list all pending transactions you have yet to confirm")]
+        public async Task ListPendingPayments()
+        {
+            await ListPendingPaymentsForUser(Context.User);
+        }
+
+        [Command("pending"), Summary("I will list all pending transactions another user has yet to confirm"), RequireOwner]
+        public async Task ListPendingPaymentsForUser([NotNull] IUser user)
+        {
+            await CheckDebugger();
+
+            var pending = (await _database.GetPendingForReceiver(user.Id)).ToArray();
+
+            if (pending.Length == 0)
+                await TypingReplyAsync("No pending transactions");
+            else
+                await PaginatedPending(pending);
         }
         #endregion
 
@@ -151,11 +187,14 @@ namespace Mute.Modules
         {
             await CheckDebugger();
 
-            var tsx = other == null
+            var tsx = (await (other == null
                 ? _database.GetTransactions(Context.Message.Author.Id)
-                : _database.GetTransactions(Context.Message.Author.Id, other.Id);
+                : _database.GetTransactions(Context.Message.Author.Id, other.Id))).ToArray();
 
-            await PaginatedTransactions(await tsx);
+            if (tsx.Length == 0)
+                await TypingReplyAsync("No transactions");
+            else
+                await PaginatedTransactions(tsx);
         }
         #endregion
 
@@ -209,7 +248,7 @@ namespace Mute.Modules
                 var amount = FormatCurrency(p.Amount, p.Unit);
 
                 if (longForm)
-                    return $"Type `!confirm {p.Id}` to confirm transaction of {amount} from {payer} {note}";
+                    return $"Type `!confirm {p.Id}` or `!deny {p.Id}` to confirm/deny transaction of {amount} from {payer} {note}";
                 else
                     return $"`{p.Id}`: {payer} paid you {amount} {note}";
             }
@@ -222,7 +261,7 @@ namespace Mute.Modules
                 await ReplyAsync(string.Join("\n", pendingArr.Select(p => FormatSinglePending(p, true))));
             else
             {
-                await TypingReplyAsync($"You have {pendingArr.Length} payments to confirm. Type `!confirm $id` for each payment you have received");
+                await TypingReplyAsync($"You have {pendingArr.Length} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise");
                 await PagedReplyAsync(new PaginatedMessage {Pages = pendingArr.Batch(5).Select(d => string.Join("\n", d.Select(p => FormatSinglePending(p, false))))});
             }
         }

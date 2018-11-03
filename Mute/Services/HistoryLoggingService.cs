@@ -23,12 +23,12 @@ namespace Mute.Services
         private const string SelectById = "SELECT Content, ChannelId, GuildId From ChatLog WHERE Uid = @Uid";
         private const string SelectByTimeRange = "SELECT Content, ChannelId, GuildId From ChatLog WHERE UtcTime < @Max and UtcTime > @Min";
 
-        [NotNull] private readonly DatabaseService _database;
+        [NotNull] private readonly IDatabaseService _database;
         [NotNull] private readonly DiscordSocketClient _client;
 
         private readonly ConcurrentDictionary<ulong, bool> _subscriptions = new ConcurrentDictionary<ulong, bool>();
 
-        public HistoryLoggingService([NotNull] DatabaseService database, [NotNull] DiscordSocketClient client)
+        public HistoryLoggingService([NotNull] IDatabaseService database, [NotNull] DiscordSocketClient client)
         {
             _database = database;
             _client = client;

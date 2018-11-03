@@ -23,11 +23,11 @@ namespace Mute.Services.Audio
 
         [NotNull] private readonly MultichannelAudioService _audio;
         [NotNull] private readonly Random _random;
-        [NotNull] private readonly DatabaseService _database;
+        [NotNull] private readonly IDatabaseService _database;
         [NotNull] private readonly SimpleQueueChannel<SoundEffect> _queue;
         [NotNull] private readonly SoundEffectConfig _config;
 
-        public SoundEffectService([NotNull] Configuration config, [NotNull] MultichannelAudioService audio, [NotNull] Random random, [NotNull] DatabaseService database)
+        public SoundEffectService([NotNull] Configuration config, [NotNull] MultichannelAudioService audio, [NotNull] Random random, [NotNull] IDatabaseService database)
         {
             _config = config.SoundEffects;
             _audio = audio;

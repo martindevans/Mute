@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 namespace Mute.Services
 {
     public class DatabaseService
+        : IDatabaseService
     {
         private readonly SQLiteConnection _dbConnection;
 
@@ -19,23 +20,31 @@ namespace Mute.Services
         {
             return new SQLiteCommand(_dbConnection);
         }
+    }
 
-        public int Exec(string sql)
+    public static class IDatabaseServiceExtensions
+    {
+        public static int Exec([NotNull] this IDatabaseService db, string sql)
         {
-            using (var cmd = CreateCommand())
+            using (var cmd = db.CreateCommand())
             {
                 cmd.CommandText = sql;
                 return cmd.ExecuteNonQuery();
             }
         }
 
-        public Task<DbDataReader> ExecReader(string sql)
+        public static Task<DbDataReader> ExecReader([NotNull] this IDatabaseService db, string sql)
         {
-            using (var cmd = CreateCommand())
+            using (var cmd = db.CreateCommand())
             {
                 cmd.CommandText = sql;
                 return cmd.ExecuteReaderAsync();
             }
         }
+    }
+
+    public interface IDatabaseService
+    {
+        DbCommand CreateCommand();
     }
 }

@@ -15,7 +15,7 @@ namespace Mute.Services
 {
     public class SentimentService
     {
-        private readonly DatabaseService _database;
+        private readonly IDatabaseService _database;
         private readonly MlConfig _config;
 
         private readonly string _modelPath;
@@ -27,7 +27,7 @@ namespace Mute.Services
         private const string InsertTaggedSentimentData = "INSERT INTO TaggedSentimentData (Content, Score) values(@Content, @Score)";
         private const string SelectTaggedSentimentData = "SELECT * FROM TaggedSentimentData";
 
-        public SentimentService([NotNull] Configuration config, DatabaseService database)
+        public SentimentService([NotNull] Configuration config, IDatabaseService database)
         {
             _database = database;
             _config = config.MlConfig;

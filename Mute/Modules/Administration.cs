@@ -14,11 +14,11 @@ namespace Mute.Modules
     public class Administration
         : BaseModule
     {
-        private readonly DatabaseService _database;
+        private readonly IDatabaseService _database;
         private readonly HistoryLoggingService _history;
         private readonly ConversationalResponseService _conversations;
 
-        public Administration(DatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations)
+        public Administration(IDatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations)
         {
             _database = database;
             _history = history;

@@ -11,9 +11,9 @@ namespace Mute.Services.Games
         private const string InsertGamePlayed = "INSERT OR IGNORE INTO `Games_Played` (`UserId`,`GameId`) VALUES (@UserId,@GameId);";
 
         [NotNull] private readonly DiscordSocketClient _client;
-        [NotNull] private readonly DatabaseService _database;
+        [NotNull] private readonly IDatabaseService _database;
 
-        public GameService([NotNull] DiscordSocketClient client, [NotNull] DatabaseService database)
+        public GameService([NotNull] DiscordSocketClient client, [NotNull] IDatabaseService database)
         {
             _client = client;
             _database = database;

@@ -17,7 +17,7 @@ namespace Mute.Services
         private const string UnsentReminders = "SELECT * FROM Reminders where not Sent = \"true\"";
         private const string DeleteReminder = "DELETE FROM Reminders WHERE UID = @Uid";
 
-        [NotNull] private readonly DatabaseService _database;
+        [NotNull] private readonly IDatabaseService _database;
         [NotNull] private readonly Random _random;
         [NotNull] private readonly DiscordSocketClient _client;
 
@@ -26,7 +26,7 @@ namespace Mute.Services
 
         private readonly List<Notification> _notifications = new List<Notification>();
 
-        public ReminderService([NotNull] DatabaseService database, [NotNull] Random random, [NotNull] DiscordSocketClient client)
+        public ReminderService([NotNull] IDatabaseService database, [NotNull] Random random, [NotNull] DiscordSocketClient client)
         {
             _database = database;
             _random = random;

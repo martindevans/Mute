@@ -16,9 +16,9 @@ namespace Mute.Services.Audio
         private const string GetTopRatedTracks = "SELECT TrackId, Sum(Rating) as Rating FROM Music_Ratings GROUP BY TrackId";
         #endregion
 
-        private readonly DatabaseService _database;
+        private readonly IDatabaseService _database;
 
-        public MusicRatingService(DatabaseService database)
+        public MusicRatingService(IDatabaseService database)
         {
             _database = database;
 

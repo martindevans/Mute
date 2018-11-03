@@ -69,7 +69,7 @@ namespace Mute
                 .AddSingleton(_commands)
                 .AddSingleton(_client)
                 .AddSingleton<IDiscordClient>(_client)
-                .AddSingleton(new DatabaseService(_config.Database))
+                .AddSingleton<IDatabaseService>(new DatabaseService(_config.Database))
                 .AddSingleton<InteractiveService>()
                 .AddSingleton<CatPictureService>()
                 .AddSingleton<DogPictureService>()
@@ -161,9 +161,9 @@ namespace Mute
             if (!(messageParam is SocketUserMessage message))
                 return;
 
-            //Ignore messages from self
-            if (message.Author.Id == _client.CurrentUser.Id)
-                return;
+            ////Ignore messages from self
+            //if (message.Author.Id == _client.CurrentUser.Id)
+            //    return;
 
             // Check if the message starts with the command prefix character
             var prefixPos = 0;
