@@ -128,99 +128,145 @@ namespace Mute.Services
             }
         }
 
-        [ItemNotNull]
-        private static async Task<IReadOnlyList<Owed>> ParseOwed([NotNull] DbDataReader reader)
-        {
-            var debts = new List<Owed>();
-
-            while (await reader.ReadAsync())
-            {
-                debts.Add(new Owed(
-                    ulong.Parse((string)reader["LenderId"]),
-                    ulong.Parse((string)reader["BorrowerId"]),
-                    decimal.Parse(reader["Amount"].ToString()),
-                    (string)reader["Unit"],
-                    (string)reader["Note"]
-                ));
-            }
-
-            return debts;
-        }
-
         [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetOwed(ulong borrowerId, [CanBeNull] string unit = null)
         {
-            try
+            using (var cmd = _database.CreateCommand())
             {
-                using (var cmd = _database.CreateCommand())
-                {
-                    cmd.CommandText = FindOwedByPerson;
-                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = borrowerId.ToString() });
+                cmd.CommandText = FindOwedByPerson;
+                cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = borrowerId.ToString() });
 
-                    var uObj = unit != null ? (object)unit : DBNull.Value;
-                    cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = uObj });
+                //Set `@Unit` to either the unit or the DBNull value
+                var uObj = unit != null ? (object)unit : DBNull.Value;
+                cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = uObj });
 
-                    using (var results = await cmd.ExecuteReaderAsync())
-                        return await ParseOwed(results);
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
+                using (var results = await cmd.ExecuteReaderAsync())
+                    return await ParseOwed(results);
             }
         }
 
-        [ItemNotNull]
-        public async Task<IReadOnlyList<Owed>> GetLent([NotNull] IUser lender)
+        [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetLent(ulong lenderId, [CanBeNull] string unit = null)
         {
-            try
+            using (var cmd = _database.CreateCommand())
             {
-                using (var cmd = _database.CreateCommand())
-                {
-                    cmd.CommandText = FindLentByPerson;
-                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = lender.Id.ToString() });
-                    cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = DBNull.Value });
+                cmd.CommandText = FindLentByPerson;
+                cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = lenderId.ToString() });
+                
+                //Set `@Unit` to either the unit or the DBNull value
+                var uObj = unit != null ? (object)unit : DBNull.Value;
+                cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = uObj });
 
-                    using (var results = await cmd.ExecuteReaderAsync())
-                        return await ParseOwed(results);
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
+                using (var results = await cmd.ExecuteReaderAsync())
+                    return await ParseOwed(results);
             }
         }
         #endregion
 
         #region payments
-        public async Task InsertUnconfirmedPayment(ulong payerId, ulong receiverId, decimal amount, [NotNull] string unit, [CanBeNull] string note, [NotNull] string id)
+        [NotNull] public async Task<Pending> InsertUnconfirmedPayment(ulong payerId, ulong receiverId, decimal amount, [NotNull] string unit, [CanBeNull] string note, [NotNull] string id)
         {
-            if (id == null)
-                throw new ArgumentNullException(nameof(id));
+            if (id == null) throw new ArgumentNullException(nameof(id));
+            if (unit == null) throw new ArgumentNullException(nameof(unit));
 
-            try
+            using (var cmd = _database.CreateCommand())
             {
-                using (var cmd = _database.CreateCommand())
-                {
-                    cmd.CommandText = InsertPaymentSql;
-                    cmd.Parameters.Add(new SQLiteParameter("@Id", System.Data.DbType.String) { Value = id });
-                    cmd.Parameters.Add(new SQLiteParameter("@PayerId", System.Data.DbType.String) { Value = payerId.ToString() });
-                    cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiverId.ToString() });
-                    cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
-                    cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
-                    cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
+                cmd.CommandText = InsertPaymentSql;
+                cmd.Parameters.Add(new SQLiteParameter("@Id", System.Data.DbType.String) { Value = id });
+                cmd.Parameters.Add(new SQLiteParameter("@PayerId", System.Data.DbType.String) { Value = payerId.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiverId.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
+                cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
+                cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
 
-                    await cmd.ExecuteNonQueryAsync();
-                }
+                await cmd.ExecuteNonQueryAsync();
             }
-            catch (Exception e)
+
+            return new Pending(payerId, receiverId, amount, unit, note, id);
+        }
+
+        [NotNull, ItemNotNull] public async Task<IReadOnlyList<Pending>> GetPendingForReceiver(ulong receiverId)
+        {
+            using (var cmd = _database.CreateCommand())
             {
-                Console.WriteLine(e);
-                throw;
+                cmd.CommandText = FindPaymentsByReceiver;
+                cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiverId.ToString() });
+
+                using (var results = await cmd.ExecuteReaderAsync())
+                    return await ParsePayments(results);
             }
         }
 
+        [NotNull, ItemCanBeNull] public async Task<Pending?> ConfirmPending(string paymentId, ulong receiverId)
+        {
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = ConfirmPayment;
+                cmd.Parameters.Add(new SQLiteParameter("@PaymentId", System.Data.DbType.String) { Value = paymentId });
+                cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiverId.ToString()});
+                using (var results = await cmd.ExecuteReaderAsync())
+                {
+                    if (!results.HasRows)
+                        return null;
+
+                    var parsed = await ParsePayments(results);
+                    return parsed.Single();
+                }
+            }
+        }
+
+        [NotNull, ItemCanBeNull] public async Task<Pending?> DenyPending(string id, ulong receiverId)
+        {
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = DenyPayment;
+                cmd.Parameters.Add(new SQLiteParameter("@PaymentId", System.Data.DbType.String) { Value = id });
+                cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiverId.ToString() });
+                using (var results = await cmd.ExecuteReaderAsync())
+                {
+                    if (!results.HasRows)
+                        return null;
+
+                    var parsed = await ParsePayments(results);
+                    return parsed.Single();
+                }
+            }
+        }
+        #endregion
+
+        #region settlement
+        public void TrySettle(IUser root, string currency)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+
+        #region transactions
+        [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetTransactions(ulong lenderId)
+        {
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = FindAllTransactionsByPerson;
+                cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = lenderId.ToString() });
+
+                using (var results = await cmd.ExecuteReaderAsync())
+                    return await ParseOwed(results);
+            }
+        }
+
+        [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetTransactions(ulong lenderId, ulong borrowerId)
+        {
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = FindAllTransactionsByPersonWithOther;
+                cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = lenderId.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@OtherId", System.Data.DbType.String) { Value = borrowerId.ToString() });
+
+                using (var results = await cmd.ExecuteReaderAsync())
+                    return await ParseOwed(results);
+            }
+        }
+        #endregion
+
+        #region Parsing results
         [NotNull, ItemNotNull]
         private static async Task<IReadOnlyList<Pending>> ParsePayments([NotNull] DbDataReader reader)
         {
@@ -242,110 +288,24 @@ namespace Mute.Services
         }
 
         [NotNull, ItemNotNull]
-        public async Task<IReadOnlyList<Pending>> GetPendingForReceiver(ulong receiverId)
+        private static async Task<IReadOnlyList<Owed>> ParseOwed([NotNull] DbDataReader reader)
         {
-            try
+            var debts = new List<Owed>();
+
+            while (await reader.ReadAsync())
             {
-                using (var cmd = _database.CreateCommand())
-                {
-                    cmd.CommandText = FindPaymentsByReceiver;
-                    cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiverId.ToString() });
-
-                    using (var results = await cmd.ExecuteReaderAsync())
-                        return await ParsePayments(results);
-                }
+                debts.Add(new Owed(
+                    ulong.Parse((string)reader["LenderId"]),
+                    ulong.Parse((string)reader["BorrowerId"]),
+                    decimal.Parse(reader["Amount"].ToString()),
+                    (string)reader["Unit"],
+                    (string)reader["Note"]
+                ));
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-        }
 
-        public async Task<Pending?> ConfirmPending(string paymentId, ulong receiverId)
-        {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = ConfirmPayment;
-                cmd.Parameters.Add(new SQLiteParameter("@PaymentId", System.Data.DbType.String) { Value = paymentId });
-                cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiverId.ToString()});
-                using (var results = await cmd.ExecuteReaderAsync())
-                {
-                    if (!results.HasRows)
-                        return null;
-
-                    var parsed = await ParsePayments(results);
-                    return parsed.Single();
-                }
-            }
-        }
-
-        public async Task<Pending?> DenyPending(string id, ulong payerId)
-        {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = DenyPayment;
-                cmd.Parameters.Add(new SQLiteParameter("@PaymentId", System.Data.DbType.String) { Value = id });
-                cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = payerId.ToString() });
-                using (var results = await cmd.ExecuteReaderAsync())
-                {
-                    if (!results.HasRows)
-                        return null;
-
-                    var parsed = await ParsePayments(results);
-                    return parsed.Single();
-                }
-            }
+            return debts;
         }
         #endregion
-
-        #region settlement
-        public void TrySettle(IUser root, string currency)
-        {
-            throw new NotImplementedException();
-        }
-        #endregion
-
-        [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetTransactions(ulong lenderId)
-        {
-            try
-            {
-                using (var cmd = _database.CreateCommand())
-                {
-                    cmd.CommandText = FindAllTransactionsByPerson;
-                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = lenderId.ToString() });
-
-                    using (var results = await cmd.ExecuteReaderAsync())
-                        return await ParseOwed(results);
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-        }
-
-        [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetTransactions(ulong lenderId, ulong borrowerId)
-        {
-            try
-            {
-                using (var cmd = _database.CreateCommand())
-                {
-                    cmd.CommandText = FindAllTransactionsByPersonWithOther;
-                    cmd.Parameters.Add(new SQLiteParameter("@PersonId", System.Data.DbType.String) { Value = lenderId.ToString() });
-                    cmd.Parameters.Add(new SQLiteParameter("@OtherId", System.Data.DbType.String) { Value = borrowerId.ToString() });
-
-                    using (var results = await cmd.ExecuteReaderAsync())
-                        return await ParseOwed(results);
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-        }
     }
 
     public struct Owed
@@ -353,10 +313,10 @@ namespace Mute.Services
         public readonly ulong LenderId;
         public readonly ulong BorrowerId;
         public readonly decimal Amount;
-        public readonly string Unit;
+        [NotNull] public readonly string Unit;
         [CanBeNull] public readonly string Note;
 
-        public Owed(ulong lenderId, ulong borrowerId, decimal amount, string unit, [CanBeNull] string note)
+        public Owed(ulong lenderId, ulong borrowerId, decimal amount, [NotNull] string unit, [CanBeNull] string note)
         {
             LenderId = lenderId;
             BorrowerId = borrowerId;
@@ -371,11 +331,11 @@ namespace Mute.Services
         public readonly ulong PayerId;
         public readonly ulong ReceiverId;
         public readonly decimal Amount;
-        public readonly string Unit;
-        public readonly string Note;
-        public readonly string Id;
+        [NotNull] public readonly string Unit;
+        [CanBeNull] public readonly string Note;
+        [NotNull] public readonly string Id;
 
-        public Pending(ulong payerId, ulong receiverId, decimal amount, string unit, string note, string id)
+        public Pending(ulong payerId, ulong receiverId, decimal amount, [NotNull] string unit, [CanBeNull] string note, [NotNull] string id)
         {
             PayerId = payerId;
             ReceiverId = receiverId;

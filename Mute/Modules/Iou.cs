@@ -77,7 +77,7 @@ namespace Mute.Modules
 
             using (Context.Channel.EnterTypingState())
             {
-                var owed = (await _database.GetLent(Context.User))
+                var owed = (await _database.GetLent(Context.User.Id))
                     .Where(o => borrower == null || o.BorrowerId == borrower.Id)
                     .OrderBy(o => o.LenderId)
                     .ToArray();

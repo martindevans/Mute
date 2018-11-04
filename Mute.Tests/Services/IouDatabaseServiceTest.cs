@@ -115,5 +115,47 @@ namespace Mute.Tests.Services
             //Confirm it as the person who received it
             Assert.IsNotNull(await _db.ConfirmPending("guid", 1));
         }
+
+        [TestMethod]
+        public async Task Payment_CannotBeDeniedByThirdParty()
+        {
+            //Create a payment of 10GBP from 0 -> 1
+            await _db.InsertUnconfirmedPayment(0, 1, 10, "gbp", "note", "guid");
+
+            //Try to confirm it as someone else
+            Assert.IsNull(await _db.DenyPending("guid", 0));
+            Assert.IsNull(await _db.DenyPending("guid", 2));
+
+            //Confirm it as the person who received it
+            Assert.IsNotNull(await _db.ConfirmPending("guid", 1));
+        }
+
+        [TestMethod]
+        public async Task Payment_DenyPending_RemovesFromPendingList()
+        {
+            //Create a payment of 10GBP from 0 -> 1
+            await _db.InsertUnconfirmedPayment(0, 1, 10, "gbp", "note", "guid");
+
+            //Get pending before deny
+            var pend0 = (await _db.GetPendingForReceiver(1)).ToArray();
+            Assert.AreEqual(1, pend0.Length);
+            Assert.AreEqual("guid", pend0[0].Id);
+
+            //Check balance
+            var bal0 = (await _db.GetLent(0)).ToArray();
+            Assert.AreEqual(0, bal0.Length);
+
+            //Deny it
+            var denied = await _db.DenyPending("guid", 1);
+            Assert.IsNotNull(denied);
+
+            //Get pending after deny
+            var pend1 = (await _db.GetPendingForReceiver(1)).ToArray();
+            Assert.AreEqual(0, pend1.Length);
+
+            //Check balance is unchanged
+            var bal1 = (await _db.GetLent(0)).ToArray();
+            Assert.AreEqual(0, bal1.Length);
+        }
     }
 }
