@@ -8,7 +8,7 @@ using Mute.Services;
 namespace Mute.Modules
 {
     public class Define
-        : BaseModule //, ITopic
+        : BaseModule
     {
         private readonly WikipediaService _wikipedia;
 
@@ -56,14 +56,5 @@ namespace Mute.Modules
                 }
             }
         }
-
-        /* #region conversation
-        public IEnumerable<string> Keywords => new[] { "define" };
-
-        public ITopicDiscussion TryOpen(IUtterance message)
-        {
-            return new SingleMessageContext("`Define` context is not implemented yet, sorry :(");
-        }
-        #endregion */
     }
 }

@@ -46,7 +46,7 @@ namespace Mute.Services.Audio.Playback
 
         public async Task<bool> MoveChannel([CanBeNull] IUser user)
         {
-            if (user is IVoiceState v)
+            if (user is IVoiceState v && v.VoiceChannel != null)
             {
                 await MoveChannel(v.VoiceChannel);
                 return true;

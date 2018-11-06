@@ -13,6 +13,7 @@ namespace Mute
         [UsedImplicitly] public ElizaConfig ElizaConfig;
         [UsedImplicitly] public SteamConfig Steam;
         [UsedImplicitly] public SoundEffectConfig SoundEffects;
+        [UsedImplicitly] public DictionaryConfig Dictionary;
     }
 
     public class AuthConfig
@@ -69,5 +70,10 @@ namespace Mute
     public class SoundEffectConfig
     {
         [UsedImplicitly] public string SfxFolder;
+    }
+
+    public class DictionaryConfig
+    {
+        [UsedImplicitly] public string WordListPath;
     }
 }
