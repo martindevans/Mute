@@ -14,6 +14,7 @@ namespace Mute
         [UsedImplicitly] public SteamConfig Steam;
         [UsedImplicitly] public SoundEffectConfig SoundEffects;
         [UsedImplicitly] public DictionaryConfig Dictionary;
+        [UsedImplicitly] public SentimentReactionConfig SentimentReactions;
     }
 
     public class AuthConfig
@@ -75,5 +76,12 @@ namespace Mute
     public class DictionaryConfig
     {
         [UsedImplicitly] public string WordListPath;
+    }
+
+    public class SentimentReactionConfig
+    {
+        [UsedImplicitly] public double CertaintyThreshold = 0.8;
+        [UsedImplicitly] public double ReactionChance = 0.05;
+        [UsedImplicitly] public double MentionReactionChance = 0.25;
     }
 }

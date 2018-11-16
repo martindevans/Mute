@@ -14,10 +14,9 @@ namespace Mute.Services.Responses
         private readonly SentimentService _sentiment;
         private readonly Random _random;
 
-        private const double Bracket = 0.95;
-
-        public double BaseChance => 0.05;
-        public double MentionedChance => 0.25;
+        private double Bracket => _config.CertaintyThreshold;
+        public double BaseChance => _config.ReactionChance;
+        public double MentionedChance => _config.MentionReactionChance;
 
         public static readonly IReadOnlyList<Emoji> Sad = new[] {
             EmojiLookup.BrokenHeart,
@@ -39,8 +38,11 @@ namespace Mute.Services.Responses
             EmojiLookup.Confused
         };
 
-        public SentimentResponse(SentimentService sentiment, Random random)
+        private readonly SentimentReactionConfig _config;
+
+        public SentimentResponse([NotNull] Configuration config, [NotNull] SentimentService sentiment, [NotNull] Random random)
         {
+            _config = config.SentimentReactions;
             _sentiment = sentiment;
             _random = random;
         }

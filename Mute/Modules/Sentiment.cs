@@ -126,6 +126,7 @@ namespace Mute.Modules
             await ReplyAsync(
                 $"```Micro Accuracy: {result.AccuracyMicro}\n" +
                 $"Macro Accuracy: {result.AccuracyMacro}\n" +
+                $"Log Loss: {result.LogLoss}" +
                 $"Log Loss Reduction: {result.LogLossReduction}```"
             );
         }

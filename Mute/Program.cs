@@ -90,6 +90,7 @@ namespace Mute
                 .AddSingleton<SteamApi>()
                 .AddSingleton<SoundEffectService>()
                 .AddSingleton<WordsService>()
+                .AddSingleton<SpacexService>()
                 .AddSingleton<MultichannelAudioService>();
             
             _services = serviceCollection.BuildServiceProvider();
