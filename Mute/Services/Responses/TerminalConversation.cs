@@ -14,7 +14,7 @@ namespace Mute.Services.Responses
 
         public bool IsComplete { get; private set; }
 
-        public TerminalConversation(string response, [CanBeNull] params IEmote[] reactions)
+        protected TerminalConversation(string response, [CanBeNull] params IEmote[] reactions)
         {
             _response = response;
             _reactions = reactions;

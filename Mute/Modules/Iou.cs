@@ -161,23 +161,50 @@ namespace Mute.Modules
             }
         }
 
-        [Command("pending"), Summary("I will list all pending transactions you have yet to confirm")]
+        [Command("pending"), Summary("I will list all pending transactions to or from you")]
         public async Task ListPendingPayments()
         {
-            await ListPendingPaymentsForUser(Context.User);
+            try
+            {
+                await ListPendingPaymentsForUser(Context.User);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
-        [Command("pending"), Summary("I will list all pending transactions another user has yet to confirm"), RequireOwner]
+        [Command("pending"), Summary("I will list all pending transactions to or from another user"), RequireOwner]
         public async Task ListPendingPaymentsForUser([NotNull] IUser user)
+        {
+            await ListPendingPaymentsFromUser(user);
+            await ListPendingPaymentsToUser(user);
+        }
+
+        [Command("pending-out"), Summary("I will list all pending transactions another user has yet to confirm"), RequireOwner]
+        public async Task ListPendingPaymentsFromUser([NotNull] IUser user)
         {
             await CheckDebugger();
 
             var pending = (await _database.GetPendingForReceiver(user.Id)).ToArray();
 
             if (pending.Length == 0)
-                await TypingReplyAsync("No pending transactions");
+                await TypingReplyAsync("No pending outgoing transactions");
             else
-                await PaginatedPending(pending);
+                await PaginatedPending(pending, "You have {0} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise", false);;
+        }
+
+        [Command("pending-in"), Summary("I will list all pending transactions another user has yet to confirm"), RequireOwner]
+        public async Task ListPendingPaymentsToUser([NotNull] IUser user)
+        {
+            await CheckDebugger();
+
+            var pending = (await _database.GetPendingForSender(user.Id)).ToArray();
+
+            if (pending.Length == 0)
+                await TypingReplyAsync("No pending incoming transactions");
+            else
+                await PaginatedPending(pending, "There are {0} unconfirmed payments to you. The other person should type `!confirm $id` or `!deny $id` to confirm or deny that the payment has happened", true);
         }
         #endregion
 
@@ -205,7 +232,7 @@ namespace Mute.Modules
                 await ReplyAsync("**Warning - Debugger is attached. This is likely not the main version of mute!**");
         }
 
-        private string Name(ulong id)
+        private string Name(ulong id, bool mention = false)
         {
             var user = _client.GetUser(id);
 
@@ -213,9 +240,14 @@ namespace Mute.Modules
                 return $"?{id}?";
 
             if (user is IGuildUser gu)
-                return gu.Nickname;
+            {
+                if (mention)
+                    return gu.Mention;
+                else
+                    return gu.Nickname;
+            }
 
-            return user.Username;
+            return user.Mention;
         }
 
         private async Task PaginatedTransactions([NotNull] IEnumerable<Owed> owed, string connector = "➜", bool lenderFirst = true)
@@ -239,29 +271,30 @@ namespace Mute.Modules
                 await PagedReplyAsync(new PaginatedMessage {Pages = owedArr.Batch(7).Select(d => string.Join("\n", d.Select(FormatSingleTsx)))});
         }
 
-        private async Task PaginatedPending([NotNull] IEnumerable<Pending> pending)
+        private async Task PaginatedPending([NotNull] IEnumerable<Pending> pending, string paginatedHeader, bool mentionReceiver)
         {
             string FormatSinglePending(Pending p, bool longForm)
             {
+                var receiver = Name(p.ReceiverId, mentionReceiver);
                 var payer = Name(p.PayerId);
                 var note = string.IsNullOrEmpty(p.Note) ? "" : $"'{p.Note}'";
                 var amount = FormatCurrency(p.Amount, p.Unit);
 
                 if (longForm)
-                    return $"Type `!confirm {p.Id}` or `!deny {p.Id}` to confirm/deny transaction of {amount} from {payer} {note}";
+                    return $"{receiver} Type `!confirm {p.Id}` or `!deny {p.Id}` to confirm/deny transaction of {amount} from {payer} {note}";
                 else
-                    return $"`{p.Id}`: {payer} paid you {amount} {note}";
+                    return $"`{p.Id}`: {payer} paid {amount} to {receiver} {note}";
             }
 
             var pendingArr = pending.ToArray();
 
             //If the number of transactions is small, display them all.
             //Otherwise batch and show them in pages
-            if (pendingArr.Length < 7)
+            if (pendingArr.Length < 0)
                 await ReplyAsync(string.Join("\n", pendingArr.Select(p => FormatSinglePending(p, true))));
             else
             {
-                await TypingReplyAsync($"You have {pendingArr.Length} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise");
+                await TypingReplyAsync(string.Format(paginatedHeader, pendingArr.Length));
                 await PagedReplyAsync(new PaginatedMessage {Pages = pendingArr.Batch(5).Select(d => string.Join("\n", d.Select(p => FormatSinglePending(p, false))))});
             }
         }

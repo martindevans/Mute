@@ -64,6 +64,7 @@ namespace Mute.Services
         private const string InsertPaymentSql = "INSERT INTO `IOU_PendingPayments` (`ID`, `PayerId`, `ReceiverId`, `Amount`, `Unit`, `Note`) VALUES (@Id, @PayerId, @ReceiverId, @Amount, @Unit, @Note)";
 
         private const string FindPaymentsByReceiver = "SELECT * FROM IOU_PendingPayments WHERE ReceiverId = @ReceiverId AND Confirmed = 'false'";
+        private const string FindPaymentsBySender = "SELECT * FROM IOU_PendingPayments WHERE PayerId = @PayerId AND Confirmed = 'false'";
 
         private const string ConfirmPayment = @"BEGIN TRANSACTION;
 	        INSERT INTO IOU_Debts (LenderId, BorrowerId, Amount, Unit, Note)
@@ -189,6 +190,18 @@ namespace Mute.Services
             {
                 cmd.CommandText = FindPaymentsByReceiver;
                 cmd.Parameters.Add(new SQLiteParameter("@ReceiverId", System.Data.DbType.String) { Value = receiverId.ToString() });
+
+                using (var results = await cmd.ExecuteReaderAsync())
+                    return await ParsePayments(results);
+            }
+        }
+
+        [NotNull, ItemNotNull] public async Task<IReadOnlyList<Pending>> GetPendingForSender(ulong receiverId)
+        {
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = FindPaymentsBySender;
+                cmd.Parameters.Add(new SQLiteParameter("@PayerId", System.Data.DbType.String) { Value = receiverId.ToString() });
 
                 using (var results = await cmd.ExecuteReaderAsync())
                     return await ParsePayments(results);
