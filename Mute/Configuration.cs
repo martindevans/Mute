@@ -15,6 +15,8 @@ namespace Mute
         [UsedImplicitly] public SoundEffectConfig SoundEffects;
         [UsedImplicitly] public DictionaryConfig Dictionary;
         [UsedImplicitly] public SentimentReactionConfig SentimentReactions;
+
+        [UsedImplicitly] public bool ProcessMessagesFromSelf;
     }
 
     public class AuthConfig
