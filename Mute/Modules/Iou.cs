@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -52,14 +53,14 @@ namespace Mute.Modules
         }
 
         [Command("io"), Summary("I will tell you what you currently owe")]
-        public async Task ListDebtsByBorrower([CanBeNull] IUser lender = null)
+        public async Task ListDebtsByBorrower([CanBeNull, Summary("Filter debts by this borrower")] IUser borrower = null)
         {
             await CheckDebugger();
 
             using (Context.Channel.EnterTypingState())
             {
                 var owed = (await _database.GetOwed(Context.User.Id))
-                    .Where(o => lender == null || o.LenderId == lender.Id)
+                    .Where(o => borrower == null || o.LenderId == borrower.Id)
                     .OrderBy(o => o.LenderId)
                     .ToArray();
 
@@ -71,14 +72,14 @@ namespace Mute.Modules
         }
 
         [Command("oi"), Summary("I will tell you what you are currently owed")]
-        public async Task ListDebtsByLender([CanBeNull] IUser borrower = null)
+        public async Task ListDebtsByLender([CanBeNull, Summary("Filter debts by this lender")] IUser lender = null)
         {
             await CheckDebugger();
 
             using (Context.Channel.EnterTypingState())
             {
                 var owed = (await _database.GetLent(Context.User.Id))
-                    .Where(o => borrower == null || o.BorrowerId == borrower.Id)
+                    .Where(o => lender == null || o.BorrowerId == lender.Id)
                     .OrderBy(o => o.LenderId)
                     .ToArray();
 
@@ -250,7 +251,7 @@ namespace Mute.Modules
             return user.Mention;
         }
 
-        private async Task PaginatedTransactions([NotNull] IEnumerable<Owed> owed, string connector = "➜", bool lenderFirst = true)
+        private async Task PaginatedTransactions([NotNull] IEnumerable<Owed> owed, string connector = "➜", bool lenderFirst = true, bool showTotals = true)
         {
             string FormatSingleTsx(Owed d)
             {
@@ -261,6 +262,20 @@ namespace Mute.Modules
                 return $"{(lenderFirst ? lender : borrower)} {connector} {(lenderFirst ? borrower : lender)} {FormatCurrency(d.Amount, d.Unit)} {note}";
             }
 
+            async Task DebtTotalsPerCurrency()
+            {
+                if (owed.Count() > 1)
+                {
+                    var totals = owed.GroupBy(a => a.Unit)
+                                     .Select(a => (a.Key, a.Sum(o => o.Amount)))
+                                     .ToArray();
+
+                    await TypingReplyAsync("Totals:");
+                    foreach (var (currency, total) in totals)
+                        await TypingReplyAsync(" - " + FormatCurrency(total, currency));
+                }
+            }
+
             var owedArr = owed.ToArray();
 
             //If the number of transactions is small, display them all.
@@ -269,6 +284,8 @@ namespace Mute.Modules
                 await ReplyAsync(string.Join("\n", owedArr.Select(FormatSingleTsx)));
             else
                 await PagedReplyAsync(new PaginatedMessage {Pages = owedArr.Batch(7).Select(d => string.Join("\n", d.Select(FormatSingleTsx)))});
+
+            await DebtTotalsPerCurrency();
         }
 
         private async Task PaginatedPending([NotNull] IEnumerable<Pending> pending, string paginatedHeader, bool mentionReceiver)

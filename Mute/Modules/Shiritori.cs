@@ -22,7 +22,7 @@ namespace Mute.Modules
             _random = random;
         }
 
-        [Command("help")]
+        [Command("help"), Summary("I will briefly explain the rules of the game")]
         public async Task Help()
         {
             await TypingReplyAsync("Shiritori is a word game. I will say a word such as `Star` and then you follow with a word which starts with the ending letter, for example `Root`");
@@ -30,13 +30,13 @@ namespace Mute.Modules
             await TypingReplyAsync("Type `!shiritori` to start a game, you can optionally specify a difficulty mode (Easy|Normal|Hard|Impossible)");
         }
 
-        [Command]
+        [Command, Summary("Challenge me to a game of shiritori")]
         public async Task StartGame(Mode mode = Mode.Normal)
         {
             await StartGame(mode, auto:false);
         }
 
-        [Command, RequireOwner]
+        [Command, RequireOwner, Summary("Challenge me to a game of shiritori (or force me to play off against myself)")]
         public async Task StartGame(Mode mode, Mode autoMode = Mode.Hard, bool auto = true)
         {
             var values = Get(mode);
