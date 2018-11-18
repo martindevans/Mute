@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Linq;
 using JetBrains.Annotations;
-using Microsoft.Recognizers.Text;
-using Microsoft.Recognizers.Text.Choice;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Mute.Tests
@@ -11,66 +8,52 @@ namespace Mute.Tests
     public class Playground
     {
         [TestMethod]
-        public void MethodName()
+        public void BooleanChoices()
         {
-            C("yes");
-            C("no");
-            C("Yes I agree that is an excellent idea");
-            C("Yes that's correct");
-            C("affirmative");
-            C("correct");
-            C("I agree");
-            C("No that's not it");
+            Assert.IsFalse(C("no"));
+            Assert.IsFalse(C("No that's not it"));
+            Assert.IsFalse(C("no ty"));
+            Assert.IsFalse(C("noty"));
+
+            Assert.IsTrue(C("yes"));
+            Assert.IsTrue(C("Yes I agree that is an excellent idea"));
+            Assert.IsTrue(C("Yes that's correct"));
+            Assert.IsTrue(C("I agree"));
+            Assert.IsTrue(C("Yep"));
+
+            //Assert.IsTrue(C("correct"));
+            //Assert.IsTrue(C("affirmative"));
         }
 
-        private static void C(string input)
+        private static bool C([NotNull] string input)
         {
-            var extr = ExtractBool(input);
+            var extr = FuzzyParsing.BooleanChoice(input);
 
             Console.WriteLine($"{input} : {extr.Value} ({extr.Confidence})");
+
+            return extr.Value;
         }
 
-        [NotNull] private static Extraction ExtractBool(string input, float positiveThreshold = 0.75f, float negativeThreshold = 0.5f)
+        [TestMethod]
+        public void Money()
         {
-            var bools = ChoiceRecognizer.RecognizeBoolean(input, Culture.EnglishOthers).Where(a => a.TypeName == "boolean").ToArray();
+            Assert.AreEqual(("Pound", 7.5M), M("you owe me £7.50"));
+            Assert.AreEqual(("British pound", 9M), M("you owe me 9 gbp"));
+            Assert.AreEqual(("Dollar", 10M), M("Oh i send you that $10 by bank transfer earlier btw"));
 
-            var trues = 0;
-            var falses = 0;
-            float bestConfidence = 0;
-
-            foreach (var item in bools)
-            {
-                if (!item.Resolution.TryGetValue("value", out var valueObj))
-                    continue;
-                if (!item.Resolution.TryGetValue("score", out var confidenceObj))
-                    continue;
-
-                var value = Convert.ToBoolean(valueObj);
-                var confidence = Convert.ToSingle(confidenceObj);
-
-                if (value)
-                    trues++;
-                else
-                    falses++;
-
-                if (trues * falses != 0)
-                    return new Extraction(false, 0);
-                bestConfidence = Math.Max(bestConfidence, confidence);
-            }
-
-            return new Extraction(trues > 0, bestConfidence);
+            Assert.AreEqual(null, M("you owe me 3 quid"));
         }
 
-        private class Extraction
+        private static (string, decimal)? M([NotNull] string input)
         {
-            public bool Value { get; }
-            public float Confidence { get; }
+            var extr = FuzzyParsing.CurrencyAndAmount(input);
 
-            public Extraction(bool value, float confidence)
-            {
-                Value = value;
-                Confidence = confidence;
-            }
+            Console.WriteLine($"{input} : {extr.Amount} {extr.Currency}");
+
+            if (!extr.IsValid)
+                return null;
+
+            return (extr.Currency, extr.Amount);
         }
     }
 }

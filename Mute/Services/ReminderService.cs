@@ -130,40 +130,43 @@ namespace Mute.Services
                     await Task.Delay(1000);
 
                     //Check if there are any waiting events
-                    DateTime? next = null;
+                    Notification sendMe = null;
+                    Notification next = null;
                     lock (_notifications)
                     {
                         if (_notifications.Count > 0)
                         {
+                            //Sort by time
                             _notifications.Sort();
-                            next = _notifications[0].TriggerTime;
+
+                            //Send the first notification if necessary
+                            if (_notifications[0].TriggerTime <= DateTime.UtcNow)
+                            {
+                                sendMe = _notifications[0];
+                                _notifications.RemoveAt(0);
+                            }
+                            else
+                                next = _notifications[0];
                         }
                     }
 
-                    if (!next.HasValue)
+                    if (sendMe != null)
                     {
-                        //no pending events, wait for a while
-                        _event.WaitOne();
+                        //Send the notification if one was found
+                        await SendNotification(sendMe);
                     }
-                    else if (next.Value <= DateTime.UtcNow)
-                    {
-                        //Send event
-                        Notification n;
-                        lock (_notifications)
-                        {
-                            n = _notifications[0];
-                            _notifications.RemoveAt(0);
-                        }
-
-                        await SendNotification(n);
-                    }
-                    else
+                    else if (next != null)
                     {
                         //Wait until event should be sent or another event happens
-                        var duration = (next.Value - DateTime.UtcNow);
+                        var duration = (next.TriggerTime - DateTime.UtcNow);
                         var durationMillis = Math.Max(0, Math.Round(duration.TotalMilliseconds));
                         var intDurationMillis = durationMillis > int.MaxValue ? int.MaxValue : (int)durationMillis;
                         _event.WaitOne(intDurationMillis);
+                    }
+                    else
+                    {
+                        //No pending events, wait for something to happen
+                        _event.WaitOne(10000);
                     }
                 }
             }

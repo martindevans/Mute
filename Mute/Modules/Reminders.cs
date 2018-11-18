@@ -9,7 +9,6 @@ using Mute.Services;
 using Humanizer;
 using Humanizer.Localisation;
 using JetBrains.Annotations;
-using Microsoft.Recognizers.Text;
 using Mute.Services.Responses.Eliza;
 using Mute.Services.Responses.Eliza.Engine;
 
@@ -85,7 +84,7 @@ namespace Mute.Modules
         {
             try
             {
-                var result = FuzzyParsing.Moment(message, Culture.EnglishOthers);
+                var result = FuzzyParsing.Moment(message);
 
                 string error = null;
                 if (!result.IsValid)

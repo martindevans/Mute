@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
-using Microsoft.Recognizers.Text;
 using Mute.Services.Responses.Eliza;
 using Mute.Services.Responses.Eliza.Engine;
 
@@ -20,7 +19,7 @@ namespace Mute.Modules
 
         [ItemNotNull] private async Task<string> GetTime([CanBeNull] string tz = null)
         {
-            var extract = FuzzyParsing.TimeOffset(tz ?? "", Culture.English);
+            var extract = FuzzyParsing.TimeOffset(tz ?? "");
             var offset = extract.IsValid ? extract.UtcOffset : TimeSpan.Zero;
 
             string FormatTime(DateTime dt) => (dt).ToString("HH:mm:ss tt");

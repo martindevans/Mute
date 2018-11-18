@@ -25,7 +25,7 @@ namespace Mute.Services.Games
             database.Exec("CREATE INDEX IF NOT EXISTS `GamesPlayedByGame` ON `Games_Played` (`GameId` ASC);");
         }
 
-        private async Task Updated([NotNull] SocketUser a, [NotNull] SocketUser b)
+        private async Task Updated([NotNull] SocketUser _, [NotNull] SocketUser b)
         {
             if (b.Activity.Type != ActivityType.Playing)
                 return;
