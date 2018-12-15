@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Mute.Services.Responses.Eliza;
+using Mute.Services.Responses.Eliza.Engine;
 
 namespace Mute.Modules
 {
     public class Hugot
-        : BaseModule
+        : BaseModule, IKeyProvider
     {
         private const double ReactionChance = 0.05;
         private const double ReplyChance = 0.01;
@@ -39,6 +42,17 @@ namespace Mute.Modules
                 await Context.Message.AddReactionAsync(_reactions[_random.Next(_responses.Length)]);
             else if (_random.NextDouble() <= ReplyChance)
                 await TypingReplyAsync(_responses[_random.Next(_responses.Length)]);
+        }
+
+        public IEnumerable<Key> Keys
+        {
+            get
+            {
+                yield return new Key("hugot", 10,
+                    new Decomposition("*", "I don't want to talk about him"),
+                    new Decomposition("*", "I haven't seen him around for a while...")
+                );
+            }
         }
     }
 }

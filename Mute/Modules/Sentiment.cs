@@ -7,6 +7,7 @@ using Discord.WebSocket;
 using Humanizer;
 using JetBrains.Annotations;
 using Microsoft.ML.Models;
+using Mute.Extensions;
 using Mute.Services;
 
 namespace Mute.Modules
@@ -110,24 +111,14 @@ namespace Mute.Modules
         [Command("sentiment-metrics"), Summary("I will show statistics on the accuracy of my opinion")]
         public async Task SentimentMetrics()
         {
-            ClassificationMetrics result;
-            using (Context.Channel.EnterTypingState())
-            {
-                //Add a thinking emoji and then evaluate the model
-                var emoji = Context.Message.AddReactionAsync(EmojiLookup.Thinking);
-                result = await _sentiment.EvaluateModelMetrics();
-                await emoji;
-
-                //Remove the thinking emoji
-                await Context.Message.RemoveReactionAsync(EmojiLookup.Thinking, _client.CurrentUser);
-            }
+            var metrics = await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sentiment.EvaluateModelMetrics());
 
             //Type out the model metrics
             await ReplyAsync(
-                $"```Micro Accuracy: {result.AccuracyMicro}\n" +
-                $"Macro Accuracy: {result.AccuracyMacro}\n" +
-                $"Log Loss: {result.LogLoss}" +
-                $"Log Loss Reduction: {result.LogLossReduction}```"
+                $"```Micro Accuracy: {metrics.AccuracyMicro}\n" +
+                $"Macro Accuracy: {metrics.AccuracyMacro}\n" +
+                $"Log Loss: {metrics.LogLoss}\n" +
+                $"Log Loss Reduction: {metrics.LogLossReduction}```"
             );
         }
 
@@ -137,10 +128,7 @@ namespace Mute.Modules
             var w = new System.Diagnostics.Stopwatch();
             w.Start();
 
-            //Add a thinking emoji and then retrain the model
-            var emoji = Context.Message.AddReactionAsync(EmojiLookup.Thinking);
-            await _sentiment.ForceRetrain();
-            await emoji;
+            await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sentiment.ForceRetrain());
 
             await TypingReplyAsync($"Retrained in {w.Elapsed.Humanize(precision:2)}");
             await SentimentMetrics();

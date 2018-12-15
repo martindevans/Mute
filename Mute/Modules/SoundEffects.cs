@@ -7,6 +7,7 @@ using System.Linq;
 using Discord;
 using JetBrains.Annotations;
 using MoreLinq;
+using Mute.Extensions;
 
 namespace Mute.Modules
 {
@@ -152,17 +153,8 @@ namespace Mute.Modules
         [Command("renormalize"), RequireOwner, Priority(1)]
         public async Task Renormalize()
         {
-            //Start work
-            var work = _sfx.NormalizeAllSfx();
-
-            //Add a reaction while work is ongoing
-            await Context.Message.AddReactionAsync(EmojiLookup.Thinking);
-
-            //Wait to finish work
-            await work;
-
-            //Remove the thinking indicator
-            await Context.Message.RemoveReactionAsync(EmojiLookup.Thinking, _client.CurrentUser);
+            // Add a thinking emote while doing the work
+            await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sfx.NormalizeAllSfx());
         }
     }
 }
