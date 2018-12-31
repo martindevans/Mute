@@ -48,9 +48,16 @@ namespace Mute.Modules
         [Command("next"), Alias("upcoming"), Summary("I will tell you about the next spacex launch(es)")]
         public async Task NextLaunches(int count = 1)
         {
-            var info = await DescribeUpcomingFlights(count);
-            foreach (var item in info)
-                await TypingReplyAsync(item);
+            try
+            {
+                var info = await DescribeUpcomingFlights(count);
+                foreach (var item in info)
+                    await TypingReplyAsync(item);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         [Command("roadster"), Summary("I will tell you about the spacex roadster")]

@@ -15,6 +15,7 @@ namespace Mute
         [UsedImplicitly] public SoundEffectConfig SoundEffects;
         [UsedImplicitly] public DictionaryConfig Dictionary;
         [UsedImplicitly] public SentimentReactionConfig SentimentReactions;
+        [UsedImplicitly] public WordVectorsConfig WordVectors;
 
         [UsedImplicitly] public bool ProcessMessagesFromSelf;
     }
@@ -46,11 +47,8 @@ namespace Mute
 
     public class MlConfig
     {
-        [UsedImplicitly] public string BaseModelPath;
-        [UsedImplicitly] public string BaseDatasetsPath;
-        [UsedImplicitly] public string TempTrainingCache;
-
         [UsedImplicitly] public SentimentConfig Sentiment;
+        [UsedImplicitly] public WordVectorsConfig WordVectors;
     }
 
     public class SentimentConfig
@@ -85,5 +83,13 @@ namespace Mute
         [UsedImplicitly] public double CertaintyThreshold = 0.8;
         [UsedImplicitly] public double ReactionChance = 0.05;
         [UsedImplicitly] public double MentionReactionChance = 0.25;
+    }
+
+    public class WordVectorsConfig
+    {
+        [UsedImplicitly] public string WordVectorsBaseUrl;
+        [UsedImplicitly] public uint CacheSize;
+        [UsedImplicitly] public uint CacheMinTimeSeconds;
+        [UsedImplicitly] public uint CacheMaxTimeSeconds;
     }
 }

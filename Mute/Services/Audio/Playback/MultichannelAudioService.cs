@@ -84,6 +84,7 @@ namespace Mute.Services.Audio.Playback
             if (_player != null)
                 await _player.Stop();
             _player = null;
+            _channel = null;
 
             foreach (var channel in _channels)
                 channel.Stop();

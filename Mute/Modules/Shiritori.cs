@@ -15,17 +15,19 @@ namespace Mute.Modules
     {
         private readonly WordsService _words;
         private readonly Random _random;
+        private readonly WordVectorsService _wordVectors;
 
-        public Shiritori(WordsService words, Random random)
+        public Shiritori(WordsService words, Random random, WordVectorsService wordVectors)
         {
             _words = words;
             _random = random;
+            _wordVectors = wordVectors;
         }
 
         [Command("help"), Summary("I will briefly explain the rules of the game")]
         public async Task Help()
         {
-            await TypingReplyAsync("Shiritori is a word game. I will say a word such as `Star` and then you follow with a word which starts with the ending letter, for example `Root`");
+            await TypingReplyAsync("Shiritori is a word game. I will say a word such as `staR` and then you follow with a word which starts with the ending letter, for example `Root`");
             await TypingReplyAsync("Words must be 4 or more letters. The loser is the first to repeat a word or fail to follow a word.");
             await TypingReplyAsync("Type `!shiritori` to start a game, you can optionally specify a difficulty mode (Easy|Normal|Hard|Impossible)");
         }
@@ -139,14 +141,17 @@ namespace Mute.Modules
             var targetChar = previous.Last();
             switch (mode)
             {
-                //Pick a random valid word
+                //Pick a random valid word.
+                //This uses almost the same set of words every time (only changing when a word is used) to improve cache hits in the word vector similarity lookup.
                 case Mode.Easy:
-                case Mode.Normal:
-                    return _words.Words
+                case Mode.Normal: {
+                    var options = _words.Words
                          .Where(a => a.Length > 4)
                          .Where(a => a[0] == targetChar)
                          .Where(a => !played.Contains(a))
-                         .Random(_random);
+                         .Take(350);
+                    return PickMostSimilar(previous, options);
+                }
 
                 //Specifically try to pick a word which starts with the same character as a previous word
                 case Mode.Hard:
@@ -159,19 +164,32 @@ namespace Mute.Modules
                     var chars = grouped[0];
 
                     //Pick a word ending with that character
-                    return _words.Words
+                    var options = _words.Words
                           .Where(a => a.Length > 4)
                           .Where(a => a[0] == targetChar)
                           .Where(a => !played.Contains(a))
                           .Where(a => a.Last() == chars.Key)
-                          .Random(_random);
+                          .Take(350);
+
+                    return PickMostSimilar(previous, options);
                 }
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
             }
+        }
 
-            
+        private string PickMostSimilar(string previous, [NotNull] IEnumerable<string> options)
+        {
+            //Order by word vector similarity
+            var sims = options.Select(a => (a, Task.Run(() => _wordVectors.CosineDistance(previous, a))))
+                              .Select(a => (a.a, a.Item2.Result ?? 0))
+                              .OrderByDescending(a => a.Item2);
+
+            //Take the most similar
+            return sims
+                   .Select(a => a.a)
+                   .First();
         }
 
         private DifficultyValues Get(Mode mode)

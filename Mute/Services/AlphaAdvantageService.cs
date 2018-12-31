@@ -42,7 +42,7 @@ namespace Mute.Services
 
         private class ExchangeRateResponseContainer
         {
-            [JsonProperty("Realtime Currency Exchange Rate")]
+            [JsonProperty("Realtime Currency Exchange Rate"), UsedImplicitly]
             public ExchangeRateResponse Response;
         }
 
@@ -85,22 +85,22 @@ namespace Mute.Services
 
         private class StockQuoteResponseContainer
         {
-            [JsonProperty("Global Quote")]
+            [JsonProperty("Global Quote"), UsedImplicitly]
             public StockQuoteResponse Response;
         }
 
         public class StockQuoteResponse
         {
-            [JsonProperty("01. symbol")] public string Symbol { get; private set; }
+            [JsonProperty("01. symbol"), UsedImplicitly] public string Symbol { get; private set; }
 
-            [JsonProperty("02. open")] public decimal Open { get; private set; }
-            [JsonProperty("03. high")] public decimal High { get; private set; }
-            [JsonProperty("04. low")] public decimal Low { get; private set; }
-            [JsonProperty("05. price")] public decimal Price { get; private set; }
+            [JsonProperty("02. open"), UsedImplicitly] public decimal Open { get; private set; }
+            [JsonProperty("03. high"), UsedImplicitly] public decimal High { get; private set; }
+            [JsonProperty("04. low"), UsedImplicitly] public decimal Low { get; private set; }
+            [JsonProperty("05. price"), UsedImplicitly] public decimal Price { get; private set; }
 
-            [JsonProperty("06. volume")] public long Volume { get; private set; }
+            [JsonProperty("06. volume"), UsedImplicitly] public long Volume { get; private set; }
 
-            [JsonProperty("09. change")] public decimal Change { get; private set; }
+            [JsonProperty("09. change"), UsedImplicitly] public decimal Change { get; private set; }
         }
     }
 }

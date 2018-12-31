@@ -4,10 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Humanizer;
 using JetBrains.Annotations;
-using Microsoft.ML.Models;
-using Mute.Extensions;
 using Mute.Services;
 
 namespace Mute.Modules
@@ -76,7 +73,7 @@ namespace Mute.Modules
             await ShowSentimentScore(await _sentiment.Predict(msg.Content), msg.Content);
         }
 
-        private async Task ShowSentimentScore(SentimentService.SentimentResult score, string quote = null)
+        private async Task ShowSentimentScore(SentimentService.SentimentResult score, [CanBeNull] string quote = null)
         {
             var embed = new EmbedBuilder()
                 .WithTitle(quote)
@@ -108,30 +105,30 @@ namespace Mute.Modules
             return messages.Skip(offset).FirstOrDefault() as IUserMessage;
         }
 
-        [Command("sentiment-metrics"), Summary("I will show statistics on the accuracy of my opinion")]
-        public async Task SentimentMetrics()
-        {
-            var metrics = await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sentiment.EvaluateModelMetrics());
+        //[Command("sentiment-metrics"), Summary("I will show statistics on the accuracy of my opinion")]
+        //public async Task SentimentMetrics()
+        //{
+        //    var metrics = await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sentiment.EvaluateModelMetrics());
 
-            //Type out the model metrics
-            await ReplyAsync(
-                $"```Micro Accuracy: {metrics.AccuracyMicro}\n" +
-                $"Macro Accuracy: {metrics.AccuracyMacro}\n" +
-                $"Log Loss: {metrics.LogLoss}\n" +
-                $"Log Loss Reduction: {metrics.LogLossReduction}```"
-            );
-        }
+        //    //Type out the model metrics
+        //    await ReplyAsync(
+        //        $"```Micro Accuracy: {metrics.AccuracyMicro}\n" +
+        //        $"Macro Accuracy: {metrics.AccuracyMacro}\n" +
+        //        $"Log Loss: {metrics.LogLoss}\n" +
+        //        $"Log Loss Reduction: {metrics.LogLossReduction}```"
+        //    );
+        //}
 
-        [RequireOwner, Command("sentiment-retrain"), Summary("I will retrain the ML models for sentiment analysis")]
-        public async Task SentimentRetrain()
-        {
-            var w = new System.Diagnostics.Stopwatch();
-            w.Start();
+        //[RequireOwner, Command("sentiment-retrain"), Summary("I will retrain the ML models for sentiment analysis")]
+        //public async Task SentimentRetrain()
+        //{
+        //    var w = new System.Diagnostics.Stopwatch();
+        //    w.Start();
 
-            await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sentiment.ForceRetrain());
+        //    await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sentiment.ForceRetrain());
 
-            await TypingReplyAsync($"Retrained in {w.Elapsed.Humanize(precision:2)}");
-            await SentimentMetrics();
-        }
+        //    await TypingReplyAsync($"Retrained in {w.Elapsed.Humanize(precision:2)}");
+        //    await SentimentMetrics();
+        //}
     }
 }

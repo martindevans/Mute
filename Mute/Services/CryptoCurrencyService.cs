@@ -13,44 +13,44 @@ namespace Mute.Services
         #region data model
         public class Currency
         {
-            [JsonProperty("id")] public int Id { get; private set; }
-            [JsonProperty("name")] public string Name { get; private set; }
-            [JsonProperty("symbol")] public string Symbol { get; private set; }
+            [UsedImplicitly, JsonProperty("id")] public int Id { get; private set; }
+            [UsedImplicitly, JsonProperty("name")] public string Name { get; private set; }
+            [UsedImplicitly, JsonProperty("symbol")] public string Symbol { get; private set; }
         }
 
         private class Listings
         {
-            [JsonProperty("data")] public Currency[] Data;
+            [UsedImplicitly, JsonProperty("data")] public Currency[] Data;
         }
 
         public class Quote
         {
-            [JsonProperty("price")] public decimal Price { get; private set; }
-            [JsonProperty("volume_24h")] public decimal? Volume { get; private set; }
-            [JsonProperty("market_cap")] public decimal MarketCap { get; private set; }
-            [JsonProperty("percent_change_1h")] public decimal? PctChange1H { get; private set; }
-            [JsonProperty("percent_change_24h")] public decimal? PctChange24H { get; private set; }
-            [JsonProperty("percent_change_7d")] public decimal? PctChange7D { get; private set; }
+            [UsedImplicitly, JsonProperty("price")] public decimal Price { get; private set; }
+            [UsedImplicitly, JsonProperty("volume_24h")] public decimal? Volume { get; private set; }
+            [UsedImplicitly, JsonProperty("market_cap")] public decimal MarketCap { get; private set; }
+            [UsedImplicitly, JsonProperty("percent_change_1h")] public decimal? PctChange1H { get; private set; }
+            [UsedImplicitly, JsonProperty("percent_change_24h")] public decimal? PctChange24H { get; private set; }
+            [UsedImplicitly, JsonProperty("percent_change_7d")] public decimal? PctChange7D { get; private set; }
         }
 
         public class Ticker
         {
-            [JsonProperty("id")] public int Id { get; private set; }
-            [JsonProperty("name")] public string Name { get; private set; }
-            [JsonProperty("symbol")] public string Symbol { get; private set; }
-            [JsonProperty("rank")] public int Rank { get; private set; }
+            [UsedImplicitly, JsonProperty("id")] public int Id { get; private set; }
+            [UsedImplicitly, JsonProperty("name")] public string Name { get; private set; }
+            [UsedImplicitly, JsonProperty("symbol")] public string Symbol { get; private set; }
+            [UsedImplicitly, JsonProperty("rank")] public int Rank { get; private set; }
 
-            [JsonProperty("circulating_supply")] public decimal CirculatingSupply { get; private set; }
-            [JsonProperty("total_supply")] public decimal TotalSupply { get; private set; }
-            [JsonProperty("max_supply")] public decimal? MaxSupply { get; private set; }
+            [UsedImplicitly, JsonProperty("circulating_supply")] public decimal CirculatingSupply { get; private set; }
+            [UsedImplicitly, JsonProperty("total_supply")] public decimal TotalSupply { get; private set; }
+            [UsedImplicitly, JsonProperty("max_supply")] public decimal? MaxSupply { get; private set; }
 
-            [JsonProperty("quotes")] private Dictionary<string, Quote> _quotes;
+            [UsedImplicitly, JsonProperty("quotes")] private Dictionary<string, Quote> _quotes;
             public IReadOnlyDictionary<string, Quote> Quotes => _quotes;
         }
 
         private class TickerContainer
         {
-            [JsonProperty("data")] public Ticker Data;
+            [UsedImplicitly, JsonProperty("data")] public Ticker Data;
         }
         #endregion
 

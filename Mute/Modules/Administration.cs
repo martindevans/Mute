@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
 using Mute.Services.Responses;
+using Newtonsoft.Json.Linq;
 
 namespace Mute.Modules
 {
@@ -14,15 +17,19 @@ namespace Mute.Modules
     public class Administration
         : BaseModule
     {
+        private readonly DiscordSocketClient _client;
         private readonly IDatabaseService _database;
         private readonly HistoryLoggingService _history;
         private readonly ConversationalResponseService _conversations;
+        private readonly WordVectorsService _wordVectors;
 
-        public Administration(IDatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations)
+        public Administration(DiscordSocketClient client, IDatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations, WordVectorsService wordVectors)
         {
+            _client = client;
             _database = database;
             _history = history;
             _conversations = conversations;
+            _wordVectors = wordVectors;
         }
 
         [Command("hostinfo"), Summary("I Will tell you where I am being hosted")]
@@ -104,6 +111,27 @@ namespace Mute.Modules
             {
                 await ReplyAsync("You are not in a voice channel");
             }
+        }
+
+        [Command("test-wv")]
+        public async Task TestWv(string word)
+        {
+            var result = await _wordVectors.GetVector(word);
+            var json = JArray.FromObject(result).ToString(Newtonsoft.Json.Formatting.None);
+            await ReplyAsync(json.Substring(0, Math.Min(500, json.Length)));
+        }
+
+        [Command("test-wv-cos")]
+        public async Task TestWvCos(string a, string b)
+        {
+            var result = await _wordVectors.CosineDistance(a, b);
+            await ReplyAsync(result.ToString());
+        }
+
+        [Command("test-wv-stats")]
+        public async Task TestWvStats()
+        {
+            await ReplyAsync(new EmbedBuilder().AddField("Size", _wordVectors.CacheCount).AddField("Hits", _wordVectors.CacheHits).AddField("Miss", _wordVectors.CacheMisses));
         }
     }
 }

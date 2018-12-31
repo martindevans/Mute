@@ -33,7 +33,7 @@ namespace Mute.Services
             var gc = (SocketGuildChannel)message.Channel;
             var g = gc.Guild;
 
-            var users = (await message.GetReactionUsersAsync(reaction.Emote))   //Get users who reacted
+            var users = (await (message.GetReactionUsersAsync(reaction.Emote, 128).Flatten().ToArray()))   //Get users who reacted
                         .Select(u => u as IGuildUser ?? g.GetUser(u.Id))        //Convert them to guild users
                         .Where(u => u != null)
                         .GroupBy(a => a.Id)                                     //GroupBy ID to deduplicate users who reacted multiple times

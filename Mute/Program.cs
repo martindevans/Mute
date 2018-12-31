@@ -91,8 +91,10 @@ namespace Mute
                 .AddSingleton<SoundEffectService>()
                 .AddSingleton<WordsService>()
                 .AddSingleton<SpacexService>()
+                .AddSingleton<WordVectorsService>()
+                .AddSingleton<UptimeService>()
                 .AddSingleton<MultichannelAudioService>();
-            
+
             _services = serviceCollection.BuildServiceProvider();
 
             //Force creation of active services
@@ -101,6 +103,7 @@ namespace Mute
             _services.GetService<SentimentService>();
             _services.GetService<HistoryLoggingService>();
             _services.GetService<ReactionSentimentTrainer>();
+            _services.GetService<UptimeService>();
         }
 
         private async Task<int> MainAsync(string[] args)
@@ -149,7 +152,7 @@ namespace Mute
             _client.MessageReceived += HandleMessage;
 
             // Discover all of the commands in this assembly and load them.
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
+            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
             
             // Print loaded modules
             Console.WriteLine($"Loaded Modules ({_commands.Modules.Count()}):");

@@ -1,6 +1,8 @@
 ﻿using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
+using Humanizer;
+using Mute.Services;
 
 namespace Mute.Modules
 {
@@ -8,10 +10,12 @@ namespace Mute.Modules
         : BaseModule
     {
         private readonly DiscordSocketClient _client;
+        private readonly UptimeService _uptime;
 
-        public Introspection(DiscordSocketClient client)
+        public Introspection(DiscordSocketClient client, UptimeService uptime)
         {
             _client = client;
+            _uptime = uptime;
         }
 
         [Command("ping"), Summary("I will respond with 'pong'"), Alias("test")]
@@ -43,6 +47,12 @@ namespace Mute.Modules
         public async Task Shard()
         {
             await TypingReplyAsync($"Hello from shard {_client.ShardId}");
+        }
+
+        [Command("uptime"), Summary("I will tell you how long I have been running")]
+        public async Task Uptime()
+        {
+            await TypingReplyAsync(_uptime.Uptime.Humanize(2));
         }
     }
 }
