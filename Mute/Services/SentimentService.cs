@@ -10,7 +10,7 @@ namespace Mute.Services
     public class SentimentService
     {
         private readonly IDatabaseService _database;
-        private readonly MlConfig _config;
+        private readonly SentimentConfig _config;
 
         private const string InsertTaggedSentimentData = "INSERT INTO TaggedSentimentData (Content, Score) values(@Content, @Score)";
         private const string SelectTaggedSentimentData = "SELECT * FROM TaggedSentimentData";
@@ -18,7 +18,7 @@ namespace Mute.Services
         public SentimentService([NotNull] Configuration config, IDatabaseService database)
         {
             _database = database;
-            _config = config.MlConfig;
+            _config = config.Sentiment;
 
             // Create database structure
             try
@@ -79,34 +79,34 @@ namespace Mute.Services
         }
         #endregion
 
-        //private async Task<object> LoadModel()
-        //{
-        //    using (var graph = new TFGraph())
-        //    {
-        //        graph.Import(await File.ReadAllBytesAsync(@"C:\Users\Martin\Documents\tensorflow\keras_to_tensorflow\converted.pb"));
-        //        var session = new TFSession(graph);
+        private async Task<object> LoadModel()
+        {
+            using (var graph = new TFGraph())
+            {
+                graph.Import(await File.ReadAllBytesAsync(@"C:\Users\Martin\Documents\tensorflow\keras_to_tensorflow\converted.pb"));
+                var session = new TFSession(graph);
 
-        //        //graph.
-                
-        //        var runner = session.GetRunner();
-        //        runner.AddInput(graph["gaussian_noise_1_input"][0], new TFTensor(TFDataType.Float, new long[] { 1, 1, 300 }, 300 * sizeof(float)));
-        //        runner.Fetch(graph["dense_3/Softmax"][0]);
+                //graph.
 
-        //        try
-        //        {
-        //            var result = runner.Run();
+                var runner = session.GetRunner();
+                runner.AddInput(graph["gaussian_noise_1_input"][0], new TFTensor(TFDataType.Float, new long[] { 1, 1, 300 }, 300 * sizeof(float)));
+                runner.Fetch(graph["dense_3/Softmax"][0]);
 
-        //            foreach (var item in result)
-        //            {
-        //            }
-        //        }
-        //        catch (Exception e)
-        //        {
+                try
+                {
+                    var result = runner.Run();
 
-        //        }
+                    foreach (var item in result)
+                    {
+                    }
+                }
+                catch (Exception e)
+                {
 
-        //        return null;
-        //    }
-        //}
+                }
+
+                return null;
+            }
+        }
     }
 }

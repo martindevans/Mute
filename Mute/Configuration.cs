@@ -9,7 +9,7 @@ namespace Mute
         [UsedImplicitly] public AlphaAdvantageConfig AlphaAdvantage;
         [UsedImplicitly] public DatabaseConfig Database;
         [UsedImplicitly] public YoutubeDlConfig YoutubeDl;
-        [UsedImplicitly] public MlConfig MlConfig;
+        [UsedImplicitly] public SentimentConfig Sentiment;
         [UsedImplicitly] public ElizaConfig ElizaConfig;
         [UsedImplicitly] public SteamConfig Steam;
         [UsedImplicitly] public SoundEffectConfig SoundEffects;
@@ -45,17 +45,9 @@ namespace Mute
         [UsedImplicitly] public string FprobeBinaryPath;
     }
 
-    public class MlConfig
-    {
-        [UsedImplicitly] public SentimentConfig Sentiment;
-        [UsedImplicitly] public WordVectorsConfig WordVectors;
-    }
-
     public class SentimentConfig
     {
-        [UsedImplicitly] public string ModelDirectory;
-        [UsedImplicitly] public string TrainingDatasetDirectory;
-        [UsedImplicitly] public string EvalDatasetDirectory;
+        [UsedImplicitly] public string SentimentModelPath;
     }
 
     public class ElizaConfig

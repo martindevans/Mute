@@ -48,18 +48,20 @@ namespace Mute.Modules
 
             while (played.Count < values.TurnLimit)
             {
-                //Check if we failed to find a valid response
-                var myWord = Pick(prev, played, mode, values);
-                if (myWord == null)
                 {
-                    await TypingReplyAsync("I can't think of a good followup for that. You win!");
-                    return;
-                }
+                    //Check if we failed to find a valid response
+                    var myWord = Pick(prev, played, mode, values);
+                    if (myWord == null)
+                    {
+                        await TypingReplyAsync("I can't think of a good followup for that. You win!");
+                        return;
+                    }
 
-                //Play our turn
-                await TypingReplyAsync($"{played.Count + 1}. {myWord}");
-                prev = myWord;
-                played.Add(myWord);
+                    //Play our turn
+                    await TypingReplyAsync($"{played.Count + 1}. {myWord}");
+                    prev = myWord;
+                    played.Add(myWord);
+                }
 
                 string theirWord;
                 if (auto)
@@ -118,7 +120,7 @@ namespace Mute.Modules
 
                 //They pass, add word to game state
                 prev = theirWord;
-                played.Add(myWord);
+                played.Add(theirWord);
             }
 
             await TypingReplyAsync($"Wow, {played.Count} turns! I surrender, you win.");
@@ -138,19 +140,21 @@ namespace Mute.Modules
             if (_random.NextDouble() < values.PerTurnNoWordChance)
                 return null;
 
+            //Get set of all valid words
             var targetChar = previous.Last();
+            var nextWords = _words
+                .Words
+                .Where(a => a.Length >= values.MinWordLength && a.Length <= values.MaxWordLength && _random.NextDouble() > values.PerWordSkipChance)
+                .Where(a => a[0] == targetChar)
+                .Where(a => !played.Contains(a));
+
             switch (mode)
             {
                 //Pick a random valid word.
                 //This uses almost the same set of words every time (only changing when a word is used) to improve cache hits in the word vector similarity lookup.
                 case Mode.Easy:
                 case Mode.Normal: {
-                    var options = _words.Words
-                         .Where(a => a.Length > 4)
-                         .Where(a => a[0] == targetChar)
-                         .Where(a => !played.Contains(a))
-                         .Take(350);
-                    return PickMostSimilar(previous, options);
+                    return PickMostSimilar(previous, nextWords.Take(350));
                 }
 
                 //Specifically try to pick a word which starts with the same character as a previous word
@@ -164,10 +168,7 @@ namespace Mute.Modules
                     var chars = grouped[0];
 
                     //Pick a word ending with that character
-                    var options = _words.Words
-                          .Where(a => a.Length > 4)
-                          .Where(a => a[0] == targetChar)
-                          .Where(a => !played.Contains(a))
+                    var options = nextWords
                           .Where(a => a.Last() == chars.Key)
                           .Take(350);
 
@@ -201,7 +202,10 @@ namespace Mute.Modules
                         TurnLimit = 10,
                         PerTurnNoWordChance = 0.1f,
                         TimeLimit = TimeSpan.FromMinutes(1),
-                        RevertToNormalChance = 0,
+                        RevertToNormalChance = 0.1,
+                        PerWordSkipChance = 0.1f,
+                        MinWordLength = 4,
+                        MaxWordLength = 8
                     };
 
                 case Mode.Normal:
@@ -210,6 +214,9 @@ namespace Mute.Modules
                         PerTurnNoWordChance = 0.01f,
                         TimeLimit = TimeSpan.FromSeconds(45),
                         RevertToNormalChance = 0,
+                        PerWordSkipChance = 0.05f,
+                        MinWordLength = 4,
+                        MaxWordLength = 9
                     };
 
                 case Mode.Hard:
@@ -217,7 +224,10 @@ namespace Mute.Modules
                         TurnLimit = 50,
                         PerTurnNoWordChance = 0.0f,
                         TimeLimit = TimeSpan.FromSeconds(30),
-                        RevertToNormalChance = 0.75
+                        RevertToNormalChance = 0.75,
+                        PerWordSkipChance = 0.05f,
+                        MinWordLength = 4,
+                        MaxWordLength = 12
                     };
 
                 case Mode.Impossible:
@@ -225,7 +235,10 @@ namespace Mute.Modules
                         TurnLimit = int.MaxValue,
                         PerTurnNoWordChance = 0.0f,
                         TimeLimit = TimeSpan.FromSeconds(20),
-                        RevertToNormalChance = 0.15
+                        RevertToNormalChance = 0.15,
+                        PerWordSkipChance = 0.01f,
+                        MinWordLength = 4,
+                        MaxWordLength = int.MaxValue
                     };
 
                 default:
@@ -239,6 +252,9 @@ namespace Mute.Modules
             public float PerTurnNoWordChance;
             public TimeSpan TimeLimit;
             public double RevertToNormalChance;
+            public double PerWordSkipChance;
+            public int MinWordLength;
+            public int MaxWordLength;
         }
 
         public enum Mode

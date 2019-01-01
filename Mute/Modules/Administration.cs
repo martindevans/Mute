@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -8,7 +6,6 @@ using JetBrains.Annotations;
 using Mute.Extensions;
 using Mute.Services;
 using Mute.Services.Responses;
-using Newtonsoft.Json.Linq;
 
 namespace Mute.Modules
 {
@@ -19,30 +16,13 @@ namespace Mute.Modules
     {
         private readonly DiscordSocketClient _client;
         private readonly IDatabaseService _database;
-        private readonly HistoryLoggingService _history;
         private readonly ConversationalResponseService _conversations;
-        private readonly WordVectorsService _wordVectors;
 
-        public Administration(DiscordSocketClient client, IDatabaseService database, HistoryLoggingService history, ConversationalResponseService conversations, WordVectorsService wordVectors)
+        public Administration( DiscordSocketClient client, IDatabaseService database, ConversationalResponseService conversations)
         {
             _client = client;
             _database = database;
-            _history = history;
             _conversations = conversations;
-            _wordVectors = wordVectors;
-        }
-
-        [Command("hostinfo"), Summary("I Will tell you where I am being hosted")]
-        public async Task HostName()
-        {
-            var embed = new EmbedBuilder()
-                .AddField("Machine", Environment.MachineName)
-                .AddField("User", Environment.UserName)
-                .AddField("OS", Environment.OSVersion)
-                .AddField("CPUs", Environment.ProcessorCount)
-                .Build();
-
-            await ReplyAsync("", false, embed);
         }
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -61,19 +41,6 @@ namespace Mute.Modules
         {
             using (var result = await _database.ExecReader(sql))
                 await TypingReplyAsync($"SQL affected {result.RecordsAffected} rows");
-        }
-
-        [Command("subscribe"), Summary("I will subscribe history logging to a new channel")]
-        public async Task Scrape([NotNull] ITextChannel channel)
-        {
-            try
-            {
-                await _history.BeginMonitoring(channel);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
         }
 
         [Command("conversation-status"), Summary("I will show the status of my current conversation with a user")]
@@ -99,39 +66,17 @@ namespace Mute.Modules
             }
         }
 
-        [Command("leave-voice"), Summary("I will immediately leave the voice channel (if you are in one)")]
-        public async Task LeaveVoice()
+        [Command("presence"), Summary("I will set my presence")]
+        public async Task SetPresence(ActivityType activity, [CanBeNull, Remainder] string presence)
         {
-            if (Context.User is IVoiceState v)
-            {
-                using (await v.VoiceChannel.ConnectAsync())
-                    await Task.Delay(100);
-            }
-            else
-            {
-                await ReplyAsync("You are not in a voice channel");
-            }
+            if (!string.IsNullOrEmpty(presence))
+                await _client.SetActivityAsync(new Game(presence, activity));
         }
 
-        [Command("test-wv")]
-        public async Task TestWv(string word)
+        [Command("status"), Summary("I will set my status")]
+        public async Task SetPresence(UserStatus status)
         {
-            var result = await _wordVectors.GetVector(word);
-            var json = JArray.FromObject(result).ToString(Newtonsoft.Json.Formatting.None);
-            await ReplyAsync(json.Substring(0, Math.Min(500, json.Length)));
-        }
-
-        [Command("test-wv-cos")]
-        public async Task TestWvCos(string a, string b)
-        {
-            var result = await _wordVectors.CosineDistance(a, b);
-            await ReplyAsync(result.ToString());
-        }
-
-        [Command("test-wv-stats")]
-        public async Task TestWvStats()
-        {
-            await ReplyAsync(new EmbedBuilder().AddField("Size", _wordVectors.CacheCount).AddField("Hits", _wordVectors.CacheHits).AddField("Miss", _wordVectors.CacheMisses));
+            await _client.SetStatusAsync(status);
         }
     }
 }

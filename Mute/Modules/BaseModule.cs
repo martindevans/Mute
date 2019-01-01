@@ -175,12 +175,12 @@ namespace Mute.Modules
             return await Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
         }
 
-        public async Task<IUserMessage> TypingReplyAsync([NotNull] EmbedBuilder embed, [CanBeNull] RequestOptions options = null)
+        protected async Task<IUserMessage> TypingReplyAsync([NotNull] EmbedBuilder embed, [CanBeNull] RequestOptions options = null)
         {
             return await TypingReplyAsync("", false, embed.Build(), options);
         }
 
-        public async Task<IUserMessage> ReplyAsync([NotNull] EmbedBuilder embed, [CanBeNull] RequestOptions options = null)
+        protected async Task<IUserMessage> ReplyAsync([NotNull] EmbedBuilder embed, [CanBeNull] RequestOptions options = null)
         {
             return await ReplyAsync("", false, embed.Build(), options);
         }

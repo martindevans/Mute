@@ -1,7 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
+using Microsoft.Extensions.DependencyInjection;
 using Mute.Services;
 
 namespace Mute.Modules
@@ -11,11 +15,37 @@ namespace Mute.Modules
     {
         private readonly DiscordSocketClient _client;
         private readonly UptimeService _uptime;
+        private readonly ServiceCollection _services;
 
-        public Introspection(DiscordSocketClient client, UptimeService uptime)
+        public Introspection(ServiceCollection services, DiscordSocketClient client, UptimeService uptime)
         {
+            _services = services;
             _client = client;
             _uptime = uptime;
+        }
+
+        [Command("services"), RequireOwner, Summary("I will list all loaded services")]
+        public async Task ListServices()
+        {
+            await DisplayItemList(
+                _services.ToArray(),
+                () => "There are no services loaded",
+                c => $"There are {c.Count} services loaded",
+                (s, i) => $"{i}. `{s.ServiceType.Name}` ({s.Lifetime})"
+            );
+        }
+
+        [Command("hostinfo"), Summary("I Will tell you where I am being hosted")]
+        public async Task HostName()
+        {
+            var embed = new EmbedBuilder()
+                        .AddField("Machine", Environment.MachineName)
+                        .AddField("User", Environment.UserName)
+                        .AddField("OS", Environment.OSVersion)
+                        .AddField("CPUs", Environment.ProcessorCount)
+                        .Build();
+
+            await ReplyAsync("", false, embed);
         }
 
         [Command("ping"), Summary("I will respond with 'pong'"), Alias("test")]

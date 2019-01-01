@@ -62,12 +62,15 @@ namespace Mute
             });
             _client = new DiscordSocketClient();
 
-            var serviceCollection = new ServiceCollection()
+            var serviceCollection = new ServiceCollection();
+
+            serviceCollection
                 .AddTransient<Random>()
                 .AddTransient<IHttpClient>(_ => new MuteHttpClient())
                 .AddSingleton(_config)
                 .AddSingleton(_commands)
                 .AddSingleton(_client)
+                .AddSingleton(serviceCollection)
                 .AddSingleton<IDiscordClient>(_client)
                 .AddSingleton<IDatabaseService>(new DatabaseService(_config.Database))
                 .AddSingleton<InteractiveService>()

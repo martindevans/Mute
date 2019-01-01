@@ -58,10 +58,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Vocabulary\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="Microsoft.Recognizers.Text.DateTime">
       <HintPath>..\..\..\..\.nuget\packages\microsoft.recognizers.text.datetime\1.1.0\lib\netstandard2.0\Microsoft.Recognizers.Text.DateTime.dll</HintPath>
     </Reference>

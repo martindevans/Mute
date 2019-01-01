@@ -207,6 +207,33 @@ namespace Mute.Services
         }
 
         #region query
+        [ItemNotNull] public async Task<IReadOnlyList<(SocketGuild, ITextChannel)>> GetSubscriptions()
+        {
+            var result = new List<(SocketGuild, ITextChannel)>();
+
+            using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = SelectMonitorSql;
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var cid = ulong.Parse((string)reader["ChannelId"]);
+                        var gid = ulong.Parse((string)reader["GuildId"]);
+                        var guild = _client.GetGuild(gid);
+
+                        var channel = guild?.GetChannel(cid);
+                        if (!(channel is ITextChannel textChannel))
+                            continue;
+
+                        result.Add((guild, textChannel));
+                    }
+                }
+            }
+
+            return result;
+        }
+
         [ItemCanBeNull] public async Task<string> MessageContent(ulong id)
         {
             using (var cmd = _database.CreateCommand())
