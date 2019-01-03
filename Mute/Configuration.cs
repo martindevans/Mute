@@ -48,6 +48,8 @@ namespace Mute
     public class SentimentConfig
     {
         [UsedImplicitly] public string SentimentModelPath;
+        [UsedImplicitly] public string SentimentModelInputLayer;
+        [UsedImplicitly] public string SentimentModelOutputLayer;
     }
 
     public class ElizaConfig

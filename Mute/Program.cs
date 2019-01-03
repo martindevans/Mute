@@ -85,6 +85,7 @@ namespace Mute
                 .AddSingleton<GameService>()
                 .AddSingleton<ReminderService>()
                 .AddSingleton<SentimentService>()
+                .AddSingleton<SentimentTrainingService>()
                 .AddSingleton<HistoryLoggingService>()
                 .AddSingleton<ReactionSentimentTrainer>()
                 .AddSingleton<ConversationalResponseService>()

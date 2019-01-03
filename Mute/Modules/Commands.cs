@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -50,15 +49,19 @@ namespace Mute.Modules
                 return false;
             }
 
-            //Find commands which pass that filter and which the user asking is allowed to execute
-            var commands = await FindCommands(FilterCommand);
-
-            if (commands.Count == 0)
-                await TypingReplyAsync($"Can't find any command which match filter `{filter}`");
-            else if (commands.Count == 1)
-                await TypingReplyAsync(FormatCommandDetails(commands.Single()));
-            else
-                await CommandSummaries(commands, "By the way you can use `!command $name` to get the details of a specific command");
+            await DisplayItemList(
+                await FindCommands(FilterCommand),
+                () => $"Can't find any command which match filter `{filter}`",
+                async c => await TypingReplyAsync(FormatCommandDetails(c)),
+                l => {
+                    const string suffix = "By the way you can use `!command $name` to get the details of a specific command";
+                    if (string.IsNullOrWhiteSpace(filter))
+                        return $"There are {l.Count} available commands. " + suffix;
+                    else
+                        return $"{l.Count} commands matched the search term `{filter}`. " + suffix;
+                },
+                (c, i) => $"{i}. {FormatCommandSummary(c)}"
+            );
         }
 
         [Command("command"), Summary("I will give you the details of a specific command")]
@@ -82,44 +85,16 @@ namespace Mute.Modules
                 return false;
             }
 
-            //Find commands which pass that filter and which the user asking is allowed to execute
-            var commands = await FindCommands(FilterCommand);
-
-            if (commands.Count == 0)
-                await TypingReplyAsync($"Can't find any command which match filter `{filter}`");
-            else if (commands.Count == 1)
-                await TypingReplyAsync(FormatCommandDetails(commands.Single()));
-            else
-                await CommandSummaries(commands, $"{commands.Count} commands matched the search term");
+            await DisplayItemList(
+                await FindCommands(FilterCommand),
+                () => $"Can't find any command which match filter `{filter}`",
+                async c => await TypingReplyAsync(FormatCommandDetails(c)),
+                l => $"{l.Count} commands matched the search term",
+                (c, i) => $"{i}. {FormatCommandSummary(c)}"
+            );
         }
 
         #region static helpers
-        private async Task CommandSummaries([NotNull] IEnumerable<CommandInfo> commands, [CanBeNull] string hint)
-        {
-            var cmds = commands.ToList();
-
-            if (!string.IsNullOrWhiteSpace(hint))
-                await TypingReplyAsync(hint);
-
-            //Now print all the remaining commands (in batches of limited characters, to ensure we don't exceed the 2000 character limit)
-            var builder = new StringBuilder();
-            while (cmds.Count > 0)
-            {
-                builder.Append(FormatCommandSummary(cmds[0]));
-                builder.Append('\n');
-                cmds.RemoveAt(0);
-
-                if (builder.Length >= 1000)
-                {
-                    await TypingReplyAsync(builder.ToString());
-                    builder.Clear();
-                }
-            }
-
-            if (builder.Length > 0)
-                await TypingReplyAsync(builder.ToString());
-        }
-
         [NotNull] private static string FormatCommandSummary([NotNull] CommandInfo cmd)
         {
             return $"{FormatCommandName(cmd)} - {cmd.Summary}";
@@ -159,8 +134,8 @@ namespace Mute.Modules
         [NotNull] private static string FormatCommandName([NotNull] CommandInfo cmd)
         {
             return cmd.Aliases.Count == 1
-                ? $"!{cmd.Aliases.Single().ToLowerInvariant()}"
-                : $"!({string.Join('/', cmd.Aliases.Select(a => a.ToLowerInvariant()))})";
+                ? $"`!{cmd.Aliases.Single().ToLowerInvariant()}`"
+                : $"`!({string.Join('/', cmd.Aliases.Select(a => a.ToLowerInvariant()))})`";
         }
 
         [ItemNotNull] private async Task<IReadOnlyList<CommandInfo>> FindCommands([NotNull] Func<CommandInfo, bool> filter)

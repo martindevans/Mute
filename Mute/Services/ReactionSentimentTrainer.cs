@@ -9,9 +9,9 @@ namespace Mute.Services
 {
     public class ReactionSentimentTrainer
     {
-        private readonly SentimentService _sentiment;
+        private readonly SentimentTrainingService _sentiment;
 
-        public ReactionSentimentTrainer([NotNull] DiscordSocketClient client, SentimentService sentiment)
+        public ReactionSentimentTrainer([NotNull] DiscordSocketClient client, SentimentTrainingService sentiment)
         {
             _sentiment = sentiment;
 

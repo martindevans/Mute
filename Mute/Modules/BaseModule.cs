@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -19,28 +20,6 @@ namespace Mute.Modules
         /// <typeparam name="T"></typeparam>
         /// <param name="items">The list of items to speak</param>
         /// <param name="nothing">Generate a string for no items</param>
-        /// <param name="singleResult">Generate a string for a single item</param>
-        /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
-        /// <param name="displayItem">Convert a single item (of many) to a string</param>
-        /// <returns></returns>
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<Task> nothing, Func<T, Task> singleResult, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
-        {
-            await DisplayItemList(
-                items,
-                nothing,
-                singleResult,
-                null,
-                manyPrelude,
-                displayItem
-            );
-        }
-
-        /// <summary>
-        /// Display a list of items. Will use different formats for none, few and many items.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items">The list of items to speak</param>
-        /// <param name="nothing">Generate a string for no items</param>
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
@@ -49,7 +28,6 @@ namespace Mute.Modules
             await DisplayItemList(
                 items,
                 nothing,
-                null,
                 null,
                 manyPrelude,
                 displayItem
@@ -71,7 +49,6 @@ namespace Mute.Modules
                 nothing,
                 null,
                 null,
-                null,
                 displayItem
             );
         }
@@ -83,11 +60,10 @@ namespace Mute.Modules
         /// <param name="items">The list of items to speak</param>
         /// <param name="nothing">Generate a string for no items</param>
         /// <param name="singleResult">Generate a string for a single item</param>
-        /// <param name="fewResults">Generate a string for the given set of results</param>
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<Task> nothing, Func<T, Task> singleResult, Func<IReadOnlyList<T>, Task> fewResults, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
+        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<Task> nothing, Func<T, Task> singleResult, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
         {
             if (items.Count == 0)
             {
@@ -102,10 +78,6 @@ namespace Mute.Modules
             {
                 await singleResult(items.Single());
             }
-            else if (items.Count < 5 && fewResults != null)
-            {
-                await fewResults(items);
-            }
             else
             {
                 if (manyPrelude != null)
@@ -117,20 +89,36 @@ namespace Mute.Modules
             }
         }
 
+        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
+        {
+            await DisplayItemList(
+                items,
+                nothing,
+                null,
+                manyPrelude,
+                itemToString
+            );
+        }
+
         /// <summary>
         /// Display a list of items. Will use different formats for none, few and many items.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="items">The list of items to speak</param>
         /// <param name="nothing">Generate a string for no items</param>
+        /// <param name="singleItem">Display a summary for a single item</param>
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="itemToString">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
+        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<string> nothing, [CanBeNull] Func<T, Task> singleItem, Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
         {
             if (items.Count == 0)
             {
                 await TypingReplyAsync(nothing());
+            }
+            else if (items.Count == 1 && singleItem != null)
+            {
+                await singleItem(items[0]);
             }
             else
             {
@@ -139,9 +127,25 @@ namespace Mute.Modules
 
                 await ReplyAsync(manyPrelude(items));
 
-                var index = 0;
-                foreach (var item in items)
-                    await ReplyAsync(itemToString(item, index++));
+                var builder = new StringBuilder();
+
+                for (var i = 0; i < items.Count; i++)
+                {
+                    var item = items[i];
+                    var str = itemToString(item, i);
+
+                    if (builder.Length + str.Length > 1000)
+                    {
+                        await ReplyAsync(builder.ToString());
+                        builder.Clear();
+                    }
+
+                    builder.Append(str);
+                    builder.Append('\n');
+                }
+
+                if (builder.Length > 0)
+                    await ReplyAsync(builder.ToString());
             }
         }
 
@@ -162,7 +166,6 @@ namespace Mute.Modules
                 items,
                 async () => await ReplyAsync(nothing()),
                 async l => await ReplyAsync(singleResult(items.Single())),
-                fewResults != null ? async l => await ReplyAsync(fewResults(items)) : (Func<IReadOnlyList<T>, Task>)null,
                 async l => await TypingReplyAsync(manyPrelude(items)),
                 async (t, i) => await ReplyAsync(itemToString(t, i))
             );

@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using TensorFlow;
@@ -9,53 +10,71 @@ namespace Mute.Services
 {
     public class SentimentService
     {
-        private readonly IDatabaseService _database;
+        private readonly WordVectorsService _wordVectors;
         private readonly SentimentConfig _config;
 
-        private const string InsertTaggedSentimentData = "INSERT INTO TaggedSentimentData (Content, Score) values(@Content, @Score)";
-        private const string SelectTaggedSentimentData = "SELECT * FROM TaggedSentimentData";
+        private readonly Task<TFGraph> _graph;
 
-        public SentimentService([NotNull] Configuration config, IDatabaseService database)
+        public SentimentService([NotNull] Configuration config, WordVectorsService wordVectors)
         {
-            _database = database;
+            _wordVectors = wordVectors;
             _config = config.Sentiment;
-
-            // Create database structure
-            try
-            {
-                _database.Exec("CREATE TABLE IF NOT EXISTS `TaggedSentimentData` (`Content` TEXT NOT NULL UNIQUE, `Score` TEXT NOT NULL)");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            _graph = Task.Run(async () => await LoadGraph());
         }
 
         public async Task<SentimentResult> Predict([NotNull] string message)
         {
-            //await LoadModel();
-
-            return new SentimentResult {
-                Classification = Sentiment.Neutral,
-                Score = 0,
-                Text = message,
-                PositiveScore = 0,
-                NegativeScore = 0,
-                NeutralScore = 0
-            };
-        }
-
-        public async Task Teach([NotNull] string text, Sentiment sentiment)
-        {
-            using (var cmd = _database.CreateCommand())
+            try
             {
-                cmd.CommandText = InsertTaggedSentimentData;
-                cmd.Parameters.Add(new SQLiteParameter("@Content", System.Data.DbType.String) { Value = text.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) { Value = ((int)sentiment).ToString() });
-                await cmd.ExecuteNonQueryAsync();
-            }
+                var w = new Stopwatch();
+                w.Start();
 
-            Console.WriteLine($"Sentiment learned: `{text}` == {sentiment}");
+                //todo: clean message more!
+                var words = message.Split(' ');
+
+                var graph = await _graph;
+
+                using (var session = new TFSession(graph))
+                {
+                    var runner = session.GetRunner();
+
+                    //Create input tensor (1 sentence, N words, 300 word vector dimensions)
+                    var input = new float[1, words.Length, 300];
+
+                    //Copy in word vectors element by element
+                    var wordIndex = 0;
+                    foreach (var wordVector in words.AsParallel().AsOrdered().Select(_wordVectors.GetVector))
+                    {
+                        for (var i = 0; i < 300; i++)
+                        {
+                            var wv = await wordVector;
+                            if (wv != null)
+                                input[0, wordIndex, i] = wv[i];
+                        }
+
+                        wordIndex++;
+                    }
+
+                    //Set tensor as input to the graph
+                    runner.AddInput(graph[_config.SentimentModelInputLayer][0], input);
+
+                    //Tell the runner what result we want
+                    runner.Fetch(graph[_config.SentimentModelOutputLayer][0]);
+
+                    //Execute the graph
+                    var results = runner.Run();
+
+                    //Fetch the result (we only asked for one)
+                    var result = (float[,])results.Single().GetValue();
+
+                    return new SentimentResult(message, result[0, 0], result[0, 1], result[0, 2], w.Elapsed);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         #region helper classes
@@ -68,45 +87,45 @@ namespace Mute.Services
 
         public struct SentimentResult
         {
-            public string Text;
+            public readonly string Text;
 
-            public float Score;
-            public Sentiment Classification;
+            public readonly float ClassificationScore;
+            public readonly Sentiment Classification;
 
-            public float PositiveScore;
-            public float NeutralScore;
-            public float NegativeScore;
+            public readonly float NegativeScore;
+            public readonly float PositiveScore;
+            public readonly float NeutralScore;
+
+            public readonly TimeSpan ClassificationTime;
+
+            public SentimentResult(string message, float negative, float positive, float neutral, TimeSpan time)
+            {
+                Text = message;
+                NegativeScore = negative;
+                PositiveScore = positive;
+                NeutralScore = neutral;
+                ClassificationTime = time;
+
+                ClassificationScore = Math.Max(negative, Math.Max(positive, neutral));
+
+                // ReSharper disable CompareOfFloatsByEqualityOperator
+                if (ClassificationScore == negative)
+                    Classification = Sentiment.Negative;
+                else if (ClassificationScore == positive)
+                    Classification = Sentiment.Positive;
+                else
+                    Classification = Sentiment.Neutral;
+                // ReSharper restore CompareOfFloatsByEqualityOperator
+            }
         }
         #endregion
 
-        private async Task<object> LoadModel()
+        [ItemNotNull]
+        private async Task<TFGraph> LoadGraph()
         {
-            using (var graph = new TFGraph())
-            {
-                graph.Import(await File.ReadAllBytesAsync(@"C:\Users\Martin\Documents\tensorflow\keras_to_tensorflow\converted.pb"));
-                var session = new TFSession(graph);
-
-                //graph.
-
-                var runner = session.GetRunner();
-                runner.AddInput(graph["gaussian_noise_1_input"][0], new TFTensor(TFDataType.Float, new long[] { 1, 1, 300 }, 300 * sizeof(float)));
-                runner.Fetch(graph["dense_3/Softmax"][0]);
-
-                try
-                {
-                    var result = runner.Run();
-
-                    foreach (var item in result)
-                    {
-                    }
-                }
-                catch (Exception e)
-                {
-
-                }
-
-                return null;
-            }
+            var graph = new TFGraph();
+            graph.Import(await File.ReadAllBytesAsync(_config.SentimentModelPath));
+            return graph;
         }
     }
 }

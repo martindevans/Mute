@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Humanizer;
 using JetBrains.Annotations;
+using Mute.Extensions;
 using Mute.Services;
 
 namespace Mute.Modules
@@ -14,11 +16,13 @@ namespace Mute.Modules
     {
         private readonly SentimentService _sentiment;
         private readonly DiscordSocketClient _client;
+        private readonly SentimentReactionConfig _config;
 
-        public Sentiment(SentimentService sentiment, DiscordSocketClient client)
+        public Sentiment([NotNull] Configuration config, SentimentService sentiment, DiscordSocketClient client)
         {
             _sentiment = sentiment;
             _client = client;
+            _config = config.SentimentReactions;
         }
 
         [Command("sentiment"), Summary("I will show my opinion of a message")]
@@ -40,7 +44,7 @@ namespace Mute.Modules
         private async Task ReactWithSentiment([NotNull] IUserMessage message, SentimentService.SentimentResult? score = null)
         {
             var result = score ?? await _sentiment.Predict(message.Content);
-            if (result.Score < 0.75)
+            if (result.ClassificationScore < _config.CertaintyThreshold)
                 await message.AddReactionAsync(EmojiLookup.Confused);
 
             switch (result.Classification)
@@ -79,7 +83,8 @@ namespace Mute.Modules
                 .WithTitle(quote)
                 .AddField("Positive", $"{score.PositiveScore:#0.##}")
                 .AddField("Neutral", $"{score.NeutralScore:#0.##}")
-                .AddField("Negative", $"{score.NegativeScore:#0.##}");
+                .AddField("Negative", $"{score.NegativeScore:#0.##}")
+                .AddField("Delay", score.ClassificationTime.Humanize(2));
 
             switch (score.Classification)
             {
@@ -105,30 +110,16 @@ namespace Mute.Modules
             return messages.Skip(offset).FirstOrDefault() as IUserMessage;
         }
 
-        //[Command("sentiment-metrics"), Summary("I will show statistics on the accuracy of my opinion")]
-        //public async Task SentimentMetrics()
-        //{
-        //    var metrics = await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sentiment.EvaluateModelMetrics());
-
-        //    //Type out the model metrics
-        //    await ReplyAsync(
-        //        $"```Micro Accuracy: {metrics.AccuracyMicro}\n" +
-        //        $"Macro Accuracy: {metrics.AccuracyMacro}\n" +
-        //        $"Log Loss: {metrics.LogLoss}\n" +
-        //        $"Log Loss Reduction: {metrics.LogLossReduction}```"
-        //    );
-        //}
-
-        //[RequireOwner, Command("sentiment-retrain"), Summary("I will retrain the ML models for sentiment analysis")]
-        //public async Task SentimentRetrain()
-        //{
-        //    var w = new System.Diagnostics.Stopwatch();
-        //    w.Start();
-
-        //    await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sentiment.ForceRetrain());
-
-        //    await TypingReplyAsync($"Retrained in {w.Elapsed.Humanize(precision:2)}");
-        //    await SentimentMetrics();
-        //}
+        [Command("mass-sentiment"), Summary("I will tag the last N messages with sentiment reactions"), RequireOwner]
+        public async Task MassSentiment(byte count = 10)
+        {
+            await Context.Message.ThinkingReplyAsync(_client.CurrentUser, Task.Run(async () => {
+                for (byte i = 0; i < count; i++)
+                {
+                    await AskSentiment(i);
+                    await Task.Delay(250);
+                }
+            }));
+        }
     }
 }

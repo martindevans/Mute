@@ -38,6 +38,8 @@ namespace Mute.Services
         [ItemCanBeNull, NotNull]
         private async Task<WordVector> GetVectorObject(string word)
         {
+            word = word.ToLowerInvariant();
+
             var item = await _indexByWord.GetItem(word, GetVectorNonCached);
             return item;
         }
@@ -45,23 +47,21 @@ namespace Mute.Services
         [ItemCanBeNull, NotNull]
         private async Task<WordVector> GetVectorNonCached(string word)
         {
-            var url = new UriBuilder(_config.WordVectorsBaseUrl) {
-                Path = $"get_vector/{Uri.EscapeUriString(word)}"
-            };
+                var url = new UriBuilder(_config.WordVectorsBaseUrl) {Path = $"get_vector/{Uri.EscapeUriString(word)}"};
 
-            using (var resp = await _client.GetAsync(url.ToString()))
-            {
-                if (!resp.IsSuccessStatusCode)
-                    return null;
+                using (var resp = await _client.GetAsync(url.ToString()))
+                {
+                    if (!resp.IsSuccessStatusCode)
+                        return null;
 
-                var arr = JArray.Parse(await resp.Content.ReadAsStringAsync());
+                    var arr = JArray.Parse(await resp.Content.ReadAsStringAsync());
 
-                var vector = new List<float>(300);
-                foreach (var jToken in arr)
-                    vector.Add((float)jToken);
+                    var vector = new List<float>(300);
+                    foreach (var jToken in arr)
+                        vector.Add((float)jToken);
 
-                return new WordVector(word, vector);
-            }
+                    return new WordVector(word, vector);
+                }
         }
 
         public async Task<double?> CosineDistance(string a, string b)

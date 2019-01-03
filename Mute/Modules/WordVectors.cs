@@ -18,7 +18,7 @@ namespace Mute.Modules
             _wordVectors = wordVectors;
         }
 
-        [Command("vector")]
+        [Command("vector"), Summary("I will get the raw vector for a word")]
         public async Task GetWordVector(string word)
         {
             var vector = await _wordVectors.GetVector(word);
@@ -45,18 +45,31 @@ namespace Mute.Modules
             await ReplyAsync(arr.ToString());
         }
 
-        [Command("similarity")]
+        [Command("similarity"), Summary("I will tell you how similar two words are")]
         public async Task GetVectorSimilarity(string a, string b)
         {
             var result = await _wordVectors.CosineDistance(a, b);
 
-            if (result < 0.2)
+            if (!result.HasValue)
+            {
+                var av = await _wordVectors.GetVector(a);
+                if (av == null)
+                    await TypingReplyAsync("I don't know the word `{a}`");
+                var bv = await _wordVectors.GetVector(b);
+                if (bv == null)
+                    await TypingReplyAsync("I don't know the word `{b}`");
+            }
+            else if (result < 0.2)
             {
                 await TypingReplyAsync($"`{a}` and `{b}` are very different ({result:0.0##})");
             }
-            else if (result < 0.65)
+            else if (result < 0.5)
             {
                 await TypingReplyAsync($"`{a}` and `{b}` are not very similar ({result:0.0##})");
+            }
+            else if (result < 0.65)
+            {
+                await TypingReplyAsync($"`{a}` and `{b}` are a bit similar ({result:0.0##})");
             }
             else if (result < 0.85)
             {
@@ -68,7 +81,7 @@ namespace Mute.Modules
             }
         }
 
-        [Command("cache-stats")]
+        [RequireOwner, Command("cache-stats")]
         public async Task TestWvStats()
         {
             await ReplyAsync(new EmbedBuilder().AddField("Size", _wordVectors.CacheCount).AddField("Hits", _wordVectors.CacheHits).AddField("Miss", _wordVectors.CacheMisses));

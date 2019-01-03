@@ -51,7 +51,7 @@ namespace Mute.Services.Responses
         {
             var s = await _sentiment.Predict(context.Message.Content);
 
-            if (s.Score < Bracket || s.Classification == SentimentService.Sentiment.Neutral)
+            if (s.ClassificationScore < Bracket || s.Classification == SentimentService.Sentiment.Neutral)
                 return null;
 
             if (s.Classification == SentimentService.Sentiment.Positive)
