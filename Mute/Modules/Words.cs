@@ -1,21 +1,25 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Mute.Services;
+using Mute.Extensions;
 
 namespace Mute.Modules
 {
     [Group("word")]
-    public class WordVectors
+    public class Words
         : BaseModule
     {
         private readonly WordVectorsService _wordVectors;
+        private readonly WordTrainingService _training;
 
-        public WordVectors(WordVectorsService wordVectors)
+        public Words(WordVectorsService wordVectors, WordTrainingService training)
         {
             _wordVectors = wordVectors;
+            _training = training;
         }
 
         [Command("vector"), Summary("I will get the raw vector for a word")]
@@ -78,6 +82,38 @@ namespace Mute.Modules
             else
             {
                 await TypingReplyAsync($"`{a}` and `{b}` are analagous ({result:0.0##})");
+            }
+        }
+
+        [Command("teach")]
+        public async Task TeachWord(string word)
+        {
+            word = word.ToLowerInvariant();
+
+            var vector = await _wordVectors.GetVector(word);
+            if (vector != null)
+            {
+                await TypingReplyAsync("I already know that word!");
+                return;
+            }
+
+            await TypingReplyAsync($"I don't know what `{word}` means, can you use it in some example sentences?");
+
+            var timer = new Stopwatch();
+            while (timer.Elapsed < TimeSpan.FromMinutes(1))
+            {
+                var message = await NextMessageAsync(false, true, TimeSpan.FromMinutes(1));
+                if (message == null)
+                    continue;
+
+                var content = message.Content.ToLower();
+                if (!content.Contains(word))
+                    continue;
+
+                await _training.Teach(word, content);
+                timer.Restart();
+                if (message is IUserMessage um)
+                    await um.AddReactionAsync(EmojiLookup.ThumbsUp);
             }
         }
 

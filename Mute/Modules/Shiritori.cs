@@ -111,8 +111,8 @@ namespace Mute.Modules
                     return;
                 }
 
-                //Check that this word is in the dictionary
-                if (!_words.Contains(theirWord))
+                //Check that this word is in the dictionary or if it's not, check if it's got a valid word vector
+                if (!_words.Contains(theirWord) && (await _wordVectors.GetVector(theirWord)) == null)
                 {
                     await TypingReplyAsync("That's not a real word! I win :D");
                     return;

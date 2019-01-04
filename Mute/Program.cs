@@ -97,6 +97,7 @@ namespace Mute
                 .AddSingleton<SpacexService>()
                 .AddSingleton<WordVectorsService>()
                 .AddSingleton<UptimeService>()
+                .AddSingleton<WordTrainingService>()
                 .AddSingleton<MultichannelAudioService>();
 
             _services = serviceCollection.BuildServiceProvider();

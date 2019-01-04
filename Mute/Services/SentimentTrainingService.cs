@@ -10,7 +10,7 @@ namespace Mute.Services
         private const string InsertTaggedSentimentData = "INSERT INTO TaggedSentimentData (Content, Score) values(@Content, @Score)";
         private const string SelectTaggedSentimentData = "SELECT * FROM TaggedSentimentData";
 
-        private IDatabaseService _database;
+        private readonly IDatabaseService _database;
 
         public SentimentTrainingService([NotNull] Configuration config, IDatabaseService database)
         {
