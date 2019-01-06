@@ -110,7 +110,7 @@ namespace Mute.Modules
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="itemToString">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<string> nothing, [CanBeNull] Func<T, Task> singleItem, Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
+        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<string> nothing, [CanBeNull] Func<T, Task> singleItem, [CanBeNull] Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
         {
             if (items.Count == 0)
             {
@@ -125,7 +125,8 @@ namespace Mute.Modules
                 //Make sure we have a fresh user list to resolve users from IDs
                 await Context.Guild.DownloadUsersAsync();
 
-                await ReplyAsync(manyPrelude(items));
+                if (manyPrelude != null)
+                    await ReplyAsync(manyPrelude(items));
 
                 var builder = new StringBuilder();
 

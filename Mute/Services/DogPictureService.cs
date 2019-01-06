@@ -33,6 +33,7 @@ namespace Mute.Services
             }
         }
 
+        #pragma warning disable CS0649
         // ReSharper disable once ClassNeverInstantiated.Local
         private class Response
         {
@@ -42,5 +43,6 @@ namespace Mute.Services
             // ReSharper disable once InconsistentNaming
             [UsedImplicitly] public string message;
         }
+        #pragma warning restore CS0649
     }
 }

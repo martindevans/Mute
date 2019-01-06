@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Mute.Services;
@@ -56,9 +54,13 @@ namespace Mute.Modules
                 }
                 else
                 {
-                    var info = await DescribeUpcomingFlights(count);
-                    foreach (var item in info)
-                        await TypingReplyAsync(item);
+                    var launches = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.LaunchDateUtc.Value).Take(count).ToArray();
+                    await DisplayItemList(
+                        launches,
+                        () => "There are no upcoming SpaceX launches!",
+                        null,
+                        (l, i) => DescribeLaunch(l)
+                    );
                 }
             }
             catch (Exception e)
@@ -72,14 +74,22 @@ namespace Mute.Modules
         {
             var roadster = await _spacex.Roadster();
 
-            var speed = ((int)roadster.SpeedKph);
+            var speed = ((int)roadster.SpeedKph).ToString("#,##0");
             var earth = ((int)roadster.EarthDistanceKilometers);
             var mars = ((int)roadster.MarsDistanceKilometers);
             var period = ((int)roadster.PeriodDays).Days().Humanize();
 
-            await TypingReplyAsync($"{roadster.Name} (NORAD:{roadster.NoradId}) was put into space {roadster.DateTimeUtc.ToLocalTime().Humanize()}. " +
-                                   $"It is currently travelling at {speed:#,##0}km/s in a {roadster.OrbitType} orbit, {earth:#,##0}km away from Earth " +
-                                   $"and {mars:#,##0}km away from Mars. It completes an orbit every {period}.");
+            await ReplyAsync(new EmbedBuilder()
+                .WithTitle($"NORAD:{roadster.NoradId}")
+                .WithDescription($"{roadster.Name} was put into space {roadster.DateTimeUtc.ToLocalTime().Humanize()}.")
+                .WithUrl(roadster.Wikipedia)
+                .WithColor(earth < mars ? Color.Blue : Color.Red)
+                .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API")
+                .AddField("Speed", $"{speed}Kph", true)
+                .AddField("Orbit", roadster.OrbitType.ToString(), true)
+                .AddField("Period", period, true)
+                .AddField("Distance From Earth", $"{earth:#,##0}Km", true)
+                .AddField("Distance From Mars", $"{mars:#,##0}Km", true));
         }
 
         #region helpers
@@ -121,48 +131,23 @@ namespace Mute.Modules
             var next = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.LaunchDateUtc.Value).Take(count).ToArray();
 
             var responses = new List<string>();
-            if (next.Length == 1)
+            foreach (var item in next)
             {
-                responses.Add(DescribeFlight(next.Single()));
-            }
-            else
-            {
-                foreach (var item in next)
-                {
-                    Debug.Assert(item.LaunchDateUtc != null);
-                    var date = item.LaunchDateUtc.Value.Humanize();
-                    var num = item.FlightNumber;
-                    var site = item.LaunchSite;
-                    var name = item.MissionName;
-                    var reuse = item.Reuse;
-                    var type = item.Rocket.RocketName;
-
-                    var response = $"Flight {num} will launch '{name}' from {site.SiteName} on a{(reuse.Core ?? false ? " reused" : "")} {type} rocket {date}";
-                    responses.Add(response);
-                }
+                var response = DescribeLaunch(item);
+                responses.Add(response);
             }
             return responses;
         }
 
-        [NotNull] private static string DescribeFlight([NotNull] LaunchInfo info)
+        [NotNull] private static string DescribeLaunch([NotNull] LaunchInfo launch)
         {
-            var response = info.Details;
-
-            if (info.LaunchDateUtc.HasValue)
-            {
-                var t = info.LaunchDateUtc.Value.ToLocalTime();
-                if (info.LaunchDateUtc.Value < DateTime.UtcNow)
-                {
-                    response += $" The launch date was {t:yyyy-MM-dd HH:mm} (UK time)";
-                }
-                else
-                {
-                    var h = t.Humanize();
-                    response += $" The expected launch date is about {h} ({t:yyyy-MM-dd HH:mm} UK time)";
-                }
-            }
-
-            return response;
+            var date = launch.LaunchDateUtc.HasValue ? launch.LaunchDateUtc.Value.Humanize() : "";
+            var num = launch.FlightNumber;
+            var site = launch.LaunchSite;
+            var name = launch.MissionName;
+            var reuse = launch.Reuse;
+            var type = launch.Rocket.RocketName;
+            return $"Flight {num} will launch '{name}' from {site.SiteName} on a{(reuse.Core ?? false ? " reused" : "")} {type} rocket {date}";
         }
         #endregion
 
