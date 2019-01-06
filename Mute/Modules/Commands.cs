@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using JetBrains.Annotations;
 
 namespace Mute.Modules
@@ -11,11 +12,13 @@ namespace Mute.Modules
     public class Commands
         : BaseModule
     {
+        private readonly DiscordSocketClient _client;
         private readonly CommandService _commands;
         private readonly IServiceProvider _services;
 
-        public Commands(CommandService commands, IServiceProvider services)
+        public Commands(DiscordSocketClient client, CommandService commands, IServiceProvider services)
         {
+            _client = client;
             _commands = commands;
             _services = services;
         }
@@ -52,7 +55,7 @@ namespace Mute.Modules
             await DisplayItemList(
                 await FindCommands(FilterCommand),
                 () => $"Can't find any command which match filter `{filter}`",
-                async c => await TypingReplyAsync(FormatCommandDetails(c)),
+                async c => await TypingReplyAsync(FormatCommandDetails(c, _client.CurrentUser)),
                 l => {
                     const string suffix = "By the way you can use `!command $name` to get the details of a specific command";
                     if (string.IsNullOrWhiteSpace(filter))
@@ -88,7 +91,7 @@ namespace Mute.Modules
             await DisplayItemList(
                 await FindCommands(FilterCommand),
                 () => $"Can't find any command which match filter `{filter}`",
-                async c => await TypingReplyAsync(FormatCommandDetails(c)),
+                async c => await TypingReplyAsync(FormatCommandDetails(c, _client.CurrentUser)),
                 l => $"{l.Count} commands matched the search term",
                 (c, i) => $"{i}. {FormatCommandSummary(c)}"
             );
@@ -100,11 +103,14 @@ namespace Mute.Modules
             return $"{FormatCommandName(cmd)} - {cmd.Summary}";
         }
 
-        [NotNull] private static EmbedBuilder FormatCommandDetails([NotNull] CommandInfo cmd)
+        [NotNull] private static EmbedBuilder FormatCommandDetails([NotNull] CommandInfo cmd, [CanBeNull] IUser self)
         {
             var embed = new EmbedBuilder()
                 .WithTitle(FormatCommandName(cmd))
                 .WithDescription(cmd.Summary);
+
+            if (self != null)
+                embed = embed.WithAuthor(self);
 
             foreach (var parameter in cmd.Parameters)
             {

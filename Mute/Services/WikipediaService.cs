@@ -36,6 +36,7 @@ namespace Mute.Services
             }
         }
 
+        #pragma warning disable CS0649
         public class WikidataResponseContainer
         {
             [JsonProperty("searchinfo")] public WikidataSearchInfo SearchInfo;
@@ -65,6 +66,7 @@ namespace Mute.Services
             [JsonProperty("language")] public string Language;
             [JsonProperty("text")] public string Text;
         }
+        #pragma warning restore CS0649
 
         [ItemCanBeNull] public async Task<string> GetDefinition(string topic, int length = 3)
         {
@@ -86,6 +88,7 @@ namespace Mute.Services
             }
         }
 
+        #pragma warning disable CS0649
         private class DefinitionResponseContainer
         {
             [JsonProperty("query")] public DefinitionResponse Query;
@@ -102,5 +105,6 @@ namespace Mute.Services
             [JsonProperty("title")] public string Title;
             [JsonProperty("extract")] public string Extract;
         }
+        #pragma warning restore CS0649
     }
 }

@@ -11,6 +11,7 @@ namespace Mute.Services
     public class CryptoCurrencyService
     {
         #region data model
+        #pragma warning disable CS0649
         public class Currency
         {
             [UsedImplicitly, JsonProperty("id")] public int Id { get; private set; }
@@ -52,6 +53,7 @@ namespace Mute.Services
         {
             [UsedImplicitly, JsonProperty("data")] public Ticker Data;
         }
+        #pragma warning restore CS0649
         #endregion
 
         private class ListingsData

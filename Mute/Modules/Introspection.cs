@@ -24,6 +24,15 @@ namespace Mute.Modules
             _uptime = uptime;
         }
 
+        [Command("memory"), RequireOwner, Summary("I will tell you my current memory usage")]
+        public async Task MemoryUsage()
+        {
+            await ReplyAsync(new EmbedBuilder()
+                .AddField("Working Set", Environment.WorkingSet.Bytes().Humanize("#.##"), true)
+                .AddField("GC Total Memory", GC.GetTotalMemory(false).Bytes().Humanize("#.##"), true)
+            );
+        }
+
         [Command("services"), RequireOwner, Summary("I will list all loaded services")]
         public async Task ListServices()
         {

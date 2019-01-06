@@ -40,12 +40,15 @@ namespace Mute.Services
             }
         }
 
+        #pragma warning disable CS0649
         private class ExchangeRateResponseContainer
         {
             [JsonProperty("Realtime Currency Exchange Rate"), UsedImplicitly]
             public ExchangeRateResponse Response;
         }
+        #pragma warning restore CS0649
 
+        #pragma warning disable CS0649
         public class ExchangeRateResponse
         {
             [JsonProperty("1. From_Currency Code")] public string FromCode { get; private set; }
@@ -59,6 +62,7 @@ namespace Mute.Services
             [JsonProperty("6. Last Refreshed")] public string LastRefreshed { get; private set; }
             [JsonProperty("7. Time Zone")] public string Timezone { get; private set; }
         }
+        #pragma warning restore CS0649
 
         [ItemCanBeNull] public async Task<StockQuoteResponse> StockQuote(string stock)
         {
@@ -83,12 +87,15 @@ namespace Mute.Services
             }
         }
 
+        #pragma warning disable CS0649
         private class StockQuoteResponseContainer
         {
             [JsonProperty("Global Quote"), UsedImplicitly]
             public StockQuoteResponse Response;
         }
+        #pragma warning restore CS0649
 
+        #pragma warning disable CS0649
         public class StockQuoteResponse
         {
             [JsonProperty("01. symbol"), UsedImplicitly] public string Symbol { get; private set; }
@@ -102,5 +109,6 @@ namespace Mute.Services
 
             [JsonProperty("09. change"), UsedImplicitly] public decimal Change { get; private set; }
         }
+        #pragma warning restore CS0649
     }
 }

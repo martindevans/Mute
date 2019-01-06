@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Mute.Services;
 using System.Linq;
+using Discord;
 using Humanizer;
 using JetBrains.Annotations;
 using Mute.Services.Responses.Eliza;
@@ -28,7 +30,6 @@ namespace Mute.Modules
         public async Task LaunchDetails(int id)
         {
             var launches = await _spacex.Launch(id);
-
             if (launches == null || launches.Count == 0)
             {
                 await TypingReplyAsync("There doesn't seem to be a flight by that ID");
@@ -41,7 +42,7 @@ namespace Mute.Modules
                 return;
             }
 
-            await TypingReplyAsync(DescribeFlight(launches.Single()));
+            await ReplyAsync(LaunchEmbed(launches.Single()));
         }
 
         [Command("next"), Alias("upcoming"), Summary("I will tell you about the next spacex launch(es)")]
@@ -49,9 +50,16 @@ namespace Mute.Modules
         {
             try
             {
-                var info = await DescribeUpcomingFlights(count);
-                foreach (var item in info)
-                    await TypingReplyAsync(item);
+                if (count == 1)
+                {
+                    await ReplyAsync(LaunchEmbed(await _spacex.NextLaunch()));
+                }
+                else
+                {
+                    var info = await DescribeUpcomingFlights(count);
+                    foreach (var item in info)
+                        await TypingReplyAsync(item);
+                }
             }
             catch (Exception e)
             {
@@ -75,6 +83,39 @@ namespace Mute.Modules
         }
 
         #region helpers
+        [NotNull] private static EmbedBuilder LaunchEmbed([NotNull] LaunchInfo launch)
+        {
+            var icon = launch.Links.MissionPatch ?? launch.Links.MissionPatchSmall;
+            var url = launch.Links.Wikipedia ?? launch.Links.RedditCampaign ?? launch.Links.RedditLaunch ?? launch.Links.Presskit;
+            var upcoming = launch.Upcoming.HasValue && launch.Upcoming.Value;
+            var success = launch.LaunchSuccess.HasValue && launch.LaunchSuccess.Value;
+
+            var builder = new EmbedBuilder()
+                .WithTitle(launch.MissionName)
+                .WithDescription(launch.Details)
+                .WithUrl(url)
+                .WithAuthor($"Flight {launch.FlightNumber}", icon, icon)
+                .WithColor(upcoming ? Color.Blue : success ? Color.Green : Color.Red)
+                .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
+
+            var site = launch.LaunchSite.SiteLongName ?? launch.LaunchSite.SiteName;
+            if (!string.IsNullOrWhiteSpace(site))
+                builder = builder.AddField("Launch Site", site, false);
+
+            if (launch.LaunchDateUtc.HasValue)
+                builder = builder.AddField("Launch Date", launch.LaunchDateUtc.Value.ToString("HH\\:mm UTC MMM-dd-yyyy"), true);
+
+            var landing = string.Join(", ", launch.Rocket.FirstStage.Cores.Select(c => (c.LandingVehicle.HasValue ? c.LandingVehicle.Value.ToString() : null)).Where(a => a != null).ToArray());
+            if (!string.IsNullOrWhiteSpace(landing))
+                builder = builder.AddField("Landing", landing, true);
+
+            builder = builder.AddField("Vehicle", launch.Rocket.RocketName, true);
+
+            
+
+            return builder;
+        }
+
         [ItemNotNull] private async Task<IReadOnlyList<string>> DescribeUpcomingFlights(int count)
         {
             var next = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.LaunchDateUtc.Value).Take(count).ToArray();
@@ -89,15 +130,14 @@ namespace Mute.Modules
                 foreach (var item in next)
                 {
                     Debug.Assert(item.LaunchDateUtc != null);
-                    var launch = item.LaunchDateUtc.Value.Humanize();
-
+                    var date = item.LaunchDateUtc.Value.Humanize();
                     var num = item.FlightNumber;
                     var site = item.LaunchSite;
                     var name = item.MissionName;
                     var reuse = item.Reuse;
                     var type = item.Rocket.RocketName;
 
-                    var response = $"Flight {num} will launch '{name}' from {site.SiteName} on a{(reuse.Core ?? false ? " reused" : "")} {type} rocket {launch}";
+                    var response = $"Flight {num} will launch '{name}' from {site.SiteName} on a{(reuse.Core ?? false ? " reused" : "")} {type} rocket {date}";
                     responses.Add(response);
                 }
             }
@@ -107,6 +147,7 @@ namespace Mute.Modules
         [NotNull] private static string DescribeFlight([NotNull] LaunchInfo info)
         {
             var response = info.Details;
+
             if (info.LaunchDateUtc.HasValue)
             {
                 var t = info.LaunchDateUtc.Value.ToLocalTime();

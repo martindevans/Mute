@@ -93,7 +93,7 @@ namespace Mute.Modules
             var vector = await _wordVectors.GetVector(word);
             if (vector != null)
             {
-                await TypingReplyAsync("I already know that word!");
+                await TypingReplyAsync("I already know what {word} means!");
                 return;
             }
 
