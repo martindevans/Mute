@@ -19,7 +19,7 @@ namespace Mute.Services
             // Create database structure
             try
             {
-                _database.Exec("CREATE TABLE IF NOT EXISTS `WordExampleData` (`Word` TEXT NOT NULL, `Example` TEXT NOT NULL)");
+                _database.Exec("CREATE TABLE IF NOT EXISTS `WordExampleData` (`Word` TEXT NOT NULL, `Example` TEXT NOT NULL, PRIMARY KEY(`Word`,`Example`))");
             }
             catch (Exception e)
             {

@@ -98,6 +98,7 @@ namespace Mute
                 .AddSingleton<WordVectorsService>()
                 .AddSingleton<UptimeService>()
                 .AddSingleton<WordTrainingService>()
+                .AddSingleton<RoleService>()
                 .AddSingleton<MultichannelAudioService>();
 
             _services = serviceCollection.BuildServiceProvider();

@@ -149,28 +149,6 @@ namespace Mute.Modules
                     await ReplyAsync(builder.ToString());
             }
         }
-
-        /// <summary>
-        /// Display a list of items. Will use different formats for none, few and many items.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="items">The list of items to speak</param>
-        /// <param name="nothing">Generate a string for no items</param>
-        /// <param name="singleResult">Generate a string for a single item</param>
-        /// <param name="fewResults">Generate a string for the given set of results</param>
-        /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
-        /// <param name="itemToString">Convert a single item (of many) to a string</param>
-        /// <returns></returns>
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<string> nothing, Func<T, string> singleResult, [CanBeNull] Func<IReadOnlyList<T>, string> fewResults, Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
-        {
-            await DisplayItemList(
-                items,
-                async () => await ReplyAsync(nothing()),
-                async l => await ReplyAsync(singleResult(items.Single())),
-                async l => await TypingReplyAsync(manyPrelude(items)),
-                async (t, i) => await ReplyAsync(itemToString(t, i))
-            );
-        }
         #endregion
 
         #region reply

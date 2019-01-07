@@ -41,8 +41,11 @@ namespace Mute.Services.Responses
             //Determine if thie message is a greeting
             var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(AllGreetings.Contains);
 
+            var gu = (SocketGuildUser)context.User;
+            var name = gu.Nickname ?? gu.Username;
+
             return Task.FromResult<IConversation>(isGreeting
-                ? new HelloConversation(string.Format(ChooseGreeting(), ((SocketGuildUser)context.User).Nickname))
+                ? new HelloConversation(string.Format(ChooseGreeting(), name))
                 : null
             );
         }

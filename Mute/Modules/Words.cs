@@ -15,11 +15,13 @@ namespace Mute.Modules
     {
         private readonly WordVectorsService _wordVectors;
         private readonly WordTrainingService _training;
+        private readonly HistoryLoggingService _history;
 
-        public Words(WordVectorsService wordVectors, WordTrainingService training)
+        public Words(WordVectorsService wordVectors, WordTrainingService training, HistoryLoggingService history)
         {
             _wordVectors = wordVectors;
             _training = training;
+            _history = history;
         }
 
         [Command("vector"), Summary("I will get the raw vector for a word")]
@@ -90,6 +92,7 @@ namespace Mute.Modules
         {
             word = word.ToLowerInvariant();
 
+            //Check if we already know this word, in which case we can just early exit
             var vector = await _wordVectors.GetVector(word);
             if (vector != null)
             {
@@ -97,8 +100,23 @@ namespace Mute.Modules
                 return;
             }
 
-            await TypingReplyAsync($"I don't know what `{word}` means, can you use it in some example sentences?");
+            //Find messages in history which contain this word, teach those as training examples
+            var historyCount = 0;
+            using (var messages = await _history.MessagesByContent(word))
+            {
+                await messages.EnumerateAsync(async item => {
+                    await _training.Teach(word, item.Content.ToLower());
+                    historyCount++;
+                });
+            }
 
+            //Prompt user for examples
+            if (historyCount > 0)
+                await TypingReplyAsync($"I have seen the word `{word}` used {historyCount} time{(historyCount > 1 ? "s" : "")} before but I don't know what it means. Can you use it in some example sentences?");
+            else
+                await TypingReplyAsync($"I don't know what `{word}` means, can you use it in some example sentences?");
+
+            //Watch all messages in the channel for some time. Every message which contains the word will be taken as an example
             var timer = new Stopwatch();
             while (timer.Elapsed < TimeSpan.FromMinutes(1))
             {
@@ -118,7 +136,7 @@ namespace Mute.Modules
         }
 
         [RequireOwner, Command("cache-stats")]
-        public async Task TestWvStats()
+        public async Task CacheStats()
         {
             await ReplyAsync(new EmbedBuilder().AddField("Size", _wordVectors.CacheCount).AddField("Hits", _wordVectors.CacheHits).AddField("Miss", _wordVectors.CacheMisses));
         }

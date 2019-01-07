@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -14,14 +15,15 @@ namespace Mute.Services
 {
     public class HistoryLoggingService
     {
-        private const string InsertMessageSql = "INSERT OR IGNORE into ChatLog (Uid, UtcTime, ChannelId, Content, UserId) values(@Uid, @UserId, @ChannelId, @Content, @UtcTime)";
+        private const string InsertMessageSql = "INSERT OR IGNORE into ChatLog (Uid, UserId, ChannelId, Content, UtcTime) values(@Uid, @UserId, @ChannelId, @Content, @UtcTime)";
         private const string InsertMonitorSql = "INSERT OR IGNORE into ChatLogMonitoring (ChannelId, GuildId) values(@ChannelId, @GuildId)";
 
         private const string SelectMonitorSql = "SELECT * From ChatLogMonitoring";
 
-        private const string SelectByUser = "SELECT Uid From ChatLog WHERE UserId = @UserId";
-        private const string SelectById = "SELECT Content, ChannelId, GuildId From ChatLog WHERE Uid = @Uid";
-        private const string SelectByTimeRange = "SELECT Content, ChannelId, GuildId From ChatLog WHERE UtcTime < @Max and UtcTime > @Min";
+        private const string SelectByUser = "SELECT * From ChatLog WHERE UserId = @UserId";
+        private const string SelectById = "SELECT * From ChatLog WHERE Uid = @Uid";
+        private const string SelectByTimeRange = "SELECT * From ChatLog WHERE UtcTime < @Max and UtcTime > @Min";
+        private const string SelectByContentSubstring = "SELECT * FROM ChatLog Where instr(Content, @Substring) > 0";
 
         [NotNull] private readonly IDatabaseService _database;
         [NotNull] private readonly DiscordSocketClient _client;
@@ -253,68 +255,98 @@ namespace Mute.Services
             }
         }
 
-        [ItemCanBeNull] public async Task<IMessage> Message(ulong id)
+        [ItemNotNull] public async Task<MessagesResult> MessagesByUser([NotNull] IUser user)
         {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = SelectById;
-                cmd.Parameters.Add(new SQLiteParameter("@Uid", System.Data.DbType.String) {Value = id.ToString()});
+            var cmd = _database.CreateCommand();
+            cmd.CommandText = SelectByUser;
+            cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = user.Id.ToString() });
 
-                var reader = await cmd.ExecuteReaderAsync();
-
-                if (reader.HasRows)
-                {
-                    await reader.ReadAsync();
-                    var cid = ulong.Parse((string)reader["ChannelId"]);
-                    var gid = ulong.Parse((string)reader["GuildId"]);
-
-                    if (_client.GetGuild(gid)?.GetChannel(cid) is ITextChannel tch)
-                        return await tch.GetMessageAsync(id);
-                }
-            }
-
-            return null;
+            return new MessagesResult(cmd);
         }
 
-        [ItemNotNull] private static async Task<IReadOnlyList<ulong>> ParseIds([NotNull] DbDataReader reader)
+        [ItemNotNull] public async Task<MessagesResult> MessagesByTimeRange(DateTime min, DateTime max)
         {
-            var results = new List<ulong> { Capacity = reader.RecordsAffected };
+            var cmd = _database.CreateCommand();
+            cmd.CommandText = SelectByTimeRange;
+            cmd.Parameters.Add(new SQLiteParameter("@Max", System.Data.DbType.String) { Value = max.UnixTimestamp().ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@Min", System.Data.DbType.String) { Value = min.UnixTimestamp().ToString() });
 
-            while (await reader.ReadAsync())
-            {
-                var uid = ulong.Parse((string)reader["Uid"]);
-                results.Add(uid);
-            }
-
-            return results;
+            return new MessagesResult(cmd);
         }
 
-        [ItemNotNull] public async Task<IReadOnlyList<ulong>> MessagesByUser([NotNull] IUser user)
+        [ItemNotNull] public async Task<MessagesResult> MessagesByContent(string word)
         {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = SelectByUser;
-                cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = user.Id.ToString() });
+            var cmd = _database.CreateCommand();
+            cmd.CommandText = SelectByContentSubstring;
+            cmd.Parameters.Add(new SQLiteParameter("@Substring", System.Data.DbType.String) { Value = word });
 
-                var reader = await cmd.ExecuteReaderAsync();
-
-                return await ParseIds(reader);
-            }
-        }
-
-        [ItemNotNull] public async Task<IReadOnlyList<ulong>> MessagesByTimeRange(DateTime min, DateTime max)
-        {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = SelectByTimeRange;
-                cmd.Parameters.Add(new SQLiteParameter("@Max", System.Data.DbType.String) { Value = max.UnixTimestamp().ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@Min", System.Data.DbType.String) { Value = min.UnixTimestamp().ToString() });
-
-                var reader = await cmd.ExecuteReaderAsync();
-
-                return await ParseIds(reader);
-            }
+            return new MessagesResult(cmd);
         }
         #endregion
+
+        public struct MessageLogEntry
+        {
+            public ulong MessageId;
+            public ulong UtcUnixTime;
+            public ulong ChannelId;
+            public string Content;
+            public ulong UserId;
+        }
+
+        public class MessagesResult
+            : IDisposable, IAsyncEnumerable<MessageLogEntry>
+        {
+            private readonly DbCommand _command;
+
+            protected internal MessagesResult(DbCommand command)
+            {
+                _command = command;
+            }
+
+            public void Dispose()
+            {
+                _command.Dispose();
+            }
+
+            [NotNull]
+            IAsyncEnumerator<MessageLogEntry> IAsyncEnumerable<MessageLogEntry>.GetEnumerator()
+            {
+                return new AsyncEnumerator(_command);
+            }
+
+            private class AsyncEnumerator
+                : IAsyncEnumerator<MessageLogEntry>
+            {
+                private readonly DbCommand _command;
+
+                private DbDataReader _reader;
+
+                public AsyncEnumerator(DbCommand command)
+                {
+                    _command = command;
+                }
+
+                public void Dispose()
+                {
+                    _reader.Close();
+                }
+
+                public async Task<bool> MoveNext(CancellationToken cancellationToken)
+                {
+                    if (_reader == null)
+                        _reader = await _command.ExecuteReaderAsync(cancellationToken);
+
+                    return await _reader.ReadAsync(cancellationToken);
+                }
+
+                public MessageLogEntry Current => new MessageLogEntry {
+                    MessageId = ulong.Parse((string)_reader["Uid"]),
+                    UtcUnixTime = ulong.Parse((string)_reader["UtcTime"]),
+                    ChannelId = ulong.Parse((string)_reader["ChannelId"]),
+                    Content = (string)_reader["Content"],
+                    UserId = ulong.Parse((string)_reader["UserId"])
+                };
+            }
+        }
     }
 }
