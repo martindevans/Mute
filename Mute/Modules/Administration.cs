@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -77,6 +78,12 @@ namespace Mute.Modules
         public async Task SetPresence(UserStatus status)
         {
             await _client.SetStatusAsync(status);
+        }
+
+        [Command("kill"), Alias("die", "self-destruct", "terminate"), Summary("I will immediately terminate my process ⊙︿⊙")]
+        public async Task Kill(int exitCode = -1)
+        {
+            Environment.Exit(exitCode);
         }
     }
 }
