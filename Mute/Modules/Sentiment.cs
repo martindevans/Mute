@@ -14,21 +14,21 @@ namespace Mute.Modules
     public class Sentiment
         : BaseModule
     {
-        private readonly SentimentService _sentiment;
         private readonly DiscordSocketClient _client;
+        private readonly ISentimentService _sentiment;
         private readonly SentimentReactionConfig _config;
 
-        public Sentiment([NotNull] Configuration config, SentimentService sentiment, DiscordSocketClient client)
+        public Sentiment([NotNull] Configuration config, DiscordSocketClient client, ISentimentService sentiment)
         {
-            _sentiment = sentiment;
             _client = client;
+            _sentiment = sentiment;
             _config = config.SentimentReactions;
         }
 
         [Command("sentiment"), Summary("I will show my opinion of a message")]
         public async Task AskSentiment([NotNull, Remainder] string message)
         {
-            await ReactWithSentiment(Context.Message, await _sentiment.Predict(message));
+            await ReactWithSentiment(Context.Message, await Context.Sentiment());
         }
 
         [Command("sentiment"), Summary("I will show my opinion of the previous message")]
@@ -41,7 +41,7 @@ namespace Mute.Modules
             await ReactWithSentiment(msg);
         }
 
-        private async Task ReactWithSentiment([NotNull] IUserMessage message, SentimentService.SentimentResult? score = null)
+        private async Task ReactWithSentiment([NotNull] IUserMessage message, SentimentResult? score = null)
         {
             var result = score ?? await _sentiment.Predict(message.Content);
             if (result.ClassificationScore < _config.CertaintyThreshold)
@@ -49,13 +49,13 @@ namespace Mute.Modules
 
             switch (result.Classification)
             {
-                case SentimentService.Sentiment.Positive:
+                case Services.Sentiment.Positive:
                     await message.AddReactionAsync(EmojiLookup.ThumbsUp);
                     break;
-                case SentimentService.Sentiment.Neutral:
+                case Services.Sentiment.Neutral:
                     await message.AddReactionAsync(EmojiLookup.Expressionless);
                     break;
-                case SentimentService.Sentiment.Negative:
+                case Services.Sentiment.Negative:
                     await message.AddReactionAsync(EmojiLookup.ThumbsDown);
                     break;
             }
@@ -77,7 +77,7 @@ namespace Mute.Modules
             await ShowSentimentScore(await _sentiment.Predict(msg.Content), msg.Content);
         }
 
-        private async Task ShowSentimentScore(SentimentService.SentimentResult score, [CanBeNull] string quote = null)
+        private async Task ShowSentimentScore(SentimentResult score, [CanBeNull] string quote = null)
         {
             var embed = new EmbedBuilder()
                 .WithTitle(quote)
@@ -88,13 +88,13 @@ namespace Mute.Modules
 
             switch (score.Classification)
             {
-                case SentimentService.Sentiment.Negative:
+                case Services.Sentiment.Negative:
                     embed = embed.WithColor(Color.Red);
                     break;
-                case SentimentService.Sentiment.Positive:
+                case Services.Sentiment.Positive:
                     embed = embed.WithColor(Color.Blue);
                     break;
-                case SentimentService.Sentiment.Neutral:
+                case Services.Sentiment.Neutral:
                     embed = embed.WithColor(Color.DarkGrey);
                     break;
                 default:

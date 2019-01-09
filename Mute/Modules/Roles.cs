@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Services;
 using System;
@@ -18,6 +17,12 @@ namespace Mute.Modules
         public Roles(RoleService roles)
         {
             _roles = roles;
+        }
+
+        [Command("id"), Summary("I will type out the ID of the specified role")]
+        public async Task RoleId([NotNull] IRole role)
+        {
+            await TypingReplyAsync($"ID for `{role.Name}` is `{role.Id}`");
         }
 
         [Command("join"), Summary("I will give you the given role (if the role is unlocked)")]
@@ -87,14 +92,14 @@ namespace Mute.Modules
             }
         }
 
-        [RequireOwner, Command("unlock"), Summary("I will unlock the given role (allow anyone to join/leave it")]
+        [RequireOwner, Command("unlock"), Summary("I will unlock the given role (allow anyone to join/leave it)")]
         public async Task UnlockRole([NotNull] IRole role)
         {
             await _roles.Unlock(role);
             await TypingReplyAsync($"Unlocked `{role.Name}`");
         }
 
-        [RequireOwner, Command("lock"), Summary("I will lock the given role (stop allowing anyone to join/leave it")]
+        [RequireOwner, Command("lock"), Summary("I will lock the given role (stop allowing anyone to join/leave it)")]
         public async Task LockRole([NotNull] IRole role)
         {
             await _roles.Lock(role);

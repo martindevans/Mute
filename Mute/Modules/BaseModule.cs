@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using JetBrains.Annotations;
+using Mute.Context;
 using Mute.Extensions;
 
 namespace Mute.Modules
@@ -13,6 +14,8 @@ namespace Mute.Modules
     public class BaseModule
         : InteractiveBase
     {
+        public new MuteCommandContext Context => (MuteCommandContext)base.Context;
+
         #region display lists
         /// <summary>
         /// Display a list of items. Will use different formats for none, few and many items.

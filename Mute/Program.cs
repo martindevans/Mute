@@ -11,12 +11,16 @@ using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Mute.Context;
+using Mute.Extensions;
 using Mute.Services;
 using Mute.Services.Audio;
 using Mute.Services.Audio.Playback;
 using Mute.Services.Games;
 using Mute.Services.Responses;
 using Newtonsoft.Json;
+using Ninject;
+using Ninject.Extensions.Conventions;
 
 namespace Mute
 {
@@ -62,18 +66,23 @@ namespace Mute
             });
             _client = new DiscordSocketClient();
 
-            var serviceCollection = new ServiceCollection();
+            var kernel = new StandardKernel();
+            _services = kernel; 
 
-            serviceCollection
-                .AddTransient<Random>()
-                .AddTransient<IHttpClient>(_ => new MuteHttpClient())
-                .AddSingleton(_config)
-                .AddSingleton(_commands)
-                .AddSingleton(_client)
-                .AddSingleton(serviceCollection)
-                .AddSingleton<IDiscordClient>(_client)
-                .AddSingleton<IDatabaseService>(new DatabaseService(_config.Database))
-                .AddSingleton<InteractiveService>()
+            kernel.Bind<Random>().To<Random>().InTransientScope();
+            kernel.Bind<IHttpClient>().To<MuteHttpClient>().InTransientScope();
+
+            kernel.Bind<IServiceProvider>().ToConstant(kernel);
+            kernel.Bind<Configuration>().ToConstant(_config);
+            kernel.Bind<CommandService>().ToConstant(_commands);
+            kernel.Bind<DiscordSocketClient>().ToConstant(_client);
+            kernel.Bind<IDiscordClient>().ToConstant(_client);
+
+            kernel.Bind<IDatabaseService>().To<DatabaseService>().InSingletonScope();
+            kernel.Bind<ISentimentService>().To<TensorflowSentimentService>().InSingletonScope();
+            kernel.Bind<InteractiveService>().ToConstructor(a => new InteractiveService(a.Inject<DiscordSocketClient>(), null)).InSingletonScope();
+
+            kernel
                 .AddSingleton<CatPictureService>()
                 .AddSingleton<DogPictureService>()
                 .AddSingleton<CryptoCurrencyService>()
@@ -84,7 +93,6 @@ namespace Mute
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
                 .AddSingleton<ReminderService>()
-                .AddSingleton<SentimentService>()
                 .AddSingleton<SentimentTrainingService>()
                 .AddSingleton<HistoryLoggingService>()
                 .AddSingleton<ReactionSentimentTrainer>()
@@ -101,15 +109,17 @@ namespace Mute
                 .AddSingleton<RoleService>()
                 .AddSingleton<MultichannelAudioService>();
 
-            _services = serviceCollection.BuildServiceProvider();
-
-            //Force creation of active services
-            _services.GetService<GameService>();
-            _services.GetService<ReminderService>();
-            _services.GetService<SentimentService>();
-            _services.GetService<HistoryLoggingService>();
-            _services.GetService<ReactionSentimentTrainer>();
-            _services.GetService<UptimeService>();
+            //Find all types which implement IPreloadService and load them
+            var preload = Assembly
+                .GetExecutingAssembly()
+                .GetTypes()
+                .Where(t => t.IsClass && !t.IsAbstract)
+                .Where(t => typeof(IPreloadService).IsAssignableFrom(t))
+                .Select(t => (IPreloadService)kernel.Get(t))
+                .ToArray();
+            Console.WriteLine("Preloading Services:");
+            foreach (var preloadService in preload)
+                Console.WriteLine($" - {preloadService.GetType().Name}");
         }
 
         private async Task<int> MainAsync(string[] args)
@@ -181,13 +191,25 @@ namespace Mute
             var hasPrefix = message.HasCharPrefix('!', ref prefixPos);
 
             // Create a context for this message
-            var context = new SocketCommandContext(_client, message);
+            var context = new MuteCommandContext(_client, message, _services);
+
+            //Apply generic message preproccessor
+            foreach (var pre in _services.GetServices<IMessagePreprocessor>())
+                pre.Process(context);
 
             //Either process as command or try to process conversationally
             if (hasPrefix)
+            {
+                foreach (var pre in _services.GetServices<ICommandPreprocessor>())
+                    pre.Process(context);
                 await ProcessAsCommand(prefixPos, context);
+            }
             else
+            {
+                foreach (var pre in _services.GetServices<IConversationPreprocessor>())
+                    pre.Process(context);
                 await _services.GetService<ConversationalResponseService>().Respond(context);
+            }
         }
 
         private async Task ProcessAsCommand(int offset, [NotNull] ICommandContext context)
@@ -199,6 +221,9 @@ namespace Mute
             // Execute the command
             try
             {
+                foreach (var pre in _services.GetServices<ICommandPreprocessor>())
+                    pre.Process(context);
+
                 var result = await _commands.ExecuteAsync(context, offset, _services);
 
                 //Don't print error message in response to messages from self

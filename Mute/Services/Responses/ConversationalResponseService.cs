@@ -6,10 +6,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Mute.Context;
 using Mute.Extensions;
 using IEnumerableExtensions = Mute.Extensions.IEnumerableExtensions;
 
@@ -41,10 +41,10 @@ namespace Mute.Services.Responses
                 Console.WriteLine($" - {response.GetType().Name}");
         }
 
-        public async Task Respond([NotNull] ICommandContext context)
+        public async Task Respond([NotNull] MuteCommandContext context)
         {
             // Check if the bot is directly mentioned
-            var mentionsBot = context.Message.MentionedUserIds.Contains(_client.CurrentUser.Id);
+            var mentionsBot = ((IMessage)context.Message).MentionedUserIds.Contains(_client.CurrentUser.Id);
 
             //Try to get a conversation with this user (either continued from before, or starting with a new one)
             var c = await GetOrCreateConversation(context, mentionsBot);
@@ -58,7 +58,7 @@ namespace Mute.Services.Responses
             }
         }
 
-        private async Task<IConversation> GetOrCreateConversation([NotNull] ICommandContext context, bool mentionsBot)
+        private async Task<IConversation> GetOrCreateConversation([NotNull] MuteCommandContext context, bool mentionsBot)
         {
             //Create a new conversation starting with this message
             var newConv = await TryCreateConversation(context, mentionsBot);
@@ -71,7 +71,7 @@ namespace Mute.Services.Responses
             );
         }
 
-        [ItemCanBeNull] private async Task<IConversation> TryCreateConversation([NotNull] ICommandContext context, bool mentionsBot)
+        [ItemCanBeNull] private async Task<IConversation> TryCreateConversation([NotNull] MuteCommandContext context, bool mentionsBot)
         {
             //Find generators which can respond to this message
             var random = new Random(context.Message.Id.GetHashCode());

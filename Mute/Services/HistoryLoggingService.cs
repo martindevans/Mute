@@ -14,6 +14,7 @@ using Mute.Extensions;
 namespace Mute.Services
 {
     public class HistoryLoggingService
+        : IPreloadService
     {
         private const string InsertMessageSql = "INSERT OR IGNORE into ChatLog (Uid, UserId, ChannelId, Content, UtcTime) values(@Uid, @UserId, @ChannelId, @Content, @UtcTime)";
         private const string InsertMonitorSql = "INSERT OR IGNORE into ChatLogMonitoring (ChannelId, GuildId) values(@ChannelId, @GuildId)";

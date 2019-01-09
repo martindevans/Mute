@@ -11,6 +11,7 @@ using Mute.Extensions;
 namespace Mute.Services
 {
     public class ReminderService
+        : IPreloadService
     {
         private const string InsertReminder = "INSERT into Reminders (UID, UtcTime, ChannelId, Prelude, Message, Sent, UserId) values(@Uid, @UtcTime, @ChannelId, @Prelude, @Message, \"False\", @UserId)";
         private const string UpdateSent = "UPDATE Reminders SET Sent = \"true\" Where UID = @Uid";

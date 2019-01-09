@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Discord.Commands;
 using JetBrains.Annotations;
+using Mute.Context;
 using Mute.Extensions;
 
 namespace Mute.Services.Responses
@@ -25,7 +25,7 @@ namespace Mute.Services.Responses
             _random = random;
         }
 
-        public Task<IConversation> TryRespond(ICommandContext context, bool containsMention)
+        public Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
         {
             var rgx = new Regex("[^a-zA-Z0-9 -]");
             var msg = rgx.Replace(context.Message.Content, "");

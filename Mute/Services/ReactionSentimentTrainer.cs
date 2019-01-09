@@ -8,6 +8,7 @@ using Mute.Services.Responses;
 namespace Mute.Services
 {
     public class ReactionSentimentTrainer
+        : IPreloadService
     {
         private readonly SentimentTrainingService _sentiment;
 
@@ -21,14 +22,14 @@ namespace Mute.Services
         private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> message, [NotNull] ISocketMessageChannel channel, [NotNull] SocketReaction reaction)
         {
             if (SentimentResponse.Happy.Contains(reaction.Emote))
-                await TryLearn(await message.DownloadAsync(), reaction, SentimentService.Sentiment.Positive);
+                await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Positive);
             else if (SentimentResponse.Sad.Contains(reaction.Emote))
-                await TryLearn(await message.DownloadAsync(), reaction, SentimentService.Sentiment.Negative);
+                await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Negative);
             else if (SentimentResponse.Neutral.Contains(reaction.Emote))
-                await TryLearn(await message.DownloadAsync(), reaction, SentimentService.Sentiment.Neutral);
+                await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Neutral);
         }
 
-        private async Task TryLearn([NotNull] IUserMessage message, [NotNull] IReaction reaction, SentimentService.Sentiment sentiment)
+        private async Task TryLearn([NotNull] IUserMessage message, [NotNull] IReaction reaction, Sentiment sentiment)
         {
             var gc = (SocketGuildChannel)message.Channel;
             var g = gc.Guild;

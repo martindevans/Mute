@@ -1,8 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using JetBrains.Annotations;
+using Mute.Context;
 
 namespace Mute.Services.Responses
 {
@@ -20,7 +20,7 @@ namespace Mute.Services.Responses
             _reactions = reactions;
         }
 
-        public Task<string> Respond(ICommandContext context, bool containsMention, CancellationToken ct)
+        public Task<string> Respond(MuteCommandContext context, bool containsMention, CancellationToken ct)
         {
             IsComplete = true;
 

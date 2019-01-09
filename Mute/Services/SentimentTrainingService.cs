@@ -27,7 +27,7 @@ namespace Mute.Services
             }
         }
 
-        public async Task Teach([NotNull] string text, SentimentService.Sentiment sentiment)
+        public async Task Teach([NotNull] string text, Sentiment sentiment)
         {
             using (var cmd = _database.CreateCommand())
             {

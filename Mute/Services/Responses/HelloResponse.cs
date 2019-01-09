@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
+using Mute.Context;
 using Mute.Extensions;
 
 namespace Mute.Services.Responses
@@ -36,7 +36,7 @@ namespace Mute.Services.Responses
             _random = random;
         }
 
-        public Task<IConversation> TryRespond(ICommandContext context, bool containsMention)
+        public Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
         {
             //Determine if thie message is a greeting
             var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(AllGreetings.Contains);

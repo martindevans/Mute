@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 namespace Mute.Services.Games
 {
     public class GameService
+        : IPreloadService
     {
         private const string InsertGamePlayed = "INSERT OR IGNORE INTO `Games_Played` (`UserId`,`GameId`) VALUES (@UserId,@GameId);";
 

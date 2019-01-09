@@ -3,6 +3,7 @@
 namespace Mute.Services
 {
     public class UptimeService
+        : IPreloadService
     {
         public DateTime StartTimeUtc { get; } = DateTime.UtcNow;
 

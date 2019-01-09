@@ -15,11 +15,9 @@ namespace Mute.Modules
     {
         private readonly DiscordSocketClient _client;
         private readonly UptimeService _uptime;
-        private readonly ServiceCollection _services;
 
-        public Introspection(ServiceCollection services, DiscordSocketClient client, UptimeService uptime)
+        public Introspection(DiscordSocketClient client, UptimeService uptime)
         {
-            _services = services;
             _client = client;
             _uptime = uptime;
         }
@@ -30,17 +28,6 @@ namespace Mute.Modules
             await ReplyAsync(new EmbedBuilder()
                 .AddField("Working Set", Environment.WorkingSet.Bytes().Humanize("#.##"), true)
                 .AddField("GC Total Memory", GC.GetTotalMemory(false).Bytes().Humanize("#.##"), true)
-            );
-        }
-
-        [Command("services"), RequireOwner, Summary("I will list all loaded services")]
-        public async Task ListServices()
-        {
-            await DisplayItemList(
-                _services.ToArray(),
-                () => "There are no services loaded",
-                c => $"There are {c.Count} services loaded",
-                (s, i) => $"{i}. `{s.ServiceType.Name}` ({s.Lifetime})"
             );
         }
 

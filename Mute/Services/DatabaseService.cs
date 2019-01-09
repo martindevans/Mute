@@ -10,9 +10,9 @@ namespace Mute.Services
     {
         private readonly SQLiteConnection _dbConnection;
 
-        public DatabaseService([NotNull] DatabaseConfig config)
+        public DatabaseService([NotNull] Configuration config)
         {
-            _dbConnection = new SQLiteConnection(config.ConnectionString);
+            _dbConnection = new SQLiteConnection(config.Database.ConnectionString);
             _dbConnection.Open();
         }
 

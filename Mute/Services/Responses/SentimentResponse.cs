@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using JetBrains.Annotations;
+using Mute.Context;
 using Mute.Extensions;
 
 namespace Mute.Services.Responses
@@ -11,7 +11,6 @@ namespace Mute.Services.Responses
     public class SentimentResponse
         : IResponse
     {
-        private readonly SentimentService _sentiment;
         private readonly Random _random;
 
         private double Bracket => _config.CertaintyThreshold;
@@ -40,21 +39,20 @@ namespace Mute.Services.Responses
 
         private readonly SentimentReactionConfig _config;
 
-        public SentimentResponse([NotNull] Configuration config, [NotNull] SentimentService sentiment, [NotNull] Random random)
+        public SentimentResponse([NotNull] Configuration config, [NotNull] Random random)
         {
             _config = config.SentimentReactions;
-            _sentiment = sentiment;
             _random = random;
         }
 
-        public async Task<IConversation> TryRespond(ICommandContext context, bool containsMention)
+        public async Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
         {
-            var s = await _sentiment.Predict(context.Message.Content);
+            var s = await context.Sentiment();
 
-            if (s.ClassificationScore < Bracket || s.Classification == SentimentService.Sentiment.Neutral)
+            if (s.ClassificationScore < Bracket || s.Classification == Sentiment.Neutral)
                 return null;
 
-            if (s.Classification == SentimentService.Sentiment.Positive)
+            if (s.Classification == Sentiment.Positive)
                 return new SentimentConversation(Happy.Random(_random));
             else
                 return new SentimentConversation(Sad.Random(_random));

@@ -5,9 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Discord.Commands;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Mute.Context;
 using Mute.Services.Responses.Eliza.Engine;
 using Mute.Services.Responses.Eliza.Scripts;
 using IEnumerableExtensions = Mute.Extensions.IEnumerableExtensions;
@@ -68,7 +68,7 @@ namespace Mute.Services.Responses.Eliza
             }
         }
 
-        public Task<IConversation> TryRespond(ICommandContext context, bool containsMention)
+        [NotNull] public Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
         {
             return Task.Run<IConversation>(() => {
 
@@ -111,7 +111,7 @@ namespace Mute.Services.Responses.Eliza
 
             public bool IsComplete { get; private set; }
 
-            public Task<string> Respond(ICommandContext context, bool containsMention, CancellationToken ct)
+            [NotNull] public Task<string> Respond(MuteCommandContext context, bool containsMention, CancellationToken ct)
             {
                 return Task.Run(() => {
                     lock (_eliza)
