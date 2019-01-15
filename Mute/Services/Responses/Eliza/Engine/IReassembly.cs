@@ -27,6 +27,7 @@ namespace Mute.Services.Responses.Eliza.Engine
             _value = value;
         }
 
+        [NotNull]
         public Task<string> Rule(ICommandContext _, IReadOnlyList<string> __) => Task.FromResult(_value);
     }
 

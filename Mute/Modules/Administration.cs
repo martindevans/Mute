@@ -81,9 +81,11 @@ namespace Mute.Modules
         }
 
         [Command("kill"), Alias("die", "self-destruct", "terminate"), Summary("I will immediately terminate my process ⊙︿⊙")]
-        public async Task Kill(int exitCode = -1)
+        public Task Kill(int exitCode = -1)
         {
             Environment.Exit(exitCode);
+
+            return Task.CompletedTask;
         }
     }
 }

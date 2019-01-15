@@ -287,11 +287,20 @@ namespace Mute.Services
 
         public struct MessageLogEntry
         {
-            public ulong MessageId;
-            public ulong UtcUnixTime;
-            public ulong ChannelId;
-            public string Content;
-            public ulong UserId;
+            public ulong MessageId { get; }
+            public ulong UtcUnixTime { get; }
+            public ulong ChannelId { get; }
+            public string Content { get; }
+            public ulong UserId { get; }
+
+            public MessageLogEntry(ulong messageId, ulong utcUnixTime, ulong channelId, string content, ulong userId)
+            {
+                MessageId = messageId;
+                UtcUnixTime = utcUnixTime;
+                ChannelId = channelId;
+                Content = content;
+                UserId = userId;
+            }
         }
 
         public class MessagesResult
@@ -340,13 +349,13 @@ namespace Mute.Services
                     return await _reader.ReadAsync(cancellationToken);
                 }
 
-                public MessageLogEntry Current => new MessageLogEntry {
-                    MessageId = ulong.Parse((string)_reader["Uid"]),
-                    UtcUnixTime = ulong.Parse((string)_reader["UtcTime"]),
-                    ChannelId = ulong.Parse((string)_reader["ChannelId"]),
-                    Content = (string)_reader["Content"],
-                    UserId = ulong.Parse((string)_reader["UserId"])
-                };
+                public MessageLogEntry Current => new MessageLogEntry(
+                    ulong.Parse((string)_reader["Uid"]),
+                    ulong.Parse((string)_reader["UtcTime"]),
+                    ulong.Parse((string)_reader["ChannelId"]),
+                    (string)_reader["Content"],
+                    ulong.Parse((string)_reader["UserId"])
+                );
             }
         }
     }

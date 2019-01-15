@@ -189,7 +189,7 @@ namespace Mute.Modules
             if (pending.Length == 0)
                 await TypingReplyAsync("No pending outgoing transactions");
             else
-                await PaginatedPending(pending, "You have {0} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise", false);;
+                await PaginatedPending(pending, "You have {0} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise", false);
         }
 
         [Command("pending-in"), Summary("I will list all pending transactions another user has yet to confirm"), RequireOwner]

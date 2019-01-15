@@ -117,6 +117,7 @@ namespace Mute.Services.Audio
             }
         }
 
+        [NotNull]
         public Task NormalizeAllSfx()
         {
             return Task.Run(() => {

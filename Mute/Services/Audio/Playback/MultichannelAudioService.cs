@@ -15,8 +15,7 @@ namespace Mute.Services.Audio.Playback
 
         private MultichannelAudioPlayer _player;
 
-        private IVoiceChannel _channel;
-        [CanBeNull] public IVoiceChannel Channel => _channel;
+        [CanBeNull] public IVoiceChannel Channel { get; private set; }
 
         public MultichannelAudioService([NotNull] DiscordSocketClient client)
         {
@@ -57,13 +56,13 @@ namespace Mute.Services.Audio.Playback
 
         public async Task MoveChannel(IVoiceChannel channel)
         {
-            if (_channel == channel)
+            if (Channel == channel)
                 return;
 
             if (_player != null)
                 await _player.Stop();
 
-            _channel = channel;
+            Channel = channel;
             _player = new MultichannelAudioPlayer(channel, _channels);
         }
 
@@ -84,7 +83,7 @@ namespace Mute.Services.Audio.Playback
             if (_player != null)
                 await _player.Stop();
             _player = null;
-            _channel = null;
+            Channel = null;
 
             foreach (var channel in _channels)
                 channel.Stop();

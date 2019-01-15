@@ -42,16 +42,16 @@ namespace Mute.Services
 
     public struct SentimentResult
     {
-        public readonly string Text;
+        public string Text { get; }
 
-        public readonly float ClassificationScore;
-        public readonly Sentiment Classification;
+        public float ClassificationScore { get; }
+        public Sentiment Classification { get; }
 
-        public readonly float NegativeScore;
-        public readonly float PositiveScore;
-        public readonly float NeutralScore;
+        public float NegativeScore { get; }
+        public float PositiveScore { get; }
+        public float NeutralScore { get; }
 
-        public readonly TimeSpan ClassificationTime;
+        public TimeSpan ClassificationTime { get; }
 
         public SentimentResult(string message, float negative, float positive, float neutral, TimeSpan time)
         {

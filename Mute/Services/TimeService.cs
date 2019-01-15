@@ -71,7 +71,7 @@ namespace Mute.Services
             if (tz == null)
             {
                 if (Abbreviations.TryGetValue(tzid.ToUpperInvariant(), out var code))
-                    tz = Timezones.SingleOrDefault(t => t.Letter.Equals(code));
+                    tz = Timezones.SingleOrDefault(t => code.Equals(t.Letter));
             }
 
             if (tz == null)

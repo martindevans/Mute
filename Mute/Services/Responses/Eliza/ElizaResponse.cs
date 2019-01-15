@@ -68,7 +68,7 @@ namespace Mute.Services.Responses.Eliza
             }
         }
 
-        [NotNull] public Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
+        public Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
         {
             return Task.Run<IConversation>(() => {
 
@@ -111,7 +111,7 @@ namespace Mute.Services.Responses.Eliza
 
             public bool IsComplete { get; private set; }
 
-            [NotNull] public Task<string> Respond(MuteCommandContext context, bool containsMention, CancellationToken ct)
+            public Task<string> Respond(MuteCommandContext context, bool containsMention, CancellationToken ct)
             {
                 return Task.Run(() => {
                     lock (_eliza)

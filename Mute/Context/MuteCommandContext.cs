@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
 using Discord.Commands;
 using Discord.WebSocket;
 using System.Threading.Tasks;
-using Mute.Extensions;
+using JetBrains.Annotations;
 
 namespace Mute.Context
 {
@@ -35,10 +33,10 @@ namespace Mute.Context
             return false;
         }
 
-        public async Task<T> GetOrAdd<T>(Func<Task<T>> create)
+        [NotNull] public Task<T> GetOrAdd<T>(Func<Task<T>> create)
             where T : class
         {
-            return (T)_resources.GetOrAdd(typeof(T), _ => Task.Run(async () => await create()).Result);
+            return Task.FromResult((T)_resources.GetOrAdd(typeof(T), _ => Task.Run(async () => await create()).Result));
         }
 
         public T GetOrAdd<T>(Func<T> create)

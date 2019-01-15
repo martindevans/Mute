@@ -19,7 +19,7 @@ namespace Mute.Tests.Mocks
             _defaultResponse = defaultResponse ?? new HttpResponseMessage(HttpStatusCode.NotFound);            
         }
 
-        public Task<HttpResponseMessage> GetAsync(string uri)
+        [NotNull] public Task<HttpResponseMessage> GetAsync(string uri)
         {
             HttpResponseMessage GenerateResponse()
             {

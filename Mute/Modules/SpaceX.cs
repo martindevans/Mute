@@ -86,7 +86,7 @@ namespace Mute.Modules
                 .WithColor(earth < mars ? Color.Blue : Color.Red)
                 .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API")
                 .AddField("Speed", $"{speed}Kph", true)
-                .AddField("Orbit", roadster.OrbitType.ToString(), true)
+                .AddField("Orbit", roadster.OrbitType, true)
                 .AddField("Period", period, true)
                 .AddField("Distance From Earth", $"{earth:#,##0}Km", true)
                 .AddField("Distance From Mars", $"{mars:#,##0}Km", true));
@@ -110,12 +110,12 @@ namespace Mute.Modules
 
             var site = launch.LaunchSite.SiteLongName ?? launch.LaunchSite.SiteName;
             if (!string.IsNullOrWhiteSpace(site))
-                builder = builder.AddField("Launch Site", site, false);
+                builder = builder.AddField("Launch Site", site);
 
             if (launch.LaunchDateUtc.HasValue)
                 builder = builder.AddField("Launch Date", launch.LaunchDateUtc.Value.ToString("HH\\:mm UTC MMM-dd-yyyy"), true);
 
-            var landing = string.Join(", ", launch.Rocket.FirstStage.Cores.Select(c => (c.LandingVehicle.HasValue ? c.LandingVehicle.Value.ToString() : null)).Where(a => a != null).ToArray());
+            var landing = string.Join(", ", launch.Rocket.FirstStage.Cores.Select(c => c.LandingVehicle?.ToString()).Where(a => a != null).ToArray());
             if (!string.IsNullOrWhiteSpace(landing))
                 builder = builder.AddField("Landing", landing, true);
 

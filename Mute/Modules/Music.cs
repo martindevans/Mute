@@ -44,7 +44,7 @@ namespace Mute.Modules
             _random = random;
         }
 
-        [Command("skip"), Summary("Skip the currently playing track")]
+        [NotNull, Command("skip"), Summary("Skip the currently playing track")]
         public Task Skip()
         {
             _music.Skip();
