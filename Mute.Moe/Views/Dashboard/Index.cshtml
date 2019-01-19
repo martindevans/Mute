@@ -1,0 +1,26 @@
+﻿
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h2>Index</h2>
+
+<ul>
+    @foreach (var id in User.Identities)
+    {
+        <li>@id.IsAuthenticated</li>
+        <li>@id.Label</li>
+        <li>@id.Name</li>
+        <li>@id.NameClaimType</li>
+        <li>@id.RoleClaimType</li>
+        <li>@id.Actor</li>
+        <li>@id.AuthenticationType</li>
+    }
+</ul>
+<ul>
+    @foreach (var role in User.Claims)
+    {
+        <li>@role</li>
+    }
+</ul>
+

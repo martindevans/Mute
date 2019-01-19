@@ -604,7 +604,8 @@ namespace Mute.Moe.Sigil
                 new XAttribute("version", "1.1"),
                 new XAttribute("baseProfile", "full"),
                 new XAttribute("width", 128),
-                new XAttribute("height", 128)
+                new XAttribute("height", 128),
+                new XAttribute("viewbox", "0 0 128 128")
             );
             doc.Add(root);
             root.Add(new XElement(ns + "rect", new XAttribute("width", 128), new XAttribute("height", 128), new XAttribute("fill", bg)));

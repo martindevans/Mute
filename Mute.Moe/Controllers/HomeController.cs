@@ -1,7 +1,7 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Mute.Moe.Models;
+using System.Linq;
 
 namespace Mute.Moe.Controllers
 {
@@ -16,14 +16,15 @@ namespace Mute.Moe.Controllers
         {
             ViewData["ID"] = HttpContext.TraceIdentifier;
 
-            return View();
+            if (User.Identities.Any(id => id.AuthenticationType == "Discord"))
+                return Redirect("dashboard");
+            else
+                return View();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            var sigil = new Sigil.Sigil(unchecked((uint)HttpContext.TraceIdentifier.GetHashCode()));
-
             return View(new ErrorViewModel {
                 RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
             });

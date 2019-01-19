@@ -105,7 +105,7 @@ namespace Mute.Moe.Discord
         private async Task ProcessAsCommand(int offset, [NotNull] MuteCommandContext context)
         {
             // When there's a mention the command may or may not include the prefix. Check if it does include it and skip over it if so
-            if (context.Message.Content[offset] == '!')
+            if (context.Message.Content[offset] == _config.PrefixCharacter)
                 offset++;
 
             // Execute the command
