@@ -1,15 +1,15 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Mute.Services;
-using Mute.Tests.Mocks;
+using Mute.Moe.Discord.Services;
+using Mute.Moe.Services.Database;
 
 namespace Mute.Tests.Services
 {
     [TestClass]
     public class IouDatabaseServiceTest
     {
-        private readonly IouDatabaseService _db = new IouDatabaseService(new DatabaseServiceInMemory());
+        private readonly IouDatabaseService _db = new IouDatabaseService(new SqliteInMemoryDatabase());
 
         [TestMethod]
         public async Task InsertDebt_CreatesDebt()

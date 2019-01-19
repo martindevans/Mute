@@ -10,6 +10,11 @@ Mute/obj
 Mute/config.json
 /Mute/Properties/PublishProfiles
 
+Mute.Moe/bin
+Mute.Moe/obj
+Mute.Moe/database.sqlite
+Mute.Moe/config.json
+
 Mute.Tests/bin
 Mute.Tests/obj
 

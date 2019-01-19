@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Mute.Services;
+using Mute.Moe.Services.Images;
 using Mute.Tests.Mocks;
 
 namespace Mute.Tests.Services
@@ -29,7 +29,7 @@ namespace Mute.Tests.Services
         public async Task Service_Returns_Dog()
         {
             var httpClient = new MockHttpClient(Responses);
-            var dogs = new DogPictureService(httpClient, "test_dog_url");
+            var dogs = new DogceoPictures(httpClient, "test_dog_url");
             var stream = await dogs.GetDogPictureAsync();
 
             var actual = new StreamReader(stream).ReadToEnd();
@@ -40,7 +40,7 @@ namespace Mute.Tests.Services
         public async Task Service_Returns_DefaultValue()
         {
             var httpClient = new MockHttpClient(Responses);
-            var dogs = new DogPictureService(httpClient, "broken_dog_url");
+            var dogs = new DogceoPictures(httpClient, "broken_dog_url");
             var stream = await dogs.GetDogPictureAsync();
             var response = new StreamReader(stream).ReadToEnd();
 
