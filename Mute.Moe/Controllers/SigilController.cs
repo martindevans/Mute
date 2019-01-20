@@ -4,13 +4,11 @@ using JetBrains.Annotations;
 
 namespace Mute.Moe.Controllers
 {
-    //@Html.Raw(Sigil.SigilSvg(@Model.RequestId.GetHashCode(), "purple", "black"));
-
-    [Route("sigil")]
+    [Route("Sigil")]
     public class SigilController
         : Controller
     {
-        [HttpGet("/sigil/{data}")]
+        [HttpGet("/Sigil/{data}")]
         [ResponseCache(Duration = 86400, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "foreground", "background" })]
         public IActionResult Index([CanBeNull, FromRoute] string data, [CanBeNull, FromQuery] string foreground, [CanBeNull, FromQuery] string background)
         {

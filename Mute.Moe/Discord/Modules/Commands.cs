@@ -63,7 +63,7 @@ namespace Mute.Moe.Discord.Modules
                     else
                         return $"{l.Count} commands matched the search term `{filter}`. " + suffix;
                 },
-                (c, i) => $"{i}. {FormatCommandSummary(c)}"
+                (c, i) => $"{i + 1}. {FormatCommandSummary(c)}"
             );
         }
 

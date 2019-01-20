@@ -113,7 +113,7 @@ namespace Mute.Moe.Discord.Modules
                 builder = builder.AddField("Launch Site", site);
 
             if (launch.LaunchDateUtc.HasValue)
-                builder = builder.AddField("Launch Date", launch.LaunchDateUtc.Value.ToString("HH\\:mm UTC MMM-dd-yyyy"), true);
+                builder = builder.AddField("Launch Date", launch.LaunchDateUtc.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
 
             var landing = string.Join(", ", launch.Rocket.FirstStage.Cores.Select(c => c.LandingVehicle?.ToString()).Where(a => a != null).ToArray());
             if (!string.IsNullOrWhiteSpace(landing))

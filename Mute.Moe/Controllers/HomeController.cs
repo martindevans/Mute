@@ -8,10 +8,6 @@ namespace Mute.Moe.Controllers
     public class HomeController
         : Controller
     {
-        public HomeController()
-        {
-        }
-
         public IActionResult Index()
         {
             ViewData["ID"] = HttpContext.TraceIdentifier;

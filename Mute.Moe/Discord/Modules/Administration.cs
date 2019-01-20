@@ -4,7 +4,6 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services;

@@ -20,6 +20,7 @@ using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Images;
+using Mute.Moe.Services.Search;
 using Mute.Moe.Services.Sentiment;
 using Newtonsoft.Json;
 
@@ -104,8 +105,7 @@ namespace Mute.Moe
 
         private static void ConfigureBaseServices(IServiceCollection services, Configuration config)
         {
-            services.AddTransient<Random>()
-                    .AddTransient<IHttpClient, SimpleHttpClient>();
+            services.AddTransient<Random>();
 
             services
                 .AddSingleton(config)
@@ -113,10 +113,12 @@ namespace Mute.Moe
 
             services.AddSingleton<InteractiveService>();
 
+            services.AddSingleton<IHttpClient, SimpleHttpClient>();
             services.AddSingleton<IDatabaseService, SqliteDatabase>();
             services.AddSingleton<ISentimentService, TensorflowSentiment>();
             services.AddSingleton<ICatPictureService, CataasPictures>();
             services.AddSingleton<IDogPictureService, DogceoPictures>();
+            services.AddSingleton<IAnimeSearch, NadekobotAnimeSearch>();
 
             //Eventually these should all become interface -> concrete type bindings
             services
