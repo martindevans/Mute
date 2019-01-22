@@ -20,6 +20,7 @@ using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Images;
+using Mute.Moe.Services.Payment;
 using Mute.Moe.Services.Search;
 using Mute.Moe.Services.Sentiment;
 using Newtonsoft.Json;
@@ -66,6 +67,8 @@ namespace Mute.Moe
                            d.SaveTokens = true;
                        }))
                        .UseStartup<Startup>()
+                       .UseKestrel()
+                       .UseIISIntegration()
                        .Build();
 
                 var cts = new CancellationTokenSource();
@@ -119,6 +122,7 @@ namespace Mute.Moe
             services.AddSingleton<ICatPictureService, CataasPictures>();
             services.AddSingleton<IDogPictureService, DogceoPictures>();
             services.AddSingleton<IAnimeSearch, NadekobotAnimeSearch>();
+            services.AddSingleton<ITransactions, DatabaseTransactionService>();
 
             //Eventually these should all become interface -> concrete type bindings
             services

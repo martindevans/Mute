@@ -6,6 +6,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services;
@@ -113,15 +114,14 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("mass-sentiment"), Summary("I will tag the last N messages with sentiment reactions"), RequireOwner]
+        [ThinkingReply, TypingReply]
         public async Task MassSentiment(byte count = 10)
         {
-            await Context.Message.ThinkingReplyAsync(_client.CurrentUser, Task.Run(async () => {
-                for (byte i = 0; i < count; i++)
-                {
-                    await AskSentiment(i);
-                    await Task.Delay(250);
-                }
-            }));
+            for (byte i = 0; i < count; i++)
+            {
+                await AskSentiment(i);
+                await Task.Delay(250);
+            }
         }
     }
 }

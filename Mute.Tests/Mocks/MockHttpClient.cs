@@ -31,5 +31,10 @@ namespace Mute.Tests.Mocks
 
             return Task.Run((Func<HttpResponseMessage>)GenerateResponse);
         }
+
+        public Task<HttpResponseMessage> SendAsync(HttpRequestMessage message)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

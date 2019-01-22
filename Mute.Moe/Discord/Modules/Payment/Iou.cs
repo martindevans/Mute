@@ -9,11 +9,14 @@ using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using MoreLinq;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services;
 using Mute.Moe.Extensions;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Payment
 {
+    [WarnDebugger]
+    [TypingReply]
     public class Iou
         : BaseModule
     {
@@ -35,56 +38,41 @@ namespace Mute.Moe.Discord.Modules
             if (amount < 0)
                 await TypingReplyAsync("You cannot owe a negative amount!");
 
-            await CheckDebugger();
+            await _database.InsertDebt(user.Id, Context.User.Id, amount, unit, note);
 
-            using (Context.Channel.EnterTypingState())
-            {
-                await _database.InsertDebt(user.Id, Context.User.Id, amount, unit, note);
-
-                var symbol = unit.TryGetCurrencySymbol();
-                if (unit == symbol)
-                    await ReplyAsync($"{Context.User.Mention} owes {amount}{unit} to {user.Mention}");
-                else
-                    await ReplyAsync($"{Context.User.Mention} owes {symbol}{amount} to {user.Mention}");
-            }
+            var symbol = unit.TryGetCurrencySymbol();
+            if (unit == symbol)
+                await ReplyAsync($"{Context.User.Mention} owes {amount}{unit} to {user.Mention}");
+            else
+                await ReplyAsync($"{Context.User.Mention} owes {symbol}{amount} to {user.Mention}");
         }
 
         [Command("io"), Summary("I will tell you what you currently owe")]
         public async Task ListDebtsByBorrower([CanBeNull, Summary("Filter debts by this borrower")] IUser borrower = null)
         {
-            await CheckDebugger();
+            var owed = (await _database.GetOwed(Context.User.Id))
+                .Where(o => borrower == null || o.LenderId == borrower.Id)
+                .OrderBy(o => o.LenderId)
+                .ToArray();
 
-            using (Context.Channel.EnterTypingState())
-            {
-                var owed = (await _database.GetOwed(Context.User.Id))
-                    .Where(o => borrower == null || o.LenderId == borrower.Id)
-                    .OrderBy(o => o.LenderId)
-                    .ToArray();
-
-                if (owed.Length == 0)
-                    await TypingReplyAsync("You are debt free");
-                else
-                    await PaginatedTransactions(owed, "owes", false);
-            }
+            if (owed.Length == 0)
+                await TypingReplyAsync("You are debt free");
+            else
+                await PaginatedTransactions(owed, "owes", false);
         }
 
         [Command("oi"), Summary("I will tell you what you are currently owed")]
         public async Task ListDebtsByLender([CanBeNull, Summary("Filter debts by this lender")] IUser lender = null)
         {
-            await CheckDebugger();
+            var owed = (await _database.GetLent(Context.User.Id))
+                .Where(o => lender == null || o.BorrowerId == lender.Id)
+                .OrderBy(o => o.LenderId)
+                .ToArray();
 
-            using (Context.Channel.EnterTypingState())
-            {
-                var owed = (await _database.GetLent(Context.User.Id))
-                    .Where(o => lender == null || o.BorrowerId == lender.Id)
-                    .OrderBy(o => o.LenderId)
-                    .ToArray();
-
-                if (owed.Length == 0)
-                    await TypingReplyAsync("No one owes you anything");
-                else
-                    await PaginatedTransactions(owed, "owes", false);
-            }
+            if (owed.Length == 0)
+                await TypingReplyAsync("No one owes you anything");
+            else
+                await PaginatedTransactions(owed, "owes", false);
         }
         #endregion
 
@@ -95,16 +83,11 @@ namespace Mute.Moe.Discord.Modules
             if (amount < 0)
                 await TypingReplyAsync("You cannot demand a negative amount!");
 
-            await CheckDebugger();
+            var id = unchecked((uint)_random.Next()).MeaninglessString();
 
-            using (Context.Channel.EnterTypingState())
-            {
-                var id = unchecked((uint)_random.Next()).MeaninglessString();
-
-                await _database.InsertUnconfirmedPayment(Context.User.Id, debter.Id, amount, unit, note, id);
-                await TypingReplyAsync($"{debter.Mention} type `!confirm {id}` to confirm that you owe this");
-                await TypingReplyAsync($"{debter.Mention} type `!deny {id}` to deny this request. Please talk to the other user about why!");
-            }
+            await _database.InsertUnconfirmedPayment(Context.User.Id, debter.Id, amount, unit, note, id);
+            await TypingReplyAsync($"{debter.Mention} type `!confirm {id}` to confirm that you owe this");
+            await TypingReplyAsync($"{debter.Mention} type `!deny {id}` to deny this request. Please talk to the other user about why!");
         }
         
         [Command("pay"), Summary("I will record that you have paid someone else some money")]
@@ -113,50 +96,35 @@ namespace Mute.Moe.Discord.Modules
             if (amount < 0)
                 await TypingReplyAsync("You cannot pay a negative amount!");
 
-            await CheckDebugger();
+            var id = unchecked((uint)_random.Next()).MeaninglessString();
 
-            using (Context.Channel.EnterTypingState())
-            {
-                var id = unchecked((uint)_random.Next()).MeaninglessString();
-
-                await _database.InsertUnconfirmedPayment(Context.User.Id, receiver.Id, amount, unit, note, id);
-                await TypingReplyAsync($"{receiver.Mention} type `!confirm {id}` to confirm that you have received this payment");
-            }
+            await _database.InsertUnconfirmedPayment(Context.User.Id, receiver.Id, amount, unit, note, id);
+            await TypingReplyAsync($"{receiver.Mention} type `!confirm {id}` to confirm that you have received this payment");
         }
 
         [Command("confirm"), Summary("I will record that you confirm the pending transaction")]
         public async Task ConfirmPendingPayment(string id)
         {
-            await CheckDebugger();
+            var result = await _database.ConfirmPending(id, Context.User.Id);
 
-            using (Context.Channel.EnterTypingState())
-            {
-                var result = await _database.ConfirmPending(id, Context.User.Id);
-
-                if (result.HasValue)
-                    await ReplyAsync($"{Context.User.Mention} Confirmed transaction of {FormatCurrency(result.Value.Amount, result.Value.Unit)} from {Context.Client.GetUser(result.Value.PayerId).Mention} to {Context.Client.GetUser(result.Value.ReceiverId).Mention}");
-                else
-                    await ReplyAsync($"{Context.User.Mention} I can't find a pending payment with that ID");
-            }
+            if (result.HasValue)
+                await ReplyAsync($"{Context.User.Mention} Confirmed transaction of {FormatCurrency(result.Value.Amount, result.Value.Unit)} from {Context.Client.GetUser(result.Value.PayerId).Mention} to {Context.Client.GetUser(result.Value.ReceiverId).Mention}");
+            else
+                await ReplyAsync($"{Context.User.Mention} I can't find a pending payment with that ID");
         }
 
         [Command("deny"), Summary("I will record that you denied the pending transaction")]
         public async Task DenyPendingPayment(string id)
         {
-            await CheckDebugger();
+            var result = await _database.DenyPending(id, Context.User.Id);
 
-            using (Context.Channel.EnterTypingState())
+            if (result.HasValue)
             {
-                var result = await _database.DenyPending(id, Context.User.Id);
-
-                if (result.HasValue)
-                {
-                    var note = string.IsNullOrWhiteSpace(result.Value.Note) ? "" : $" '{result.Value.Note}";
-                    await ReplyAsync($"{Context.User.Mention} *Denied* transaction of {FormatCurrency(result.Value.Amount, result.Value.Unit)} from {Context.Client.GetUser(result.Value.PayerId).Mention} to {Context.Client.GetUser(result.Value.ReceiverId).Mention} {note}");
-                }
-                else
-                    await ReplyAsync($"{Context.User.Mention} I can't find a pending payment with that ID");
+                var note = string.IsNullOrWhiteSpace(result.Value.Note) ? "" : $" '{result.Value.Note}";
+                await ReplyAsync($"{Context.User.Mention} *Denied* transaction of {FormatCurrency(result.Value.Amount, result.Value.Unit)} from {Context.Client.GetUser(result.Value.PayerId).Mention} to {Context.Client.GetUser(result.Value.ReceiverId).Mention} {note}");
             }
+            else
+                await ReplyAsync($"{Context.User.Mention} I can't find a pending payment with that ID");
         }
 
         [Command("pending"), Summary("I will list all pending transactions to or from you")]
@@ -182,8 +150,6 @@ namespace Mute.Moe.Discord.Modules
         [Command("pending-out"), Summary("I will list all pending transactions another user has yet to confirm"), RequireOwner]
         public async Task ListPendingPaymentsFromUser([NotNull] IUser user)
         {
-            await CheckDebugger();
-
             var pending = (await _database.GetPendingForReceiver(user.Id)).ToArray();
 
             if (pending.Length == 0)
@@ -195,8 +161,6 @@ namespace Mute.Moe.Discord.Modules
         [Command("pending-in"), Summary("I will list all pending transactions another user has yet to confirm"), RequireOwner]
         public async Task ListPendingPaymentsToUser([NotNull] IUser user)
         {
-            await CheckDebugger();
-
             var pending = (await _database.GetPendingForSender(user.Id)).ToArray();
 
             if (pending.Length == 0)
@@ -210,8 +174,6 @@ namespace Mute.Moe.Discord.Modules
         [Command("transactions"), Summary("I will show all your transactions, optionally filtered to only with another user")]
         public async Task ListTransactions([CanBeNull] IUser other = null)
         {
-            await CheckDebugger();
-
             var tsx = (await (other == null
                 ? _database.GetTransactions(Context.Message.Author.Id)
                 : _database.GetTransactions(Context.Message.Author.Id, other.Id))).ToArray();
@@ -224,12 +186,6 @@ namespace Mute.Moe.Discord.Modules
         #endregion
 
         #region helpers
-        private async Task CheckDebugger()
-        {
-            if (Debugger.IsAttached)
-                await ReplyAsync("**Warning - Debugger is attached. This is likely not the main version of mute!**");
-        }
-
         private string Name(ulong id, bool mention = false)
         {
             var user = _client.GetUser(id);

@@ -5,7 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
+using Discord.Commands;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
 
@@ -15,6 +17,8 @@ namespace Mute.Moe.Discord.Modules
         : InteractiveBase
     {
         public new MuteCommandContext Context => (MuteCommandContext)base.Context;
+
+        private IEndExecute[] _afterExecuteDisposals;
 
         #region display lists
         /// <summary>
@@ -170,5 +174,22 @@ namespace Mute.Moe.Discord.Modules
             return await ReplyAsync("", false, embed.Build(), options);
         }
         #endregion
+
+        protected override void BeforeExecute([NotNull] CommandInfo command)
+        {
+            var method = command.Attributes.OfType<BaseExecuteContextAttribute>();
+            var module = GetType().GetCustomAttributes(typeof(BaseExecuteContextAttribute), true).Cast<BaseExecuteContextAttribute>();
+            _afterExecuteDisposals = method.Concat(module).Select(eca => eca.StartExecute(Context)).ToArray();
+
+            base.BeforeExecute(command);
+        }
+
+        protected override void AfterExecute(CommandInfo command)
+        {
+            foreach (var item in _afterExecuteDisposals)
+                item.EndExecute().GetAwaiter().GetResult();
+
+            base.AfterExecute(command);
+        }
     }
 }

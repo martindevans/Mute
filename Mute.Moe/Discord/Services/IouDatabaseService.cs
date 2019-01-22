@@ -247,13 +247,6 @@ namespace Mute.Moe.Discord.Services
         }
         #endregion
 
-        #region settlement
-        public void TrySettle(IUser root, string currency)
-        {
-            throw new NotImplementedException();
-        }
-        #endregion
-
         #region transactions
         [ItemNotNull] public async Task<IReadOnlyList<Owed>> GetTransactions(ulong lenderId)
         {

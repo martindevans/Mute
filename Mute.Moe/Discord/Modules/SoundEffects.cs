@@ -6,8 +6,8 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using JetBrains.Annotations;
 using MoreLinq;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Audio;
-using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -17,13 +17,11 @@ namespace Mute.Moe.Discord.Modules
     {
         private readonly SoundEffectService _sfx;
         private readonly IHttpClient _http;
-        private readonly IDiscordClient _client;
-
-        public SoundEffects([NotNull] SoundEffectService sfx, IHttpClient http, IDiscordClient client)
+        
+        public SoundEffects([NotNull] SoundEffectService sfx, IHttpClient http)
         {
             _sfx = sfx;
             _http = http;
-            _client = client;
         }
 
         [Command, Summary("I will join the voice channel you are in, play a sound effect and leave"), Priority(0)]
@@ -151,10 +149,11 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("renormalize"), RequireOwner, Priority(1)]
+        [ThinkingReply]
         public async Task Renormalize()
         {
             // Add a thinking emote while doing the work
-            await Context.Message.ThinkingReplyAsync(_client.CurrentUser, _sfx.NormalizeAllSfx());
+            await _sfx.NormalizeAllSfx();
         }
     }
 }
