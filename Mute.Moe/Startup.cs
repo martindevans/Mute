@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Logging;
 using Mute.Moe.Auth;
 using Mute.Moe.Discord;
@@ -96,7 +97,6 @@ namespace Mute.Moe
 
             services.AddMemoryCache();
             services.AddResponseCaching();
-            services.AddResponseCompression();
             services.AddRouteAnalyzer();
 
             services.AddMvc()
@@ -142,7 +142,7 @@ namespace Mute.Moe
             app.UseCookiePolicy();
             app.UseAuthentication();
             app.UseResponseCaching();
-            app.UseResponseCompression();
+            app.UseForwardedHeaders();
 
             app.UseMvc(routes =>
             {

@@ -3,9 +3,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Mute.Moe.Discord;
-using Mute.Moe.Services;
 
 namespace Mute.Moe
 {
@@ -18,7 +15,6 @@ namespace Mute.Moe
             var host = WebHost.CreateDefaultBuilder(args)
                               .UseStartup<Startup>()
                               .UseKestrel()
-                              .UseIISIntegration()
                               .Build();
 
             var cts = new CancellationTokenSource();

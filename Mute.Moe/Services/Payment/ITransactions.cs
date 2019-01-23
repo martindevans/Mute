@@ -13,11 +13,11 @@ namespace Mute.Moe.Services.Payment
         /// Convert a set of transactions into balances
         /// </summary>
         /// <param name="transactions"></param>
-        private static async Task<IEnumerable<IBalance>> TransactionsToBalances(ulong primaryUser, IAsyncEnumerable<ITransaction> transactions)
+        [NotNull, ItemNotNull] private static async Task<IEnumerable<IBalance>> TransactionsToBalances(ulong primaryUser, IAsyncEnumerable<ITransaction> transactions)
         {
             // Accumulate a lookup table of user -> unit -> amount
             //user in this case is always the secondary user (the other is implicitly the primary user)
-            Dictionary<ulong, Dictionary<string, decimal>> accumulator = new Dictionary<ulong, Dictionary<string, decimal>>();
+            var accumulator = new Dictionary<ulong, Dictionary<string, decimal>>();
 
             Dictionary<string, decimal> GetInner(ulong user)
             {
@@ -30,7 +30,7 @@ namespace Mute.Moe.Services.Payment
                 return lookup;
             }
 
-            void Add(Dictionary<string, decimal> lookup, string unit, decimal add)
+            void Add(IDictionary<string, decimal> lookup, string unit, decimal add)
             {
                 lookup.TryGetValue(unit, out var amount);
                 lookup[unit] = amount + add;
