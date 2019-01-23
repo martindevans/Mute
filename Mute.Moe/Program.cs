@@ -1,29 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using CommandLine;
-using Discord.Addons.Interactive;
-using JetBrains.Annotations;
 using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
-using Mute.Moe.Discord.Services;
-using Mute.Moe.Discord.Services.Audio;
-using Mute.Moe.Discord.Services.Audio.Playback;
-using Mute.Moe.Discord.Services.Games;
-using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services;
-using Mute.Moe.Services.Database;
-using Mute.Moe.Services.Images;
-using Mute.Moe.Services.Payment;
-using Mute.Moe.Services.Search;
-using Mute.Moe.Services.Sentiment;
-using Newtonsoft.Json;
 
 namespace Mute.Moe
 {
@@ -33,63 +15,19 @@ namespace Mute.Moe
         {
             DependencyHelper.TestDependencies();
 
-            Parser
-                .Default
-                .ParseArguments<Options>(args)
-                .WithNotParsed(ParsingError)
-                .WithParsed(CreateStartupSuccess(args));
-        }
+            var host = WebHost.CreateDefaultBuilder(args)
+                              .UseStartup<Startup>()
+                              .UseKestrel()
+                              .UseIISIntegration()
+                              .Build();
 
-        [NotNull] private static Action<Options> CreateStartupSuccess(string[] args)
-        {
-            return options =>
-            {
-                if (!File.Exists(options.ConfigPath))
-                {
-                    Console.Write(Path.GetFullPath(options.ConfigPath));
-                    Console.Error.WriteLine("No config file found");
-                    return;
-                }
+            var cts = new CancellationTokenSource();
+            var webhost = host.RunAsync(cts.Token);
 
-                var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(options.ConfigPath));
+            WaitForExitSignal();
 
-                var host = WebHost.CreateDefaultBuilder(args)
-                       .ConfigureServices(a => ConfigureBaseServices(a, config))
-                       .ConfigureServices(HostedDiscordBot.ConfigureServices)
-                       .ConfigureServices(a => a.AddHostedService<HostedDiscordBot>())
-                       .ConfigureServices(a => a.AddHostedService<ServicePreloader>())
-                       .ConfigureServices(a => a.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                       .AddCookie("Cookies")
-                       .AddDiscord(d => {
-                           d.AppId = config.Auth.ClientId;
-                           d.AppSecret = config.Auth.ClientSecret;
-                           d.Scope.Add("identify");
-                           d.SaveTokens = true;
-                       }))
-                       .UseStartup<Startup>()
-                       .UseKestrel()
-                       .UseIISIntegration()
-                       .Build();
-
-                var cts = new CancellationTokenSource();
-                var webhost = host.RunAsync(cts.Token);
-
-                WaitForExitSignal();
-
-                cts.Cancel();
-                webhost.GetAwaiter().GetResult();
-            };
-        }
-
-        /// <summary>
-        /// Handle an error in parsing command line args
-        /// </summary>
-        /// <param name="errors"></param>
-        private static void ParsingError([NotNull] IEnumerable<Error> errors)
-        {
-            Console.WriteLine($"Failed to start application due to {errors.Count()} errors:");
-            foreach (var error in errors)
-                Console.WriteLine($" - {error}");
+            cts.Cancel();
+            webhost.GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -105,63 +43,6 @@ namespace Mute.Moe
                     return;
             }
         }
-
-        private static void ConfigureBaseServices(IServiceCollection services, Configuration config)
-        {
-            services.AddTransient<Random>();
-
-            services
-                .AddSingleton(config)
-                .AddSingleton(services);
-
-            services.AddSingleton<InteractiveService>();
-
-            services.AddSingleton<IHttpClient, SimpleHttpClient>();
-            services.AddSingleton<IDatabaseService, SqliteDatabase>();
-            services.AddSingleton<ISentimentService, TensorflowSentiment>();
-            services.AddSingleton<ICatPictureService, CataasPictures>();
-            services.AddSingleton<IDogPictureService, DogceoPictures>();
-            services.AddSingleton<IAnimeSearch, NadekobotAnimeSearch>();
-            services.AddSingleton<ITransactions, DatabaseTransactionService>();
-
-            //Eventually these should all become interface -> concrete type bindings
-            services
-                .AddSingleton<CryptoCurrencyService>()
-                .AddSingleton<AlphaAdvantageService>()
-                .AddSingleton<IouDatabaseService>()
-                .AddSingleton<MusicPlayerService>()
-                .AddSingleton<YoutubeService>()
-                .AddSingleton<MusicRatingService>()
-                .AddSingleton<GameService>()
-                .AddSingleton<ReminderService>()
-                .AddSingleton<SentimentTrainingService>()
-                .AddSingleton<HistoryLoggingService>()
-                .AddSingleton<ReactionSentimentTrainer>()
-                .AddSingleton<ConversationalResponseService>()
-                .AddSingleton<WikipediaService>()
-                .AddSingleton<TimeService>()
-                .AddSingleton<SteamApi>()
-                .AddSingleton<SoundEffectService>()
-                .AddSingleton<WordsService>()
-                .AddSingleton<SpacexService>()
-                .AddSingleton<WordVectorsService>()
-                .AddSingleton<UptimeService>()
-                .AddSingleton<WordTrainingService>()
-                .AddSingleton<RoleService>()
-                .AddSingleton<MultichannelAudioService>();
-        }
-    }
-
-    /// <summary>
-    /// Describe options to be passed in by command line switches
-    /// </summary>
-    public class Options
-    {
-        [Option('c', "config", Required = true, HelpText = "Path to the config file")]
-        public string ConfigPath { get; set; }
-
-        [Option('d', "database", Required = true, HelpText = "Path to the database file")]
-        public string DatabasePath { get; set; }
     }
 
     internal class DependencyHelper

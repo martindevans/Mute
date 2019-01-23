@@ -160,13 +160,13 @@ namespace Mute.Moe.Services.Payment
         /// <param name="note">A human readable note</param>
         /// <param name="instant">When this transaction happened</param>
         /// <returns></returns>
-        Task CreateTransaction(ulong fromId, ulong toId, decimal amount, [NotNull] string unit, [CanBeNull] string note, DateTime instant);
+        [NotNull] Task CreateTransaction(ulong fromId, ulong toId, decimal amount, [NotNull] string unit, [CanBeNull] string note, DateTime instant);
 
         /// <summary>
         /// Get all transactions, optionally filtered by source, sink, unit and time range
         /// </summary>
         /// <returns></returns>
-        Task<IAsyncEnumerable<ITransaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, string unit = null, DateTime? after = null, DateTime? before = null);
+        [NotNull, ItemNotNull] Task<IAsyncEnumerable<ITransaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, string unit = null, DateTime? after = null, DateTime? before = null);
     }
 
     /// <summary>
