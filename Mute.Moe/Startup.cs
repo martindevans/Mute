@@ -136,13 +136,13 @@ namespace Mute.Moe
             else
             {
                 app.UseStatusCodePagesWithRedirects("/error/{0}");
+                //app.UseHttpsRedirection();
             }
 
             app.UseStaticFiles();
             app.UseCookiePolicy();
             app.UseAuthentication();
             app.UseResponseCaching();
-            app.UseForwardedHeaders();
 
             app.UseMvc(routes =>
             {
