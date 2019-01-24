@@ -3,8 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Mute.Moe.Discord.Services;
-using Mute.Moe.Services.Images;
+using Mute.Moe.Services.Images.Cats;
 using Mute.Tests.Mocks;
 
 namespace Mute.Tests.Services

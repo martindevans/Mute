@@ -21,7 +21,7 @@ namespace Mute.Moe.Discord.Modules
     {
         private static readonly TimeSpan ReactionTimeout = TimeSpan.FromSeconds(15);
 
-        private static readonly IReadOnlyDictionary<IEmote, int> ReactionScores = new Dictionary<IEmote, int> {
+        private static readonly IReadOnlyDictionary<string, int> ReactionScores = new Dictionary<string, int> {
             { EmojiLookup.Heart, 2 },
             { EmojiLookup.ThumbsUp, 1 },
             { EmojiLookup.Expressionless, 0 },
@@ -117,7 +117,7 @@ namespace Mute.Moe.Discord.Modules
             else
             {
                 //Add reaction indicating download
-                var addEmoji = message.AddReactionAsync(EmojiLookup.Loading);
+                var addEmoji = message.AddReactionAsync(new Emoji(EmojiLookup.Loading));
 
                 //Start downloading the video
                 var download = Task.Factory.StartNew(async () => {
@@ -131,7 +131,7 @@ namespace Mute.Moe.Discord.Modules
                 await download;
 
                 //Remove emoji indicating download
-                await message.RemoveReactionAsync(EmojiLookup.Loading, Context.Client.CurrentUser);
+                await message.RemoveReactionAsync(new Emoji(EmojiLookup.Loading), Context.Client.CurrentUser);
 
                 //Enqueue the track
                 return await EnqueueMusicClip(() => new YoutubeAsyncFileAudio(vid, download));
@@ -282,7 +282,7 @@ namespace Mute.Moe.Discord.Modules
 
             //Add the reaction options (from love to hate)
             foreach (var reactionScore in ReactionScores)
-                await message.AddReactionAsync(reactionScore.Key);
+                await message.AddReactionAsync(new Emoji(reactionScore.Key));
         }
 
         private class ReactionCallbackHandler
@@ -308,7 +308,7 @@ namespace Mute.Moe.Discord.Modules
 
             public async Task<bool> HandleCallbackAsync([NotNull] SocketReaction reaction)
             {
-                if (ReactionScores.TryGetValue(reaction.Emote, out var score))
+                if (ReactionScores.TryGetValue(reaction.Emote.Name, out var score))
                     await _rating.Record(_id, reaction.User.Value.Id, score);
 
                 return false;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 
@@ -23,7 +24,7 @@ namespace Mute.Moe.Discord.Modules
             "Hmph",
         };
 
-        private readonly Emoji[] _reactions = {
+        private readonly string[] _reactions = {
             EmojiLookup.Smirk,
             EmojiLookup.Expressionless,
             EmojiLookup.RollingEyes,
@@ -39,7 +40,7 @@ namespace Mute.Moe.Discord.Modules
         public async Task DoNothing(params string[] _)
         {
             if (_random.NextDouble() < ReactionChance)
-                await Context.Message.AddReactionAsync(_reactions[_random.Next(_responses.Length)]);
+                await Context.Message.AddReactionAsync(new Emoji(_reactions[_random.Next(_responses.Length)]));
             else if (_random.NextDouble() <= ReplyChance)
                 await TypingReplyAsync(_responses[_random.Next(_responses.Length)]);
         }

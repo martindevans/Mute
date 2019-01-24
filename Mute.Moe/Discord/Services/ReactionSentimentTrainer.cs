@@ -4,7 +4,6 @@ using Discord;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses;
-using Mute.Moe.Services;
 using Mute.Moe.Services.Sentiment;
 
 namespace Mute.Moe.Discord.Services
@@ -22,11 +21,11 @@ namespace Mute.Moe.Discord.Services
 
         private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> message, [NotNull] ISocketMessageChannel channel, [NotNull] SocketReaction reaction)
         {
-            if (SentimentResponse.Happy.Contains(reaction.Emote))
+            if (SentimentResponse.Happy.Contains(reaction.Emote.Name))
                 await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Positive);
-            else if (SentimentResponse.Sad.Contains(reaction.Emote))
+            else if (SentimentResponse.Sad.Contains(reaction.Emote.Name))
                 await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Negative);
-            else if (SentimentResponse.Neutral.Contains(reaction.Emote))
+            else if (SentimentResponse.Neutral.Contains(reaction.Emote.Name))
                 await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Neutral);
         }
 

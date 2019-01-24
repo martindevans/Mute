@@ -1,37 +1,46 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services;
 using Mute.Moe.Extensions;
+using Mute.Moe.Services.Information.Cryptocurrency;
 
 namespace Mute.Moe.Discord.Modules
 {
     public class Finance
         : BaseModule
     {
-        private readonly CryptoCurrencyService _cryptoService;
+        private readonly ICryptocurrencyInfo _crypto;
         private readonly AlphaAdvantageService _stockService;
 
-        public Finance(CryptoCurrencyService cryptoService, AlphaAdvantageService stockService)
+        public Finance(ICryptocurrencyInfo crypto, AlphaAdvantageService stockService)
         {
-            _cryptoService = cryptoService;
+            _crypto = crypto;
             _stockService = stockService;
         }
 
         [Command("ticker"), Summary("I will find out information about a stock or currency")]
         public async Task Ticker([NotNull] string symbolOrName, string quote = "USD")
         {
-            if (await TickerAsCrypto(symbolOrName, quote))
-                return;
+            try
+            {
+                if (await TickerAsCrypto(symbolOrName, quote))
+                    return;
 
-            if (await TickerAsStock(symbolOrName))
-                return;
+                if (await TickerAsStock(symbolOrName))
+                    return;
 
-            if (await TickerAsForex(symbolOrName, quote))
-                return;
+                if (await TickerAsForex(symbolOrName, quote))
+                    return;
 
-            await TypingReplyAsync($"I can't find a stock or a currency called '{symbolOrName}'");
+                await TypingReplyAsync($"I can't find a stock or a currency called '{symbolOrName}'");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         private async Task<bool> TickerAsStock(string symbolOrName)
@@ -71,48 +80,49 @@ namespace Mute.Moe.Discord.Modules
         private async Task<bool> TickerAsCrypto([NotNull] string symbolOrName, string quote)
         {
             //Try to parse the sym/name as a cryptocurrency
-            var currency = await _cryptoService.Find(symbolOrName);
+            var currency = await _crypto.FindBySymbolOrName(symbolOrName);
             if (currency == null)
                 return false;
 
-            var ticker = await _cryptoService.GetTicker(currency, quote);
+            var ticker = await _crypto.GetTicker(currency, quote);
 
-            //Begin forming the reply
-            var reply = $"{ticker.Name} ({ticker.Symbol})";
-
-            //Try to find quote in selected currency, if not then default to USD
-            Task ongoingTask = null;
-            if (!ticker.Quotes.TryGetValue(quote.ToUpperInvariant(), out var val) && quote != "USD")
+            var reply = "";
+            if (ticker == null)
             {
-                ongoingTask = TypingReplyAsync($"I'm not sure what the value is in '{quote.ToUpperInvariant()}', I'll try 'USD' instead");
-
-                quote = "USD";
-                ticker.Quotes.TryGetValue(quote, out val);
+                reply = $"{currency.Name} ({currency.Symbol}) doesn't seem to have any price information associated with it";
             }
-
-            //Format the value part of the quote
-            if (val != null)
+            else
             {
-                var price = val.Price.ToString("0.00", CultureInfo.InvariantCulture);
-                reply += $" is worth {quote.TryGetCurrencySymbol().ToUpperInvariant()}{price}";
+                reply = $"{ticker.Currency.Name} ({ticker.Currency.Symbol})";
 
-                if (val.PctChange24H.HasValue)
+                //Try to find quote in selected currency, if not then default to USD
+                if (!ticker.Quotes.TryGetValue(quote.ToUpperInvariant(), out var val) && quote != "USD")
                 {
-                    if (val.PctChange24H > 0)
-                        reply += " (up";
-                    else
-                        reply += " (down";
+                    await TypingReplyAsync($"I'm not sure what the value is in '{quote.ToUpperInvariant()}', I'll try 'USD' instead");
 
-                    reply += $" {val.PctChange24H}% in 24H)";
+                    quote = "USD";
+                    ticker.Quotes.TryGetValue(quote, out val);
+                }
+
+                //Format the value part of the quote
+                if (val != null)
+                {
+                    var price = val.Price.ToString("0.00", CultureInfo.InvariantCulture);
+                    reply += $" is worth {quote.TryGetCurrencySymbol().ToUpperInvariant()}{price}";
+
+                    if (val.PctChange24H.HasValue)
+                    {
+                        if (val.PctChange24H > 0)
+                            reply += " (up";
+                        else
+                            reply += " (down";
+
+                        reply += $" {val.PctChange24H}% in 24H)";
+                    }
                 }
             }
 
-            //If we were typing a previous response, wait for that to complete
-            if (ongoingTask != null)
-                await ongoingTask;
-
             await TypingReplyAsync(reply);
-
             return true;
         }
     }

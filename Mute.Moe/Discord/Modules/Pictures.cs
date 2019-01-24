@@ -1,7 +1,8 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 using Discord.Commands;
-using Mute.Moe.Services.Images;
+using Mute.Moe.Services.Images.Cats;
+using Mute.Moe.Services.Images.Dogs;
 
 namespace Mute.Moe.Discord.Modules
 {

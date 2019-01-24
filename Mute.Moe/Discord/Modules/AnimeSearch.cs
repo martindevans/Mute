@@ -1,16 +1,16 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Mute.Moe.Services.Search;
+using Mute.Moe.Services.Information.Anime;
 
 namespace Mute.Moe.Discord.Modules
 {
     public class AnimeSearch
         : BaseModule
     {
-        private readonly IAnimeSearch _animeSearch;
+        private readonly IAnimeInfo _animeSearch;
 
-        public AnimeSearch(IAnimeSearch animeSearch)
+        public AnimeSearch(IAnimeInfo animeSearch)
         {
             _animeSearch = animeSearch;
         }

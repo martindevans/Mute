@@ -7,9 +7,10 @@ using Oddity;
 using Oddity.API.Models.Launch;
 using Oddity.API.Models.Roadster;
 
-namespace Mute.Moe.Discord.Services
+namespace Mute.Moe.Services.Information.SpaceX
 {
-    public class SpacexService
+    public class OdditySpaceX
+        : ISpacexInfo
     {
         public async Task<LaunchInfo> NextLaunch()
         {

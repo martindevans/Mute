@@ -6,6 +6,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
 
 namespace Mute.Moe.Discord.Modules
 {

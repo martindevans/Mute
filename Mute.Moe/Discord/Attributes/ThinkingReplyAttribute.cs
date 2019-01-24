@@ -9,7 +9,7 @@ namespace Mute.Moe.Discord.Attributes
     {
         private readonly IEmote _emote;
 
-        public ThinkingReplyAttribute(string emote = "🤔")
+        public ThinkingReplyAttribute(string emote = EmojiLookup.Thinking)
         {
             _emote = new Emoji(emote);
         }

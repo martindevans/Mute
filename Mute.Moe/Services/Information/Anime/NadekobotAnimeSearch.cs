@@ -5,10 +5,10 @@ using FluidCaching;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
-namespace Mute.Moe.Services.Search
+namespace Mute.Moe.Services.Information.Anime
 {
     public class NadekobotAnimeSearch
-        : IAnimeSearch
+        : IAnimeInfo
     {
         private readonly IHttpClient _http;
 

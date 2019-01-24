@@ -1,45 +1,43 @@
-﻿using Discord;
-
-namespace Mute.Moe.Discord
+﻿namespace Mute.Moe.Discord
 {
-    class EmojiLookup
+    public static class EmojiLookup
     {
-        public static readonly Emoji Unamused = new Emoji("😒");
-        public static readonly Emoji Smirk = new Emoji("😏");
-        public static readonly Emoji Expressionless = new Emoji("😐");
-        public static readonly Emoji RollingEyes = new Emoji("🙄");
-        public static readonly Emoji Worried = new Emoji("😟");
-        public static readonly Emoji Thinking = new Emoji("🤔");
-        public static readonly Emoji ThumbsUp = new Emoji("👍");
-        public static readonly Emoji ThumbsDown = new Emoji("👎");
-        public static readonly Emoji Heart = new Emoji("❤");
-        public static readonly Emoji BrokenHeart = new Emoji("💔");
-        public static readonly Emoji Confused = new Emoji("😕");
-        public static readonly Emoji Grin = new Emoji("😀");
-        public static readonly Emoji Smile = new Emoji("😄");
-        public static readonly Emoji SlightSmile = new Emoji("🙂");
-        public static readonly Emoji Pensive = new Emoji("😔");
-        public static readonly Emoji SlightlyFrowning = new Emoji("🙁");
-        public static readonly Emoji Crying = new Emoji("😢");
+        public const string Unamused = "😒";
+        public const string Smirk = "😏";
+        public const string Expressionless = "😐";
+        public const string RollingEyes = "🙄";
+        public const string Worried = "😟";
+        public const string Thinking = "🤔";
+        public const string ThumbsUp = "👍";
+        public const string ThumbsDown = "👎";
+        public const string Heart = "❤";
+        public const string BrokenHeart = "💔";
+        public const string Confused = "😕";
+        public const string Grin = "😀";
+        public const string Smile = "😄";
+        public const string SlightSmile = "🙂";
+        public const string Pensive = "😔";
+        public const string SlightlyFrowning = "🙁";
+        public const string Crying = "😢";
             
 
-        public static readonly Emoji Shuffle = new Emoji("🔀");
-        public static readonly Emoji Play = new Emoji("▶");
-        public static readonly Emoji Pause = new Emoji("⏸");
-        public static readonly Emoji Stop = new Emoji("⏹");
-        public static readonly Emoji Eject = new Emoji("⏏");
-        public static readonly Emoji FastForward = new Emoji("⏩");
-        public static readonly Emoji SkipForward = new Emoji("⏭");
-        public static readonly Emoji PlayPause = new Emoji("⏯");
-        public static readonly Emoji FastBackward = new Emoji("⏪");
-        public static readonly Emoji SkipBackward = new Emoji("⏮");
+        public const string Shuffle = "🔀";
+        public const string Play = "▶";
+        public const string Pause = "⏸";
+        public const string Stop = "⏹";
+        public const string Eject = "⏏";
+        public const string FastForward = "⏩";
+        public const string SkipForward = "⏭";
+        public const string PlayPause = "⏯";
+        public const string FastBackward = "⏪";
+        public const string SkipBackward = "⏮";
 
-        public static readonly Emoji Loading = new Emoji("🔄");
+        public const string Loading = "🔄";
 
-        public static readonly Emoji OpenBook = new Emoji("📖");
-        public static readonly Emoji ClosedBook = new Emoji("📕");
-        public static readonly Emoji GreenBook = new Emoji("📗");
-        public static readonly Emoji BlueBook = new Emoji("📘");
-        public static readonly Emoji OrangeBook = new Emoji("📙");
+        public const string OpenBook = "📖";
+        public const string ClosedBook = "📕";
+        public const string GreenBook = "📗";
+        public const string BlueBook = "📘";
+        public const string OrangeBook = "📙";
     }
 }

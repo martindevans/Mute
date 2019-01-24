@@ -6,9 +6,9 @@ using Discord;
 using Discord.Commands;
 using Humanizer;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
+using Mute.Moe.Services.Information.SpaceX;
 using Oddity.API.Models.Launch;
 
 namespace Mute.Moe.Discord.Modules
@@ -17,9 +17,9 @@ namespace Mute.Moe.Discord.Modules
     public class SpaceX
         : BaseModule, IKeyProvider
     {
-        private readonly SpacexService _spacex;
+        private readonly ISpacexInfo _spacex;
 
-        public SpaceX(SpacexService spacex)
+        public SpaceX(ISpacexInfo spacex)
         {
             _spacex = spacex;
         }

@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
-namespace Mute.Moe.Services.Search
+namespace Mute.Moe.Services.Information.Anime
 {
-    public interface IAnimeSearch
+    public interface IAnimeInfo
     {
         [ItemCanBeNull] Task<IAnime> GetAnimeInfoAsync(string search);
     }

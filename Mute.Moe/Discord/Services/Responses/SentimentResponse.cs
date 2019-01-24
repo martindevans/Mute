@@ -18,21 +18,21 @@ namespace Mute.Moe.Discord.Services.Responses
         public double BaseChance => _config.ReactionChance;
         public double MentionedChance => _config.MentionReactionChance;
 
-        public static readonly IReadOnlyList<Emoji> Sad = new[] {
+        public static readonly IReadOnlyList<string> Sad = new[] {
             EmojiLookup.BrokenHeart,
             EmojiLookup.ThumbsDown,
             EmojiLookup.Worried,
             EmojiLookup.SlightlyFrowning,
             EmojiLookup.Crying
         };
-        public static readonly IReadOnlyList<Emoji> Happy = new[] {
+        public static readonly IReadOnlyList<string> Happy = new[] {
             EmojiLookup.Heart,
             EmojiLookup.ThumbsUp,
             EmojiLookup.Grin,
             EmojiLookup.Smile,
             EmojiLookup.SlightSmile
         };
-        public static readonly IReadOnlyList<Emoji> Neutral = new[] {
+        public static readonly IReadOnlyList<string> Neutral = new[] {
             EmojiLookup.Expressionless,
             EmojiLookup.Pensive,
             EmojiLookup.Confused
@@ -54,9 +54,9 @@ namespace Mute.Moe.Discord.Services.Responses
                 return null;
 
             if (s.Classification == Sentiment.Positive)
-                return new SentimentConversation(Happy.Random(_random));
+                return new SentimentConversation(new Emoji(Happy.Random(_random)));
             else
-                return new SentimentConversation(Sad.Random(_random));
+                return new SentimentConversation(new Emoji(Sad.Random(_random)));
         }
 
         private class SentimentConversation

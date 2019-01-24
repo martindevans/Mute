@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 
 namespace Mute.Moe
@@ -7,6 +8,7 @@ namespace Mute.Moe
     {
         [UsedImplicitly] public AuthConfig Auth;
         [UsedImplicitly] public AlphaAdvantageConfig AlphaAdvantage;
+        [UsedImplicitly] public CoinMarketCapConfig CoinMarketCap;
         [UsedImplicitly] public DatabaseConfig Database;
         [UsedImplicitly] public YoutubeDlConfig YoutubeDl;
         [UsedImplicitly] public SentimentConfig Sentiment;
@@ -31,6 +33,15 @@ namespace Mute.Moe
     public class AlphaAdvantageConfig
     {
         [UsedImplicitly] public string Key;
+    }
+
+    public class CoinMarketCapConfig
+    {
+        [UsedImplicitly] public string Key;
+
+        [UsedImplicitly] public int CacheSize = 4096;
+        [UsedImplicitly] public int CacheMinAgeSeconds = (int)TimeSpan.FromMinutes(5).TotalSeconds;
+        [UsedImplicitly] public int CacheMaxAgeSeconds = (int)TimeSpan.FromHours(6).TotalSeconds;
     }
 
     public class DatabaseConfig

@@ -3,13 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using Humanizer;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
-using Mute.Moe.Extensions;
-using Mute.Moe.Services;
 using Mute.Moe.Services.Sentiment;
 
 namespace Mute.Moe.Discord.Modules
@@ -17,13 +14,11 @@ namespace Mute.Moe.Discord.Modules
     public class Sentiment
         : BaseModule
     {
-        private readonly DiscordSocketClient _client;
         private readonly ISentimentService _sentiment;
         private readonly SentimentReactionConfig _config;
 
-        public Sentiment([NotNull] Configuration config, DiscordSocketClient client, ISentimentService sentiment)
+        public Sentiment([NotNull] Configuration config, ISentimentService sentiment)
         {
-            _client = client;
             _sentiment = sentiment;
             _config = config.SentimentReactions;
         }
@@ -48,18 +43,18 @@ namespace Mute.Moe.Discord.Modules
         {
             var result = score ?? await _sentiment.Predict(message.Content);
             if (result.ClassificationScore < _config.CertaintyThreshold)
-                await message.AddReactionAsync(EmojiLookup.Confused);
+                await message.AddReactionAsync(new Emoji(EmojiLookup.Confused));
 
             switch (result.Classification)
             {
                 case Moe.Services.Sentiment.Sentiment.Positive:
-                    await message.AddReactionAsync(EmojiLookup.ThumbsUp);
+                    await message.AddReactionAsync(new Emoji(EmojiLookup.ThumbsUp));
                     break;
                 case Moe.Services.Sentiment.Sentiment.Neutral:
-                    await message.AddReactionAsync(EmojiLookup.Expressionless);
+                    await message.AddReactionAsync(new Emoji(EmojiLookup.Expressionless));
                     break;
                 case Moe.Services.Sentiment.Sentiment.Negative:
-                    await message.AddReactionAsync(EmojiLookup.ThumbsDown);
+                    await message.AddReactionAsync(new Emoji(EmojiLookup.ThumbsDown));
                     break;
             }
         }

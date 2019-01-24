@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Mute.Moe.Services.Images
+namespace Mute.Moe.Services.Images.Cats
 {
     public class CataasPictures
         : ICatPictureService

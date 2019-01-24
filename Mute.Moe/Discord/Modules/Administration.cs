@@ -6,7 +6,6 @@ using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Discord.Modules

@@ -5,9 +5,10 @@ using Steam.Models.SteamPlayer;
 using Steam.Models.SteamStore;
 using SteamWebAPI2.Interfaces;
 
-namespace Mute.Moe.Discord.Services
+namespace Mute.Moe.Services.Information.Steam
 {
     public class SteamApi
+        : ISteamInfo
     {
         private readonly SteamUser _user;
         private readonly SteamStore _store;

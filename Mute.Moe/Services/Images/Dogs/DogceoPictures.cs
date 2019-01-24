@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 
-namespace Mute.Moe.Services.Images
+namespace Mute.Moe.Services.Images.Dogs
 {
     public class DogceoPictures
         : IDogPictureService
