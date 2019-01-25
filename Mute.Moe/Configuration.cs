@@ -33,6 +33,10 @@ namespace Mute.Moe
     public class AlphaAdvantageConfig
     {
         [UsedImplicitly] public string Key;
+
+        [UsedImplicitly] public int CacheSize = 128;
+        [UsedImplicitly] public int CacheMinAgeSeconds = (int)TimeSpan.FromMinutes(5).TotalSeconds;
+        [UsedImplicitly] public int CacheMaxAgeSeconds = (int)TimeSpan.FromHours(6).TotalSeconds;
     }
 
     public class CoinMarketCapConfig

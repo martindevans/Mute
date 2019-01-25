@@ -102,26 +102,28 @@ namespace Mute.Moe.Discord.Services
 
             //No luck, download the details from the API
             var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/map?CMC_PRO_API_KEY={_key}";
-            var result = await _http.GetAsync(url);
-            if (!result.IsSuccessStatusCode)
-                return null;
+            using (var result = await _http.GetAsync(url))
+            {
+                if (!result.IsSuccessStatusCode)
+                    return null;
 
-            //Deserialize response
-            CmcMapResponse model;
-            var serializer = new JsonSerializer();
-            using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
-            using (var jsonTextReader = new JsonTextReader(sr))
-                model = serializer.Deserialize<CmcMapResponse>(jsonTextReader);
+                //Deserialize response
+                CmcMapResponse model;
+                var serializer = new JsonSerializer();
+                using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
+                using (var jsonTextReader = new JsonTextReader(sr))
+                    model = serializer.Deserialize<CmcMapResponse>(jsonTextReader);
 
-            //Store the entire map
-            foreach (var cmcMap in model.Data)
-                _nameToSymbolMap[cmcMap.Name.ToLowerInvariant()] = cmcMap.Symbol;
+                //Store the entire map
+                foreach (var cmcMap in model.Data)
+                    _nameToSymbolMap[cmcMap.Name.ToLowerInvariant()] = cmcMap.Symbol;
 
-            //Get it from the cache again
-            if (_nameToSymbolMap.TryGetValue(name, out symbol))
-                return await FindBySymbol(symbol);
-            else
-                return null;
+                //Get it from the cache again
+                if (_nameToSymbolMap.TryGetValue(name, out symbol))
+                    return await FindBySymbol(symbol);
+                else
+                    return null;
+            }
         }
 
         public async Task<ICurrency> FindBySymbolOrName(string symbolOrName)

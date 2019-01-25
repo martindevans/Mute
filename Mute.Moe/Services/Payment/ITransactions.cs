@@ -12,8 +12,9 @@ namespace Mute.Moe.Services.Payment
         /// <summary>
         /// Convert a set of transactions into balances
         /// </summary>
+        /// <param name="primaryUser"></param>
         /// <param name="transactions"></param>
-        [NotNull, ItemNotNull] private static async Task<IEnumerable<IBalance>> TransactionsToBalances(ulong primaryUser, IAsyncEnumerable<ITransaction> transactions)
+        [NotNull, ItemNotNull] private static async Task<IEnumerable<IBalance>> TransactionsToBalances(ulong primaryUser, [NotNull] IAsyncEnumerable<ITransaction> transactions)
         {
             // Accumulate a lookup table of user -> unit -> amount
             //user in this case is always the secondary user (the other is implicitly the primary user)
@@ -71,7 +72,7 @@ namespace Mute.Moe.Services.Payment
         /// <param name="userA"></param>
         /// <param name="userB"></param>
         /// <returns>All non-zero balances in order of amount</returns>
-        public static async Task<IEnumerable<IBalance>> GetBalances(this ITransactions database, ulong userA, ulong? userB, string unit = null)
+        [ItemNotNull] public static async Task<IEnumerable<IBalance>> GetBalances([NotNull] this ITransactions database, ulong userA, ulong? userB, string unit = null)
         {
             //e.g.
             //A -> B £2
@@ -96,55 +97,12 @@ namespace Mute.Moe.Services.Payment
         /// <param name="a">One of the users in the transaction</param>
         /// <param name="b"></param>
         /// <returns>All transactions involving A (filtered to also involving B if specified), ordered by instant</returns>
-        public static async Task<IEnumerable<ITransaction>> GetAllTransactions(this ITransactions database, ulong a, ulong? b)
+        [ItemNotNull] public static async Task<IEnumerable<ITransaction>> GetAllTransactions([NotNull] this ITransactions database, ulong a, ulong? b)
         {
             var ab = await database.GetTransactions(fromId: a, toId: b);
             var ba = await database.GetTransactions(fromId: b, toId: a);
 
             return await ab.Concat(ba).OrderBy(t => t.Instant).ToArray();
-        }
-    }
-
-    /// <summary>
-    /// An account balance between 2 users. A positive value indicates that B owes A.
-    /// </summary>
-    public interface IBalance
-    {
-        /// <summary>
-        /// Unit this balance is in
-        /// </summary>
-        [NotNull] string Unit { get; }
-
-        /// <summary>
-        /// User on the receiving end of this balance
-        /// </summary>
-        ulong UserA { get; }
-
-        /// <summary>
-        /// User on the giving end of this balance
-        /// </summary>
-        ulong UserB { get; }
-
-        /// <summary>
-        /// Amount of the balance
-        /// </summary>
-        decimal Amount { get; }
-    }
-
-    public class Balance
-        : IBalance
-    {
-        public string Unit { get; }
-        public ulong UserA { get; }
-        public ulong UserB { get; }
-        public decimal Amount { get; }
-
-        public Balance(string unit, ulong a, ulong b, decimal amount)
-        {
-            Unit = unit;
-            UserA = a;
-            UserB = b;
-            Amount = amount;
         }
     }
 
@@ -167,41 +125,5 @@ namespace Mute.Moe.Services.Payment
         /// </summary>
         /// <returns></returns>
         [NotNull, ItemNotNull] Task<IAsyncEnumerable<ITransaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, string unit = null, DateTime? after = null, DateTime? before = null);
-    }
-
-    /// <summary>
-    /// Represents A transaction of some amount of a thing from one person to another
-    /// </summary>
-    public interface ITransaction
-    {
-        ulong FromId { get; }
-        ulong ToId { get; }
-        decimal Amount { get; }
-        DateTime Instant { get; }
-
-        [NotNull] string Unit { get; }
-        [CanBeNull] string Note { get; }
-    }
-
-    internal class Transaction
-        : ITransaction
-    {
-        public ulong FromId { get; }
-        public ulong ToId { get; }
-        public decimal Amount { get; }
-        public DateTime Instant { get; }
-
-        public string Unit { get; }
-        public string Note { get; }
-
-        public Transaction(ulong fromId, ulong toId, decimal amount, [NotNull] string unit, [CanBeNull] string note, DateTime instant)
-        {
-            FromId = fromId;
-            ToId = toId;
-            Amount = amount;
-            Unit = unit;
-            Note = note;
-            Instant = instant;
-        }
     }
 }

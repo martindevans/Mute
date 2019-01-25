@@ -10,7 +10,6 @@ using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Audio.Mixing;
 using Mute.Moe.Discord.Services.Audio.Playback;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
 using NAudio.Wave;
 

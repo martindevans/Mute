@@ -1,5 +1,4 @@
-﻿using System;
-using Mute.Moe.Discord.Context;
+﻿using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Attributes
 {

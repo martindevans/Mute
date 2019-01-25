@@ -9,7 +9,7 @@ using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Payment
 {
-    public class DatabaseTransactionService
+    public class DatabaseTransactions
         : ITransactions
     {
         #region SQL transactions
@@ -20,20 +20,18 @@ namespace Mute.Moe.Services.Payment
 
         private readonly IDatabaseService _database;
 
-        public DatabaseTransactionService(IDatabaseService database)
+        public DatabaseTransactions(IDatabaseService database)
         {
             _database = database;
 
             //Create debts table and indices
-            _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_Transactions` (`ID` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, `FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT);");
-            _database.Exec("CREATE INDEX IF NOT EXISTS `TransactionsIndexFrom` ON `IOU2_Transactions` ( `FromId` ASC, `Unit` ASC, `ToId` ASC, `Amount` ASC )");
-            _database.Exec("CREATE INDEX IF NOT EXISTS `TransactionsIndexTo` ON `IOU2_Transactions` ( `ToId` ASC, `Unit` ASC, `FromId` ASC, `Amount` ASC )");
+            _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_Transactions` (`FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT);");
         }
 
         public async Task CreateTransaction(ulong fromId, ulong toId, decimal amount, string unit, string note, DateTime instant)
         {
             if (amount < 0)
-                throw new ArgumentOutOfRangeException("Cannot transact a negative amount");
+                throw new ArgumentOutOfRangeException(nameof(amount), "Cannot transact a negative amount");
             if (unit == null)
                 throw new ArgumentNullException(nameof(unit));
             if (fromId == toId)

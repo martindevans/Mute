@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using System.Linq;
 using Discord.WebSocket;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Auth

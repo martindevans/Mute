@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Discord.Services.Audio

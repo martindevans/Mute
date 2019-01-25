@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Logging;
 using Mute.Moe.Auth;
 using Mute.Moe.Discord;
@@ -21,14 +20,17 @@ using Mute.Moe.Discord.Services.Games;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
-using Mute.Moe.Services.Images;
 using Mute.Moe.Services.Images.Cats;
 using Mute.Moe.Services.Images.Dogs;
 using Mute.Moe.Services.Information.Anime;
 using Mute.Moe.Services.Information.Cryptocurrency;
+using Mute.Moe.Services.Information.Forex;
 using Mute.Moe.Services.Information.SpaceX;
 using Mute.Moe.Services.Information.Steam;
+using Mute.Moe.Services.Information.Stocks;
+using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.Payment;
+using Mute.Moe.Services.Randomness;
 using Mute.Moe.Services.Sentiment;
 using Newtonsoft.Json;
 
@@ -45,10 +47,11 @@ namespace Mute.Moe
 
         private static void ConfigureBaseServices(IServiceCollection services)
         {
-            services.AddTransient<Random>();
-
             services.AddSingleton(services);
             services.AddSingleton<InteractiveService>();
+
+            services.AddTransient<Random>();
+            services.AddTransient<IDiceRoller, CryptoDiceRoller>();
 
             services.AddSingleton<IHttpClient, SimpleHttpClient>();
             services.AddSingleton<IDatabaseService, SqliteDatabase>();
@@ -56,14 +59,17 @@ namespace Mute.Moe
             services.AddSingleton<ICatPictureService, CataasPictures>();
             services.AddSingleton<IDogPictureService, DogceoPictures>();
             services.AddSingleton<IAnimeInfo, NadekobotAnimeSearch>();
-            services.AddSingleton<ITransactions, DatabaseTransactionService>();
+            services.AddSingleton<ITransactions, DatabaseTransactions>();
+            services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
             services.AddSingleton<ISpacexInfo, OdditySpaceX>();
             services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
             services.AddSingleton<ISteamInfo, SteamApi>();
+            services.AddSingleton<IUptime, UtcDifferenceUptime>();
+            services.AddSingleton<IStockInfo, AlphaVantageStocks>();
+            services.AddSingleton<IForexInfo, AlphaVantageForex>();
 
             //Eventually these should all become interface -> concrete type bindings
             services
-                .AddSingleton<AlphaAdvantageService>()
                 .AddSingleton<IouDatabaseService>()
                 .AddSingleton<MusicPlayerService>()
                 .AddSingleton<YoutubeService>()
@@ -75,11 +81,9 @@ namespace Mute.Moe
                 .AddSingleton<ReactionSentimentTrainer>()
                 .AddSingleton<ConversationalResponseService>()
                 .AddSingleton<WikipediaService>()
-                .AddSingleton<TimeService>()
                 .AddSingleton<SoundEffectService>()
                 .AddSingleton<WordsService>()
                 .AddSingleton<WordVectorsService>()
-                .AddSingleton<UptimeService>()
                 .AddSingleton<WordTrainingService>()
                 .AddSingleton<RoleService>()
                 .AddSingleton<MultichannelAudioService>();

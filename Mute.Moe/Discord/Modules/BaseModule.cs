@@ -175,6 +175,25 @@ namespace Mute.Moe.Discord.Modules
         }
         #endregion
 
+        #region user names
+        public string Name(ulong id, bool mention = false)
+        {
+            var user = Context.Client.GetUser(id);
+            if (user == null)
+                return $"UNKNOWN_USER:{id}";
+
+            return Name(user, mention);
+        }
+
+        public static string Name([NotNull] IUser user, bool mention = false)
+        {
+            if (mention)
+                return user.Mention;
+
+            return (user as IGuildUser)?.Nickname ?? user.Username;
+        }
+        #endregion
+
         protected override void BeforeExecute([NotNull] CommandInfo command)
         {
             var method = command.Attributes.OfType<BaseExecuteContextAttribute>();

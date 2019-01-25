@@ -1,18 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
+using Mute.Moe.Services.Randomness;
 
 namespace Mute.Moe.Discord.Modules
 {
     public class Dice
         : BaseModule, IKeyProvider
     {
-        private readonly RNGCryptoServiceProvider _random = new RNGCryptoServiceProvider();
+        private readonly IDiceRoller _dice;
 
         private static readonly IReadOnlyList<string> Ball8Replies = new[] {
             "It is certain.",
@@ -37,59 +37,28 @@ namespace Mute.Moe.Discord.Modules
             "Very doubtful."
         };
 
-        private byte Random(byte numberSides)
+        public Dice(IDiceRoller dice)
         {
-            bool IsFairRoll(byte roll)
-            {
-                // There are MaxValue / numSides full sets of numbers that can come up
-                // in a single byte.  For instance, if we have a 6 sided die, there are
-                // 42 full sets of 1-6 that come up.  The 43rd set is incomplete.
-                var fullSetsOfValues = byte.MaxValue / numberSides;
-
-                // If the roll is within this range of fair values, then we let it continue.
-                // In the 6 sided die case, a roll between 0 and 251 is allowed.  (We use
-                // < rather than <= since the = portion allows through an extra 0 value).
-                // 252 through 255 would provide an extra 0, 1, 2, 3 so they are not fair
-                // to use.
-                return roll < numberSides * fullSetsOfValues;
-            }
-
-            if (numberSides == 0)
-                return 0;
-
-            // Create a byte array to hold the random value.
-            var randomNumber = new byte[1];
-
-            lock (_random)
-            {
-                //Keep re-reolling until the roll is fair.
-                do
-                {
-                    _random.GetBytes(randomNumber);
-                } while (!IsFairRoll(randomNumber[0]));
-
-                // Return the random number mod the number
-                // of sides.  The possible values are zero-
-                // based, so we add one.
-                return (byte)((randomNumber[0] % numberSides) + 1);
-            }
+            _dice = dice;
         }
 
         [Command("roll"), Alias("dice"), Summary("I will roll a dice")]
         public async Task RollCmd(string command)
         {
-            if (byte.TryParse(command, out var byt))
+            //Try to parse the command as a number, if that succeeds roll a D(Number)
+            if (ulong.TryParse(command, out var sides))
             {
-                await TypingReplyAsync(Roll(1, byt));
+                await TypingReplyAsync(Roll(1, sides));
                 return;
             }
 
+            //Try to parse the command as `dX dY dZ` and so on. A list of dice to roll
             if (command.Contains("d"))
             {
                 var parts = command.Split('d');
                 if (parts.Length == 2)
                 {
-                    if (byte.TryParse(parts[0], out var count) && byte.TryParse(parts[1], out var max))
+                    if (byte.TryParse(parts[0], out var count) && ulong.TryParse(parts[1], out var max))
                     {
                         await TypingReplyAsync(Roll(count, max));
                         return;
@@ -120,9 +89,7 @@ namespace Mute.Moe.Discord.Modules
 
         [NotNull] private string Flip()
         {
-            var r = Random(2);
-
-            if (r == 1)
+            if (_dice.Flip())
                 return "Heads";
             else
                 return "Tails";
@@ -137,9 +104,9 @@ namespace Mute.Moe.Discord.Modules
             return Roll(pdice, psides);
         }
 
-        [NotNull] private string Roll(byte dice, byte sides)
+        [NotNull] private string Roll(byte dice, ulong sides)
         {
-            var results = Enumerable.Range(0, dice).Select(_ => Random(sides)).ToArray();
+            var results = Enumerable.Range(0, dice).Select(_ => _dice.Roll(sides)).ToArray();
             var total = results.Select(a => (int)a).Sum();
 
             return $"{string.Join('+', results)} = {total}";
@@ -147,7 +114,7 @@ namespace Mute.Moe.Discord.Modules
 
         [NotNull] private string Magic8Ball()
         {
-            var index = Random(20) - 1;
+            var index = (int)(_dice.Roll(20) - 1);
             return Ball8Replies[index];
         }
 

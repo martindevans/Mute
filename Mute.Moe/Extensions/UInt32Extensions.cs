@@ -1,8 +1,9 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using JetBrains.Annotations;
 
 namespace Mute.Moe.Extensions
 {
-    public static class UInt32Extensions
+    public struct FriendlyId32
     {
         private static readonly string[] Prefixes = {
             "doz", "mar", "bin", "wan", "sam", "lit", "sig", "hid",
@@ -38,7 +39,6 @@ namespace Mute.Moe.Extensions
             "lap", "tal", "pit", "nam", "bon", "ros", "ton", "fod",
             "pon", "sov", "noc", "sor", "lav", "mat", "mip", "fip"
         };
-
         private static readonly string[] Suffixes = {
             "zod", "nec", "bud", "wes", "sev", "per", "sut", "let",
             "ful", "pen", "syt", "dur", "wep", "ser", "wyl", "sun",
@@ -74,24 +74,93 @@ namespace Mute.Moe.Extensions
             "mur", "tel", "rep", "teg", "pec", "nel", "nev", "fes"
         };
 
+        private const uint Offset = unchecked((uint)(1185671 * 1299827));
+
+        private readonly uint _value;
+        public uint Value => _value;
+
+        public FriendlyId32(uint value)
+        {
+            _value = value;
+        }
+
+        public static FriendlyId32? Parse([NotNull] string str)
+        {
+            var parts = str.Split('-');
+            if (parts.Length != 2)
+                return null;
+
+            var ab = parts[0];
+            if (ab.Length != 6)
+                return null;
+            var cd = parts[1];
+            if (cd.Length != 6)
+                return null;
+
+            var a = ab.Substring(0, 3);
+            var b = ab.Substring(3, 3);
+            var c = cd.Substring(0, 3);
+            var d = cd.Substring(3, 3);
+
+            var an = Array.IndexOf(Prefixes, a);
+            if (an < 0)
+                return null;
+
+            var bn = Array.IndexOf(Suffixes, b);
+            if (bn < 0)
+                return null;
+
+            var cn = Array.IndexOf(Prefixes, c);
+            if (cn < 0)
+                return null;
+
+            var dn = Array.IndexOf(Suffixes, d);
+            if (dn < 0)
+                return null;
+
+            uint number = 0;
+            unsafe
+            {
+                // ReSharper disable once ObjectCreationAsStatement (assigning into the underlying pointer)
+                new Span<byte>(&number, sizeof(uint)) {
+                    [0] = (byte)an,
+                    [1] = (byte)bn,
+                    [2] = (byte)cn,
+                    [3] = (byte)dn,
+                };
+            }
+
+            number -= Offset;
+
+            return new FriendlyId32(number);
+        }
+
+        [NotNull] public override string ToString()
+        {
+            var number = _value;
+            unchecked {
+                number += Offset;
+            }
+
+            unsafe
+            {
+                var bytes = new Span<byte>(&number, sizeof(uint));
+
+                var a = Prefixes[bytes[0]];
+                var b = Suffixes[bytes[1]];
+                var c = Prefixes[bytes[2]];
+                var d = Suffixes[bytes[3]];
+
+                return $"{a}{b}-{c}{d}";
+            }
+        }
+    }
+
+    public static class UInt32Extensions
+    {
         [NotNull] public static string MeaninglessString(this uint number)
         {
-            unchecked {
-                number += 1185671;
-                number *= 1299827;
-            }
-
-            var syllables = new string[4];
-
-            for (var i = 0; i < 4; i++)
-            {
-                var byt = number % 256;
-                number /= 256;
-
-                syllables[i] = i % 2 == 1 ? Prefixes[byt] : Suffixes[byt];
-            }
-
-            return $"{syllables[3]}{syllables[2]}-{syllables[1]}{syllables[0]}";
+            return new FriendlyId32(number).ToString();
         }
     }
 }

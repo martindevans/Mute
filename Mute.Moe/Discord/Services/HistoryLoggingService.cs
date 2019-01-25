@@ -10,7 +10,6 @@ using Discord;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Discord.Services

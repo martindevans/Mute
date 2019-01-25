@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Mute.Moe.Services;
 using Mute.Moe.Services.Sentiment;
 
 namespace Mute.Moe.Discord.Context

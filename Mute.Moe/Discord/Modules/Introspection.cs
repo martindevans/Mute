@@ -4,7 +4,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
-using Mute.Moe.Discord.Services;
+using Mute.Moe.Services.Introspection.Uptime;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -12,9 +12,9 @@ namespace Mute.Moe.Discord.Modules
         : BaseModule
     {
         private readonly DiscordSocketClient _client;
-        private readonly UptimeService _uptime;
+        private readonly IUptime _uptime;
 
-        public Introspection(DiscordSocketClient client, UptimeService uptime)
+        public Introspection(DiscordSocketClient client, IUptime uptime)
         {
             _client = client;
             _uptime = uptime;

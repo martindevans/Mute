@@ -14,7 +14,7 @@ namespace Mute.Tests.Services.Payments
         [TestMethod]
         public async Task CreateTransactionDoesNotThrow()
         {
-            var svc = new DatabaseTransactionService(new SqliteInMemoryDatabase());
+            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
             var now = DateTime.UtcNow;
             await svc.CreateTransaction(0, 1, 10, "TEST", "Note 1", now);
@@ -28,13 +28,12 @@ namespace Mute.Tests.Services.Payments
             await svc.CreateTransaction(1, 0, 5, "TEST", "Note 2", now + TimeSpan.FromMinutes(2));
 
             await svc.CreateTransaction(1, 2, 5, "TEST3", "Note 4", now + TimeSpan.FromMinutes(3));
-            
         }
 
         [TestMethod]
         public async Task GetTransactionByFromId()
         {
-            var svc = new DatabaseTransactionService(new SqliteInMemoryDatabase());
+            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
@@ -49,7 +48,7 @@ namespace Mute.Tests.Services.Payments
         [TestMethod]
         public async Task GetTransactionByToId()
         {
-            var svc = new DatabaseTransactionService(new SqliteInMemoryDatabase());
+            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
@@ -63,7 +62,7 @@ namespace Mute.Tests.Services.Payments
         [TestMethod]
         public async Task GetTransactionByUnit()
         {
-            var svc = new DatabaseTransactionService(new SqliteInMemoryDatabase());
+            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
@@ -78,7 +77,7 @@ namespace Mute.Tests.Services.Payments
         [TestMethod]
         public async Task GetTransactionByBefore()
         {
-            var svc = new DatabaseTransactionService(new SqliteInMemoryDatabase());
+            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
@@ -93,7 +92,7 @@ namespace Mute.Tests.Services.Payments
         [TestMethod]
         public async Task GetTransactionByAfter()
         {
-            var svc = new DatabaseTransactionService(new SqliteInMemoryDatabase());
+            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
@@ -108,7 +107,7 @@ namespace Mute.Tests.Services.Payments
         [TestMethod]
         public async Task GetBalances01()
         {
-            var svc = new DatabaseTransactionService(new SqliteInMemoryDatabase());
+            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
@@ -121,7 +120,7 @@ namespace Mute.Tests.Services.Payments
         [TestMethod]
         public async Task GetBalances10()
         {
-            var svc = new DatabaseTransactionService(new SqliteInMemoryDatabase());
+            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
@@ -134,7 +133,7 @@ namespace Mute.Tests.Services.Payments
         [TestMethod]
         public async Task GetBalances19()
         {
-            var svc = new DatabaseTransactionService(new SqliteInMemoryDatabase());
+            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);

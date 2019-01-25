@@ -25,29 +25,31 @@ namespace Mute.Moe.Services.Information.Anime
 
         public async Task<IAnime> GetAnimeInfoAsync(string search)
         {
-            var result = await _http.GetAsync("https://aniapi.nadekobot.me/anime/" + Uri.EscapeUriString(search));
-            if (!result.IsSuccessStatusCode)
-                return null;
+            using (var result = await _http.GetAsync("https://aniapi.nadekobot.me/anime/" + Uri.EscapeUriString(search)))
+            {
+                if (!result.IsSuccessStatusCode)
+                    return null;
 
-            JsonAnime anime;
-            var serializer = new JsonSerializer();
-            using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
-            using (var jsonTextReader = new JsonTextReader(sr))
-                anime = serializer.Deserialize<JsonAnime>(jsonTextReader);
+                JsonAnime anime;
+                var serializer = new JsonSerializer();
+                using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
+                using (var jsonTextReader = new JsonTextReader(sr))
+                    anime = serializer.Deserialize<JsonAnime>(jsonTextReader);
 
-            //Before modifying the downloaded data, see if we have it in cache
-            var fromCache = await _animeById.GetItem(anime.Id);
-            if (fromCache != null)
-                return fromCache;
+                //Before modifying the downloaded data, see if we have it in cache
+                var fromCache = await _animeById.GetItem(anime.Id);
+                if (fromCache != null)
+                    return fromCache;
 
-            //Do cleanup work on downloaded model and store in cache
-            anime.ImgUrlLarge = await ValidUrl(anime.ImgUrlLarge);
-            anime.ImgUrlMedium = await ValidUrl(anime.ImgUrlMedium);
-            anime.ImgUrlSmall = await ValidUrl(anime.ImgUrlSmall);
-            anime.Description = anime.Description.Replace("<br>", "");
-            _cache.Add(anime);
+                //Do cleanup work on downloaded model and store in cache
+                anime.ImgUrlLarge = await ValidUrl(anime.ImgUrlLarge);
+                anime.ImgUrlMedium = await ValidUrl(anime.ImgUrlMedium);
+                anime.ImgUrlSmall = await ValidUrl(anime.ImgUrlSmall);
+                anime.Description = anime.Description.Replace("<br>", "");
+                _cache.Add(anime);
 
-            return anime;
+                return anime;
+            }
         }
 
         [ItemCanBeNull] private async Task<string> ValidUrl(string url)

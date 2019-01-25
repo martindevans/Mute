@@ -5,9 +5,7 @@ using System.Data.SQLite;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
 using JetBrains.Annotations;
-using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Discord.Services

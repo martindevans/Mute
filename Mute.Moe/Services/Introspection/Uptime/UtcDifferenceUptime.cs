@@ -1,8 +1,9 @@
 ﻿using System;
 
-namespace Mute.Moe.Discord.Services
+namespace Mute.Moe.Services.Introspection.Uptime
 {
-    public class UptimeService
+    public class UtcDifferenceUptime
+        : IUptime
     {
         public DateTime StartTimeUtc { get; } = DateTime.UtcNow;
 

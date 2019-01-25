@@ -3,9 +3,10 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.Cryptocurrency;
+using Mute.Moe.Services.Information.Forex;
+using Mute.Moe.Services.Information.Stocks;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -13,12 +14,14 @@ namespace Mute.Moe.Discord.Modules
         : BaseModule
     {
         private readonly ICryptocurrencyInfo _crypto;
-        private readonly AlphaAdvantageService _stockService;
+        private readonly IStockInfo _stocks;
+        private readonly IForexInfo _forex;
 
-        public Finance(ICryptocurrencyInfo crypto, AlphaAdvantageService stockService)
+        public Finance(ICryptocurrencyInfo crypto, IStockInfo stocks, IForexInfo forex)
         {
             _crypto = crypto;
-            _stockService = stockService;
+            _stocks = stocks;
+            _forex = forex;
         }
 
         [Command("ticker"), Summary("I will find out information about a stock or currency")]
@@ -45,7 +48,7 @@ namespace Mute.Moe.Discord.Modules
 
         private async Task<bool> TickerAsStock(string symbolOrName)
         {
-            var result = await _stockService.StockQuote(symbolOrName);
+            var result = await _stocks.GetQuote(symbolOrName);
 
             if (result != null)
             {
@@ -66,7 +69,7 @@ namespace Mute.Moe.Discord.Modules
 
         private async Task<bool> TickerAsForex(string symbolOrName, string quote)
         {
-            var result = await _stockService.CurrencyExchangeRate(symbolOrName, quote);
+            var result = await _forex.GetExchangeRate(symbolOrName, quote);
 
             if (result != null)
             {
