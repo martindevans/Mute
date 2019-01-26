@@ -104,7 +104,7 @@ namespace Mute.Moe.Discord.Modules
             return $"{FormatCommandName(cmd)} - {cmd.Summary}";
         }
 
-        [NotNull] private static EmbedBuilder FormatCommandDetails([NotNull] CommandInfo cmd, [CanBeNull] IUser self)
+        [NotNull] public static EmbedBuilder FormatCommandDetails([NotNull] CommandInfo cmd, [CanBeNull] IUser self)
         {
             var embed = new EmbedBuilder()
                 .WithTitle(FormatCommandName(cmd))

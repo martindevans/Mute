@@ -1,12 +1,13 @@
-﻿using Discord.Commands;
+﻿using System.Threading.Tasks;
+using Discord.Commands;
 
-namespace Mute.Moe.Discord.Context
+namespace Mute.Moe.Discord.Context.Preprocessing
 {
     /// <summary>
     /// Preprocess a context for messages which have a command character prefix
     /// </summary>
     public interface ICommandPreprocessor
     {
-        void Process(ICommandContext context);
+        Task Process(ICommandContext context);
     }
 }

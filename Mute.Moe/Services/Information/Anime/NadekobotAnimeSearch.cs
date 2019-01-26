@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using FluidCaching;
@@ -45,6 +46,8 @@ namespace Mute.Moe.Services.Information.Anime
                 anime.ImgUrlLarge = await ValidUrl(anime.ImgUrlLarge);
                 anime.ImgUrlMedium = await ValidUrl(anime.ImgUrlMedium);
                 anime.ImgUrlSmall = await ValidUrl(anime.ImgUrlSmall);
+                anime.ImageUrl = anime.ImgUrlLarge ?? anime.ImgUrlMedium ?? anime.ImgUrlSmall;
+
                 anime.Description = anime.Description.Replace("<br>", "");
                 _cache.Add(anime);
 
@@ -59,6 +62,32 @@ namespace Mute.Moe.Services.Information.Anime
                 return null;
             else
                 return url;
+        }
+
+        public class JsonAnime
+            : IAnime
+        {
+            [UsedImplicitly, JsonProperty("id")] public string Id { get; set; }
+            [UsedImplicitly, JsonProperty("title_romaji")] public string TitleRomanji { get; set; }
+            [UsedImplicitly, JsonProperty("title_english")] public string TitleEnglish { get; set; }
+            [UsedImplicitly, JsonProperty("title_japanese")] public string TitleJapanese { get; set; }
+            [UsedImplicitly, JsonProperty("type")] public string Type { get; set; }
+            [UsedImplicitly, JsonProperty("start_date")] public DateTimeOffset? StartDate { get; set; }
+            [UsedImplicitly, JsonProperty("end_date")] public DateTimeOffset? EndDate { get; set; }
+            [UsedImplicitly, JsonProperty("description")] public string Description { get; set; }
+            [UsedImplicitly, JsonProperty("adult")] public bool Adult { get; set; }
+
+            [UsedImplicitly, JsonProperty("image_url_sml")] public string ImgUrlSmall { get; set; }
+            [UsedImplicitly, JsonProperty("image_url_med")] public string ImgUrlMedium { get; set; }
+            [UsedImplicitly, JsonProperty("image_url_lge")] public string ImgUrlLarge { get; set; }
+
+            [UsedImplicitly, JsonProperty("genres")] public IReadOnlyList<string> Genres { get; set; }
+            [UsedImplicitly, JsonProperty("total_episodes")] public uint? TotalEpisodes { get; set; }
+
+            [UsedImplicitly, JsonProperty("youtube_id")] public string YoutubeId { get; set; }
+
+            public string Url { get; } = null;
+            public string ImageUrl { get; internal set; }
         }
     }
 }

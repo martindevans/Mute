@@ -58,7 +58,9 @@ namespace Mute.Moe
             services.AddSingleton<ISentimentService, TensorflowSentiment>();
             services.AddSingleton<ICatPictureService, CataasPictures>();
             services.AddSingleton<IDogPictureService, DogceoPictures>();
-            services.AddSingleton<IAnimeInfo, NadekobotAnimeSearch>();
+            services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
+            services.AddSingleton<IMangaInfo, MikibotAnilistMangaSearch>();
+            services.AddSingleton<ICharacterInfo, MikibotAnilistCharacterSearch>();
             services.AddSingleton<ITransactions, DatabaseTransactions>();
             services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
             services.AddSingleton<ISpacexInfo, OdditySpaceX>();

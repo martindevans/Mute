@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +10,8 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Mute.Moe.Discord.Context;
+using Mute.Moe.Discord.Context.Postprocessing;
+using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Discord.Services.Responses;
 
 namespace Mute.Moe.Discord
@@ -35,9 +36,6 @@ namespace Mute.Moe.Discord
         {
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
-            Console.WriteLine($"Loaded Modules ({_commands.Modules.Count()}):");
-            foreach (var module in _commands.Modules)
-                Console.WriteLine($" - {module.Name}");
 
             // Hook the MessageReceived Event into our Command Handler
             _client.MessageReceived += HandleMessage;
@@ -85,19 +83,19 @@ namespace Mute.Moe.Discord
 
             //Apply generic message preproccessor
             foreach (var pre in _services.GetServices<IMessagePreprocessor>())
-                pre.Process(context);
+                await pre.Process(context);
 
             //Either process as command or try to process conversationally
             if (hasPrefix)
             {
                 foreach (var pre in _services.GetServices<ICommandPreprocessor>())
-                    pre.Process(context);
+                    await pre.Process(context);
                 await ProcessAsCommand(prefixPos, context);
             }
             else
             {
                 foreach (var pre in _services.GetServices<IConversationPreprocessor>())
-                    pre.Process(context);
+                    await pre.Process(context);
                 await _services.GetService<ConversationalResponseService>().Respond(context);
             }
         }
@@ -112,16 +110,19 @@ namespace Mute.Moe.Discord
             try
             {
                 foreach (var pre in _services.GetServices<ICommandPreprocessor>())
-                    pre.Process(context);
+                    await pre.Process(context);
 
                 var result = await _commands.ExecuteAsync(context, offset, _services);
-
-                //Don't print error message in response to messages from self
-                if (!result.IsSuccess && context.User.Id != _client.CurrentUser.Id)
-                    await context.Channel.SendMessageAsync(result.ErrorReason);
-
-                if (result.ErrorReason != null)
-                    Console.WriteLine(result.ErrorReason);
+                if (result.IsSuccess)
+                {
+                    foreach (var post in _services.GetServices<ISuccessfulCommandPostprocessor>())
+                        await post.Process(context);
+                }
+                else
+                {
+                    foreach (var post in _services.GetServices<IUnsuccessfulCommandPostprocessor>())
+                        await post.Process(context, result);
+                }
             }
             catch (Exception e)
             {
@@ -143,6 +144,8 @@ namespace Mute.Moe.Discord
 
             services.AddSingleton(client);
             services.AddSingleton<IDiscordClient>(client);
+
+            services.AddTransient<IUnsuccessfulCommandPostprocessor, DisplayCommandError>();
         }
     }
 }

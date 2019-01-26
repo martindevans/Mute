@@ -156,26 +156,26 @@ namespace Mute.Moe.Discord.Modules.Payment
         [Command("pending"), Summary("I will list pending transactions you have yet to confirm")]
         public async Task Pending()
         {
-            var transactions = await (await _pending.Get(toId: Context.User.Id, state: PendingState.Pending)).ToArray();
-
-            if (transactions.Length == 0)
-                await TypingReplyAsync("No pending transactions to confirm");
-            else
-                await PaginatedPending(transactions, "You have {0} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise", false);
+            await PaginatedPending(
+                await _pending.Get(toId: Context.User.Id, state: PendingState.Pending),
+                "No pending transactions to confirm",
+                "You have {0} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise",
+                mentionReceiver: false
+            );
         }
 
         [Command("pending-in"), Summary("I will list pending transactions involving you which the other person has no yet confirmed")]
         public async Task ReversePending()
         {
-            var transactions = await (await _pending.Get(fromId: Context.User.Id, state: PendingState.Pending)).ToArray();
-
-            if (transactions.Length == 0)
-                await TypingReplyAsync("No pending transactions involving you for others to confirm");
-            else
-                await PaginatedPending(transactions, "There are {0} unconfirmed payments to you. The other person should type `!confirm $id` or `!deny $id` to confirm or deny that the payment has happened", true);
+            await PaginatedPending(
+                await _pending.Get(fromId: Context.User.Id, state: PendingState.Pending),
+                "No pending transactions involving you for others to confirm",
+                "There are {0} unconfirmed payments to you. The other person should type `!confirm $id` or `!deny $id` to confirm or deny that the payment has happened",
+                mentionReceiver: true
+            );
         }
 
-        private async Task PaginatedPending([NotNull] IEnumerable<IPendingTransaction> pending, string paginatedHeader, bool mentionReceiver)
+        private async Task PaginatedPending([NotNull] IAsyncEnumerable<IPendingTransaction> pending, string none, string paginatedHeader, bool mentionReceiver)
         {
             string FormatSinglePending(IPendingTransaction p, bool longForm)
             {
@@ -191,16 +191,16 @@ namespace Mute.Moe.Discord.Modules.Payment
                     return $"`{fid}`: {payer} paid {amount} to {receiver} {note}";
             }
 
-            var pendingArr = pending.ToArray();
+            var pendingArr = await pending.ToArray();
 
-            //If the number of transactions is small, display them all.
-            //Otherwise batch and show them in pages
-            if (pendingArr.Length < 0)
+            if (pendingArr.Length == 0)
+                await TypingReplyAsync(none);
+            else if (pendingArr.Length < 5)
                 await ReplyAsync(string.Join("\n", pendingArr.Select(p => FormatSinglePending(p, true))));
             else
             {
                 await TypingReplyAsync(string.Format(paginatedHeader, pendingArr.Length));
-                await PagedReplyAsync(new PaginatedMessage { Pages = pendingArr.Batch(5).Select(d => string.Join("\n", d.Select(p => FormatSinglePending(p, false)))) });
+                await PagedReplyAsync(new PaginatedMessage { Pages = pendingArr.Batch(7).Select(d => string.Join("\n", d.Select(p => FormatSinglePending(p, false)))) });
             }
         }
     }
