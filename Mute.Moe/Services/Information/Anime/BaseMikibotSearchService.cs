@@ -16,7 +16,6 @@ namespace Mute.Moe.Services.Information.Anime
         private readonly MediaFormat[] _formats;
 
         protected BaseMikibotMediaSearchService(params MediaFormat[] formats)
-            : base()
         {
             _formats = formats;
         }
@@ -64,7 +63,7 @@ namespace Mute.Moe.Services.Information.Anime
         protected BaseMikibotSearchService()
         {
             _cache = new FluidCache<TItem>(128, TimeSpan.FromHours(1), TimeSpan.FromDays(7), () => DateTime.UtcNow);
-            _itemById = _cache.AddIndex("id", a => ExtractId(a));
+            _itemById = _cache.AddIndex("id", ExtractId);
         }
 
         [ItemCanBeNull] protected async Task<TItem> GetItemInfoAsync(string search)
@@ -85,10 +84,16 @@ namespace Mute.Moe.Services.Information.Anime
                 return r;
             }
 
-            //Search for results, return the one with the closest levenshtein distance
-            var bestResult = await new SearchResultAsyncEnumerable<TSearchItem>(Page, 2)
+            //Search for results, 
+            var results = await new SearchResultAsyncEnumerable<TSearchItem>(Page, 2)
                 .Select(r => new {r, l = Distance(r, search) })
-                .Aggregate((a, b) => a.l < b.l ? a : b);
+                .ToArray();
+
+            if (results.Length == 0)
+                return null;
+
+            //return the one with the closest levenshtein distance
+            var bestResult = results.Aggregate((a, b) => a.l < b.l ? a : b);
 
             return await GetItemAsyncCached(client, bestResult.r);
         }

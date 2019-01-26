@@ -82,7 +82,5 @@ namespace Mute.Moe.Services.Information.Anime
             public string Url { get; }
             public string ImageUrl { get; }
         }
-
-        
     }
 }
