@@ -41,7 +41,9 @@ namespace Mute.Moe.Discord.Modules.Search
                                   .WithDescription(desc)
                                   .WithColor(Color.Gold)
                                   .WithImageUrl(character.ImageUrl ?? "")
-                                  .WithAuthor(character.FamilyName + " " + character.GivenName, url: character.Url ?? "");
+                                  .WithAuthor(character.FamilyName + " " + character.GivenName)
+                                  .WithFooter("🦑 https://anilist.co")
+                                  .WithUrl(character.Url ?? "");
 
 
                 await ReplyAsync(builder);

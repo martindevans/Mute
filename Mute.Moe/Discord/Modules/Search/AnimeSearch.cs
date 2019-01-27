@@ -47,14 +47,14 @@ namespace Mute.Moe.Discord.Modules.Search
                 var builder = new EmbedBuilder()
                       .WithDescription(desc)
                       .WithColor(anime.Adult ? Color.DarkPurple : Color.Blue)
-                      .WithImageUrl(anime.ImageUrl ?? "");
+                      .WithImageUrl(anime.ImageUrl ?? "")
+                      .WithFooter("🦑 https://anilist.co")
+                      .WithUrl(anime.Url ?? "");
 
                 if (anime.TitleJapanese != null && anime.TitleEnglish != null)
-                    builder = builder.WithAuthor(anime.TitleJapanese, url: anime.Url).WithTitle(anime.TitleEnglish);
+                    builder = builder.WithAuthor(anime.TitleJapanese).WithTitle(anime.TitleEnglish);
                 else if (anime.TitleEnglish != null ^ anime.TitleJapanese != null)
-                    builder = builder.WithTitle(anime.TitleEnglish ?? anime.TitleJapanese).WithUrl(anime.Url);
-                else
-                    builder = builder.WithTitle("Unknown Title").WithUrl(anime.Url);
+                    builder = builder.WithTitle(anime.TitleEnglish ?? anime.TitleJapanese);
 
                 //Extract a string describing dates
                 string dateString = null;

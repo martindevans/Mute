@@ -43,14 +43,14 @@ namespace Mute.Moe.Discord.Modules.Search
                     var builder = new EmbedBuilder()
                           .WithDescription(desc)
                           .WithColor(Color.DarkGreen)
-                          .WithImageUrl(manga.ImageUrl ?? "");
+                          .WithImageUrl(manga.ImageUrl ?? "")
+                          .WithFooter("🦑 https://anilist.co")
+                          .WithUrl(manga.Url ?? "");
 
                     if (manga.TitleJapanese != null && manga.TitleEnglish != null)
-                        builder = builder.WithAuthor(manga.TitleJapanese, url: manga.Url).WithTitle(manga.TitleEnglish);
+                        builder = builder.WithAuthor(manga.TitleJapanese).WithTitle(manga.TitleEnglish);
                     else if (manga.TitleEnglish != null ^ manga.TitleJapanese != null)
-                        builder = builder.WithTitle(manga.TitleEnglish ?? manga.TitleJapanese).WithUrl(manga.Url);
-                    else
-                        builder = builder.WithTitle("Unknown Title").WithUrl(manga.Url);
+                        builder = builder.WithTitle(manga.TitleEnglish ?? manga.TitleJapanese);
 
                     if (manga.Volumes.HasValue)
                         builder = builder.WithFields(new EmbedFieldBuilder().WithName("Volumes").WithValue(manga.Volumes.Value));

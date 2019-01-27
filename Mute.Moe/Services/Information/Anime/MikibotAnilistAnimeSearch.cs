@@ -10,7 +10,7 @@ namespace Mute.Moe.Services.Information.Anime
         : BaseMikibotMediaSearchService<IAnime>, IAnimeInfo
     {
         public MikibotAnilistAnimeSearch(IHttpClient http)
-            : base(MediaFormat.MANGA, MediaFormat.NOVEL)
+            : base(MediaFormat.MANGA, MediaFormat.NOVEL, MediaFormat.MUSIC)    //This is a list of formats _not_ to return!
         {
         }
 
