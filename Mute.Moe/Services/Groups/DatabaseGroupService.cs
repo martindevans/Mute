@@ -2,26 +2,29 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SQLite;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using JetBrains.Annotations;
 using Mute.Moe.Services.Database;
 
-namespace Mute.Moe.Discord.Services
+namespace Mute.Moe.Services.Groups
 {
-    public class RoleService
+    public class DatabaseGroupService
+        : IGroups
     {
-        private readonly IDatabaseService _database;
-
+        #region SQL
         private const string FindUnlockedRoleByCompositeId = "SELECT 1 FROM UnlockedRoles WHERE RoleId = @RoleId AND GuildId = @GuildId";
         private const string FindUnlockedRoleByGuildId = "SELECT * FROM UnlockedRoles WHERE GuildId = @GuildId";
 
         private const string InsertUnlockSql = "INSERT OR IGNORE into UnlockedRoles (RoleId, GuildId) values(@RoleId, @GuildId)";
         private const string DeleteUnlockSql = "Delete from UnlockedRoles Where RoleId = @RoleId AND GuildId = @GuildId";
-        
+        #endregion
 
-        public RoleService(IDatabaseService database)
+        private readonly IDatabaseService _database;
+
+        public DatabaseGroupService(IDatabaseService database)
         {
             _database = database;
 
@@ -36,13 +39,13 @@ namespace Mute.Moe.Discord.Services
             }
         }
 
-        public async Task<bool> IsUnlocked([NotNull] IRole role)
+        public async Task<bool> IsUnlocked([NotNull] IRole grp)
         {
             using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = FindUnlockedRoleByCompositeId;
-                cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = role.Id.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = role.Guild.Id.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
 
                 using (var results = await cmd.ExecuteReaderAsync())
                     return results.HasRows;
@@ -55,32 +58,32 @@ namespace Mute.Moe.Discord.Services
             cmd.CommandText = FindUnlockedRoleByGuildId;
             cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.Id.ToString() });
 
-            return new RolesResult(cmd, guild);
+            return new RolesResult(cmd, guild).Where(r => r != null);
         }
 
-        public async Task Unlock([NotNull] IRole role)
+        public async Task Unlock(IRole grp)
         {
             using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = InsertUnlockSql;
-                cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = role.Id.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = role.Guild.Id.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
                 await cmd.ExecuteNonQueryAsync();
             }
         }
 
-        public async Task Lock([NotNull] IRole role)
+        public async Task Lock(IRole grp)
         {
             using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = DeleteUnlockSql;
-                cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = role.Id.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = role.Guild.Id.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
                 await cmd.ExecuteNonQueryAsync();
             }
         }
 
-        public class RolesResult
+        private class RolesResult
             : IDisposable, IAsyncEnumerable<IRole>
         {
             private readonly DbCommand _command;

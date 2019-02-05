@@ -22,6 +22,7 @@ namespace Mute.Moe.Services.Database
         }
     }
 
+    // ReSharper disable once InconsistentNaming
     public static class IDatabaseServiceExtensions
     {
         public static int Exec([NotNull] this IDatabaseService db, string sql)

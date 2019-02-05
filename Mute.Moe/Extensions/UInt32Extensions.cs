@@ -74,14 +74,16 @@ namespace Mute.Moe.Extensions
             "mur", "tel", "rep", "teg", "pec", "nel", "nev", "fes"
         };
 
-        private const uint Offset = unchecked((uint)(1185671 * 1299827));
+        private const uint Offset = 1646229403;
 
-        private readonly uint _value;
-        public uint Value => _value;
+        private const uint Multiply = 143435305;
+        private const uint MultiplyInverse = 824333849;
+
+        public uint Value { get; }
 
         public FriendlyId32(uint value)
         {
-            _value = value;
+            Value = value;
         }
 
         public static FriendlyId32? Parse([NotNull] string str)
@@ -124,22 +126,28 @@ namespace Mute.Moe.Extensions
                 // ReSharper disable once ObjectCreationAsStatement (assigning into the underlying pointer)
                 new Span<byte>(&number, sizeof(uint)) {
                     [0] = (byte)an,
-                    [1] = (byte)bn,
-                    [2] = (byte)cn,
-                    [3] = (byte)dn,
+                    [2] = (byte)bn,
+                    [3] = (byte)cn,
+                    [1] = (byte)dn,
                 };
             }
 
-            number -= Offset;
+            unchecked
+            {
+                //This number
+                number = number * MultiplyInverse;
+                number = number - Offset;
+            }
 
             return new FriendlyId32(number);
         }
 
         [NotNull] public override string ToString()
         {
-            var number = _value;
+            var number = Value;
             unchecked {
-                number += Offset;
+                number = number + Offset;
+                number *= Multiply;
             }
 
             unsafe
@@ -147,9 +155,9 @@ namespace Mute.Moe.Extensions
                 var bytes = new Span<byte>(&number, sizeof(uint));
 
                 var a = Prefixes[bytes[0]];
-                var b = Suffixes[bytes[1]];
-                var c = Prefixes[bytes[2]];
-                var d = Suffixes[bytes[3]];
+                var b = Suffixes[bytes[2]];
+                var c = Prefixes[bytes[3]];
+                var d = Suffixes[bytes[1]];
 
                 return $"{a}{b}-{c}{d}";
             }
@@ -161,6 +169,16 @@ namespace Mute.Moe.Extensions
         [NotNull] public static string MeaninglessString(this uint number)
         {
             return new FriendlyId32(number).ToString();
+        }
+
+        public static uint LeftRotate(this uint number, byte bits)
+        {
+            return (number << bits) | (number >> (32 - bits));
+        }
+
+        public static uint RightRotate(this uint number, byte bits)
+        {
+            return (number >> bits) | (number << (32 - bits));
         }
     }
 }

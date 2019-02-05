@@ -13,7 +13,8 @@ namespace Mute.Moe.Extensions
 
         public static DateTime FromUnixTimestamp(this ulong unixTime)
         {
-            return UnixEpoch.Add(TimeSpan.FromSeconds(unixTime));
+            var t = UnixEpoch.Add(TimeSpan.FromSeconds(unixTime));
+            return new DateTime(t.Ticks, DateTimeKind.Utc);
         }
     }
 }

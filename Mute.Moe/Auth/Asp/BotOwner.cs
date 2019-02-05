@@ -4,7 +4,7 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Mute.Moe.Extensions;
 
-namespace Mute.Moe.Auth
+namespace Mute.Moe.Auth.Asp
 {
     public class BotOwnerRequirement
         : IAuthorizationRequirement
@@ -23,12 +23,7 @@ namespace Mute.Moe.Auth
 
         protected override async Task HandleRequirementAsync([NotNull] AuthorizationHandlerContext context, BotOwnerRequirement requirement)
         {
-            var discordUser = context.User.TryGetDiscordUser(_client);
-            if (discordUser == null)
-                return;
-
-            var info = await _client.GetApplicationInfoAsync();
-            if (info.Owner?.Id == discordUser.Id)
+            if (await context.User.IsBotOwner(_client))
                 context.Succeed(requirement);
         }
     }

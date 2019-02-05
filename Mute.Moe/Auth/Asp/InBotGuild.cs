@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using System.Linq;
 using Discord.WebSocket;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 using Mute.Moe.Extensions;
 
-namespace Mute.Moe.Auth
+namespace Mute.Moe.Auth.Asp
 {
     public class InBotGuildRequirement
         : IAuthorizationRequirement
@@ -24,11 +23,7 @@ namespace Mute.Moe.Auth
 
         [NotNull] protected override async Task HandleRequirementAsync([NotNull] AuthorizationHandlerContext context, InBotGuildRequirement requirement)
         {
-            var discordUser = context.User.TryGetDiscordUser(_client);
-            if (discordUser == null)
-                return;
-
-            if (discordUser.MutualGuilds?.Any() ?? false)
+            if (await context.User.IsInBotGuild(_client))
                 context.Succeed(requirement);
         }
     }

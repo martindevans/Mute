@@ -35,10 +35,21 @@ namespace Mute.Tests
             var str = "lomryc-racnes";
             var fid = FriendlyId32.Parse(str);
 
-            Console.WriteLine(str);
             Assert.IsTrue(fid.HasValue);
+            Assert.AreEqual(str, fid.ToString());
+
+            Console.WriteLine(str);
             Console.WriteLine(fid.Value.Value);
             Console.WriteLine(fid.ToString());
+        }
+
+        [TestMethod]
+        public void First100()
+        {
+            for (uint i = 0; i < 100; i++)
+            {
+                Console.WriteLine(new FriendlyId32(i).ToString());
+            }
         }
     }
 }

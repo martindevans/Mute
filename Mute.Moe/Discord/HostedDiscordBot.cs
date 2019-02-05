@@ -40,6 +40,8 @@ namespace Mute.Moe.Discord
             // Hook the MessageReceived Event into our Command Handler
             _client.MessageReceived += HandleMessage;
 
+            _commands.CommandExecuted += CommandExecuted;
+
             // Log the bot in
             await _client.LogoutAsync();
             await _client.LoginAsync(TokenType.Bot, _config.Auth.Token);
@@ -56,6 +58,11 @@ namespace Mute.Moe.Discord
                 await _client.SetActivityAsync(null);
                 await _client.SetStatusAsync(UserStatus.Online);
             }
+        }
+
+        private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context, IResult result)
+        {
+
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)

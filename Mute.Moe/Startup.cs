@@ -2,8 +2,10 @@
 using System.IO;
 using AspNetCore.RouteAnalyzer;
 using Discord.Addons.Interactive;
+using GraphQL.Types;
+using GraphQL.Utilities;
+using GraphQL.Validation.Complexity;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -11,7 +13,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Mute.Moe.Auth;
 using Mute.Moe.Discord;
 using Mute.Moe.Discord.Services;
 using Mute.Moe.Discord.Services.Audio;
@@ -20,6 +21,7 @@ using Mute.Moe.Discord.Services.Games;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
+using Mute.Moe.Services.Groups;
 using Mute.Moe.Services.Images.Cats;
 using Mute.Moe.Services.Images.Dogs;
 using Mute.Moe.Services.Information.Anime;
@@ -28,11 +30,20 @@ using Mute.Moe.Services.Information.Forex;
 using Mute.Moe.Services.Information.SpaceX;
 using Mute.Moe.Services.Information.Steam;
 using Mute.Moe.Services.Information.Stocks;
+using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.Payment;
 using Mute.Moe.Services.Randomness;
 using Mute.Moe.Services.Sentiment;
 using Newtonsoft.Json;
+using GraphQL.Server;
+using GraphQL.Server.Transports.AspNetCore;
+using GraphQL.Server.Ui.GraphiQL;
+using Mute.Moe.Auth.Asp;
+using Mute.Moe.Auth.GraphQL;
+using Mute.Moe.Controllers.GraphQL;
+using Mute.Moe.GraphQL.Schema;
+using Mute.Moe.Services.Reminders;
 
 namespace Mute.Moe
 {
@@ -69,15 +80,17 @@ namespace Mute.Moe
             services.AddSingleton<IUptime, UtcDifferenceUptime>();
             services.AddSingleton<IStockInfo, AlphaVantageStocks>();
             services.AddSingleton<IForexInfo, AlphaVantageForex>();
+            services.AddSingleton<IGroups, DatabaseGroupService>();
+            services.AddSingleton<IReminders, DatabaseReminders>();
+            services.AddSingleton<IReminderSender, AsyncReminderSender>();
 
             //Eventually these should all become interface -> concrete type bindings
             services
-                .AddSingleton<IouDatabaseService>()
+                .AddSingleton<Status>()
                 .AddSingleton<MusicPlayerService>()
                 .AddSingleton<YoutubeService>()
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
-                .AddSingleton<ReminderService>()
                 .AddSingleton<SentimentTrainingService>()
                 .AddSingleton<HistoryLoggingService>()
                 .AddSingleton<ReactionSentimentTrainer>()
@@ -87,11 +100,9 @@ namespace Mute.Moe
                 .AddSingleton<WordsService>()
                 .AddSingleton<WordVectorsService>()
                 .AddSingleton<WordTrainingService>()
-                .AddSingleton<RoleService>()
                 .AddSingleton<MultichannelAudioService>();
         }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             ConfigureBaseServices(services);
@@ -114,17 +125,10 @@ namespace Mute.Moe
                     .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
                     .AddXmlSerializerFormatters();
 
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("InAnyBotGuild", policy => policy.Requirements.Add(new InBotGuildRequirement()));
-                options.AddPolicy("BotOwner", policy => policy.Requirements.Add(new BotOwnerRequirement()));
-                options.AddPolicy("DenyAll", policy => policy.RequireAssertion(_ => false));
-            });
-            services.AddSingleton<IAuthorizationHandler, InBotGuildRequirementHandler>();
-            services.AddSingleton<IAuthorizationHandler, BotOwnerRequirementHandler>();
-
+            services.AddAspAuth();
+            
             services.AddLogging(logging => {
-                logging.AddConsole();
+                //logging.AddConsole();
                 logging.AddDebug();
             });
 
@@ -137,9 +141,22 @@ namespace Mute.Moe
                 d.Scope.Add("identify");
                 d.SaveTokens = true;
             });
+
+            services.AddSingleton<IUserContextBuilder, GraphQLUserContextBuilder>();
+
+            //GraphQL setup
+            GraphTypeTypeRegistry.Register<TimeSpan, TimeSpanMillisecondsGraphType>();
+            services.AddSingleton<InjectedSchema>();
+            services.AddSingleton<InjectedSchema.IRootQuery, StatusSchema>();
+
+            services.AddGraphQLAuth();
+            services.AddGraphQL(options => {
+                options.EnableMetrics = true;
+                options.ExposeExceptions = true;
+                options.ComplexityConfiguration = new ComplexityConfiguration { MaxDepth = 15 };
+            });
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -154,6 +171,12 @@ namespace Mute.Moe
             app.UseCookiePolicy();
             app.UseAuthentication();
             app.UseResponseCaching();
+
+            app.UseGraphQL<InjectedSchema>();
+            app.UseGraphiQLServer(new GraphiQLOptions {
+                GraphiQLPath = "/graphiql",
+                GraphQLEndPoint = "/graphql"
+            });
 
             app.UseMvc(routes =>
             {

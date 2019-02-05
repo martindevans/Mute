@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Humanizer;
 using Humanizer.Localisation;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
+using Mute.Moe.Extensions;
+using Mute.Moe.Services.Reminders;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -19,13 +19,13 @@ namespace Mute.Moe.Discord.Modules
     {
         private static readonly Color Color = Color.Purple;
 
-        private readonly ReminderService _reminder;
+        private readonly IReminders _reminders;
 
         private const string PastValueErrorMessage = "I'm sorry, but $moment$ is in the past.";
 
-        public Reminders(ReminderService reminder)
+        public Reminders(IReminders reminders)
         {
-            _reminder = reminder;
+            _reminders = reminders;
         }
 
         [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder"), Summary("I will remind you of something after a period of time")]
@@ -45,9 +45,10 @@ namespace Mute.Moe.Discord.Modules
         [Command("reminders"), Summary("I will give you a list of all pending reminders for a user"), RequireOwner]
         public async Task ListReminders([NotNull] IUser user)
         {
-            var items = _reminder.Get(user.Id).OrderBy(a => a.TriggerTime).ToArray();
+            var items = await _reminders.Get(user.Id).ToArray();
 
-            await DisplayItemList(items,
+            await DisplayItemList(
+                items,
                 async () => await ReplyAsync("No pending reminders"),
                 async i => {
                     await ReplyAsync("One pending reminder:");
@@ -58,22 +59,29 @@ namespace Mute.Moe.Discord.Modules
             );
         }
 
-        private async Task DisplayReminder([NotNull] ReminderService.Notification n)
+        private async Task DisplayReminder([NotNull] IReminder reminder)
         {
             var embed = new EmbedBuilder()
                  .WithColor(Color)
-                 .WithDescription(n.Message.Replace("`", "'"))
-                 .WithTimestamp(new DateTimeOffset(n.TriggerTime))
-                 .WithFooter(n.ID)
+                 .WithDescription(reminder.Message.Replace("`", "'"))
+                 .WithTimestamp(new DateTimeOffset(reminder.TriggerTime))
+                 .WithFooter(new FriendlyId32(reminder.ID).ToString())
                  .Build();
 
-            await ReplyAsync("", false, embed);
+            await ReplyAsync(embed: embed);
         }
 
         [Command("cancel-reminder"), Alias("reminder-cancel", "remind-cancel", "cancel-remind", "unremind"), Summary("I will delete a reminder with the given ID")]
         public async Task CancelReminder([NotNull] string id)
         {
-            if (await _reminder.Delete(id))
+            var parsed = FriendlyId32.Parse(id);
+            if (!parsed.HasValue)
+            {
+                await TypingReplyAsync("Invalid ID");
+                return;
+            }
+
+            if (await _reminders.Delete(parsed.Value.Value))
                 await TypingReplyAsync($"Deleted reminder `{id}`");
             else
                 await TypingReplyAsync($"I can't find a reminder with id `{id}`");
@@ -106,9 +114,10 @@ namespace Mute.Moe.Discord.Modules
                     var msg = $"remind me {message}";
 
                     //Save to database
-                    var n = await _reminder.Create(triggerTime, prelude, msg, context.Message.Channel.Id, context.User.Id);
+                    var n = await _reminders.Create(triggerTime, prelude, msg, context.Message.Channel.Id, context.User.Id);
 
-                    return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{n.ID}`)";
+                    var friendlyId = new FriendlyId32(n.ID);
+                    return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{friendlyId}`)";
                 }
             }
             catch (Exception e)

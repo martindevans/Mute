@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using System.Threading.Tasks;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 
@@ -16,6 +17,28 @@ namespace Mute.Moe.Extensions
                 return null;
 
             return client.GetUser(id);
+        }
+
+        public static async Task<bool> IsBotOwner([NotNull] this ClaimsPrincipal user, DiscordSocketClient client)
+        {
+            var discordUser = user.TryGetDiscordUser(client);
+            if (discordUser == null)
+                return false;
+
+            var info = await client.GetApplicationInfoAsync();
+            if (info.Owner == null)
+                return false;
+
+            return info.Owner.Id == discordUser.Id;
+        }
+
+        public static async Task<bool> IsInBotGuild([NotNull] this ClaimsPrincipal user, DiscordSocketClient client)
+        {
+            var discordUser = user.TryGetDiscordUser(client);
+            if (discordUser == null)
+                return false;
+
+            return discordUser.MutualGuilds.Count > 0;
         }
     }
 }
