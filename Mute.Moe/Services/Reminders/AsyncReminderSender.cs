@@ -14,8 +14,9 @@ namespace Mute.Moe.Services.Reminders
         private readonly IReminders _reminders;
         private readonly DiscordSocketClient _client;
 
-        // ReSharper disable once NotAccessedField.Local
-        private Task _thread;
+        private readonly Task _thread;
+
+        public TaskStatus Status => _thread.Status;
 
         public AsyncReminderSender(IReminders reminders, DiscordSocketClient client)
         {
@@ -31,7 +32,8 @@ namespace Mute.Moe.Services.Reminders
             {
                 while (true)
                 {
-                    var next = await _reminders.Get(after: DateTime.UtcNow, count: 1).FirstOrDefault();
+                    //Get the first unsent reminder
+                    var next = await _reminders.Get(count: 1).FirstOrDefault();
 
                     //Wait for one of these events to happen
                     var cts = new CancellationTokenSource();
@@ -100,7 +102,9 @@ namespace Mute.Moe.Services.Reminders
             else
             {
                 //Wait for this reminder to time out
-                await Task.Delay(next.TriggerTime - DateTime.UtcNow, ct);
+                var now = DateTime.UtcNow;
+                if (next.TriggerTime > now)
+                    await Task.Delay(next.TriggerTime - now, ct);
 
                 return new EventTimeoutAction(next, _reminders, _client);
             }
@@ -171,7 +175,7 @@ namespace Mute.Moe.Services.Reminders
                         if (!string.IsNullOrWhiteSpace(_reminder.Prelude))
                             await channel.SendMessageAsync(_reminder.Prelude);
 
-                        string name = null;
+                        string name;
                         if (channel.Guild != null)
                         {
                             var user = (await channel.Guild.GetUserAsync(_reminder.UserId));

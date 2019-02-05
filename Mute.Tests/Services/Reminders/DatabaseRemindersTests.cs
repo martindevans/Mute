@@ -47,12 +47,13 @@ namespace Mute.Tests.Services.Reminders
             var db = new SqliteInMemoryDatabase();
             var rm = new DatabaseReminders(db);
 
-            var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
-            var r = await rm.Create(t, "pre", "msg", 17, 28);
+            var t = DateTime.UtcNow;
+            var r1 = await rm.Create(t, "pre", "msg2", 17, 28);
+            var r2 = await rm.Create(t + TimeSpan.FromHours(1), "pre", "msg2", 17, 28);
 
-            var rs = await rm.Get(after: DateTime.UtcNow).ToArray();
+            var rs = await rm.Get(after: DateTime.UtcNow + TimeSpan.FromHours(0.5f)).ToArray();
 
-            Assert.AreEqual(r, rs.Single());
+            Assert.AreEqual(r2, rs.Single());
         }
 
         [TestMethod]
@@ -61,12 +62,13 @@ namespace Mute.Tests.Services.Reminders
             var db = new SqliteInMemoryDatabase();
             var rm = new DatabaseReminders(db);
 
-            var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
-            var r = await rm.Create(t, "pre", "msg", 17, 28);
+            var t = DateTime.UtcNow;
+            var r1 = await rm.Create(t, "pre", "msg2", 17, 28);
+            var r2 = await rm.Create(t + TimeSpan.FromHours(1), "pre", "msg2", 17, 28);
 
-            var rs = await rm.Get(before: DateTime.UtcNow + TimeSpan.FromHours(1)).ToArray();
+            var rs = await rm.Get(before: t + TimeSpan.FromHours(0.5f)).ToArray();
 
-            Assert.AreEqual(r, rs.Single());
+            Assert.AreEqual(r1, rs.Single());
         }
 
         [TestMethod]

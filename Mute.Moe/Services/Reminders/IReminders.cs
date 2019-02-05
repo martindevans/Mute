@@ -1,7 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using GraphQL.Types;
 using JetBrains.Annotations;
+using Mute.Moe.GraphQL.Schema;
+using Microsoft.Extensions.DependencyInjection;
+using Mute.Moe.Controllers.GraphQL;
+using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Services.Reminders
 {
@@ -47,5 +53,62 @@ namespace Mute.Moe.Services.Reminders
         string Message { get; }
 
         DateTime TriggerTime { get; }
+    }
+
+    public class RemindersSchema
+        : InjectedSchema.IRootQuery
+    {
+        private async Task<IReadOnlyList<IReminder>> GetReminders(IReminders reminders, [NotNull] ResolveFieldContext<object> context)
+        {
+            var userCtx = (GraphQLUserContext)context.UserContext;
+            var user = userCtx.ClaimsPrincipal;
+            var client = userCtx.DiscordClient;
+
+            //If they are not a discord user, return an empty list
+            var dUser = user.TryGetDiscordUser(client);
+            if (dUser == null)
+                return Array.Empty<IReminder>();
+
+            DateTime? before = null;
+            if (context.Arguments.TryGetValue("before_unix", out var beforeUnix))
+                before = ((ulong)(int)beforeUnix).FromUnixTimestamp();
+
+            DateTime? after = null;
+            if (context.Arguments.TryGetValue("after_unix", out var afterUnix))
+                after = ((ulong)(int)afterUnix).FromUnixTimestamp();
+
+            return await reminders.Get(userId: dUser.Id, after: after, before: before).ToArray();
+        }
+
+        public void Add(IServiceProvider services, ObjectGraphType ogt)
+        {
+            var reminders = services.GetService<IReminders>();
+
+            ogt.Field<ListGraphType<IReminderSchema>>(
+                "reminders",
+                resolve: context => GetReminders(reminders, context),
+                arguments: new QueryArguments(
+                    new QueryArgument(typeof(IntGraphType)) { Name = "before_unix" },
+                    new QueryArgument(typeof(IntGraphType)) { Name = "after_unix" }
+                )
+            );
+        }
+    }
+
+    // ReSharper disable once InconsistentNaming
+    public class IReminderSchema
+        : ObjectGraphType<IReminder>
+    {
+        public IReminderSchema()
+        {
+            Field(typeof(UIntGraphType), "channelId", resolve: x => x.Source.ID);
+            Field("id", x => new FriendlyId32(x.ID).ToString());
+            Field("userid", x => x.UserId.ToString());
+
+            Field(x => x.Message);
+            Field(x => x.Prelude);
+            Field(x => x.TriggerTime);
+            
+        }
     }
 }

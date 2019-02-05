@@ -148,6 +148,7 @@ namespace Mute.Moe
             GraphTypeTypeRegistry.Register<TimeSpan, TimeSpanMillisecondsGraphType>();
             services.AddSingleton<InjectedSchema>();
             services.AddSingleton<InjectedSchema.IRootQuery, StatusSchema>();
+            services.AddSingleton<InjectedSchema.IRootQuery, RemindersSchema>();
 
             services.AddGraphQLAuth();
             services.AddGraphQL(options => {
