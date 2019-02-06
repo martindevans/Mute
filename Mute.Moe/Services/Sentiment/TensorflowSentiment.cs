@@ -10,7 +10,7 @@ using TensorFlow;
 namespace Mute.Moe.Services.Sentiment
 {
     public class TensorflowSentiment
-        : ISentimentService
+        : ISentimentEvaluator
     {
         private readonly WordVectorsService _wordVectors;
         private readonly SentimentConfig _config;

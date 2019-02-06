@@ -2,6 +2,7 @@
 using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe.Discord;
+using Mute.Moe.Utilities;
 
 namespace Mute.Tests
 {

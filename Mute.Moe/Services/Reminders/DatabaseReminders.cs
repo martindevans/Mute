@@ -5,6 +5,7 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 

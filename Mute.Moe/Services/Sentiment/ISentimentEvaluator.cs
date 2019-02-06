@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Sentiment
 {
-    public interface ISentimentService
+    public interface ISentimentEvaluator
     {
         Task<SentimentResult> Predict(string message);
     }

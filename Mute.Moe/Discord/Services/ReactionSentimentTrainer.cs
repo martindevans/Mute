@@ -5,14 +5,15 @@ using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.Sentiment;
+using Mute.Moe.Services.Sentiment.Training;
 
 namespace Mute.Moe.Discord.Services
 {
     public class ReactionSentimentTrainer
     {
-        private readonly SentimentTrainingService _sentiment;
+        private readonly ISentimentTrainer _sentiment;
 
-        public ReactionSentimentTrainer([NotNull] DiscordSocketClient client, SentimentTrainingService sentiment)
+        public ReactionSentimentTrainer([NotNull] DiscordSocketClient client, ISentimentTrainer sentiment)
         {
             _sentiment = sentiment;
 

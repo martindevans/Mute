@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
 using Mute.Moe.Services.Information.Cryptocurrency;
+using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Discord.Services

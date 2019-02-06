@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Reminders;

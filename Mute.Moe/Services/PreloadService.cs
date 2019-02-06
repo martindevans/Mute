@@ -13,7 +13,7 @@ namespace Mute.Moe.Services
     public class ServicePreloader
         : IHostedService
     {
-        public ServicePreloader(GameService games, HistoryLoggingService history, ReactionSentimentTrainer reactionTrainer, IReminderSender reminders, ISentimentService sentiment, IUptime uptime)
+        public ServicePreloader(GameService games, HistoryLoggingService history, ReactionSentimentTrainer reactionTrainer, IReminderSender reminders, ISentimentEvaluator sentiment, IUptime uptime)
         {
             // Parameters to this services cause those other services to be eagerly initialised.
         }

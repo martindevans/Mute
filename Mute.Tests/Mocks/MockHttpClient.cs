@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Mute.Moe;
+using Mute.Moe.Utilities;
 
 namespace Mute.Tests.Mocks
 {

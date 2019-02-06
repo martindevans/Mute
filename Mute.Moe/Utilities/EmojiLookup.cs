@@ -1,4 +1,4 @@
-﻿namespace Mute.Moe.Discord
+﻿namespace Mute.Moe.Utilities
 {
     public static class EmojiLookup
     {

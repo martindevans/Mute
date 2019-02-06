@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Miki.Anilist;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.Information.Anime
 {

@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Mute.Moe.Extensions
+namespace Mute.Moe.AsyncEnumerable.Extensions
 {
     public static class TaskOfIOrderedAsyncEnumerableExtensions
     {

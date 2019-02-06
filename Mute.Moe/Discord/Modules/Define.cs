@@ -1,18 +1,16 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Mute.Moe.Discord.Services;
+using Mute.Moe.Services.Information.Wikipedia;
 
 namespace Mute.Moe.Discord.Modules
 {
     public class Define
         : BaseModule
     {
-        private readonly WikipediaService _wikipedia;
+        private readonly IWikipedia _wikipedia;
 
-        public Define(WikipediaService wiki)
+        public Define(IWikipedia wiki)
         {
             _wikipedia = wiki;
         }
@@ -20,41 +18,36 @@ namespace Mute.Moe.Discord.Modules
         [Command("define"), Summary("I will briefly explain what a thing is")]
         public async Task DefineAsync([Remainder] string thing)
         {
-            var definition = await _wikipedia.SearchData(thing);
+            await DefineAsync(3, thing);
+        }
 
-            var count = definition?.Search?.Count ?? 0;
+        [Command("define"), Summary("I will briefly explain what a thing is")]
+        public async Task DefineAsync(int sentences, [Remainder] string thing)
+        {
+            //Get definitions from wikipedia
+            var definitions = await _wikipedia.Define(thing, sentences: sentences);
 
-            if (definition?.Search == null || count == 0)
+            //Define a method to display a single definition in an embed
+            Task SingleDefinition(IDefinition def)
             {
-                await TypingReplyAsync("I don't know anything about that, sorry");
-            }
-            else if (count == 1)
-            {
-                await TypingReplyAsync(definition.Search.Single().Description);
-            }
-            else
-            {
-                await TypingReplyAsync($"I have found {count} possible items, could you be more specific?");
+                var embed = new EmbedBuilder().WithFooter("📖 wikipedia.org").WithDescription(def.Definition);
 
-                var r = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
-                if (r == null)
-                    return;
+                var url = !string.IsNullOrWhiteSpace(def.Url);
+                embed = url
+                      ? embed.WithAuthor(new EmbedAuthorBuilder().WithName(def.Title).WithUrl(def.Url))
+                      : embed.WithTitle(def.Title);
 
-                var rr = r.Content.ToLowerInvariant();
-                if (rr.Contains("list") || rr.Contains("what"))
-                {
-                    await DisplayItemList(
-                        definition.Search,
-                        async () => await ReplyAsync("No items :("),
-                        async (item, index) => {
-                            var embed = new EmbedBuilder()
-                                        .WithTitle(item.Label ?? item.Title)
-                                        .WithDescription(item.Description)
-                                        .WithUrl(item.Uri ?? item.ConceptUri);
-                            await TypingReplyAsync(embed);
-                        });
-                }
+                return ReplyAsync(embed: embed.Build());
             }
+
+            //Display the item(s)
+            await DisplayItemList(
+                definitions,
+                () => "I don't know anything about that, sorry",
+                SingleDefinition,
+                items => $"I have found {items.Count} possible items, could you be more specific?",
+                (item, index) => $"{index + 1}. [{item.Title}]({item.Url})"
+            );
         }
     }
 }

@@ -3,18 +3,17 @@ using System.Data.SQLite;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Mute.Moe.Services.Database;
-using Mute.Moe.Services.Sentiment;
 
-namespace Mute.Moe.Discord.Services
+namespace Mute.Moe.Services.Sentiment.Training
 {
-    public class SentimentTrainingService
+    public class DatabaseSentimentTrainer
+        : ISentimentTrainer
     {
         private const string InsertTaggedSentimentData = "INSERT INTO TaggedSentimentData (Content, Score) values(@Content, @Score)";
-        private const string SelectTaggedSentimentData = "SELECT * FROM TaggedSentimentData";
 
         private readonly IDatabaseService _database;
 
-        public SentimentTrainingService([NotNull] Configuration config, IDatabaseService database)
+        public DatabaseSentimentTrainer([NotNull] Configuration config, IDatabaseService database)
         {
             _database = database;
 
@@ -29,7 +28,7 @@ namespace Mute.Moe.Discord.Services
             }
         }
 
-        public async Task Teach([NotNull] string text, Sentiment sentiment)
+        public async Task Teach(string text, Sentiment sentiment)
         {
             using (var cmd = _database.CreateCommand())
             {
@@ -38,8 +37,6 @@ namespace Mute.Moe.Discord.Services
                 cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) { Value = ((int)sentiment).ToString() });
                 await cmd.ExecuteNonQueryAsync();
             }
-
-            Console.WriteLine($"Sentiment learned: `{text}` == {sentiment}");
         }
     }
 }

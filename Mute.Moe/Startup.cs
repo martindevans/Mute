@@ -43,7 +43,10 @@ using Mute.Moe.Auth.Asp;
 using Mute.Moe.Auth.GraphQL;
 using Mute.Moe.Controllers.GraphQL;
 using Mute.Moe.GraphQL.Schema;
+using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Reminders;
+using Mute.Moe.Services.Sentiment.Training;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe
 {
@@ -66,7 +69,8 @@ namespace Mute.Moe
 
             services.AddSingleton<IHttpClient, SimpleHttpClient>();
             services.AddSingleton<IDatabaseService, SqliteDatabase>();
-            services.AddSingleton<ISentimentService, TensorflowSentiment>();
+            services.AddSingleton<ISentimentEvaluator, TensorflowSentiment>();
+            services.AddSingleton<ISentimentTrainer, DatabaseSentimentTrainer>();
             services.AddSingleton<ICatPictureService, CataasPictures>();
             services.AddSingleton<IDogPictureService, DogceoPictures>();
             services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
@@ -83,6 +87,7 @@ namespace Mute.Moe
             services.AddSingleton<IGroups, DatabaseGroupService>();
             services.AddSingleton<IReminders, DatabaseReminders>();
             services.AddSingleton<IReminderSender, AsyncReminderSender>();
+            services.AddSingleton<IWikipedia, WikipediaApi>();
 
             //Eventually these should all become interface -> concrete type bindings
             services
@@ -91,11 +96,9 @@ namespace Mute.Moe
                 .AddSingleton<YoutubeService>()
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
-                .AddSingleton<SentimentTrainingService>()
                 .AddSingleton<HistoryLoggingService>()
                 .AddSingleton<ReactionSentimentTrainer>()
                 .AddSingleton<ConversationalResponseService>()
-                .AddSingleton<WikipediaService>()
                 .AddSingleton<SoundEffectService>()
                 .AddSingleton<WordsService>()
                 .AddSingleton<WordVectorsService>()

@@ -8,16 +8,17 @@ using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.Sentiment;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules
 {
     public class Sentiment
         : BaseModule
     {
-        private readonly ISentimentService _sentiment;
+        private readonly ISentimentEvaluator _sentiment;
         private readonly SentimentReactionConfig _config;
 
-        public Sentiment([NotNull] Configuration config, ISentimentService sentiment)
+        public Sentiment([NotNull] Configuration config, ISentimentEvaluator sentiment)
         {
             _sentiment = sentiment;
             _config = config.SentimentReactions;

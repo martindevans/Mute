@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using JetBrains.Annotations;
+using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Services.Reminders

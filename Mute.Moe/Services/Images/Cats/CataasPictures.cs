@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.Images.Cats
 {

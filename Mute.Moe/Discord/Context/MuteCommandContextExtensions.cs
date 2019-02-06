@@ -9,7 +9,7 @@ namespace Mute.Moe.Discord.Context
         public static async Task<SentimentResult> Sentiment([NotNull] this MuteCommandContext context)
         {
             var r = await context.GetOrAdd(async () => {
-                var sentiment = (ISentimentService)context.Services.GetService(typeof(ISentimentService));
+                var sentiment = (ISentimentEvaluator)context.Services.GetService(typeof(ISentimentEvaluator));
                 return new SentimentResultContainer(await sentiment.Predict(context.Message.Content));
             });
 

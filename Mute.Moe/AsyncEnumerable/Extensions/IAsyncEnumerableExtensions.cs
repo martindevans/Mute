@@ -4,8 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Mute.Moe.Extensions
+namespace Mute.Moe.AsyncEnumerable.Extensions
 {
+    // ReSharper disable once InconsistentNaming
     public static class IAsyncEnumerableExtensions
     {
         public static async Task EnumerateAsync<T>([NotNull] this IAsyncEnumerable<T> enumerable, Func<T, Task> body)

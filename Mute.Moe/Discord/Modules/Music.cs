@@ -12,6 +12,7 @@ using Mute.Moe.Discord.Services;
 using Mute.Moe.Discord.Services.Audio;
 using Mute.Moe.Discord.Services.Audio.Clips;
 using Mute.Moe.Discord.Services.Audio.Playback;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules
 {

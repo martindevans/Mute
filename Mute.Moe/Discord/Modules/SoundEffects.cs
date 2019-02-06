@@ -8,6 +8,7 @@ using JetBrains.Annotations;
 using MoreLinq;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Audio;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules
 {

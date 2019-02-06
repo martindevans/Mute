@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
+using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Forex

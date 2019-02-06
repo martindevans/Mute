@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Sentiment;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Services.Responses
 {

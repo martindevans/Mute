@@ -5,6 +5,7 @@ using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules
 {

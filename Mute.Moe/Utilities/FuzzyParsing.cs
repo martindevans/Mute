@@ -7,7 +7,7 @@ using Microsoft.Recognizers.Text.Choice;
 using Microsoft.Recognizers.Text.DateTime;
 using Microsoft.Recognizers.Text.NumberWithUnit;
 
-namespace Mute.Moe.Discord
+namespace Mute.Moe.Utilities
 {
     public static class FuzzyParsing
     {
