@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Mute.Moe
+namespace Mute.Moe.Utilities
 {
     public class AsyncLock
     {

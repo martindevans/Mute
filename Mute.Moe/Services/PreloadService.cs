@@ -7,13 +7,14 @@ using Mute.Moe.Discord.Services.Games;
 using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment;
+using Mute.Moe.Services.Sentiment.Training;
 
 namespace Mute.Moe.Services
 {
     public class ServicePreloader
         : IHostedService
     {
-        public ServicePreloader(GameService games, HistoryLoggingService history, ReactionSentimentTrainer reactionTrainer, IReminderSender reminders, ISentimentEvaluator sentiment, IUptime uptime)
+        public ServicePreloader(GameService games, AutoReactionTrainer reactionTrainer, IReminderSender reminders, ISentimentEvaluator sentiment, IUptime uptime)
         {
             // Parameters to this services cause those other services to be eagerly initialised.
         }

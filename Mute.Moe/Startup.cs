@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Abstractions;
 using AspNetCore.RouteAnalyzer;
 using Discord.Addons.Interactive;
 using GraphQL.Types;
@@ -46,6 +47,7 @@ using Mute.Moe.GraphQL.Schema;
 using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
+using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe
@@ -67,6 +69,7 @@ namespace Mute.Moe
             services.AddTransient<Random>();
             services.AddTransient<IDiceRoller, CryptoDiceRoller>();
 
+            services.AddSingleton<IFileSystem, FileSystem>();
             services.AddSingleton<IHttpClient, SimpleHttpClient>();
             services.AddSingleton<IDatabaseService, SqliteDatabase>();
             services.AddSingleton<ISentimentEvaluator, TensorflowSentiment>();
@@ -88,18 +91,19 @@ namespace Mute.Moe
             services.AddSingleton<IReminders, DatabaseReminders>();
             services.AddSingleton<IReminderSender, AsyncReminderSender>();
             services.AddSingleton<IWikipedia, WikipediaApi>();
+            services.AddSingleton<ISoundEffectLibrary, DatabaseSoundEffectLibrary>();
+            services.AddSingleton<ISoundEffectPlayer, SoundEffectPlayer>();
+
+            services.AddSingleton<AutoReactionTrainer>();
+            services.AddSingleton<Status>();
 
             //Eventually these should all become interface -> concrete type bindings
             services
-                .AddSingleton<Status>()
                 .AddSingleton<MusicPlayerService>()
                 .AddSingleton<YoutubeService>()
                 .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
-                .AddSingleton<HistoryLoggingService>()
-                .AddSingleton<ReactionSentimentTrainer>()
                 .AddSingleton<ConversationalResponseService>()
-                .AddSingleton<SoundEffectService>()
                 .AddSingleton<WordsService>()
                 .AddSingleton<WordVectorsService>()
                 .AddSingleton<WordTrainingService>()

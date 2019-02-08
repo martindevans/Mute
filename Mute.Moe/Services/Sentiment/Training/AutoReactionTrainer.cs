@@ -4,16 +4,14 @@ using Discord;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses;
-using Mute.Moe.Services.Sentiment;
-using Mute.Moe.Services.Sentiment.Training;
 
-namespace Mute.Moe.Discord.Services
+namespace Mute.Moe.Services.Sentiment.Training
 {
-    public class ReactionSentimentTrainer
+    public class AutoReactionTrainer
     {
         private readonly ISentimentTrainer _sentiment;
 
-        public ReactionSentimentTrainer([NotNull] DiscordSocketClient client, ISentimentTrainer sentiment)
+        public AutoReactionTrainer([NotNull] DiscordSocketClient client, ISentimentTrainer sentiment)
         {
             _sentiment = sentiment;
 
@@ -32,15 +30,17 @@ namespace Mute.Moe.Discord.Services
 
         private async Task TryLearn([NotNull] IUserMessage message, [NotNull] IReaction reaction, Sentiment sentiment)
         {
-            var gc = (SocketGuildChannel)message.Channel;
+            //Early exit if channel is not a guild channel
+            if (!(message.Channel is SocketGuildChannel gc))
+                return;
             var g = gc.Guild;
 
-            var users = (await (message.GetReactionUsersAsync(reaction.Emote, 128).Flatten().ToArray()))   //Get users who reacted
-                        .Select(u => u as IGuildUser ?? g.GetUser(u.Id))        //Convert them to guild users
-                        .Where(u => u != null)
-                        .GroupBy(a => a.Id)                                     //GroupBy ID to deduplicate users who reacted multiple times
-                        .Select(a => a.First())
-                        .ToArray();
+            //Get guild users who reacted to the message
+            var users = await message.GetReactionUsersAsync(reaction.Emote, 128).Flatten()
+                .Select(u => u as IGuildUser ?? g.GetUser(u.Id))
+                .Where(u => u != null)
+                .Distinct()
+                .ToArray();
 
             if (users.Length >= 3 || users.Any(IsTeacher))
                 await _sentiment.Teach(message.Content, sentiment);
@@ -50,9 +50,6 @@ namespace Mute.Moe.Discord.Services
         {
             //Check if the user has the `*MuteTeacher` role (hardcoded ID for now)
             return user.RoleIds.Contains<ulong>(506127510740795393);
-
-            ////For now hardcode it to Nyarlathothep only, in the future make this role based
-            //return user.Id == 103509816437149696;
         }
     }
 }

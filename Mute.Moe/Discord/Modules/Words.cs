@@ -4,9 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Discord.Services;
-using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules
@@ -17,13 +15,11 @@ namespace Mute.Moe.Discord.Modules
     {
         private readonly WordVectorsService _wordVectors;
         private readonly WordTrainingService _training;
-        private readonly HistoryLoggingService _history;
 
-        public Words(WordVectorsService wordVectors, WordTrainingService training, HistoryLoggingService history)
+        public Words(WordVectorsService wordVectors, WordTrainingService training)
         {
             _wordVectors = wordVectors;
             _training = training;
-            _history = history;
         }
 
         [Command("vector"), Summary("I will get the raw vector for a word")]
@@ -102,21 +98,8 @@ namespace Mute.Moe.Discord.Modules
                 return;
             }
 
-            //Find messages in history which contain this word, teach those as training examples
-            var historyCount = 0;
-            using (var messages = _history.MessagesByContent(word))
-            {
-                await messages.EnumerateAsync(async item => {
-                    await _training.Teach(word, item.Content.ToLower());
-                    historyCount++;
-                });
-            }
-
             //Prompt user for examples
-            if (historyCount > 0)
-                await TypingReplyAsync($"I have seen the word `{word}` used {historyCount} time{(historyCount > 1 ? "s" : "")} before but I don't know what it means. Can you use it in some example sentences?");
-            else
-                await TypingReplyAsync($"I don't know what `{word}` means, can you use it in some example sentences?");
+            await TypingReplyAsync($"I don't know what `{word}` means, can you use it in some example sentences?");
 
             //Watch all messages in the channel for some time. Every message which contains the word will be taken as an example
             var timer = new Stopwatch();

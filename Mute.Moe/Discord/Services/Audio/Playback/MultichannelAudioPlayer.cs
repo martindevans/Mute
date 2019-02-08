@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services.Audio.Mixing;
+using Mute.Moe.Services.Audio.Mixing;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 

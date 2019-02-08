@@ -84,5 +84,20 @@ namespace Mute.Moe.AsyncEnumerable.Extensions
                 }
             }
         }
+
+        public static async Task<T[]> ToArray<T>([NotNull] this Task<IAsyncEnumerable<T>> task)
+        {
+            return await (await task).ToArray();
+        }
+
+        public static async Task<T> FirstOrDefault<T>([NotNull] this Task<IAsyncEnumerable<T>> task)
+        {
+            return await (await task).FirstOrDefault();
+        }
+
+        public static async Task<IOrderedAsyncEnumerable<T>> OrderBy<T, TKey>([NotNull] this Task<IAsyncEnumerable<T>> task, Func<T, TKey> keySelector)
+        {
+            return (await task).OrderBy(keySelector);
+        }
     }
 }

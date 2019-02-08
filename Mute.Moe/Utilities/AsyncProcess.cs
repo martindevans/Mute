@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
-namespace Mute.Moe
+namespace Mute.Moe.Utilities
 {
     public static class AsyncProcess
     {

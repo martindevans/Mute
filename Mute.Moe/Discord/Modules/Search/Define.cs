@@ -3,7 +3,7 @@ using Discord;
 using Discord.Commands;
 using Mute.Moe.Services.Information.Wikipedia;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Search
 {
     public class Define
         : BaseModule

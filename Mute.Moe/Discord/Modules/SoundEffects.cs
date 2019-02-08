@@ -6,8 +6,9 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using JetBrains.Annotations;
 using MoreLinq;
-using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Discord.Services.Audio;
+using Mute.Moe.AsyncEnumerable.Extensions;
+using Mute.Moe.Extensions;
+using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules
@@ -16,31 +17,52 @@ namespace Mute.Moe.Discord.Modules
     public class SoundEffects
         : BaseModule
     {
-        private readonly SoundEffectService _sfx;
+        private readonly ISoundEffectLibrary _library;
+        private readonly ISoundEffectPlayer _player;
         private readonly IHttpClient _http;
-        
-        public SoundEffects([NotNull] SoundEffectService sfx, IHttpClient http)
+        private readonly Random _random;
+
+        public SoundEffects(ISoundEffectLibrary library, ISoundEffectPlayer player, IHttpClient http, Random random)
         {
-            _sfx = sfx;
+            _library = library;
+            _player = player;
             _http = http;
+            _random = random;
         }
 
-        [Command, Summary("I will join the voice channel you are in, play a sound effect and leave"), Priority(0)]
+        [Command, Summary("I will join the voice channel you are in and play a sound effect"), Priority(0)]
         public async Task Play([NotNull] string id)
         {
-            //Try to play a clip by the given ID
-            var (ok, msg) = await _sfx.Play(Context.User, id);
-            if (ok)
-                return;
+            var found = await _library.Find(Context.Guild.Id, id).ToArray();
 
-            //Type back the error encountered while playing this clip
-            await TypingReplyAsync(msg);
+            if (found.Length == 0)
+            {
+                await TypingReplyAsync($"Cannot find any sound effects by search string `{id}`");
+                return;
+            }
+
+            var sfx = found.Random(_random);
+
+            var result = await _player.Play(Context.User, sfx);
+            switch (result)
+            {
+                case PlayResult.Enqueued:
+                    return;
+                case PlayResult.UserNotInVoice:
+                    await TypingReplyAsync("You are not in a voice channel!");
+                    return;
+                case PlayResult.FileNotFound:
+                    await TypingReplyAsync("File not found.");
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         [Command("find"), Summary("I will list all available sfx"), Priority(1)]
         public async Task Find([NotNull] string search)
         {
-            var sfx = (await _sfx.Find(search)).OrderBy(a => a.Name).ToArray();
+            var sfx = await _library.Find(Context.Guild.Id, search).OrderBy(a => a.Name).ToArray();
 
             if (sfx.Length == 0)
             {
@@ -79,7 +101,7 @@ namespace Mute.Moe.Discord.Modules
                 await TypingReplyAsync($"There don't seem to be any attachments to that message. I can't create sound effect `{name}` from that");
                 return;
             }
-            
+
             if (reply.Attachments.Count > 1)
             {
                 await TypingReplyAsync($"There is more than one attachment to that message. I don't know which one to use to create sound effect `{name}`");
@@ -95,7 +117,7 @@ namespace Mute.Moe.Discord.Modules
             }
 
             //Download a local copy of the attachment
-            byte[] data; 
+            byte[] data;
             using (var download = await _http.GetAsync(attachment.ProxyUrl))
             {
                 if (!download.IsSuccessStatusCode)
@@ -107,54 +129,45 @@ namespace Mute.Moe.Discord.Modules
                 data = await download.Content.ReadAsByteArrayAsync();
             }
 
+            if (await _library.Get(Context.Guild.Id, name) != null)
+            {
+                await TypingReplyAsync("A sound effect with this name already exists!");
+                return;
+            }
+
             //Create the sound effect
-            var (ok, msg) = await _sfx.Create(name, data);
-            if (ok)
-            {
-                await TypingReplyAsync($"Created new sound effect `{name}`!");
-            }
-            else
-            {
-                await TypingReplyAsync($"Failed to create new sound effect. {msg}");
-            }
+            await _library.Create(Context.Guild.Id, name, data);
+            await TypingReplyAsync($"Created new sound effect `{name}`!");
         }
 
         [Command("alias"), Summary("I will create an alias for another sound effect"), Priority(1)]
         public async Task Alias([NotNull] string name, [NotNull] string alias)
         {
-            var a = await _sfx.Get(name);
-            var b = await _sfx.Get(alias);
+            var a = await _library.Get(Context.Guild.Id, name);
+            var b = await _library.Get(Context.Guild.Id, alias);
 
-            if (a.HasValue && b.HasValue)
+            if (a != null && b != null)
             {
                 await TypingReplyAsync($"Cannot create an alias because `{name}` and `{alias}` both already exist");
                 return;
             }
 
-            if (!a.HasValue && !b.HasValue)
+            if (a == null && b == null)
             {
                 await TypingReplyAsync($"Cannot create an alias because neither `{name}` nor `{alias}` exist");
                 return;
             }
 
-            if (!a.HasValue)
+            if (a == null)
             {
-                await _sfx.Alias(b.Value, name);
-                await TypingReplyAsync($"Aliased `{b.Value.Name}` as `{name}`");
+                await _library.Alias(name, b);
+                await TypingReplyAsync($"Aliased `{b.Name}` as `{name}`");
             }
             else
             {
-                await _sfx.Alias(a.Value, alias);
-                await TypingReplyAsync($"Aliased `{a.Value.Name}` as `{alias}`");
+                await _library.Alias(name, a);
+                await TypingReplyAsync($"Aliased `{a.Name}` as `{alias}`");
             }
-        }
-
-        [Command("renormalize"), RequireOwner, Priority(1)]
-        [ThinkingReply]
-        public async Task Renormalize()
-        {
-            // Add a thinking emote while doing the work
-            await _sfx.NormalizeAllSfx();
         }
     }
 }

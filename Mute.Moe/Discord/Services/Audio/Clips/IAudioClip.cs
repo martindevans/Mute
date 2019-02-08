@@ -10,11 +10,6 @@ namespace Mute.Moe.Discord.Services.Audio.Clips
         string Name { get; }
 
         /// <summary>
-        /// Check if this file is ready to be opened
-        /// </summary>
-        bool IsLoaded { get; }
-
-        /// <summary>
         /// Open a stream to begin reading this clip
         /// </summary>
         /// <returns></returns>
