@@ -131,7 +131,9 @@ namespace Mute.Moe.Discord.Modules
 
         private async Task<bool> CheckCommandPreconditions([NotNull] CommandInfo command, [NotNull] ICommandContext context, [NotNull] IServiceProvider services)
         {
-            foreach (var precondition in command.Preconditions)
+            var conditions = command.Preconditions.Concat(command.Module.Preconditions);
+
+            foreach (var precondition in conditions)
                 if (!(await precondition.CheckPermissionsAsync(Context, command, _services)).IsSuccess)
                     return false;
 

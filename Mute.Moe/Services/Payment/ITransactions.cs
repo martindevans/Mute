@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using System.Linq;
 using Mute.Moe.AsyncEnumerable.Extensions;
-using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Services.Payment
 {
@@ -15,7 +14,7 @@ namespace Mute.Moe.Services.Payment
         /// </summary>
         /// <param name="primaryUser"></param>
         /// <param name="transactions"></param>
-        [NotNull, ItemNotNull] private static async Task<IEnumerable<IBalance>> TransactionsToBalances(ulong primaryUser, [NotNull] IAsyncEnumerable<ITransaction> transactions)
+        [NotNull, ItemNotNull] private static async Task<IReadOnlyList<IBalance>> TransactionsToBalances(ulong primaryUser, [NotNull] IAsyncEnumerable<ITransaction> transactions)
         {
             // Accumulate a lookup table of user -> unit -> amount
             //user in this case is always the secondary user (the other is implicitly the primary user)
@@ -47,7 +46,7 @@ namespace Mute.Moe.Services.Payment
                 else
                     return;
 
-                bool positive = transaction.FromId == primaryUser;
+                var positive = transaction.FromId == primaryUser;
                 Add(inner, transaction.Unit, transaction.Amount * (positive ? 1 : -1));
             });
 
@@ -73,7 +72,7 @@ namespace Mute.Moe.Services.Payment
         /// <param name="userA"></param>
         /// <param name="userB"></param>
         /// <returns>All non-zero balances in order of amount</returns>
-        [ItemNotNull] public static async Task<IEnumerable<IBalance>> GetBalances([NotNull] this ITransactions database, ulong userA, ulong? userB, string unit = null)
+        [ItemNotNull] public static async Task<IReadOnlyList<IBalance>> GetBalances([NotNull] this ITransactions database, ulong userA, ulong? userB, [CanBeNull] string unit = null)
         {
             //e.g.
             //A -> B £2
@@ -98,7 +97,7 @@ namespace Mute.Moe.Services.Payment
         /// <param name="a">One of the users in the transaction</param>
         /// <param name="b"></param>
         /// <returns>All transactions involving A (filtered to also involving B if specified), ordered by instant</returns>
-        [ItemNotNull] public static async Task<IEnumerable<ITransaction>> GetAllTransactions([NotNull] this ITransactions database, ulong a, ulong? b)
+        [ItemNotNull] public static async Task<IReadOnlyList<ITransaction>> GetAllTransactions([NotNull] this ITransactions database, ulong a, ulong? b = null)
         {
             var ab = await database.GetTransactions(fromId: a, toId: b);
             var ba = await database.GetTransactions(fromId: b, toId: a);

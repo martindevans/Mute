@@ -577,11 +577,6 @@ namespace Mute.Moe.Sigil
             : this(unchecked((ulong)value))
         {
         }
-
-        public static string SigilSvg(int value, [NotNull] string fg, [NotNull] string bg)
-        {
-            return new Sigil(value).ToSvg(fg, bg).ToString();
-        }
         #endregion
 
         private static byte Hash8(ulong value)
@@ -636,7 +631,9 @@ namespace Mute.Moe.Sigil
                 Layout(root, elements, dim, dim);
             }
             else
+                //ncrunch: no coverage start
                 throw new NotSupportedException($"Incorrect number of elements ({count})");
+                //ncrunch: no coverage end
 
             return doc;
         }
@@ -697,10 +694,12 @@ namespace Mute.Moe.Sigil
                 }
             }
 
+            //ncrunch: no coverage start
             IEnumerator IEnumerable.GetEnumerator()
             {
                 return GetEnumerator();
             }
+            //ncrunch: no coverage end
         }
     }
 }

@@ -14,6 +14,7 @@ using Mute.Moe.Utilities;
 namespace Mute.Moe.Discord.Modules
 {
     [Group("sfx")]
+    [RequireContext(ContextType.Guild)]
     public class SoundEffects
         : BaseModule
     {
@@ -43,10 +44,13 @@ namespace Mute.Moe.Discord.Modules
 
             var sfx = found.Random(_random);
 
-            var result = await _player.Play(Context.User, sfx);
+            var (result, finished) = await _player.Play(Context.User, sfx);
             switch (result)
             {
                 case PlayResult.Enqueued:
+                    await Context.Message.AddReactionAsync(new Emoji(EmojiLookup.SpeakerLowVolume));
+                    await finished;
+                    await Context.Message.RemoveReactionAsync(new Emoji(EmojiLookup.SpeakerLowVolume), Context.Client.CurrentUser);
                     return;
                 case PlayResult.UserNotInVoice:
                     await TypingReplyAsync("You are not in a voice channel!");

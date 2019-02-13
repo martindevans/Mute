@@ -29,7 +29,9 @@ namespace Mute.Moe.Sigil
                     svg = ToSvgPath(obj);
                     break;
                 default:
+                    //ncrunch: no coverage start
                     throw new NotSupportedException($"Unknown tag `{tag}`");
+                    //ncrunch: no coverage end
             }
 
             //Attach attributes
@@ -52,7 +54,9 @@ namespace Mute.Moe.Sigil
                 else if (fill == "BG")
                     svg.SetAttributeValue("fill", bg);
                 else
+                    //ncrunch: no coverage start
                     throw new NotSupportedException($"Unsupported fill mode `{fill}`");
+                    //ncrunch: no coverage end
             }
 
             return svg;

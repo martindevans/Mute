@@ -170,15 +170,5 @@ namespace Mute.Moe.Extensions
         {
             return new FriendlyId32(number).ToString();
         }
-
-        public static uint LeftRotate(this uint number, byte bits)
-        {
-            return (number << bits) | (number >> (32 - bits));
-        }
-
-        public static uint RightRotate(this uint number, byte bits)
-        {
-            return (number >> bits) | (number << (32 - bits));
-        }
     }
 }

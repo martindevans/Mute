@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Services;
+using Mute.Moe.Services.Words;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules
@@ -13,10 +15,10 @@ namespace Mute.Moe.Discord.Modules
     public class Words
         : BaseModule
     {
-        private readonly WordVectorsService _wordVectors;
+        private readonly IWords _wordVectors;
         private readonly WordTrainingService _training;
 
-        public Words(WordVectorsService wordVectors, WordTrainingService training)
+        public Words(IWords wordVectors, WordTrainingService training)
         {
             _wordVectors = wordVectors;
             _training = training;
@@ -25,7 +27,7 @@ namespace Mute.Moe.Discord.Modules
         [Command("vector"), Summary("I will get the raw vector for a word")]
         public async Task GetWordVector(string word)
         {
-            var vector = await _wordVectors.GetVector(word);
+            var vector = await _wordVectors.Vector(word);
             if (vector == null)
             {
                 await TypingReplyAsync("I don't know that word");
@@ -52,14 +54,14 @@ namespace Mute.Moe.Discord.Modules
         [Command("similarity"), Summary("I will tell you how similar two words are")]
         public async Task GetVectorSimilarity(string a, string b)
         {
-            var result = await _wordVectors.CosineDistance(a, b);
+            var result = await _wordVectors.Similarity(a, b);
 
             if (!result.HasValue)
             {
-                var av = await _wordVectors.GetVector(a);
+                var av = await _wordVectors.Vector(a);
                 if (av == null)
                     await TypingReplyAsync("I don't know the word `{a}`");
-                var bv = await _wordVectors.GetVector(b);
+                var bv = await _wordVectors.Vector(b);
                 if (bv == null)
                     await TypingReplyAsync("I don't know the word `{b}`");
             }
@@ -85,13 +87,31 @@ namespace Mute.Moe.Discord.Modules
             }
         }
 
+        [Command("similar")]
+        public async Task GetSimilarWords(string a, int n = 15)
+        {
+            var result = await _wordVectors.Similar(a);
+            if (result == null)
+            {
+                await TypingReplyAsync("I don't know the word `{a}`");
+                return;
+            }
+
+            await DisplayItemList(
+                result.Take(n).ToArray(),
+                () => "I can't find any similar words",
+                items => $"The {items.Count} most similar words are:",
+                (t, i) => $"`{t.Word}` ({t.Similarity})"
+            );
+        }
+
         [Command("teach")]
         public async Task TeachWord(string word)
         {
             word = word.ToLowerInvariant();
 
             //Check if we already know this word, in which case we can just early exit
-            var vector = await _wordVectors.GetVector(word);
+            var vector = await _wordVectors.Vector(word);
             if (vector != null)
             {
                 await TypingReplyAsync("I already know what {word} means!");
@@ -118,12 +138,6 @@ namespace Mute.Moe.Discord.Modules
                 if (message is IUserMessage um)
                     await um.AddReactionAsync(new Emoji(EmojiLookup.OpenBook));
             }
-        }
-
-        [RequireOwner, Command("cache-stats")]
-        public async Task CacheStats()
-        {
-            await ReplyAsync(new EmbedBuilder().AddField("Size", _wordVectors.CacheCount).AddField("Hits", _wordVectors.CacheHits).AddField("Miss", _wordVectors.CacheMisses));
         }
     }
 }

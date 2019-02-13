@@ -10,7 +10,6 @@ using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Discord.Modules
 {
-    [Group]
     [RequireOwner]
     public class Administration
         : BaseModule
@@ -27,21 +26,12 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
-        [RequireOwner]
         public async Task Say([NotNull] string message, IMessageChannel channel = null)
         {
             if (channel == null)
                 channel = Context.Channel;
 
             await channel.TypingReplyAsync(message);
-        }
-
-        [Command("sql"), Summary("I will execute an arbitrary SQL statement. Please be very careful x_x")]
-        [RequireOwner]
-        public async Task Sql([Remainder] string sql)
-        {
-            using (var result = await _database.ExecReader(sql))
-                await TypingReplyAsync($"SQL affected {result.RecordsAffected} rows");
         }
 
         [Command("conversation-status"), Summary("I will show the status of my current conversation with a user")]

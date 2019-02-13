@@ -6,6 +6,11 @@ namespace Mute.Moe.Services.Music
     public interface ITrack
     {
         /// <summary>
+        /// The guild which owns this track
+        /// </summary>
+        ulong Guild { get; }
+
+        /// <summary>
         /// Unique ID for this track
         /// </summary>
         ulong ID { get; }

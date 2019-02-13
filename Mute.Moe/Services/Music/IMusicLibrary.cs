@@ -9,16 +9,18 @@ namespace Mute.Moe.Services.Music
         /// <summary>
         /// Add a new track to the music library
         /// </summary>
+        /// <param name="guild"></param>
         /// <param name="path"></param>
         /// <param name="title"></param>
         /// <param name="url"></param>
         /// <param name="artist"></param>
         /// <returns></returns>
-        Task<ITrack> Add([NotNull] string path, [NotNull] string title, [CanBeNull] string url = null, [CanBeNull] string artist = null);
+        Task<ITrack> Add(ulong guild, [NotNull] string path, [NotNull] string title, [CanBeNull] string url = null, [CanBeNull] string artist = null);
 
         /// <summary>
         /// Search for tracks in the music library
         /// </summary>
+        /// <param name="guild"></param>
         /// <param name="id"></param>
         /// <param name="minRating"></param>
         /// <param name="maxRating"></param>
@@ -27,11 +29,12 @@ namespace Mute.Moe.Services.Music
         /// <param name="artistName"></param>
         /// <param name="artist"></param>
         /// <returns></returns>
-        Task<IAsyncEnumerable<ITrack>> Get(ulong? id = null, byte? minRating = null, byte? maxRating = null, uint? minPlayCount = null, uint? maxPlayCount = null, string artistName = null, ulong? artist = null);
+        Task<IAsyncEnumerable<ITrack>> Get(ulong guild, ulong? id = null, byte? minRating = null, byte? maxRating = null, uint? minPlayCount = null, uint? maxPlayCount = null, string artistName = null, ulong? artist = null);
 
         /// <summary>
         /// Increment the play count for a track
         /// </summary>
+        /// <param name="guild"></param>
         /// <param name="id"></param>
         /// <returns></returns>
         Task Played(ulong id);

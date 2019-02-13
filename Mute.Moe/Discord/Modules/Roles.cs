@@ -10,7 +10,7 @@ using IRole = Discord.IRole;
 
 namespace Mute.Moe.Discord.Modules
 {
-    [Group("role"), Alias("roles")]
+    [Group("role"), Alias("roles"), RequireContext(ContextType.Guild)]
     public class Roles
         : BaseModule
     {

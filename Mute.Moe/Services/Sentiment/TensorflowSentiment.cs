@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services;
+using Mute.Moe.Services.Words;
 using TensorFlow;
 
 namespace Mute.Moe.Services.Sentiment
@@ -12,12 +12,12 @@ namespace Mute.Moe.Services.Sentiment
     public class TensorflowSentiment
         : ISentimentEvaluator
     {
-        private readonly WordVectorsService _wordVectors;
+        private readonly IWords _wordVectors;
         private readonly SentimentConfig _config;
 
         private readonly Task<TFGraph> _graph;
 
-        public TensorflowSentiment([NotNull] Configuration config, WordVectorsService wordVectors)
+        public TensorflowSentiment([NotNull] Configuration config, IWords wordVectors)
         {
             _wordVectors = wordVectors;
             _config = config.Sentiment;
@@ -45,7 +45,7 @@ namespace Mute.Moe.Services.Sentiment
 
                     //Copy in word vectors element by element
                     var wordIndex = 0;
-                    foreach (var wordVector in words.AsParallel().AsOrdered().Select(_wordVectors.GetVector))
+                    foreach (var wordVector in words.AsParallel().AsOrdered().Select(_wordVectors.Vector))
                     {
                         for (var i = 0; i < 300; i++)
                         {

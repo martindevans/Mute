@@ -5,6 +5,9 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Attributes
 {
+    /// <summary>
+    /// An emoji will be attached to the message which triggered this context for the duration of the response handler
+    /// </summary>
     public class ThinkingReplyAttribute
         : BaseExecuteContextAttribute
     {

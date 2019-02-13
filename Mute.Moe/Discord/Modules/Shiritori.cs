@@ -6,6 +6,7 @@ using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services;
 using Mute.Moe.Extensions;
+using Mute.Moe.Services.Words;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -15,9 +16,9 @@ namespace Mute.Moe.Discord.Modules
     {
         private readonly WordsService _words;
         private readonly Random _random;
-        private readonly WordVectorsService _wordVectors;
+        private readonly IWords _wordVectors;
 
-        public Shiritori(WordsService words, Random random, WordVectorsService wordVectors)
+        public Shiritori(WordsService words, Random random, IWords wordVectors)
         {
             _words = words;
             _random = random;
@@ -112,7 +113,7 @@ namespace Mute.Moe.Discord.Modules
                 }
 
                 //Check that this word is in the dictionary or if it's not, check if it's got a valid word vector
-                if (!_words.Contains(theirWord) && (await _wordVectors.GetVector(theirWord)) == null)
+                if (!_words.Contains(theirWord) && (await _wordVectors.Vector(theirWord)) == null)
                 {
                     await TypingReplyAsync("That's not a real word! I win :D");
                     return;
@@ -183,7 +184,7 @@ namespace Mute.Moe.Discord.Modules
         private string PickMostSimilar(string previous, [NotNull] IEnumerable<string> options)
         {
             //Order by word vector similarity
-            var sims = options.Select(a => (a, Task.Run(() => _wordVectors.CosineDistance(previous, a))))
+            var sims = options.Select(a => (a, Task.Run(() => _wordVectors.Similarity(previous, a))))
                               .Select(a => (a.a, a.Item2.Result ?? 0))
                               .OrderByDescending(a => a.Item2);
 

@@ -41,5 +41,41 @@ namespace Mute.Tests.Sigil
             Assert.IsNotNull(str);
             Console.WriteLine(str);
         }
+
+        [TestMethod]
+        public void SigilFromSByte()
+        {
+            var s = new Moe.Sigil.Sigil((sbyte)-17);
+            var str = s.ToSvg().ToString();
+            Assert.IsNotNull(str);
+            Console.WriteLine(str);
+        }
+
+        [TestMethod]
+        public void SigilFromShort()
+        {
+            var s = new Moe.Sigil.Sigil((short)-24517);
+            var str = s.ToSvg().ToString();
+            Assert.IsNotNull(str);
+            Console.WriteLine(str);
+        }
+
+        [TestMethod]
+        public void SigilFromInt()
+        {
+            var s = new Moe.Sigil.Sigil((int)-568524564);
+            var str = s.ToSvg().ToString();
+            Assert.IsNotNull(str);
+            Console.WriteLine(str);
+        }
+
+        [TestMethod]
+        public void SigilFromLong()
+        {
+            var s = new Moe.Sigil.Sigil((long)-568556845665424564);
+            var str = s.ToSvg().ToString();
+            Assert.IsNotNull(str);
+            Console.WriteLine(str);
+        }
     }
 }

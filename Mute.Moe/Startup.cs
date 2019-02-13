@@ -48,6 +48,7 @@ using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
 using Mute.Moe.Services.SoundEffects;
+using Mute.Moe.Services.Words;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe
@@ -93,6 +94,7 @@ namespace Mute.Moe
             services.AddSingleton<IWikipedia, WikipediaApi>();
             services.AddSingleton<ISoundEffectLibrary, DatabaseSoundEffectLibrary>();
             services.AddSingleton<ISoundEffectPlayer, SoundEffectPlayer>();
+            services.AddSingleton<IWords, HttpWordVectors>();
 
             services.AddSingleton<AutoReactionTrainer>();
             services.AddSingleton<Status>();
@@ -105,7 +107,6 @@ namespace Mute.Moe
                 .AddSingleton<GameService>()
                 .AddSingleton<ConversationalResponseService>()
                 .AddSingleton<WordsService>()
-                .AddSingleton<WordVectorsService>()
                 .AddSingleton<WordTrainingService>()
                 .AddSingleton<MultichannelAudioService>();
         }
@@ -181,7 +182,8 @@ namespace Mute.Moe
             app.UseResponseCaching();
 
             app.UseGraphQL<InjectedSchema>();
-            app.UseGraphiQLServer(new GraphiQLOptions {
+            app.UseGraphiQLServer(new GraphiQLOptions
+            {
                 GraphiQLPath = "/graphiql",
                 GraphQLEndPoint = "/graphql"
             });

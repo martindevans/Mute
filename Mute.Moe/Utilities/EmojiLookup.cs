@@ -32,6 +32,11 @@
         public const string FastBackward = "⏪";
         public const string SkipBackward = "⏮";
 
+        public const string SpeakerLowVolume = "🔈";
+        public const string SpeakerMedVolume = "🔉";
+        public const string SpeakerHighVolume = "🔊";
+        public const string SpeakerMuted = "🔇";
+
         public const string Loading = "🔄";
 
         public const string OpenBook = "📖";

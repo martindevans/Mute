@@ -8,6 +8,19 @@ namespace Mute.Tests
     public class FriendlyId32Tests
     {
         [TestMethod]
+        public void ParseInvalid()
+        {
+            Assert.IsNull(FriendlyId32.Parse("aaaryc-racnes"));
+            Assert.IsNull(FriendlyId32.Parse("molaaa-racnes"));
+            Assert.IsNull(FriendlyId32.Parse("molryc-aaanes"));
+            Assert.IsNull(FriendlyId32.Parse("molryc-racaaa"));
+            Assert.IsNull(FriendlyId32.Parse("molrycracten"));
+            Assert.IsNull(FriendlyId32.Parse("hello"));
+            Assert.IsNull(FriendlyId32.Parse("hello-world"));
+            Assert.IsNull(FriendlyId32.Parse("molryc-world"));
+        }
+
+        [TestMethod]
         public void Roundtrip()
         {
             const uint a = 2323423;

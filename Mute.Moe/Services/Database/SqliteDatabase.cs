@@ -33,14 +33,5 @@ namespace Mute.Moe.Services.Database
                 return cmd.ExecuteNonQuery();
             }
         }
-
-        public static Task<DbDataReader> ExecReader([NotNull] this IDatabaseService db, string sql)
-        {
-            using (var cmd = db.CreateCommand())
-            {
-                cmd.CommandText = sql;
-                return cmd.ExecuteReaderAsync();
-            }
-        }
     }
 }

@@ -96,8 +96,7 @@ namespace Mute.Moe.Services.Reminders
             //If there is no next event then just hang forever
             if (next == null)
             {
-                while (!ct.IsCancellationRequested)
-                    await Task.Yield();
+                await Task.Delay(-1, ct);
                 return await Task.FromCanceled<BaseEventAction>(ct);
             }
             else
@@ -128,6 +127,8 @@ namespace Mute.Moe.Services.Reminders
 
             public override Task Run(ref IReminder next)
             {
+                Console.WriteLine("Create reminder " + _reminder.ID);
+
                 if (next == null || _reminder.TriggerTime < next.TriggerTime)
                     next = _reminder;
 
@@ -147,6 +148,8 @@ namespace Mute.Moe.Services.Reminders
 
             public override Task Run(ref IReminder next)
             {
+                Console.WriteLine("Delete reminder " + _id);
+
                 if (_id == next?.ID)
                     next = null;
                 return Task.CompletedTask;
@@ -169,6 +172,8 @@ namespace Mute.Moe.Services.Reminders
 
             public override Task Run(ref IReminder _)
             {
+                Console.WriteLine("Send reminder " + _reminder.ID);
+
                 return Task.Run(async () =>
                 {
                     if (_client.GetChannel(_reminder.ChannelId) is ITextChannel channel)
