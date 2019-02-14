@@ -4,12 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Humanizer;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Services.Information.SpaceX;
-using Oddity.API.Models.Launch;
+using Mute.Moe.Services.Information.SpaceX.Extensions;
+using Mute.Moe.Services.Notifications.SpaceX;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -18,10 +18,12 @@ namespace Mute.Moe.Discord.Modules
         : BaseModule, IKeyProvider
     {
         private readonly ISpacexInfo _spacex;
+        private readonly ISpacexNotifications _notifications;
 
-        public SpaceX(ISpacexInfo spacex)
+        public SpaceX(ISpacexInfo spacex, ISpacexNotifications notifications)
         {
             _spacex = spacex;
+            _notifications = notifications;
         }
 
         [Command("details"), Alias("flight-no", "flight-num"), Summary("I will tell you about a specific spacex launch")]
@@ -40,7 +42,7 @@ namespace Mute.Moe.Discord.Modules
                 return;
             }
 
-            await ReplyAsync(LaunchEmbed(launches.Single()));
+            await ReplyAsync(launches.Single().DiscordEmbed());
         }
 
         [Command("next"), Alias("upcoming"), Summary("I will tell you about the next spacex launch(es)")]
@@ -50,7 +52,7 @@ namespace Mute.Moe.Discord.Modules
             {
                 if (count == 1)
                 {
-                    await ReplyAsync(LaunchEmbed(await _spacex.NextLaunch()));
+                    await ReplyAsync(await _spacex.NextLaunch().DiscordEmbed());
                 }
                 else
                 {
@@ -59,7 +61,7 @@ namespace Mute.Moe.Discord.Modules
                         launches,
                         () => "There are no upcoming SpaceX launches!",
                         null,
-                        (l, i) => DescribeLaunch(l)
+                        (l, i) => l.Summary()
                     );
                 }
             }
@@ -72,60 +74,17 @@ namespace Mute.Moe.Discord.Modules
         [Command("roadster"), Summary("I will tell you about the spacex roadster")]
         public async Task Roadster()
         {
-            var roadster = await _spacex.Roadster();
+            await ReplyAsync(await _spacex.Roadster().DiscordEmbed());
+        }
 
-            var speed = ((int)roadster.SpeedKph).ToString("#,##0");
-            var earth = ((int)roadster.EarthDistanceKilometers);
-            var mars = ((int)roadster.MarsDistanceKilometers);
-            var period = ((int)roadster.PeriodDays).Days().Humanize();
-
-            await ReplyAsync(new EmbedBuilder()
-                .WithTitle($"NORAD:{roadster.NoradId}")
-                .WithDescription($"{roadster.Name} was put into space {roadster.DateTimeUtc.ToLocalTime().Humanize()}.")
-                .WithUrl(roadster.Wikipedia)
-                .WithColor(earth < mars ? Color.Blue : Color.Red)
-                .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API")
-                .AddField("Speed", $"{speed}Kph", true)
-                .AddField("Orbit", roadster.OrbitType, true)
-                .AddField("Period", period, true)
-                .AddField("Distance From Earth", $"{earth:#,##0}Km", true)
-                .AddField("Distance From Mars", $"{mars:#,##0}Km", true));
+        [Command("subscribe"), RequireOwner]
+        public async Task Subscribe([CanBeNull] IRole role = null)
+        {
+            await _notifications.Subscribe(Context.Channel.Id, role?.Id);
+            await TypingReplyAsync("Subscribed to receive SpaceX mission updates");
         }
 
         #region helpers
-        [NotNull] private static EmbedBuilder LaunchEmbed([NotNull] LaunchInfo launch)
-        {
-            var icon = launch.Links.MissionPatch ?? launch.Links.MissionPatchSmall;
-            var url = launch.Links.Wikipedia ?? launch.Links.RedditCampaign ?? launch.Links.RedditLaunch ?? launch.Links.Presskit;
-            var upcoming = launch.Upcoming.HasValue && launch.Upcoming.Value;
-            var success = launch.LaunchSuccess.HasValue && launch.LaunchSuccess.Value;
-
-            var builder = new EmbedBuilder()
-                .WithTitle(launch.MissionName)
-                .WithDescription(launch.Details)
-                .WithUrl(url)
-                .WithAuthor($"Flight {launch.FlightNumber}", icon, icon)
-                .WithColor(upcoming ? Color.Blue : success ? Color.Green : Color.Red)
-                .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
-
-            var site = launch.LaunchSite.SiteLongName ?? launch.LaunchSite.SiteName;
-            if (!string.IsNullOrWhiteSpace(site))
-                builder = builder.AddField("Launch Site", site);
-
-            if (launch.LaunchDateUtc.HasValue)
-                builder = builder.AddField("Launch Date", launch.LaunchDateUtc.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
-
-            var landing = string.Join(", ", launch.Rocket.FirstStage.Cores.Select(c => c.LandingVehicle?.ToString()).Where(a => a != null).ToArray());
-            if (!string.IsNullOrWhiteSpace(landing))
-                builder = builder.AddField("Landing", landing, true);
-
-            builder = builder.AddField("Vehicle", launch.Rocket.RocketName, true);
-
-            
-
-            return builder;
-        }
-
         [ItemNotNull] private async Task<IReadOnlyList<string>> DescribeUpcomingFlights(int count)
         {
             var next = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.LaunchDateUtc.Value).Take(count).ToArray();
@@ -133,21 +92,10 @@ namespace Mute.Moe.Discord.Modules
             var responses = new List<string>();
             foreach (var item in next)
             {
-                var response = DescribeLaunch(item);
+                var response = item.Summary();
                 responses.Add(response);
             }
             return responses;
-        }
-
-        [NotNull] private static string DescribeLaunch([NotNull] LaunchInfo launch)
-        {
-            var date = launch.LaunchDateUtc.HasValue ? launch.LaunchDateUtc.Value.Humanize() : "";
-            var num = launch.FlightNumber;
-            var site = launch.LaunchSite;
-            var name = launch.MissionName;
-            var reuse = launch.Reuse;
-            var type = launch.Rocket.RocketName;
-            return $"Flight {num} will launch '{name}' from {site.SiteName} on a{(reuse.Core ?? false ? " reused" : "")} {type} rocket {date}";
         }
         #endregion
 

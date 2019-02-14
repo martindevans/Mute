@@ -45,6 +45,7 @@ using Mute.Moe.Auth.GraphQL;
 using Mute.Moe.Controllers.GraphQL;
 using Mute.Moe.GraphQL.Schema;
 using Mute.Moe.Services.Information.Wikipedia;
+using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
 using Mute.Moe.Services.SoundEffects;
@@ -95,6 +96,8 @@ namespace Mute.Moe
             services.AddSingleton<ISoundEffectLibrary, DatabaseSoundEffectLibrary>();
             services.AddSingleton<ISoundEffectPlayer, SoundEffectPlayer>();
             services.AddSingleton<IWords, HttpWordVectors>();
+            services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
+            services.AddSingleton<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
 
             services.AddSingleton<AutoReactionTrainer>();
             services.AddSingleton<Status>();

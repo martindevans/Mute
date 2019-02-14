@@ -93,7 +93,7 @@ namespace Mute.Moe.Discord.Modules
             var result = await _wordVectors.Similar(a);
             if (result == null)
             {
-                await TypingReplyAsync("I don't know the word `{a}`");
+                await TypingReplyAsync($"I don't know the word `{a}`");
                 return;
             }
 
