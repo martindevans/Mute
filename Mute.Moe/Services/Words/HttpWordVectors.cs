@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services;
 using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -17,9 +16,11 @@ namespace Mute.Moe.Services.Words
         private readonly IHttpClient _client;
         private readonly WordVectorsConfig _config;
 
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly FluidCache<WordVector> _vectorCache;
         private readonly IIndex<string, WordVector> _indexByWord;
 
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly FluidCache<SimilarResult> _similarCache;
         private readonly IIndex<string, SimilarResult> _indexSimilarByWord;
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 
 namespace Mute.Moe.Services.Music
@@ -31,9 +32,9 @@ namespace Mute.Moe.Services.Music
         [CanBeNull] string Url { get; }
 
         /// <summary>
-        /// The artist who composed this track
+        /// The artist who composed/performed this track
         /// </summary>
-        [CanBeNull] IArtist Artist { get; }
+        [CanBeNull] IReadOnlyList<IArtist> Artists { get; }
 
         /// <summary>
         /// Duration of this track

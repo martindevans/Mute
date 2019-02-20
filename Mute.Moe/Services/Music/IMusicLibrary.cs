@@ -9,13 +9,13 @@ namespace Mute.Moe.Services.Music
         /// <summary>
         /// Add a new track to the music library
         /// </summary>
-        /// <param name="guild"></param>
-        /// <param name="path"></param>
-        /// <param name="title"></param>
-        /// <param name="url"></param>
-        /// <param name="artist"></param>
+        /// <param name="guild">Guild which owns this track</param>
+        /// <param name="path">Path to the file for this audio track</param>
+        /// <param name="title">Human readable title of this track</param>
+        /// <param name="url">URL related to this track</param>
+        /// <param name="artists">Artists related to this track</param>
         /// <returns></returns>
-        Task<ITrack> Add(ulong guild, [NotNull] string path, [NotNull] string title, [CanBeNull] string url = null, [CanBeNull] string artist = null);
+        Task<ITrack> Add(ulong guild, [NotNull] string path, [NotNull] string title, [CanBeNull] string url = null, [CanBeNull] IReadOnlyList<IArtist> artists = null);
 
         /// <summary>
         /// Search for tracks in the music library
@@ -34,7 +34,6 @@ namespace Mute.Moe.Services.Music
         /// <summary>
         /// Increment the play count for a track
         /// </summary>
-        /// <param name="guild"></param>
         /// <param name="id"></param>
         /// <returns></returns>
         Task Played(ulong id);

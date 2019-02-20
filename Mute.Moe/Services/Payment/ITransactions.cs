@@ -71,6 +71,7 @@ namespace Mute.Moe.Services.Payment
         /// <param name="database"></param>
         /// <param name="userA"></param>
         /// <param name="userB"></param>
+        /// <param name="unit"></param>
         /// <returns>All non-zero balances in order of amount</returns>
         [ItemNotNull] public static async Task<IReadOnlyList<IBalance>> GetBalances([NotNull] this ITransactions database, ulong userA, ulong? userB, [CanBeNull] string unit = null)
         {

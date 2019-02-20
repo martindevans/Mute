@@ -132,10 +132,9 @@ namespace Mute.Moe.Services.SoundEffects
             {
                 var cmd = db.CreateCommand();
 
-                if (search == "*")
-                    cmd.CommandText = FindAllSfxSql;
-                else
-                    cmd.CommandText = FindSfxSql;
+                cmd.CommandText = search == "*"
+                                ? FindAllSfxSql
+                                : FindSfxSql;
 
                 cmd.Parameters.Add(new SQLiteParameter("@Search", System.Data.DbType.String) { Value = search.ToLowerInvariant() });
                 cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });

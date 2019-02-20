@@ -6,7 +6,6 @@ using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -15,13 +14,11 @@ namespace Mute.Moe.Discord.Modules
         : BaseModule
     {
         private readonly DiscordSocketClient _client;
-        private readonly IDatabaseService _database;
         private readonly ConversationalResponseService _conversations;
 
-        public Administration( DiscordSocketClient client, IDatabaseService database, ConversationalResponseService conversations)
+        public Administration( DiscordSocketClient client, ConversationalResponseService conversations)
         {
             _client = client;
-            _database = database;
             _conversations = conversations;
         }
 

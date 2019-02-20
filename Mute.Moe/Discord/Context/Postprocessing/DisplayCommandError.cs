@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
+using JetBrains.Annotations;
 using Mute.Moe.Discord.Modules;
 using Mute.Moe.Extensions;
 
@@ -16,7 +17,7 @@ namespace Mute.Moe.Discord.Context.Postprocessing
             _commands = commands;
         }
 
-        public async Task Process(MuteCommandContext context, IResult result)
+        public async Task Process(MuteCommandContext context, [NotNull] IResult result)
         {
             if (result.Error == CommandError.UnknownCommand)
             {

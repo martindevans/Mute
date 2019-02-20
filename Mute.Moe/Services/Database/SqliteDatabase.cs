@@ -1,6 +1,5 @@
 ﻿using System.Data.Common;
 using System.Data.SQLite;
-using System.Threading.Tasks;
 using JetBrains.Annotations;
 
 namespace Mute.Moe.Services.Database

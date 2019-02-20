@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Folder Include="Modules\" />
+    <Folder Include="Services\Notifications\SpaceX\" />
   </ItemGroup>
 
   <ItemGroup>

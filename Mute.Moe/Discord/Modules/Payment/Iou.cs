@@ -49,7 +49,7 @@ namespace Mute.Moe.Discord.Modules.Payment
         {
             async Task DebtTotalsPerUnit()
             {
-                if (balances.Count() > 1)
+                if (balances.Count > 1)
                 {
                     var totals = balances.GroupBy(a => a.Unit)
                                          .Select(a => (a.Key, a.Sum(o => o.Amount)))

@@ -89,7 +89,7 @@ namespace Mute.Moe.Discord.Modules
 
             var ticker = await _crypto.GetTicker(currency, quote);
 
-            var reply = "";
+            string reply;
             if (ticker == null)
             {
                 reply = $"{currency.Name} ({currency.Symbol}) doesn't seem to have any price information associated with it";

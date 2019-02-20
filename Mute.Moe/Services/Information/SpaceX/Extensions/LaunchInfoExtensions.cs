@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Humanizer;
@@ -34,15 +35,20 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
                 builder = builder.AddField("Launch Site", site);
 
             if (launch.LaunchDateUtc.HasValue)
+            {
                 builder = builder.AddField("Launch Date", launch.LaunchDateUtc.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
+                builder = builder.AddField("T-", (launch.LaunchDateUtc.Value - DateTime.UtcNow).Humanize());
+            }
 
             var landing = string.Join(", ", launch.Rocket.FirstStage.Cores.Select(c => c.LandingVehicle?.ToString()).Where(a => a != null).ToArray());
             if (!string.IsNullOrWhiteSpace(landing))
                 builder = builder.AddField("Landing", landing, true);
 
-            builder = builder.AddField("Vehicle", launch.Rocket.RocketName, true);
+            var serials = string.Join(",", launch.Rocket.FirstStage.Cores.Select(c => c.CoreSerial ?? "B????").ToArray());
+            builder = builder.AddField("Vehicle", $"{launch.Rocket.RocketName} ({serials})", true);
 
-            
+            var flights = string.Join(",", launch.Rocket.FirstStage.Cores.Select(c => c.Flight?.ToString() ?? "??").ToString());
+            builder = builder.AddField("Previous Flights", flights);
 
             return builder;
         }

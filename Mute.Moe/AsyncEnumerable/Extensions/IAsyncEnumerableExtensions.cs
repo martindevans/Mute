@@ -41,7 +41,7 @@ namespace Mute.Moe.AsyncEnumerable.Extensions
                 return _enumerable.GetEnumerator();
             }
 
-            public IOrderedAsyncEnumerable<T> CreateOrderedEnumerable<TKey>(Func<T, TKey> keySelector, IComparer<TKey> comparer, bool @descending)
+            public IOrderedAsyncEnumerable<T> CreateOrderedEnumerable<TKey>(Func<T, TKey> keySelector, IComparer<TKey> comparer, bool descending)
             {
                 var comp = new Comparer<TKey>(_keySelector, _comparer, keySelector, comparer);
                 if (!descending)

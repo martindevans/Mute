@@ -26,6 +26,19 @@ namespace Mute.Moe.Discord.Modules
             _notifications = notifications;
         }
 
+        [Command("core"), Alias("booster"), Summary("I will tell you about a specific SpaceX vehicle")]
+        public async Task CoreDetails(string id)
+        {
+            var details = await _spacex.Core(id);
+            if (details == null)
+            {
+                await TypingReplyAsync("There doesn't seem to be a core by that ID");
+                return;
+            }
+
+            await ReplyAsync(await details.DiscordEmbed());
+        }
+
         [Command("details"), Alias("flight-no", "flight-num"), Summary("I will tell you about a specific spacex launch")]
         public async Task LaunchDetails(int id)
         {
