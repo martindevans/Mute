@@ -65,7 +65,9 @@ namespace Mute.Moe.Discord.Modules
             else
             {
                 var choice = FuzzyParsing.BooleanChoice(next.Content);
-                if (choice.Value == real)
+                if (choice.Confidence < 0.5f)
+                    await ReplyAsync("Sorry, I don't understand you :(");
+                else if (choice.Value == real)
                     await ReplyAsync("Correct!");
                 else if (real)
                     await TypingReplyAsync("Wrong! This is a real kitty");
