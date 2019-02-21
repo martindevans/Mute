@@ -47,7 +47,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             var serials = string.Join(",", launch.Rocket.FirstStage.Cores.Select(c => c.CoreSerial ?? "B????").ToArray());
             builder = builder.AddField("Vehicle", $"{launch.Rocket.RocketName} ({serials})", true);
 
-            var flights = string.Join(",", launch.Rocket.FirstStage.Cores.Select(c => c.Flight?.ToString() ?? "??").ToArray());
+            var flights = string.Join(",", launch.Rocket.FirstStage.Cores.Select(c => (c.Flight - 1)?.ToString() ?? "??").ToArray());
             builder = builder.AddField("Previous Flights", flights);
 
             return builder;

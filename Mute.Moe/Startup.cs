@@ -76,7 +76,8 @@ namespace Mute.Moe
             services.AddSingleton<IDatabaseService, SqliteDatabase>();
             services.AddSingleton<ISentimentEvaluator, TensorflowSentiment>();
             services.AddSingleton<ISentimentTrainer, DatabaseSentimentTrainer>();
-            services.AddSingleton<ICatPictureService, CataasPictures>();
+            services.AddSingleton<ICatPictureProvider, CataasPictures>();
+            services.AddSingleton<IArtificialCatPictureProvider, ThisCatDoesNotExist>();
             services.AddSingleton<IDogPictureService, DogceoPictures>();
             services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
             services.AddSingleton<IMangaInfo, MikibotAnilistMangaSearch>();

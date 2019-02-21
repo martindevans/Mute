@@ -46,16 +46,16 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
                           .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
 
             if (info.Block.HasValue)
-                builder = builder.AddField("Block", info.Block.Value.ToString());
+                builder = builder.AddField("Block", info.Block.Value.ToString(), true);
 
             if (info.AsdsLandings.HasValue && info.AsdsLandings.Value > 0)
-                builder = builder.AddField("ASDS Landings", info.AsdsLandings.Value.ToString());
+                builder = builder.AddField("ASDS Landings", info.AsdsLandings.Value.ToString(), true);
 
             if (info.RtlsLandings.HasValue && info.RtlsLandings.Value > 0)
-                builder = builder.AddField("RTLS Landings", info.RtlsLandings.Value.ToString());
+                builder = builder.AddField("RTLS Landings", info.RtlsLandings.Value.ToString(), true);
 
             if (info.OriginalLaunch.HasValue)
-                builder = builder.AddField("First Launch Date", info.OriginalLaunch.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"));
+                builder = builder.AddField("First Launch Date", info.OriginalLaunch.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
 
             return builder;
         }

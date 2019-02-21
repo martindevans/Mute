@@ -1,4 +1,6 @@
-﻿namespace Mute.Moe.Utilities
+﻿using Discord;
+
+namespace Mute.Moe.Utilities
 {
     public static class EmojiLookup
     {
@@ -44,5 +46,8 @@
         public const string GreenBook = "📗";
         public const string BlueBook = "📘";
         public const string OrangeBook = "📙";
+
+        public const string CatFace = "🐱";
+        public const string ScreamingCatFace = "🙀";
     }
 }

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Images.Cats
 {
-    public interface ICatPictureService
+    public interface ICatPictureProvider
     {
         Task<Stream> GetCatPictureAsync();
     }
