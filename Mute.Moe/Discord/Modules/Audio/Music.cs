@@ -14,7 +14,7 @@ using Mute.Moe.Discord.Services.Audio.Clips;
 using Mute.Moe.Discord.Services.Audio.Playback;
 using Mute.Moe.Utilities;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Audio
 {
     [Group]
     public class Music

@@ -11,7 +11,7 @@ using Mute.Moe.Extensions;
 using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Utilities;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Audio
 {
     [Group("sfx")]
     [RequireContext(ContextType.Guild)]

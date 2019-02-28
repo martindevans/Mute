@@ -8,7 +8,7 @@ using Mute.Moe.Discord.Services;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Words;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Games
 {
     [Group("shiritori")]
     public class Shiritori

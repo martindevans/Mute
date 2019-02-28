@@ -39,19 +39,20 @@ namespace Mute.Moe.Services.SoundEffects
         {
             var normalized = NormalizeAudioData(data);
 
-            //Choose a unique name for this file based on the hash of name and normalized data
+            //Choose a unique name for this file based on the hash(name, data) and guild
             var hashName = name.SHA256();
             var hashData = normalized.SHA256();
             var hash = $"{hashName}{hashData}{guild}".SHA256();
             var fileName = hash + ".wav";
-            var path = Path.Combine(_config.SfxFolder, guild.ToString(), fileName);
+            var pathDir = Path.Combine(_config.SfxFolder, guild.ToString());
+            var path = Path.Combine(pathDir, fileName);
 
             //Check that there isn't a file collision
             if (_fs.File.Exists(path))
                 throw new InvalidOperationException("File already exists, use a different name");
 
-            //Create a folder for the guild
-            _fs.Directory.CreateDirectory(path);
+            //Ensure the path exists to put the file where it needs to go
+            _fs.Directory.CreateDirectory(pathDir);
 
             //Write out to disk
             normalized.Position = 0;

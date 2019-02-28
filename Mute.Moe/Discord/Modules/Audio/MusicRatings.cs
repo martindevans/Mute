@@ -7,7 +7,7 @@ using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Audio;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Audio
 {
     [Group("ratings")]
     public class MusicRatings
