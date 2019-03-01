@@ -44,6 +44,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
         {
             try
             {
+                //Set up the initial state as if we just notified about this flight
                 _state = new NotificationState(await _spacex.NextLaunch(), DateTime.UtcNow);
 
                 while (true)
@@ -53,6 +54,12 @@ namespace Mute.Moe.Services.Notifications.SpaceX
 
                     //Get the next launch according to the API
                     var newNext = await _spacex.NextLaunch();
+
+                    //There are 4 possibilities here:
+                    // 1. Scrub, launch time of same flight has been pushed back
+                    // 2. Scrub, launch time has been pushed back so far another flight is next
+                    // 3. AOK, same flight number as last time is on track to launch
+                    // 4. AOK, same flight number as last time is on track to launch, a notification needs to be sent
 
                     //If the actual launch ID has changed notify about that
                     if (newNext.FlightNumber != _state.Launch.FlightNumber)
@@ -159,7 +166,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             {
                 Launch = launch;
 
-                TimeToLaunch = utcNow - launch.LaunchDateUtc;
+                TimeToLaunch = launch.LaunchDateUtc - utcNow;
                 LaunchTimeUtc = launch.LaunchDateUtc;
             }
         }
