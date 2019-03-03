@@ -36,8 +36,16 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 
             if (launch.LaunchDateUtc.HasValue)
             {
-                builder = builder.AddField("Launch Date", launch.LaunchDateUtc.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
-                builder = builder.AddField("T-", (launch.LaunchDateUtc.Value - DateTime.UtcNow).Humanize());
+                var date = launch.LaunchDateUtc.Value.ToString("HH\\:mm UTC dd-MMM-yyyy");
+                if (launch.IsTentative || launch.LaunchDateUtc.Value < DateTime.UtcNow)
+                {
+                    builder.AddField("Launch Date", $"Uncertain  - scheduled for {date} ± 1 {launch.TentativeMaxPrecision}");
+                }
+                else
+                {
+                    builder = builder.AddField("Launch Date", date, true);
+                    builder = builder.AddField("T-", (launch.LaunchDateUtc.Value - DateTime.UtcNow).Humanize());
+                }
             }
 
             var landing = string.Join(", ", launch.Rocket.FirstStage.Cores.Select(c => c.LandingVehicle?.ToString()).Where(a => a != null).ToArray());

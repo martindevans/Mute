@@ -8,7 +8,7 @@ using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Utilities;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.OtherBots
 {
     public class Hugot
         : BaseModule, IKeyProvider

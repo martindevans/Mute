@@ -22,13 +22,15 @@ namespace Mute.Moe.Services.Notifications.SpaceX
         private static readonly IReadOnlyList<TimeSpan> NotificationTimes = new[] {
             TimeSpan.FromDays(7),
             TimeSpan.FromDays(1),
-            TimeSpan.FromHours(1),
-            TimeSpan.FromMinutes(10),
-            TimeSpan.FromMinutes(1),
-            TimeSpan.FromSeconds(10)
+            TimeSpan.FromHours(6),
+            TimeSpan.FromMinutes(30),
+            TimeSpan.FromMinutes(5),
+            TimeSpan.FromMinutes(1)
         };
 
-        private Task _thread;
+        public bool Status => !_thread.IsFaulted;
+
+        private readonly Task _thread;
         private NotificationState _state;
 
         public AsyncSpacexNotificationsSender(DiscordSocketClient client, ISpacexNotifications notifications, ISpacexInfo spacex)
@@ -97,7 +99,12 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                         //Wait for the next notification, or an hour, whichever is less
                         var nextEventTime = timeToLaunch - nextNotification;
                         if (nextEventTime < TimeSpan.FromHours(1))
-                            await Task.Delay(nextEventTime);
+                        {
+                            if (nextEventTime > TimeSpan.FromSeconds(0.5f))
+                                await Task.Delay(nextEventTime);
+                            else
+                                await Task.Delay(TimeSpan.FromSeconds(0.5f));
+                        }
                         else
                             await Task.Delay(TimeSpan.FromHours(1));
                     }
@@ -127,7 +134,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             //Append video link if there is one.
             var video = "";
             if (launch.Links.VideoLink != null)
-                video = $". Watch it [here]({launch.Links.VideoLink}).";
+                video = $". Watch it here: {launch.Links.VideoLink}.";
 
             return $"SpaceX launch {launch.MissionName} will launch in {launch.LaunchDateUtc.Humanize()} {video}";
         }
