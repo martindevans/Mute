@@ -9,7 +9,7 @@ namespace Mute.Moe.Services.Information.SpaceX
 {
     public interface ISpacexInfo
     {
-        [NotNull, ItemNotNull] Task<LaunchInfo> NextLaunch();
+        [NotNull, ItemCanBeNull] Task<LaunchInfo> NextLaunch();
 
         [NotNull, ItemCanBeNull] Task<IReadOnlyList<LaunchInfo>> Launch(int id);
 

@@ -10,25 +10,33 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 {
     public static class LaunchInfoExtensions
     {
-        [ItemNotNull, NotNull] public static async Task<EmbedBuilder> DiscordEmbed([NotNull] this Task<LaunchInfo> launch)
+        [ItemNotNull, NotNull] public static async Task<EmbedBuilder> DiscordEmbed([NotNull, ItemCanBeNull] this Task<LaunchInfo> launch)
         {
             return (await launch).DiscordEmbed();
         }
 
-        [NotNull] public static EmbedBuilder DiscordEmbed([NotNull] this LaunchInfo launch)
+        [NotNull] public static EmbedBuilder DiscordEmbed([CanBeNull] this LaunchInfo launch)
         {
+            var builder = new EmbedBuilder()
+                .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
+
+            if (launch == null)
+            {
+                builder = builder.WithTitle("No Upcoming Missions!");
+                return builder;
+            }
+
             var icon = launch.Links.MissionPatch ?? launch.Links.MissionPatchSmall;
             var url = launch.Links.Wikipedia ?? launch.Links.RedditCampaign ?? launch.Links.RedditLaunch ?? launch.Links.Presskit;
             var upcoming = launch.Upcoming.HasValue && launch.Upcoming.Value;
             var success = launch.LaunchSuccess.HasValue && launch.LaunchSuccess.Value;
 
-            var builder = new EmbedBuilder()
-                          .WithTitle(launch.MissionName)
-                          .WithDescription(launch.Details)
-                          .WithUrl(url)
-                          .WithAuthor($"Flight {launch.FlightNumber}", icon, icon)
-                          .WithColor(upcoming ? Color.Blue : success ? Color.Green : Color.Red)
-                          .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
+            builder = builder
+                .WithTitle(launch.MissionName)
+                .WithDescription(launch.Details)
+                .WithUrl(url)
+                .WithAuthor($"Flight {launch.FlightNumber}", icon, icon)
+                .WithColor(upcoming ? Color.Blue : success ? Color.Green : Color.Red);
 
             var site = launch.LaunchSite.SiteLongName ?? launch.LaunchSite.SiteName;
             if (!string.IsNullOrWhiteSpace(site))
