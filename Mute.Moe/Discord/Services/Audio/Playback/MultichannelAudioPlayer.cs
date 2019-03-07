@@ -20,7 +20,7 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
         private readonly IVoiceChannel _voiceChannel;
         private readonly AutoResetEvent _threadEvent;
         private readonly Task _thread;
-        private readonly byte[] _buffer = new byte[MixingFormat.AverageBytesPerSecond / 50];
+        private readonly byte[] _buffer = new byte[MixingFormat.AverageBytesPerSecond / 25];
 
         private readonly Dictionary<IChannel, ChannelConverter> _channels = new Dictionary<IChannel, ChannelConverter>();
 
@@ -89,11 +89,11 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
                 using (var c = await _voiceChannel.ConnectAsync())
                 using (var s = c.CreatePCMStream(AudioApplication.Mixed, _voiceChannel.Bitrate))
                 {
-                    var playing = false;
+                    var speakingState = false;
                     while (!_stopped)
                     {
                         //Wait for an event to happen to wake up the thread
-                        if (!playing)
+                        if (!speakingState)
                             _threadEvent.WaitOne(250);
 
                         //Break out if stop flag has been set
@@ -101,21 +101,23 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
                             return;
 
                         //Count up how many channels are playing.
+                        bool playing;
                         lock (_channels)
                             playing = _channels.Select(a => a.Value.IsPlaying ? 1 : 0).Sum() > 0;
 
-                        //Set playback state
-                        await c.SetSpeakingAsync(playing);
+                        //Set playback state if it has changed
+                        if (playing != speakingState)
+                        {
+                            await c.SetSpeakingAsync(speakingState);
+                            speakingState = playing;
+                        }
 
                         //Early exit if nothing is playing
-                        if (!playing)
+                        if (!speakingState)
                             continue;
 
-                        //Read output from mixer
-                        var mixed = _mixerOutput.Read(_buffer, 0, _buffer.Length);
-
-                        //Send the mixed audio buffer to discord
-                        await s.WriteAsync(_buffer, 0, mixed);
+                        //Copy mixed audio to the output
+                        await WriteOutput(_mixerOutput, s, _buffer.Length, _buffer);
                     }
                 }
             }
@@ -123,6 +125,23 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
             {
                 Console.WriteLine(e);
                 throw;
+            }
+        }
+
+        private static async Task WriteOutput(IWaveProvider waveSource, AudioOutStream waveSink, int sampleCount, byte[] buffer)
+        {
+            while (sampleCount > 0)
+            {
+                //Read output from mixer
+                var mixed = waveSource.Read(buffer, 0, buffer.Length);
+                sampleCount -= mixed;
+
+                //Send the mixed audio buffer to discord
+                await waveSink.WriteAsync(buffer, 0, mixed);
+                
+                //If no audio was mixed early exit, this probably indicates the end of the stream
+                if (mixed == 0)
+                    return;
             }
         }
 
