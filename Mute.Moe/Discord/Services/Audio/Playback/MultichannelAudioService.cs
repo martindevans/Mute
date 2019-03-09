@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
@@ -27,23 +28,37 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
         {
             //Ignore this event if the bot isn't in a channel
             if (Channel == null)
+            {
+                Console.WriteLine("Ignoring voice event (bot not in channel)");
                 return;
+            }
 
             //Ignore this event if it is the bot itself doing something
             if (user.Id == _client.CurrentUser.Id)
+            {
+                Console.WriteLine("Ignoring voice event (event regards self)");
                 return;
+            }
 
             //Ignore this event if it's not someone leaving the channel
             if (before.VoiceChannel != Channel || after.VoiceChannel != null)
+            {
+                Console.WriteLine("Ignoring voice event (it's not a channel leave event)");
                 return;
+            }
 
             //If there are other users in the channel stay in the channel
             var count = await Channel.GetUsersAsync().Select(a => a.Count).Sum();
             if (count > 1)
+            {
+                Console.WriteLine($"Ignoring voice event (there are {count} users in channel)");
                 return;
+            }
 
             //No one is listening :(
+            Console.WriteLine("Stopping voice");
             await Stop();
+            Console.WriteLine("Stopped voice");
         }
 
         public async Task<bool> MoveChannel([CanBeNull] IUser user)
@@ -83,13 +98,21 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
 
         public async Task Stop()
         {
-            if (_player != null)
-                await _player.Stop();
-            _player = null;
-            Channel = null;
+            try
+            {
+                if (_player != null)
+                    await _player.Stop();
+                _player = null;
+                Channel = null;
 
-            foreach (var channel in _channels)
-                channel.Stop();
+                foreach (var channel in _channels)
+                    channel.Stop();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 

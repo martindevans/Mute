@@ -119,6 +119,9 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
                         //Copy mixed audio to the output
                         await WriteOutput(_mixerOutput, s, _buffer.Length, _buffer);
                     }
+
+                    await c.SetSpeakingAsync(false);
+                    await c.StopAsync();
                 }
             }
             catch (Exception e)
