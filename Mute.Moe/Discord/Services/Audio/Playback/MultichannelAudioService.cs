@@ -25,14 +25,17 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
 
         private async Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
         {
+            //Ignore this event if the bot isn't in a channel
             if (Channel == null)
                 return;
 
+            //Ignore this event if it is the bot itself doing something
             if (user.Id == _client.CurrentUser.Id)
                 return;
 
-            //Ensure we can get all users in this channel
-            await _client.DownloadUsersAsync(new [] { Channel.Guild });
+            //Ignore this event if it's not someone leaving the channel
+            if (before.VoiceChannel != Channel || after.VoiceChannel != null)
+                return;
 
             //If there are other users in the channel stay in the channel
             var count = await Channel.GetUsersAsync().Select(a => a.Count).Sum();
