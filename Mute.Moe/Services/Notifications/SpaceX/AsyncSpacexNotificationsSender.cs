@@ -118,18 +118,18 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             }
         }
 
-        [NotNull] private string NextLaunchChangedMessage([NotNull] LaunchInfo previous, [NotNull] LaunchInfo next)
+        [NotNull] private static string NextLaunchChangedMessage([NotNull] LaunchInfo previous, [NotNull] LaunchInfo next)
         {
             return $"The next SpaceX Launch has changed from {previous.MissionName} to {next.MissionName}";
         }
 
-        [NotNull] private string ExpectedLaunchTimeChangedMessage([NotNull] LaunchInfo launch, DateTime previousT, DateTime newT)
+        [NotNull] private static string ExpectedLaunchTimeChangedMessage([NotNull] LaunchInfo launch, DateTime previousT, DateTime newT)
         {
             var delay = newT - previousT;
             return $"SpaceX launch {launch.MissionName} has been delayed by {delay.Humanize()} to {newT:HH\\:mm UTC dd-MMM-yyyy}";
         }
 
-        [NotNull] private string PeriodicReminderMessage([NotNull] LaunchInfo launch)
+        [NotNull] private static string PeriodicReminderMessage([NotNull] LaunchInfo launch)
         {
             //Append video link if there is one.
             var video = "";
@@ -143,10 +143,9 @@ namespace Mute.Moe.Services.Notifications.SpaceX
         private async Task<NotificationState> SendNotification([NotNull] LaunchInfo launch, string message)
         {
             var subs = await _notifications.GetSubscriptions();
-            await subs.EnumerateAsync(async s => {
-
-                var channel = _client.GetChannel(s.Channel) as ITextChannel;
-                if (channel == null)
+            await subs.EnumerateAsync(async s =>
+            {
+                if (!(_client.GetChannel(s.Channel) is ITextChannel channel))
                     return;
 
                 var m = message;

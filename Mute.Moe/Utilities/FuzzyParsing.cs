@@ -11,7 +11,7 @@ namespace Mute.Moe.Utilities
 {
     public static class FuzzyParsing
     {
-        [NotNull] public static MomentExtraction Moment(string input, string culture = Culture.EnglishOthers)
+        [NotNull] public static MomentExtraction Moment(string userInput, string culture = Culture.EnglishOthers)
         {
             TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
             {
@@ -24,7 +24,7 @@ namespace Mute.Moe.Utilities
                 return TimeSpan.Zero;
             }
 
-            MomentExtraction Extract()
+            MomentExtraction Extract(string input)
             {
                 // Get DateTime for the specified culture
                 var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview, DateTime.UtcNow);
@@ -71,7 +71,9 @@ namespace Mute.Moe.Utilities
                 return null;
             }
 
-            return Extract() ?? new MomentExtraction
+            return Extract(userInput)
+                ?? Extract($"in {userInput}")
+                ?? new MomentExtraction
             {
                 IsValid = false,
                 Value = DateTime.MinValue,

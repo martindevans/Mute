@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Data.SQLite;
 using System.Globalization;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 
@@ -47,11 +48,12 @@ namespace Mute.Moe.Services.Payment
                 cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
                 cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = instant.UnixTimestamp() });
 
+                // ReSharper disable once UnusedVariable
                 var id = await cmd.ExecuteScalarAsync();
             }
         }
 
-        public async Task<IAsyncEnumerable<ITransaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, string unit = null, DateTime? after = null, DateTime? before = null)
+        public async Task<IAsyncEnumerable<ITransaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, [CanBeNull] string unit = null, DateTime? after = null, DateTime? before = null)
         {
             ITransaction ParseTransaction(DbDataReader reader)
             {

@@ -7,7 +7,7 @@ namespace Mute.Moe.Services.Information.Anime
 {
     public interface IAnimeInfo
     {
-        [ItemCanBeNull] Task<IAnime> GetAnimeInfoAsync(string search);
+        [NotNull, ItemCanBeNull] Task<IAnime> GetAnimeInfoAsync(string search);
     }
 
     public interface IAnime

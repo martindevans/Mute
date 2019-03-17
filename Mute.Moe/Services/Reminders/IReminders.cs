@@ -7,8 +7,8 @@ using JetBrains.Annotations;
 using Mute.Moe.GraphQL.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.AsyncEnumerable.Extensions;
-using Mute.Moe.Controllers.GraphQL;
 using Mute.Moe.Extensions;
+using Mute.Moe.GraphQL;
 
 namespace Mute.Moe.Services.Reminders
 {

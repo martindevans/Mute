@@ -163,6 +163,7 @@ namespace Mute.Moe.Services.Words
             : ISimilarWord
         {
             [UsedImplicitly, JsonProperty("word")] private string _word;
+            // ReSharper disable once ConvertToAutoProperty
             public string Word => _word;
 
             [UsedImplicitly, JsonProperty("distance")] private float _distance;

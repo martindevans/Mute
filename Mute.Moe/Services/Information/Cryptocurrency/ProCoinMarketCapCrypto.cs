@@ -6,11 +6,11 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
-using Mute.Moe.Services.Information.Cryptocurrency;
+using JetBrains.Annotations;
 using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 
-namespace Mute.Moe.Discord.Services
+namespace Mute.Moe.Services.Information.Cryptocurrency
 {
     /// <summary>
     /// https://coinmarketcap.com/api/documentation/v1/#section/Quick-Start-Guide
@@ -19,20 +19,20 @@ namespace Mute.Moe.Discord.Services
         : ICryptocurrencyInfo
     {
         private readonly FluidCache<ICurrency> _currencyCache;
-        private IIndex<uint, ICurrency> _currencyById;
-        private IIndex<string, ICurrency> _currencyByName;
-        private IIndex<string, ICurrency> _currencyBySymbol;
+        private readonly IIndex<uint, ICurrency> _currencyById;
+        private readonly IIndex<string, ICurrency> _currencyByName;
+        private readonly IIndex<string, ICurrency> _currencyBySymbol;
 
         private readonly FluidCache<ITicker> _tickerCache;
-        private IIndex<uint, ITicker> _tickerById;
-        private IIndex<string, ITicker> _tickerBySymbol;
+        private readonly IIndex<uint, ITicker> _tickerById;
+        private readonly IIndex<string, ITicker> _tickerBySymbol;
 
         private readonly ConcurrentDictionary<string, string> _nameToSymbolMap = new ConcurrentDictionary<string, string>();
 
         private readonly IHttpClient _http;
         private readonly string _key;
 
-        public ProCoinMarketCapCrypto(Configuration config, IHttpClient http)
+        public ProCoinMarketCapCrypto([NotNull] Configuration config, [NotNull] IHttpClient http)
         {
             _http = http;
             _key = config.CoinMarketCap.Key;

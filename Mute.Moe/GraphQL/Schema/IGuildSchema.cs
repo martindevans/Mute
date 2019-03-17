@@ -6,7 +6,6 @@ using Discord;
 using GraphQL.Authorization;
 using GraphQL.Types;
 using JetBrains.Annotations;
-using Mute.Moe.Controllers.GraphQL;
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.GraphQL.Schema

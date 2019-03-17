@@ -7,11 +7,11 @@ using Discord.WebSocket;
 using GraphQL.Authorization;
 using GraphQL.Types;
 using JetBrains.Annotations;
-using Mute.Moe.Controllers.GraphQL;
 using Mute.Moe.Extensions;
 using Mute.Moe.GraphQL.Schema;
 using Mute.Moe.Services.Introspection.Uptime;
 using Microsoft.Extensions.DependencyInjection;
+using Mute.Moe.GraphQL;
 
 namespace Mute.Moe.Services.Introspection
 {

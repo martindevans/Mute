@@ -42,7 +42,7 @@ using GraphQL.Server.Transports.AspNetCore;
 using GraphQL.Server.Ui.GraphiQL;
 using Mute.Moe.Auth.Asp;
 using Mute.Moe.Auth.GraphQL;
-using Mute.Moe.Controllers.GraphQL;
+using Mute.Moe.GraphQL;
 using Mute.Moe.GraphQL.Schema;
 using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Notifications.SpaceX;

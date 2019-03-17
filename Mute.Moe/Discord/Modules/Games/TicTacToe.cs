@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services.Randomness;
 
 namespace Mute.Moe.Discord.Modules.Games
 {
@@ -12,10 +11,6 @@ namespace Mute.Moe.Discord.Modules.Games
     public class TicTacToe
         : BaseModule
     {
-        public TicTacToe()
-        {
-        }
-
         [Command, Summary("Challenge me to a game of tictactoe")]
         public async Task StartGame()
         {
@@ -147,9 +142,9 @@ namespace Mute.Moe.Discord.Modules.Games
                 }
 
                 return $"{State(0, 0)}|{State(1, 0)}|{State(2, 0)}\n"
-                     + $"-----\n"
+                     +  "-----\n"
                      + $"{State(0, 1)}|{State(1, 1)}|{State(2, 1)}\n"
-                     + $"-----\n"
+                     +  "-----\n"
                      + $"{State(0, 2)}|{State(1, 2)}|{State(2, 2)}\n";
             }
 

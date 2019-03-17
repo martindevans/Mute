@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using Humanizer;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -17,10 +19,12 @@ namespace Mute.Moe.Discord.Modules
         : BaseModule, IKeyProvider
     {
         private readonly DiscordSocketClient _client;
+        private readonly IHttpClient _http;
 
-        public UserInfo(DiscordSocketClient client)
+        public UserInfo(DiscordSocketClient client, IHttpClient http)
         {
             _client = client;
+            _http = http;
         }
 
         [Command("userid"), Summary("I will type out the ID of the specified user")]
@@ -35,6 +39,22 @@ namespace Mute.Moe.Discord.Modules
         public async Task Whois([CanBeNull] IUser user = null)
         {
             await TypingReplyAsync(GetUserInfo(user ?? Context.User));
+        }
+
+        [Command("avatar"), Summary("I will show the avatar for a user")]
+        public async Task Avatar([CanBeNull] IUser user = null)
+        {
+            var u = user ?? Context.User;
+            var url = u.GetAvatarUrl(ImageFormat.Png, 2048);
+            
+            using (var resp = await _http.GetAsync(url))
+            {
+                var m = new MemoryStream();
+                await resp.Content.CopyToAsync(m);
+                m.Position = 0;
+
+                await Context.Channel.SendFileAsync(m, $"{Name(u)}.png");
+            }
         }
 
         private string GetUserInfo(string userid)
