@@ -3,7 +3,7 @@ using Discord.WebSocket;
 using GraphQL.Authorization;
 using JetBrains.Annotations;
 using Mute.Moe.Extensions;
-using Mute.Moe.GraphQL;
+using Mute.Moe.GQL;
 
 namespace Mute.Moe.Auth.GraphQL
 {

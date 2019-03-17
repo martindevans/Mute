@@ -8,10 +8,10 @@ using GraphQL.Authorization;
 using GraphQL.Types;
 using JetBrains.Annotations;
 using Mute.Moe.Extensions;
-using Mute.Moe.GraphQL.Schema;
 using Mute.Moe.Services.Introspection.Uptime;
 using Microsoft.Extensions.DependencyInjection;
-using Mute.Moe.GraphQL;
+using Mute.Moe.GQL;
+using Mute.Moe.GQL.Schema;
 
 namespace Mute.Moe.Services.Introspection
 {

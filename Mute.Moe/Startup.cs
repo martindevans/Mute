@@ -42,8 +42,8 @@ using GraphQL.Server.Transports.AspNetCore;
 using GraphQL.Server.Ui.GraphiQL;
 using Mute.Moe.Auth.Asp;
 using Mute.Moe.Auth.GraphQL;
-using Mute.Moe.GraphQL;
-using Mute.Moe.GraphQL.Schema;
+using Mute.Moe.GQL;
+using Mute.Moe.GQL.Schema;
 using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
@@ -160,7 +160,8 @@ namespace Mute.Moe
             GraphTypeTypeRegistry.Register<TimeSpan, TimeSpanMillisecondsGraphType>();
             services.AddSingleton<InjectedSchema>();
             services.AddSingleton<InjectedSchema.IRootQuery, StatusSchema>();
-            services.AddSingleton<InjectedSchema.IRootQuery, RemindersSchema>();
+            services.AddSingleton<InjectedSchema.IRootQuery, RemindersQuerySchema>();
+            services.AddSingleton<InjectedSchema.IRootMutation, RemindersMutationSchema>();
 
             services.AddGraphQLAuth();
             services.AddGraphQL(options => {

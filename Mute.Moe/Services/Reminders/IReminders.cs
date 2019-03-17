@@ -4,11 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using GraphQL.Types;
 using JetBrains.Annotations;
-using Mute.Moe.GraphQL.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Extensions;
-using Mute.Moe.GraphQL;
+using Mute.Moe.GQL;
+using Mute.Moe.GQL.Schema;
 
 namespace Mute.Moe.Services.Reminders
 {
@@ -56,7 +56,7 @@ namespace Mute.Moe.Services.Reminders
         DateTime TriggerTime { get; }
     }
 
-    public class RemindersSchema
+    public class RemindersQuerySchema
         : InjectedSchema.IRootQuery
     {
         private async Task<IReadOnlyList<IReminder>> GetReminders(IReminders reminders, [NotNull] ResolveFieldContext<object> context)
@@ -96,6 +96,28 @@ namespace Mute.Moe.Services.Reminders
         }
     }
 
+    public class RemindersMutationSchema
+        : InjectedSchema.IRootMutation
+    {
+        public void Add(IServiceProvider services, ObjectGraphType ogt)
+        {
+            ogt.Field<IReminderSchema>("create_reminder",
+                arguments: new QueryArguments(
+                    new QueryArgument<NonNullGraphType<DateTimeGraphType>> { Name = "trigger_unix" },
+                    new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "message" },
+                    new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "channel" }
+                ),
+                resolve: context => {
+                    return null;
+                    //todo: mutation for reminders
+                    // - Validate channel (is user in guild with that channel, are they allowed to post in that channel?)
+                    // - Validate time (is it in the future)
+                    // - Create reminder
+                }
+            );
+        }
+    }
+
     // ReSharper disable once InconsistentNaming
     public class IReminderSchema
         : ObjectGraphType<IReminder>
@@ -103,13 +125,13 @@ namespace Mute.Moe.Services.Reminders
         public IReminderSchema()
         {
             Field(typeof(UIntGraphType), "channelId", resolve: x => x.Source.ID);
+            Field(typeof(UIntGraphType), "trigger_unix", resolve: x => (int)x.Source.TriggerTime.UnixTimestamp());
+
             Field("id", x => new FriendlyId32(x.ID).ToString());
             Field("userid", x => x.UserId.ToString());
 
             Field(x => x.Message);
             Field(x => x.Prelude);
-            Field(x => x.TriggerTime);
-            
         }
     }
 }

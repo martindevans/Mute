@@ -2,7 +2,7 @@
 using GraphQL.Authorization;
 using GraphQL.Types;
 
-namespace Mute.Moe.GraphQL.Schema
+namespace Mute.Moe.GQL.Schema
 {
     // ReSharper disable once InconsistentNaming
     public class IRoleSchema

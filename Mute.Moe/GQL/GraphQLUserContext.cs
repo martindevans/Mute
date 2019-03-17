@@ -5,7 +5,7 @@ using GraphQL.Server.Transports.AspNetCore;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
-namespace Mute.Moe.GraphQL
+namespace Mute.Moe.GQL
 {
     public class GraphQLUserContextBuilder
         : IUserContextBuilder

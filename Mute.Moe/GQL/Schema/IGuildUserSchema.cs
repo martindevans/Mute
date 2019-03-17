@@ -3,7 +3,7 @@ using GraphQL.Authorization;
 using GraphQL.Types;
 using JetBrains.Annotations;
 
-namespace Mute.Moe.GraphQL.Schema
+namespace Mute.Moe.GQL.Schema
 {
     // ReSharper disable once InconsistentNaming
     public class IGuildUserSchema

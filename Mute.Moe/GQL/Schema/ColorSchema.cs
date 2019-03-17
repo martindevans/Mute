@@ -1,7 +1,7 @@
 ﻿using Discord;
 using GraphQL.Types;
 
-namespace Mute.Moe.GraphQL.Schema
+namespace Mute.Moe.GQL.Schema
 {
     public class ColorSchema
         : ObjectGraphType<Color>
