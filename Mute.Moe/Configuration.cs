@@ -18,6 +18,7 @@ namespace Mute.Moe
         [UsedImplicitly] public DictionaryConfig Dictionary;
         [UsedImplicitly] public SentimentReactionConfig SentimentReactions;
         [UsedImplicitly] public WordVectorsConfig WordVectors;
+        [UsedImplicitly] public UrbanDictionaryConfig UrbanDictionary;
 
         [UsedImplicitly] public bool ProcessMessagesFromSelf = false;
         [UsedImplicitly] public char PrefixCharacter = '!';
@@ -100,6 +101,13 @@ namespace Mute.Moe
     public class WordVectorsConfig
     {
         [UsedImplicitly] public string WordVectorsBaseUrl;
+        [UsedImplicitly] public uint CacheSize;
+        [UsedImplicitly] public uint CacheMinTimeSeconds;
+        [UsedImplicitly] public uint CacheMaxTimeSeconds;
+    }
+
+    public class UrbanDictionaryConfig
+    {
         [UsedImplicitly] public uint CacheSize;
         [UsedImplicitly] public uint CacheMinTimeSeconds;
         [UsedImplicitly] public uint CacheMaxTimeSeconds;

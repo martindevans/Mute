@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
+using Discord.WebSocket;
 using GraphQL.Types;
+using Humanizer;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.AsyncEnumerable.Extensions;
@@ -59,7 +63,7 @@ namespace Mute.Moe.Services.Reminders
     public class RemindersQuerySchema
         : InjectedSchema.IRootQuery
     {
-        private async Task<IReadOnlyList<IReminder>> GetReminders(IReminders reminders, [NotNull] ResolveFieldContext<object> context)
+        private static async Task<IReadOnlyList<IReminder>> GetReminders(IReminders reminders, [NotNull] ResolveFieldContext<object> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;
@@ -71,12 +75,12 @@ namespace Mute.Moe.Services.Reminders
                 return Array.Empty<IReminder>();
 
             DateTime? before = null;
-            if (context.Arguments.TryGetValue("before_unix", out var beforeUnix))
-                before = ((ulong)(int)beforeUnix).FromUnixTimestamp();
+            if (context.Arguments.TryGetValue("before", out var beforeObj) && beforeObj is DateTime beforeTime)
+                before = beforeTime;
 
             DateTime? after = null;
-            if (context.Arguments.TryGetValue("after_unix", out var afterUnix))
-                after = ((ulong)(int)afterUnix).FromUnixTimestamp();
+            if (context.Arguments.TryGetValue("after", out var afterObj) && afterObj is DateTime afterTime)
+                after = afterTime;
 
             return await reminders.Get(userId: dUser.Id, after: after, before: before).ToArray();
         }
@@ -89,8 +93,8 @@ namespace Mute.Moe.Services.Reminders
                 "reminders",
                 resolve: context => GetReminders(reminders, context),
                 arguments: new QueryArguments(
-                    new QueryArgument(typeof(IntGraphType)) { Name = "before_unix" },
-                    new QueryArgument(typeof(IntGraphType)) { Name = "after_unix" }
+                    new QueryArgument(typeof(DateTimeGraphType)) { Name = "before" },
+                    new QueryArgument(typeof(DateTimeGraphType)) { Name = "after" }
                 )
             );
         }
@@ -99,21 +103,66 @@ namespace Mute.Moe.Services.Reminders
     public class RemindersMutationSchema
         : InjectedSchema.IRootMutation
     {
+        [ItemCanBeNull] private async Task<IReminder> CreateReminder(IReminders reminders, [NotNull] ResolveFieldContext<object> context)
+        {
+            var userCtx = (GraphQLUserContext)context.UserContext;
+            var user = userCtx.ClaimsPrincipal;
+            var client = userCtx.DiscordClient;
+
+            //If they are not a discord user, return null
+            var dUser = user.TryGetDiscordUser(client);
+            if (dUser == null)
+                return null;
+
+            //Get message or early exit
+            if (!context.Arguments.TryGetValue("message", out var messageObj) || !(messageObj is string message))
+                return null;
+
+            //Get trigger time or exit if none specified
+            if (!context.Arguments.TryGetValue("trigger_time", out var triggerTime) || !(triggerTime is DateTime trigger))
+                return null;
+
+            //Check if we're trying to schedule an event in the past
+            if (trigger < DateTime.UtcNow)
+                return null;
+
+            //Get channel or exit if none specified or user cannot write into this channel
+            if (context.Arguments.TryGetValue("channel_id", out var channelIdStr) && ulong.TryParse(channelIdStr as string ?? "", out var channelId))
+            {
+                //Get the channel or exit if it doesn't exist
+                var channel = client.GetChannel(channelId) as ITextChannel;
+                if (channel == null)
+                    return null;
+
+                //Check if user is in channel
+                var gUser = await channel.GetUserAsync(dUser.Id);
+                if (gUser == null)
+                    return null;
+
+                //check user has permission to write in this channel
+                var permission = gUser.GetPermissions(channel);
+                if (!permission.Has(ChannelPermission.SendMessages))
+                    return null;
+            }
+            else
+                return null;
+
+            var prelude = $"{dUser.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: trigger, culture: CultureInfo.GetCultureInfo("en-gn"))}...";
+
+            return await reminders.Create(trigger, prelude, message, channelId, dUser.Id);
+        }
+
         public void Add(IServiceProvider services, ObjectGraphType ogt)
         {
+            var reminders = services.GetService<IReminders>();
+
             ogt.Field<IReminderSchema>("create_reminder",
                 arguments: new QueryArguments(
-                    new QueryArgument<NonNullGraphType<DateTimeGraphType>> { Name = "trigger_unix" },
+                    new QueryArgument<NonNullGraphType<DateTimeGraphType>> { Name = "trigger_time" },
                     new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "message" },
-                    new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "channel" }
+                    new QueryArgument<NonNullGraphType<StringGraphType>> { Name = "channel_id" }
                 ),
-                resolve: context => {
-                    return null;
-                    //todo: mutation for reminders
-                    // - Validate channel (is user in guild with that channel, are they allowed to post in that channel?)
-                    // - Validate time (is it in the future)
-                    // - Create reminder
-                }
+                resolve: context => CreateReminder(reminders, context)
             );
         }
     }
@@ -124,8 +173,8 @@ namespace Mute.Moe.Services.Reminders
     {
         public IReminderSchema()
         {
-            Field(typeof(UIntGraphType), "channelId", resolve: x => x.Source.ID);
-            Field(typeof(UIntGraphType), "trigger_unix", resolve: x => (int)x.Source.TriggerTime.UnixTimestamp());
+            Field(typeof(UIntGraphType), "channel_id", resolve: x => x.Source.ID);
+            Field(typeof(DateTimeGraphType), "trigger_time", resolve: x => x.Source.TriggerTime);
 
             Field("id", x => new FriendlyId32(x.ID).ToString());
             Field("userid", x => x.UserId.ToString());

@@ -1,6 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Mute.Moe.Services.Information.UrbanDictionary;
 using Mute.Moe.Services.Information.Wikipedia;
 
 namespace Mute.Moe.Discord.Modules.Search
@@ -9,10 +11,12 @@ namespace Mute.Moe.Discord.Modules.Search
         : BaseModule
     {
         private readonly IWikipedia _wikipedia;
+        private readonly IUrbanDictionary _urban;
 
-        public Define(IWikipedia wiki)
+        public Define(IWikipedia wiki, IUrbanDictionary urban)
         {
             _wikipedia = wiki;
+            _urban = urban;
         }
 
         [Command("define"), Summary("I will briefly explain what a thing is")]
@@ -21,7 +25,7 @@ namespace Mute.Moe.Discord.Modules.Search
             await DefineAsync(3, thing);
         }
 
-        [Command("define"), Summary("I will briefly explain what a thing is")]
+        [Command("define"), Summary("I will briefly explain what a thing is, within a specified number of sentences")]
         public async Task DefineAsync(int sentences, [Remainder] string thing)
         {
             //Get definitions from wikipedia
@@ -48,6 +52,33 @@ namespace Mute.Moe.Discord.Modules.Search
                 items => $"I have found {items.Count} possible items, could you be more specific?",
                 (item, index) => $"{index + 1}. [{item.Title}]({item.Url})"
             );
+        }
+
+        [Command("urbandefine"), Summary("I will briefly define a word according to urban dictionary")]
+        public async Task UrbanDefineAsync([Remainder] string thing)
+        {
+            var result = await _urban.SearchTermAsync(thing);
+
+            if (result.Count == 0)
+            {
+                await TypingReplyAsync("I don't know anything about that, sorry");
+                return;
+            }
+
+            //Select the most upvoted definition
+            var best = result.Select(a => new { def = a, score = a.ThumbsUp - a.ThumbsDown }).Aggregate((a, b) => a.score > b.score ? a : b).def;
+
+            //Remove link signifiers
+            var definition = best.Definition.Replace("[", "").Replace("]", "");
+
+            //Build an embed card for it
+            var embed = new EmbedBuilder().WithFooter("👌 urbandictionary.com").WithDescription(definition).WithTimestamp(best.WrittenOn);
+            var url = best.Permalink != null;
+            embed = url
+                ? embed.WithAuthor(new EmbedAuthorBuilder().WithName(best.Word).WithUrl(best.Permalink.ToString()))
+                : embed.WithTitle(best.Word);
+
+            await ReplyAsync(embed: embed.Build());
         }
     }
 }

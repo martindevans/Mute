@@ -44,6 +44,7 @@ using Mute.Moe.Auth.Asp;
 using Mute.Moe.Auth.GraphQL;
 using Mute.Moe.GQL;
 using Mute.Moe.GQL.Schema;
+using Mute.Moe.Services.Information.UrbanDictionary;
 using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
@@ -99,6 +100,7 @@ namespace Mute.Moe
             services.AddSingleton<IWords, HttpWordVectors>();
             services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
             services.AddSingleton<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
+            services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
 
             services.AddSingleton<AutoReactionTrainer>();
             services.AddSingleton<Status>();
