@@ -85,6 +85,18 @@ namespace Mute.Moe.Discord.Modules
             await TypingReplyAsync($"Removed role `{role.Name}` from `{gu.Nickname ?? gu.Username}`");
         }
 
+        [Command("who"), Summary("I will tell you who has a given role")]
+        public async Task RoleWho([NotNull] IRole role)
+        {
+            var users = (from user in await role.Guild.GetUsersAsync()
+                         where user.RoleIds.Contains(role.Id)
+                         let name = Name(user)
+                         orderby name
+                         select name).ToArray();
+
+            await DisplayItemList(users, () => "No one has this role", u => $"{u.Count} users have this role", (u, i) => $"{i + 1}. {u}");
+        }
+
         [Command("list"), Alias("show", "unlocked"), Summary("I will list the unlocked roles")]
         public async Task ListRoles()
         {
