@@ -132,8 +132,9 @@ namespace Mute.Moe.Discord.Modules
                 //Make sure we have a fresh user list to resolve users from IDs
                 await Context.Guild.DownloadUsersAsync();
 
-                if (manyPrelude != null)
-                    await ReplyAsync(manyPrelude(items));
+                var p = manyPrelude?.Invoke(items);
+                if (p != null)
+                    await ReplyAsync(p);
 
                 var builder = new StringBuilder();
 

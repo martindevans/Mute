@@ -55,7 +55,7 @@ namespace Mute.Moe.Discord.Modules.Payment
                                          .Select(a => (a.Key, a.Sum(o => o.Amount)))
                                          .ToArray();
 
-                    await DisplayItemList(totals, () => null, _ => null, (b, i) => TransactionFormatting.FormatCurrency(b.Item2, b.Key));
+                    await DisplayItemList(totals, () => null, _ => "Totals:", (b, i) => $" - {TransactionFormatting.FormatCurrency(b.Item2, b.Key)}");
                 }
             }
 

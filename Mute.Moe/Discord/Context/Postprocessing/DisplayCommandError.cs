@@ -21,7 +21,7 @@ namespace Mute.Moe.Discord.Context.Postprocessing
         {
             if (result.Error == CommandError.UnknownCommand)
             {
-                var input = context.Message.Content;
+                var input = context.Message.Content ?? "";
                 var spaceIndex = input.IndexOf(' ');
                 var inputCmd = input;
                 if (spaceIndex != -1)

@@ -102,9 +102,11 @@ namespace Mute.Moe.Services.Reminders
             else
             {
                 //Wait for this reminder to time out
-                var now = DateTime.UtcNow;
-                if (next.TriggerTime > now)
-                    await Task.Delay(next.TriggerTime - now, ct);
+                while (next.TriggerTime > DateTime.UtcNow)
+                {
+                    var delay = Math.Clamp((int)(next.TriggerTime - DateTime.UtcNow).TotalMilliseconds, 1, 3600000);
+                    await Task.Delay(delay, ct);
+                }
 
                 return new EventTimeoutAction(next, _reminders, _client);
             }

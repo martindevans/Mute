@@ -65,6 +65,10 @@ namespace Mute.Moe.Discord
             //Only pay attention to commands which fail due to an exception
             if (result.IsSuccess || !result.Error.HasValue || result.Error != CommandError.Exception)
                 return;
+
+            if (result is ExecuteResult er)
+                Console.WriteLine(er.Exception);
+
             await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
         }
 
