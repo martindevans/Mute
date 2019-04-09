@@ -74,5 +74,11 @@ namespace Mute.Moe.Discord.Modules
 
             return Task.CompletedTask;
         }
+
+        [Command("nickname"), Alias("nick"), Summary("Set my nickname")]
+        public async Task Nickname([Remainder] string name)
+        {
+            await Context.Guild.CurrentUser.ModifyAsync(a => a.Nickname = name);
+        }
     }
 }
