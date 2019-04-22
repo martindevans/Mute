@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
-using Discord.WebSocket;
 using GraphQL.Types;
 using Humanizer;
 using JetBrains.Annotations;

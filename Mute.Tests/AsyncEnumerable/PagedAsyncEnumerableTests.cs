@@ -14,6 +14,8 @@ namespace Mute.Tests.AsyncEnumerable
         {
             async Task<Page> GetPage(Page previous)
             {
+                await Task.CompletedTask;
+
                 if (previous == null)
                     return new Page { Index = 0 };
                 else if (previous.Index == 0)

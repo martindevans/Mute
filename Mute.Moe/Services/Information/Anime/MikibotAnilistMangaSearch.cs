@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Miki.Anilist;
 using Mute.Moe.Utilities;
@@ -8,7 +10,7 @@ namespace Mute.Moe.Services.Information.Anime
     public class MikibotAnilistMangaSearch
         : BaseMikibotMediaSearchService<IManga>, IMangaInfo
     {
-        public MikibotAnilistMangaSearch(IHttpClient http)
+        public MikibotAnilistMangaSearch()
             : base(MediaFormat.MOVIE, MediaFormat.MUSIC, MediaFormat.ONA, MediaFormat.ONE_SHOT, MediaFormat.OVA, MediaFormat.SPECIAL, MediaFormat.TV, MediaFormat.TV_SHORT)    //This is a list of formats _not_ to return!
         {
         }
@@ -16,6 +18,16 @@ namespace Mute.Moe.Services.Information.Anime
         [NotNull] public Task<IManga> GetMangaInfoAsync(string search)
         {
             return GetItemInfoAsync(search);
+        }
+
+        public Task<IAsyncEnumerable<IManga>> GetMangasInfoAsync(string search)
+        {
+            return GetItemsInfoAsync(search);
+        }
+
+        public Task<IAsyncEnumerable<IManga>> GetMangasInfoAsync(ICharacter search)
+        {
+            return GetItemsInfoAsync(search);
         }
 
         protected override IManga WrapItem(IMedia media)

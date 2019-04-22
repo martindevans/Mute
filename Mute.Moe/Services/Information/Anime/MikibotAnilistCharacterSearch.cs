@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Miki.Anilist;
@@ -21,6 +22,11 @@ namespace Mute.Moe.Services.Information.Anime
         [NotNull] public Task<ICharacter> GetCharacterInfoAsync(string search)
         {
             return GetItemInfoAsync(search);
+        }
+
+        public Task<IAsyncEnumerable<ICharacter>> GetCharactersInfoAsync(string search)
+        {
+            return GetItemsInfoAsync(search);
         }
 
         protected override uint Distance(ICharacterSearchResult item, string search)
@@ -75,11 +81,13 @@ namespace Mute.Moe.Services.Information.Anime
             public string Id { get; }
 
             public string GivenName { get; }
+
             public string FamilyName { get; }
 
             public string Description { get; }
 
             public string Url { get; }
+
             public string ImageUrl { get; }
         }
     }

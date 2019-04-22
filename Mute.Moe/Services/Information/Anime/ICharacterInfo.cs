@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 
 namespace Mute.Moe.Services.Information.Anime
@@ -6,6 +7,8 @@ namespace Mute.Moe.Services.Information.Anime
     public interface ICharacterInfo
     {
         [ItemCanBeNull] Task<ICharacter> GetCharacterInfoAsync(string search);
+
+        [ItemCanBeNull] Task<IAsyncEnumerable<ICharacter>> GetCharactersInfoAsync(string search);
     }
 
     public interface ICharacter
@@ -13,6 +16,7 @@ namespace Mute.Moe.Services.Information.Anime
         string Id { get; }
 
         string GivenName { get; }
+
         string FamilyName { get; }
 
         string Description { get; }

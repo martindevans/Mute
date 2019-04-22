@@ -9,6 +9,13 @@ namespace Mute.Moe.AsyncEnumerable.Extensions
     // ReSharper disable once InconsistentNaming
     public static class IAsyncEnumerableExtensions
     {
+        /// <summary>
+        /// Convert an async enumerable into something like a foreach loop
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="enumerable"></param>
+        /// <param name="body"></param>
+        /// <returns></returns>
         public static async Task EnumerateAsync<T>([NotNull] this IAsyncEnumerable<T> enumerable, Func<T, Task> body)
         {
             using (var enumerator = enumerable.GetEnumerator())
@@ -16,6 +23,7 @@ namespace Mute.Moe.AsyncEnumerable.Extensions
                     await body(enumerator.Current);
         }
 
+        #region ordered async enumerable
         [NotNull] public static IOrderedAsyncEnumerable<T> AsOrderedEnumerable<T, TKey>([NotNull] this IAsyncEnumerable<T> enumerable, Func<T, TKey> keySelector, IComparer<TKey> comparer)
         {
             return new OrderedEnumerable<T, TKey>(enumerable, keySelector, comparer);
@@ -84,6 +92,12 @@ namespace Mute.Moe.AsyncEnumerable.Extensions
                 }
             }
         }
+        #endregion
+
+        public static async Task<IAsyncEnumerable<T>> Take<T>([NotNull] this Task<IAsyncEnumerable<T>> task, int count)
+        {
+            return (await task).Take(count);
+        }
 
         public static async Task<T[]> ToArray<T>([NotNull] this Task<IAsyncEnumerable<T>> task)
         {
@@ -98,6 +112,11 @@ namespace Mute.Moe.AsyncEnumerable.Extensions
         public static async Task<IOrderedAsyncEnumerable<T>> OrderBy<T, TKey>([NotNull] this Task<IAsyncEnumerable<T>> task, Func<T, TKey> keySelector)
         {
             return (await task).OrderBy(keySelector);
+        }
+
+        public static IAsyncEnumerable<TOut> Select<TIn, TOut>([NotNull] this IAsyncEnumerable<TIn> enumerable, Func<TIn, Task<TOut>> transform)
+        {
+            return new AsyncSelectEnumerable<TIn, TOut>(enumerable, transform);
         }
     }
 }

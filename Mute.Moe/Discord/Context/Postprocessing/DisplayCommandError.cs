@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
@@ -11,10 +12,14 @@ namespace Mute.Moe.Discord.Context.Postprocessing
         : IUnsuccessfulCommandPostprocessor
     {
         private readonly CommandService _commands;
+        private readonly Random _random;
+        private readonly Configuration _config;
 
-        public DisplayCommandError(CommandService commands)
+        public DisplayCommandError(Configuration config, CommandService commands, Random random)
         {
             _commands = commands;
+            _random = random;
+            _config = config;
         }
 
         public async Task Process(MuteCommandContext context, [NotNull] IResult result)
@@ -27,13 +32,23 @@ namespace Mute.Moe.Discord.Context.Postprocessing
                 if (spaceIndex != -1)
                     inputCmd = input.Substring(0, spaceIndex);
 
-                var closest = _commands.Commands.Select(c => new { c, d = c.Aliases.Append(c.Name).Min(n => n.Levenshtein(inputCmd)) }).Aggregate((a, b) => a.d < b.d ? a : b);
-                if (closest == null)
+                inputCmd = inputCmd.TrimStart(_config.PrefixCharacter);
+
+                //Take a random command from the group of commands which are closest
+                var closest = _commands.Commands
+                    .Select(c => new { c, d = c.Aliases.Append(c.Name).Min(n => n.Levenshtein(inputCmd)) })
+                    .GroupBy(a => a.d)
+                    .MinBy(a => a.Key)
+                    .Random(_random);
+
+                //If we can't find a command, or the one we found has too many differences to be considered, just exit out
+                if (closest == null || closest.d >= inputCmd.Length * 0.5)
                 {
-                    await context.Channel.SendMessageAsync("Unknown command");
+                    await context.Channel.SendMessageAsync("I don't know that command :confused:");
                     return;
                 }
 
+                //Suggest a potential matched command
                 await context.Channel.TypingReplyAsync("I don't know that command, did you mean:", embed: Commands.FormatCommandDetails(closest.c, context.Client.CurrentUser).Build());
             }
             else

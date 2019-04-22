@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using System.Linq;
 
 namespace Mute.Moe.Extensions
 {
@@ -23,6 +24,15 @@ namespace Mute.Moe.Extensions
             }
 
             return result;
+        }
+
+        public static T MinBy<T, K>([NotNull] this IEnumerable<T> items, [NotNull] Func<T, K> keySelector)
+            where K : IComparable<K>
+        {
+            return items
+                .Select(a => new  { item = a, k = keySelector(a) })
+                .Aggregate((a, b) => a.k.CompareTo(b.k) < 0 ? a : b)
+                .item;
         }
     }
 }

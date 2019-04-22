@@ -16,7 +16,7 @@ namespace Mute.Moe.Discord.Modules.Search
             _animeSearch = animeSearch;
         }
 
-        [Command("anime"), Summary("I will tell you about the given anime")]
+        [Command("anime"), Alias("animu"), Summary("I will tell you about the given anime")]
         [TypingReply]
         public async Task FindAnime([Remainder] string term)
         {

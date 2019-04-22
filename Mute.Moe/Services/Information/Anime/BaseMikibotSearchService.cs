@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
 using Miki.Anilist;
 using Mute.Moe.AsyncEnumerable;
+using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Services.Information.Anime
@@ -72,6 +74,31 @@ namespace Mute.Moe.Services.Information.Anime
 
             var client = new AnilistClient();
 
+            var result = await (await GetSearchItemsAsync(client, search)).FirstOrDefault();
+            if (result == null)
+                return null;
+
+            return await GetItemAsyncCached(client, result);
+        }
+
+        protected async Task<IAsyncEnumerable<TItem>> GetItemsInfoAsync(ICharacter character)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected async Task<IAsyncEnumerable<TItem>> GetItemsInfoAsync(string search)
+        {
+            var client = new AnilistClient();
+
+            return (await GetSearchItemsAsync(client, search))
+                .OrderBy(i => Distance(i, search))
+                .Select(async i => await GetItemAsyncCached(client, i));
+        }
+
+        private async Task<IAsyncEnumerable<TSearchItem>> GetSearchItemsAsync(AnilistClient client, string search)
+        {
+            search = search.ToLowerInvariant();
+
             async Task<ISearchResult<TSearchItem>> Page(ISearchResult<TSearchItem> previous)
             {
                 //Stop once there is no next page
@@ -84,18 +111,7 @@ namespace Mute.Moe.Services.Information.Anime
                 return r;
             }
 
-            //Search for results, 
-            var results = await new SearchResultAsyncEnumerable<TSearchItem>(Page, 2)
-                .Select(r => new {r, l = Distance(r, search) })
-                .ToArray();
-
-            if (results.Length == 0)
-                return null;
-
-            //return the one with the closest levenshtein distance
-            var bestResult = results.Aggregate((a, b) => a.l < b.l ? a : b);
-
-            return await GetItemAsyncCached(client, bestResult.r);
+            return new SearchResultAsyncEnumerable<TSearchItem>(Page, 2);
         }
 
         [ItemCanBeNull] private async Task<TItem> GetItemAsyncCached([NotNull] AnilistClient client, [NotNull] TSearchItem searchItem)

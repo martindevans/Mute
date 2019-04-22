@@ -20,6 +20,16 @@ namespace Mute.Moe.Services.Information.Anime
             return GetItemInfoAsync(search);
         }
 
+        public Task<IAsyncEnumerable<IAnime>> GetAnimesInfoAsync(string search)
+        {
+            return GetItemsInfoAsync(search);
+        }
+
+        public Task<IAsyncEnumerable<IAnime>> GetAnimesInfoAsync(ICharacter search)
+        {
+            return GetItemsInfoAsync(search);
+        }
+
         protected override IAnime WrapItem(IMedia media)
         {
             return new MikibotAnime(media);

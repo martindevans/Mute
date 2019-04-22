@@ -157,6 +157,11 @@ namespace Mute.Moe.Discord.Modules
                     await ReplyAsync(builder.ToString());
             }
         }
+
+        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, string nothing, [CanBeNull] Func<T, Task> singleItem, [CanBeNull] Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
+        {
+            await DisplayItemList(items, () => nothing, singleItem, manyPrelude, itemToString);
+        }
         #endregion
 
         #region reply
