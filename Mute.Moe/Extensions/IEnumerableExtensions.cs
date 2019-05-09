@@ -34,5 +34,34 @@ namespace Mute.Moe.Extensions
                 .Aggregate((a, b) => a.k.CompareTo(b.k) < 0 ? a : b)
                 .item;
         }
+
+        [NotNull]
+        public static IEnumerable<T> DistinctBy<T, K>([NotNull] this IEnumerable<T> items, [NotNull] Func<T, K> keySelector)
+            where K : IEquatable<K>
+        {
+            return items.Distinct(new DistinctByComparer<T, K>(keySelector));
+        }
+
+        private class DistinctByComparer<T, K>
+            : IEqualityComparer<T>
+            where K : IEquatable<K>
+        {
+            private readonly Func<T, K> _keySelector;
+
+            public DistinctByComparer(Func<T, K> keySelector)
+            {
+                _keySelector = keySelector;
+            }
+
+            public bool Equals(T x, T y)
+            {
+                return _keySelector(x).Equals(_keySelector(y));
+            }
+
+            public int GetHashCode(T obj)
+            {
+                return _keySelector(obj).GetHashCode();
+            }
+        }
     }
 }

@@ -114,6 +114,7 @@ namespace Mute.Moe.AsyncEnumerable.Extensions
             return (await task).OrderBy(keySelector);
         }
 
+        [NotNull]
         public static IAsyncEnumerable<TOut> Select<TIn, TOut>([NotNull] this IAsyncEnumerable<TIn> enumerable, Func<TIn, Task<TOut>> transform)
         {
             return new AsyncSelectEnumerable<TIn, TOut>(enumerable, transform);

@@ -13,6 +13,7 @@ using Mute.Moe.Services.Payment;
 
 namespace Mute.Moe.Discord.Modules.Payment
 {
+    [HelpGroup("payment")]
     [WarnDebugger]
     [TypingReply]
     public class Uoi

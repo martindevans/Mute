@@ -8,6 +8,7 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services;
 using Mute.Moe.Discord.Services.Audio;
 using Mute.Moe.Discord.Services.Audio.Clips;
@@ -16,6 +17,7 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.Audio
 {
+    [HelpGroup("music")]
     [Group]
     public class Music
         : BaseModule

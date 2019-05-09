@@ -5,6 +5,7 @@ using Discord;
 using Humanizer;
 using JetBrains.Annotations;
 using Oddity.API.Models.Launch;
+using Oddity.API.Models.Launch.Rocket.FirstStage;
 
 namespace Mute.Moe.Services.Information.SpaceX.Extensions
 {
@@ -63,7 +64,23 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             var serials = string.Join(",", launch.Rocket.FirstStage.Cores.Select(c => c.CoreSerial ?? "B????").ToArray());
             builder = builder.AddField("Vehicle", $"{launch.Rocket.RocketName} ({serials})", true);
 
-            var flights = string.Join(",", launch.Rocket.FirstStage.Cores.Select(c => (c.Flight - 1)?.ToString() ?? "??").ToArray());
+            string PreviousFlights(CoreInfo core)
+            {
+                //If we know it's not re-used, return zero
+                var reused = core.Reused ?? true;
+                if (!reused)
+                    return "0";
+
+                //Return the flight number
+                //There seems to be some inconsistency between if the very first flight is zero or one, sub one and make sure it doesn't underflow
+                var flight = core.Flight;
+                if (flight.HasValue)
+                    return Math.Max(flight.Value - 1, 0).ToString();
+
+                return "??";
+            }
+
+            var flights = string.Join(",", launch.Rocket.FirstStage.Cores.Select(PreviousFlights).ToArray());
             builder = builder.AddField("Previous Flights", flights);
 
             return builder;

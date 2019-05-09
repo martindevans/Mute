@@ -10,6 +10,7 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.OtherBots
 {
+    [Hidden]
     public class Hugot
         : BaseModule, IKeyProvider
     {

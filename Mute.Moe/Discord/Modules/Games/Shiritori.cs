@@ -4,12 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Words;
 
 namespace Mute.Moe.Discord.Modules.Games
 {
+    [HelpGroup("games")]
     [Group("shiritori")]
     public class Shiritori
         : BaseModule

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services;
 using Mute.Moe.Services.Words;
 using Mute.Moe.Utilities;
@@ -24,7 +25,7 @@ namespace Mute.Moe.Discord.Modules
             _training = training;
         }
 
-        [Command("vector"), Summary("I will get the raw vector for a word")]
+        [Command("vector"), Summary("I will get the raw vector for a word"), Hidden]
         public async Task GetWordVector(string word)
         {
             var vector = await _wordVectors.Vector(word);
@@ -87,7 +88,7 @@ namespace Mute.Moe.Discord.Modules
             }
         }
 
-        [Command("similar")]
+        [Command("similar"), Hidden]
         public async Task GetSimilarWords(string a, int n = 15)
         {
             var result = await _wordVectors.Similar(a);
@@ -105,7 +106,7 @@ namespace Mute.Moe.Discord.Modules
             );
         }
 
-        [Command("teach")]
+        [Command("teach"), Hidden]
         public async Task TeachWord(string word)
         {
             word = word.ToLowerInvariant();

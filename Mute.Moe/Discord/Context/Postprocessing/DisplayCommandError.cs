@@ -14,12 +14,14 @@ namespace Mute.Moe.Discord.Context.Postprocessing
         private readonly CommandService _commands;
         private readonly Random _random;
         private readonly Configuration _config;
+        private readonly char _prefix;
 
-        public DisplayCommandError(Configuration config, CommandService commands, Random random)
+        public DisplayCommandError([NotNull] Configuration config, CommandService commands, Random random)
         {
             _commands = commands;
             _random = random;
             _config = config;
+            _prefix = config.PrefixCharacter;
         }
 
         public async Task Process(MuteCommandContext context, [NotNull] IResult result)
@@ -49,7 +51,7 @@ namespace Mute.Moe.Discord.Context.Postprocessing
                 }
 
                 //Suggest a potential matched command
-                await context.Channel.TypingReplyAsync("I don't know that command, did you mean:", embed: Commands.FormatCommandDetails(closest.c, context.Client.CurrentUser).Build());
+                await context.Channel.TypingReplyAsync("I don't know that command, did you mean:", embed: Help.FormatCommandDetails(context, _prefix, new[] { closest.c }).Build());
             }
             else
             {

@@ -3,12 +3,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Services.Randomness;
 
 namespace Mute.Moe.Discord.Modules
 {
+    [HelpGroup("dice")]
     public class Dice
         : BaseModule, IKeyProvider
     {
@@ -76,9 +78,9 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("8ball"), Summary("I will reach into the hazy mists of the future to determine the truth")]
-        public async Task Magic8Ball([CanBeNull] params string[] question)
+        public async Task Magic8Ball([Remainder] string question)
         {
-            if (question == null || question.Length == 0)
+            if (string.IsNullOrWhiteSpace(question))
             {
                 await TypingReplyAsync("You must ask a question");
                 return;

@@ -3,10 +3,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Modules.Games
 {
+    [HelpGroup("games")]
     [Group("tictactoe")]
     public class TicTacToe
         : BaseModule

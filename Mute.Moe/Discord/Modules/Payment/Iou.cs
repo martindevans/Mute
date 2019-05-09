@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -12,8 +13,10 @@ using Mute.Moe.Services.Payment;
 
 namespace Mute.Moe.Discord.Modules.Payment
 {
+    [HelpGroup("payment")]
     [WarnDebugger]
     [TypingReply]
+    [Summary("Record and query how much you owe people")]
     public class Iou
         : BaseModule
     {
@@ -53,9 +56,15 @@ namespace Mute.Moe.Discord.Modules.Payment
                 {
                     var totals = balances.GroupBy(a => a.Unit)
                                          .Select(a => (a.Key, a.Sum(o => o.Amount)))
+                                         .OrderByDescending(a => a.Item2)
                                          .ToArray();
 
-                    await DisplayItemList(totals, () => null, _ => "Totals:", (b, i) => $" - {TransactionFormatting.FormatCurrency(b.Item2, b.Key)}");
+                    var r = new StringBuilder("```\nTotals:\n");
+                    foreach (var total in totals)
+                        r.AppendLine($" => {TransactionFormatting.FormatCurrency(total.Item2, total.Key)}");
+                    r.AppendLine("```");
+
+                    await ReplyAsync(r.ToString());
                 }
             }
 
