@@ -8,6 +8,7 @@ using JetBrains.Annotations;
 using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -29,6 +30,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("modules"), Alias("help", "commands")]
+        [Summary("I will list all command modules (groups of commands)")]
         public async Task ListModules()
         {
             //Find modules which have at least one permitted command
@@ -43,7 +45,7 @@ namespace Mute.Moe.Discord.Modules
             await ReplyAsync(embed);
         }
 
-        [Command("help"), Summary("I will tell you about what I can do")]
+        [Command("help"), Summary("I will tell you about commands or modules")]
         public async Task ListDetails([Remainder] string search)
         {
             var commands = await FindCommands(search).ToArray();
@@ -63,6 +65,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("module")]
+        [Summary("I will tell you about the commands in a specific module")]
         public async Task ListModuleDetails([Remainder] string search)
         {
             var modules = await FindModules(search).ToArray();
@@ -73,6 +76,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("command")]
+        [Summary("I will tell you about a specific command")]
         public async Task ListCommandDetails([Remainder] string name)
         {
             var commands = await FindCommands(name).ToArray();
@@ -200,12 +204,12 @@ namespace Mute.Moe.Discord.Modules
                 return embed;
             }
 
-            EmbedBuilder MultiCommandDetails(IReadOnlyList<CommandInfo> multi)
+            EmbedBuilder MultiCommandDetails(IReadOnlyCollection<CommandInfo> multi)
             {
                 var embed = CreateEmbed(context, prefix, $"{multi.Count} commands", "description");
 
                 foreach (var item in multi)
-                    embed.AddField(FormatCommandName(item, prefix), item.Summary ?? item.Remarks);
+                    embed.AddField(FormatCommandName(item, prefix), item.Summary ?? item.Remarks ?? $"No description {EmojiLookup.Confused}");
 
                 return embed;
             }
