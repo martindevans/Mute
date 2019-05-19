@@ -89,8 +89,9 @@ namespace Mute.Moe
             services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
             services.AddSingleton<ISteamInfo, SteamApi>();
             services.AddSingleton<IUptime, UtcDifferenceUptime>();
-            services.AddSingleton<IStockInfo, AlphaVantageStocks>();
+            services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
             services.AddSingleton<IForexInfo, AlphaVantageForex>();
+            services.AddSingleton<IStockSearch, AlphaVantageStockSearch>();
             services.AddSingleton<IGroups, DatabaseGroupService>();
             services.AddSingleton<IReminders, DatabaseReminders>();
             services.AddSingleton<IReminderSender, AsyncReminderSender>();

@@ -35,7 +35,13 @@
     {
         foreach (var guild in user.MutualGuilds)
         {
-            <img src="@guild.IconUrl" width="50" height="50" style="border-radius: 25px;" Alt="Guild icon for '@guild.Name'" />
+
+            <span class="circle-icon-container" data-toggle="tooltip" data-placement="top" title="@guild.Name">
+
+                <img src="@guild.IconUrl" alt=""/>
+
+            </span>
+
         }
     }
 }

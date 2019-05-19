@@ -16,7 +16,8 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
 
         private MultichannelAudioPlayer _player;
 
-        [CanBeNull] public IVoiceChannel Channel { get; private set; }
+        [CanBeNull]
+        public IVoiceChannel Channel { get; private set; }
 
         public MultichannelAudioService([NotNull] DiscordSocketClient client)
         {
@@ -98,21 +99,13 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
 
         public async Task Stop()
         {
-            try
-            {
-                if (_player != null)
-                    await _player.Stop();
-                _player = null;
-                Channel = null;
+            if (_player != null)
+                await _player.Stop();
+            _player = null;
+            Channel = null;
 
-                foreach (var channel in _channels)
-                    channel.Stop();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            foreach (var channel in _channels)
+                channel.Stop();
         }
     }
 

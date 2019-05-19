@@ -8,9 +8,9 @@ using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Services.Randomness;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Games
 {
-    [HelpGroup("dice")]
+    [HelpGroup("games")]
     public class Dice
         : BaseModule, IKeyProvider
     {

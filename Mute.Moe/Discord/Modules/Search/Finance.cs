@@ -3,49 +3,51 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
+using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.Cryptocurrency;
 using Mute.Moe.Services.Information.Forex;
 using Mute.Moe.Services.Information.Stocks;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Search
 {
     [ThinkingReply]
     public class Finance
         : BaseModule
     {
         private readonly ICryptocurrencyInfo _crypto;
-        private readonly IStockInfo _stocks;
+        private readonly IStockQuotes _stocks;
         private readonly IForexInfo _forex;
+        private readonly IStockSearch _search;
 
-        public Finance(ICryptocurrencyInfo crypto, IStockInfo stocks, IForexInfo forex)
+        public Finance(ICryptocurrencyInfo crypto, IStockQuotes stocks, IForexInfo forex, IStockSearch search)
         {
             _crypto = crypto;
             _stocks = stocks;
             _forex = forex;
+            _search = search;
         }
 
         [Command("ticker"), Summary("I will find out information about a stock or currency")]
         public async Task Ticker([NotNull] string symbolOrName, string quote = "USD")
         {
-            try
-            {
-                if (await TickerAsCrypto(symbolOrName, quote))
-                    return;
+            if (await TickerAsCrypto(symbolOrName, quote))
+                return;
 
-                if (await TickerAsStock(symbolOrName))
-                    return;
+            if (await TickerAsForex(symbolOrName, quote))
+                return;
 
-                if (await TickerAsForex(symbolOrName, quote))
-                    return;
+            if (await TickerAsStock(symbolOrName))
+                return;
 
-                await TypingReplyAsync($"I can't find a stock or a currency called '{symbolOrName}'");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            var suggestions = await _search
+                                    .Search(symbolOrName)
+                                    .Select(a => $" - {a.Name} (`{a.Symbol}`)")
+                                    .Take(10)
+                                    .ToArray();
+
+            await ReplyAsync($"I can't find a crypto, currency or stock with the symbol `{symbolOrName}`. Did you mean one of these stocks:\n" + string.Join("\n", suggestions));
         }
 
         private async Task<bool> TickerAsStock(string symbolOrName)

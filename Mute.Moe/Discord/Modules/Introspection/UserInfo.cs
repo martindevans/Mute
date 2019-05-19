@@ -13,7 +13,7 @@ using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Utilities;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Introspection
 {
     public class UserInfo
         : BaseModule, IKeyProvider

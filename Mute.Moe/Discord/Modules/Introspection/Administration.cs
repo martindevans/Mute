@@ -7,7 +7,7 @@ using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Introspection
 {
     [RequireOwner]
     public class Administration

@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 
 namespace Mute.Moe.Services.Information.Stocks
 {
-    public interface IStockInfo
+    public interface IStockQuotes
     {
         [ItemCanBeNull] Task<IStockQuote> GetQuote(string symbol);
     }

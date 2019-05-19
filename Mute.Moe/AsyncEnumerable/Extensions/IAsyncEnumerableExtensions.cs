@@ -99,6 +99,12 @@ namespace Mute.Moe.AsyncEnumerable.Extensions
             return (await task).Take(count);
         }
 
+        [ItemNotNull]
+        public static async Task<IAsyncEnumerable<R>> Select<T, R>([NotNull] this Task<IAsyncEnumerable<T>> task, Func<T, R> func)
+        {
+            return (await task).Select(func);
+        }
+
         public static async Task<T[]> ToArray<T>([NotNull] this Task<IAsyncEnumerable<T>> task)
         {
             return await (await task).ToArray();

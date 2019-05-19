@@ -9,6 +9,6 @@
 
         ulong TrackId { get; }
 
-        byte Rating { get; }
+        Rating Rating { get; }
     }
 }

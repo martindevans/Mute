@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 namespace Mute.Moe.Services.Information.Stocks
 {
     public class AlphaVantageStocks
-        : IStockInfo
+        : IStockQuotes
     {
         private readonly IHttpClient _http;
         private readonly AlphaAdvantageConfig _config;
@@ -44,6 +44,9 @@ namespace Mute.Moe.Services.Information.Stocks
                 using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
                 using (var jsonTextReader = new JsonTextReader(sr))
                     response = serializer.Deserialize<StockQuoteResponseContainer>(jsonTextReader);
+
+                if (response.Response == null || response.Response.Symbol == null)
+                    return null;
 
                 _cache.Add(response.Response);
                 return response.Response;

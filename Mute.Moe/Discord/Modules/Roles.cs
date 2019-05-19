@@ -113,17 +113,10 @@ namespace Mute.Moe.Discord.Modules
         [Command("test"), Alias("query"), Summary("I will tell you if the given role is unlocked")]
         public async Task TestRole([NotNull] IRole role)
         {
-            try
-            {
-                if (await _groups.IsUnlocked(role))
-                    await TypingReplyAsync($"The role `{role.Name}` is **unlocked**");
-                else
-                    await TypingReplyAsync($"The role `{role.Name}` is **locked**");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            if (await _groups.IsUnlocked(role))
+                await TypingReplyAsync($"The role `{role.Name}` is **unlocked**");
+            else
+                await TypingReplyAsync($"The role `{role.Name}` is **locked**");
         }
 
         [RequireOwner, Command("unlock"), Summary("I will unlock the given role (allow anyone to join/leave it)")]

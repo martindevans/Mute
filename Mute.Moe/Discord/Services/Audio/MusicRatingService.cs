@@ -28,24 +28,17 @@ namespace Mute.Moe.Discord.Services.Audio
             _database.Exec("CREATE INDEX IF NOT EXISTS `MusicRatingsByUserId` ON `Music_Ratings` (`UserId` ASC)");
         }
 
-        [NotNull] public async Task Record([NotNull] string trackId, ulong userId, int score)
+        [NotNull]
+        public async Task Record([NotNull] string trackId, ulong userId, int score)
         {
-            try
+            using (var cmd = _database.CreateCommand())
             {
-                using (var cmd = _database.CreateCommand())
-                {
-                    cmd.CommandText = InsertRating;
-                    cmd.Parameters.Add(new SQLiteParameter("@TrackId", System.Data.DbType.String) {Value = trackId});
-                    cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = userId.ToString()});
-                    cmd.Parameters.Add(new SQLiteParameter("@Rating", System.Data.DbType.Int32) {Value = score});
+                cmd.CommandText = InsertRating;
+                cmd.Parameters.Add(new SQLiteParameter("@TrackId", System.Data.DbType.String) {Value = trackId});
+                cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = userId.ToString()});
+                cmd.Parameters.Add(new SQLiteParameter("@Rating", System.Data.DbType.Int32) {Value = score});
 
-                    await cmd.ExecuteNonQueryAsync();
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
+                await cmd.ExecuteNonQueryAsync();
             }
         }
 

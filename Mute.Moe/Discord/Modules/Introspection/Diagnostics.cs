@@ -5,14 +5,14 @@ using Discord.Commands;
 using Humanizer;
 using Mute.Moe.Services.Introspection;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Introspection
 {
-    public class Introspection
+    public class Diagnostics
         : BaseModule
     {
         private readonly Status _status;
 
-        public Introspection(Status status)
+        public Diagnostics(Status status)
         {
             _status = status;
         }

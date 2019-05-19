@@ -61,26 +61,19 @@ namespace Mute.Moe.Discord.Modules
         [Command("next"), Alias("upcoming"), Summary("I will tell you about the next spacex launch(es)")]
         public async Task NextLaunches(int count = 1)
         {
-            try
+            if (count == 1)
             {
-                if (count == 1)
-                {
-                    await ReplyAsync(await _spacex.NextLaunch().DiscordEmbed());
-                }
-                else
-                {
-                    var launches = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.LaunchDateUtc.Value).Take(count).ToArray();
-                    await DisplayItemList(
-                        launches,
-                        () => "There are no upcoming SpaceX launches!",
-                        null,
-                        (l, i) => l.Summary()
-                    );
-                }
+                await ReplyAsync(await _spacex.NextLaunch().DiscordEmbed());
             }
-            catch (Exception e)
+            else
             {
-                Console.WriteLine(e);
+                var launches = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.LaunchDateUtc.Value).Take(count).ToArray();
+                await DisplayItemList(
+                    launches,
+                    () => "There are no upcoming SpaceX launches!",
+                    null,
+                    (l, i) => l.Summary()
+                );
             }
         }
 

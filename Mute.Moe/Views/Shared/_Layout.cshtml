@@ -40,6 +40,7 @@
             <ul class="nav navbar-nav">
                 <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
                 <li><a asp-area="" asp-controller="Admin" asp-action="Index">Admin</a></li>
+                <li><a asp-area="" asp-controller="Reminders" asp-action="Index">Reminders</a></li>
                 <li><a asp-area="" asp-controller="Account" asp-action="SignOut">Logout</a></li>
             </ul>
         </div>
@@ -75,6 +76,12 @@
             <script src="~/js/site.min.js" asp-append-version="true"></script>
         </environment>
 
-        @RenderSection("Scripts", required: false)
+        <script>
+            $(document).ready(function(){
+                $('[data-toggle="tooltip"]').tooltip(); 
+            });
+        </script>
+
+@RenderSection("Scripts", required: false)
 </body>
 </html>

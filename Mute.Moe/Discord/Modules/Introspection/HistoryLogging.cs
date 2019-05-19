@@ -12,7 +12,7 @@ using Mute.Moe.AsyncEnumerable;
 using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Discord.Attributes;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Introspection
 {
     [RequireOwner]
     public class HistoryLogging

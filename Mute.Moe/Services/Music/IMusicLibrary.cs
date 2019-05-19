@@ -45,6 +45,6 @@ namespace Mute.Moe.Services.Music
         /// <param name="trackId"></param>
         /// <param name="rating"></param>
         /// <returns></returns>
-        Task Rating(ulong userId, ulong trackId, byte rating);
+        Task Rating(ulong userId, ulong trackId, Rating rating);
     }
 }

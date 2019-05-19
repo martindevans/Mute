@@ -63,7 +63,7 @@ namespace Mute.Moe.Discord.Modules
         [Command("sentiment-score"), Summary("I will show my opinion of a message numerically")]
         public async Task AskSentimentScore([NotNull, Remainder] string message)
         {
-            await ShowSentimentScore(await _sentiment.Predict(message));
+            await ShowSentimentScore(await Context.Sentiment());
         }
 
         [Command("sentiment-score"), Summary("I will show my opinion of the previous message numerically")]

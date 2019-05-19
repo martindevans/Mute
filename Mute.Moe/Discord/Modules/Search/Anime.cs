@@ -6,12 +6,12 @@ using Mute.Moe.Services.Information.Anime;
 
 namespace Mute.Moe.Discord.Modules.Search
 {
-    public class AnimeSearch
+    public class Anime
         : BaseModule
     {
         private readonly IAnimeInfo _animeSearch;
 
-        public AnimeSearch(IAnimeInfo animeSearch)
+        public Anime(IAnimeInfo animeSearch)
         {
             _animeSearch = animeSearch;
         }

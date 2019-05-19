@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Mute.Moe.AsyncEnumerable.Extensions;
@@ -10,12 +7,12 @@ using Mute.Moe.Services.Information.Anime;
 
 namespace Mute.Moe.Discord.Modules.Search
 {
-    public class CharacterSearch
+    public class AnimeCharacters
         : BaseModule
     {
         private readonly ICharacterInfo _characters;
 
-        public CharacterSearch(ICharacterInfo characters)
+        public AnimeCharacters(ICharacterInfo characters)
         {
             _characters = characters;
         }

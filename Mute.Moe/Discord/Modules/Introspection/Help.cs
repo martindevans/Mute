@@ -10,7 +10,7 @@ using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules.Introspection
 {
     [HelpGroup("help")]
     public class Help
