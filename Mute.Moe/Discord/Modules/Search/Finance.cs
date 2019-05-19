@@ -9,6 +9,7 @@ using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.Cryptocurrency;
 using Mute.Moe.Services.Information.Forex;
 using Mute.Moe.Services.Information.Stocks;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.Search
 {
@@ -20,13 +21,15 @@ namespace Mute.Moe.Discord.Modules.Search
         private readonly IStockQuotes _stocks;
         private readonly IForexInfo _forex;
         private readonly IStockSearch _search;
+        private readonly Random _random;
 
-        public Finance(ICryptocurrencyInfo crypto, IStockQuotes stocks, IForexInfo forex, IStockSearch search)
+        public Finance(ICryptocurrencyInfo crypto, IStockQuotes stocks, IForexInfo forex, IStockSearch search, Random random)
         {
             _crypto = crypto;
             _stocks = stocks;
             _forex = forex;
             _search = search;
+            _random = random;
         }
 
         [Command("ticker"), Summary("I will find out information about a stock or currency")]
@@ -41,13 +44,19 @@ namespace Mute.Moe.Discord.Modules.Search
             if (await TickerAsStock(symbolOrName))
                 return;
 
+            var reply = $"I can't find a crypto, currency or stock with the symbol `{symbolOrName}`. ";
+
             var suggestions = await _search
                                     .Search(symbolOrName)
-                                    .Select(a => $" - {a.Name} (`{a.Symbol}`)")
+                                    .Select(a => $" • {a.Name} (`{a.Symbol}`)")
                                     .Take(10)
                                     .ToArray();
+            if (suggestions.Length > 0)
+                reply += "Did you mean one of these stocks:\n" + string.Join("\n", suggestions);
+            else if (_random.NextDouble() < 0.25f)
+                reply += new[] { EmojiLookup.Confused, EmojiLookup.Crying, EmojiLookup.Pensive, EmojiLookup.SlightlyFrowning, EmojiLookup.Thinking, EmojiLookup.Unamused, EmojiLookup.Worried }.Random(_random);
 
-            await ReplyAsync($"I can't find a crypto, currency or stock with the symbol `{symbolOrName}`. Did you mean one of these stocks:\n" + string.Join("\n", suggestions));
+            await TypingReplyAsync(reply);
         }
 
         private async Task<bool> TickerAsStock(string symbolOrName)
