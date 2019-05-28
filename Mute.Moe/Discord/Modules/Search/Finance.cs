@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -13,6 +14,7 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.Search
 {
+    [HelpGroup("finance")]
     [ThinkingReply]
     public class Finance
         : BaseModule
@@ -22,6 +24,8 @@ namespace Mute.Moe.Discord.Modules.Search
         private readonly IForexInfo _forex;
         private readonly IStockSearch _search;
         private readonly Random _random;
+
+        private readonly IReadOnlyList<string> _fail = new[] { EmojiLookup.Confused, EmojiLookup.Crying, EmojiLookup.Pensive, EmojiLookup.SlightlyFrowning, EmojiLookup.Thinking, EmojiLookup.Unamused, EmojiLookup.Worried };
 
         public Finance(ICryptocurrencyInfo crypto, IStockQuotes stocks, IForexInfo forex, IStockSearch search, Random random)
         {
@@ -44,7 +48,47 @@ namespace Mute.Moe.Discord.Modules.Search
             if (await TickerAsStock(symbolOrName))
                 return;
 
-            var reply = $"I can't find a crypto, currency or stock with the symbol `{symbolOrName}`. ";
+            await Suggestions(symbolOrName, "crypto, currency or stock");
+        }
+
+        [Command("crypto")]
+        public async Task TickerCrypto([NotNull] string symbolOrName, string quote = "USD")
+        {
+            if (!await TickerAsCrypto(symbolOrName, quote))
+            {
+                var reply = $"I can't find a cryptourrency with the `{symbolOrName}` symbol. ";
+                if (_random.NextDouble() < 0.45f)
+                    reply += _fail.Random(_random);
+
+                await TypingReplyAsync(reply);
+            }
+        }
+
+        [Command("forex")]
+        public async Task TickerForex([NotNull] string symbolOrName, string quote = "USD")
+        {
+            if (!await TickerAsForex(symbolOrName, quote))
+            {
+                var reply = $"I can't find a currency with the symbolOrName symbol. ";
+                if (_random.NextDouble() < 0.25f)
+                    reply += _fail.Random(_random);
+
+                await TypingReplyAsync(reply);
+            }
+        }
+
+        [Command("stock")]
+        public async Task TickerStock([NotNull] string symbolOrName)
+        {
+            if (!await TickerAsStock(symbolOrName))
+            {
+                await Suggestions(symbolOrName, "stock");
+            }
+        }
+
+        private async Task Suggestions(string symbolOrName, string category)
+        {
+            var reply = $"I can't find a {category} with the symbol `{symbolOrName}`. ";
 
             var suggestions = await _search
                                     .Search(symbolOrName)
@@ -54,7 +98,7 @@ namespace Mute.Moe.Discord.Modules.Search
             if (suggestions.Length > 0)
                 reply += "Did you mean one of these stocks:\n" + string.Join("\n", suggestions);
             else if (_random.NextDouble() < 0.25f)
-                reply += new[] { EmojiLookup.Confused, EmojiLookup.Crying, EmojiLookup.Pensive, EmojiLookup.SlightlyFrowning, EmojiLookup.Thinking, EmojiLookup.Unamused, EmojiLookup.Worried }.Random(_random);
+                reply += _fail.Random(_random);
 
             await TypingReplyAsync(reply);
         }

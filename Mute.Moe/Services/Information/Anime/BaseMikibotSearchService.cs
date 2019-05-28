@@ -29,7 +29,7 @@ namespace Mute.Moe.Services.Information.Anime
 
         protected override Task<ISearchResult<IMediaSearchResult>> SearchPage(AnilistClient client, string search, int index)
         {
-            return client.SearchMediaAsync(search, index, false, _formats);
+            return client.SearchMediaAsync(search, index, false, filter: _formats);
         }
 
         protected override async Task<TItem> GetItemAsync(AnilistClient client, IMediaSearchResult item)

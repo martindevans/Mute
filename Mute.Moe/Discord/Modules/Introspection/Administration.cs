@@ -4,8 +4,10 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Services.Audio.Playback;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
+using Mute.Moe.Services.Speech.TTS;
 
 namespace Mute.Moe.Discord.Modules.Introspection
 {
@@ -15,11 +17,20 @@ namespace Mute.Moe.Discord.Modules.Introspection
     {
         private readonly DiscordSocketClient _client;
         private readonly ConversationalResponseService _conversations;
+        private readonly ITextToSpeech _tts;
+        private readonly MultichannelAudioService _audio;
 
-        public Administration( DiscordSocketClient client, ConversationalResponseService conversations)
+        private SimpleQueueChannel<string> _ttsChannel;
+
+        public Administration(DiscordSocketClient client, ConversationalResponseService conversations, ITextToSpeech tts, MultichannelAudioService audio)
         {
             _client = client;
             _conversations = conversations;
+            _tts = tts;
+            _audio = audio;
+
+            _ttsChannel = new SimpleQueueChannel<string>();
+            _audio.Open(_ttsChannel);
         }
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -79,6 +90,22 @@ namespace Mute.Moe.Discord.Modules.Introspection
         public async Task Nickname([Remainder] string name)
         {
             await Context.Guild.CurrentUser.ModifyAsync(a => a.Nickname = name);
+        }
+
+        [Command("tts")]
+        public async Task TextToSpeech([Remainder] string message)
+        {
+            if (!await _audio.MoveChannel(Context.User))
+                await ReplyAsync("You are not in a voice channel");
+            else
+            {
+                var audio = (await _tts.Synthesize(message)).Open();
+
+                await _ttsChannel.Enqueue(message, audio);
+
+                if (audio is IDisposable ad)
+                    ad.Dispose();
+            }
         }
     }
 }

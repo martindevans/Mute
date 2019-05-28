@@ -50,6 +50,7 @@ using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
 using Mute.Moe.Services.SoundEffects;
+using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Words;
 using Mute.Moe.Utilities;
 
@@ -102,6 +103,7 @@ namespace Mute.Moe
             services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
             services.AddSingleton<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
             services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
+            services.AddSingleton<ITextToSpeech, MicrosoftCognitiveTextToSpeech>();
 
             services.AddSingleton<AutoReactionTrainer>();
             services.AddSingleton<Status>();

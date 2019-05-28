@@ -19,6 +19,7 @@ namespace Mute.Moe
         [UsedImplicitly] public SentimentReactionConfig SentimentReactions;
         [UsedImplicitly] public WordVectorsConfig WordVectors;
         [UsedImplicitly] public UrbanDictionaryConfig UrbanDictionary;
+        [UsedImplicitly] public TTSConfig TTS;
 
         [UsedImplicitly] public bool ProcessMessagesFromSelf = false;
         [UsedImplicitly] public char PrefixCharacter = '!';
@@ -111,5 +112,18 @@ namespace Mute.Moe
         [UsedImplicitly] public uint CacheSize;
         [UsedImplicitly] public uint CacheMinTimeSeconds;
         [UsedImplicitly] public uint CacheMaxTimeSeconds;
+    }
+
+    public class TTSConfig
+    {
+        public class MsCongnitiveConfig
+        {
+            [UsedImplicitly] public string Region;
+            [UsedImplicitly] public string Key;
+            [UsedImplicitly] public string Language;
+            [UsedImplicitly] public string Voice;
+        }
+
+        public MsCongnitiveConfig MsCognitive; 
     }
 }
