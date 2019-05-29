@@ -11,6 +11,7 @@ using Mute.Moe.Extensions;
 using Mute.Moe.Services.Audio.Mixing;
 using Mute.Moe.Services.Database;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace Mute.Moe.Services.SoundEffects
 {
@@ -171,7 +172,7 @@ namespace Mute.Moe.Services.SoundEffects
             
             //Write (as wav) with soft clipping and peak volume normalization
             var output = new MemoryStream((int)(reader.Length * 4));
-            var input = new SoftClipSampleProvider(new GainSampleProvider(sampleProvider, 1 / max - 0.05f));
+            var input = new SoftClipSampleProvider(new VolumeSampleProvider(sampleProvider) { Volume = 1 / max - 0.05f });
             reader.Position = 0;
             WaveFileWriter.WriteWavFileToStream(output, input.ToWaveProvider16());
 

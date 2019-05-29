@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -8,7 +7,6 @@ using Discord.Audio;
 using JetBrains.Annotations;
 using Mute.Moe.Services.Audio.Mixing;
 using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
 
 namespace Mute.Moe.Discord.Services.Audio.Playback
 {
@@ -22,53 +20,33 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
         private readonly Task _thread;
         private readonly byte[] _buffer = new byte[MixingFormat.AverageBytesPerSecond / 25];
 
-        private readonly Dictionary<IChannel, ChannelConverter> _channels = new Dictionary<IChannel, ChannelConverter>();
-
-        private readonly MixingSampleProvider _mixerInput;
-        private readonly IWaveProvider _mixerOutput;
-
         private volatile bool _stopped;
 
-        public MultichannelAudioPlayer([NotNull] IVoiceChannel voiceChannel, [NotNull] IEnumerable<IChannel> sources)
+        private readonly MultiChannelMixer _mixer;
+
+        public MultichannelAudioPlayer([NotNull] IVoiceChannel voiceChannel)
         {
             _voiceChannel = voiceChannel;
             _threadEvent = new AutoResetEvent(true);
             _thread = Task.Run(ThreadEntry);
 
-            //Sample provider which mixes together several sample providers
-            _mixerInput = new MixingSampleProvider(MixingFormat) { ReadFully = true };
+            _mixer = new MultiChannelMixer();
+        }
 
-            //Soft clip using opus
-            var clipper = new SoftClipSampleProvider(_mixerInput.ToMono());
-
-            //resample mix format to output format
-            _mixerOutput = new WdlResamplingSampleProvider(clipper, OutputFormat.SampleRate).ToStereo().ToWaveProvider16();
-
-            //Add all initial channels to the mixer
+        public void AddRange([NotNull] IEnumerable<IChannel> sources)
+        {
             foreach (var source in sources)
                 Add(source);
         }
 
         public void Add([NotNull] IChannel source)
         {
-            var converter = new ChannelConverter(source);
-
-            lock (_channels)
-            lock (_mixerInput)
-            {
-                _channels.Add(source, converter);
-                _mixerInput.AddMixerInput(converter);
-            }
+            _mixer.Add(source);
         }
 
-        public void Remove(IChannel source)
+        public void Remove([NotNull] IChannel source)
         {
-            lock (_channels)
-            lock (_mixerInput)
-            {
-                if (_channels.TryGetValue(source, out var converter))
-                    _mixerInput.RemoveMixerInput(converter);
-            }
+            _mixer.Remove(source);
         }
 
         public async Task Stop()
@@ -101,9 +79,7 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
                             return;
 
                         //Count up how many channels are playing.
-                        bool playing;
-                        lock (_channels)
-                            playing = _channels.Select(a => a.Value.IsPlaying ? 1 : 0).Sum() > 0;
+                        var playing = _mixer.IsPlaying;
 
                         //Set playback state if it has changed
                         if (playing != speakingState)
@@ -117,7 +93,7 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
                             continue;
 
                         //Copy mixed audio to the output
-                        await WriteOutput(_mixerOutput, s, _buffer.Length, _buffer);
+                        await WriteOutput(_mixer, s, _buffer.Length, _buffer);
                     }
 
                     await c.SetSpeakingAsync(false);
@@ -146,43 +122,6 @@ namespace Mute.Moe.Discord.Services.Audio.Playback
                 if (mixed == 0)
                     return;
             }
-        }
-
-        /// <summary>
-        /// Resamples a source channels to the mixing rate (and mono)
-        /// </summary>
-        private class ChannelConverter
-            : ISampleProvider
-        {
-            [NotNull] private readonly IChannel _channel;
-
-            [NotNull] private readonly ISampleProvider _resampled;
-
-            public bool IsPlaying => _channel.IsPlaying;
-
-            public ChannelConverter([NotNull] IChannel channel)
-            {
-                _channel = channel;
-
-                var resampler = new WdlResamplingSampleProvider(channel.ToMono(), MixingFormat.SampleRate);
-                _resampled = resampler;
-            }
-
-            public int Read(float[] buffer, int offset, int count)
-            {
-                if (!IsPlaying)
-                {
-                    Array.Clear(buffer, offset, count);
-                    return count;
-                }
-                else
-                {
-                    var c = _resampled.Read(buffer, offset, count);
-                    return c;
-                }
-            }
-
-            public WaveFormat WaveFormat => _resampled.WaveFormat;
         }
     }
 }
