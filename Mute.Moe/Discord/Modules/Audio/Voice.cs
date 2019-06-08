@@ -1,8 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Discord.Services.Audio.Playback;
+using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Utilities;
 
@@ -12,14 +12,12 @@ namespace Mute.Moe.Discord.Modules.Audio
         : BaseModule
     {
         private readonly ITextToSpeech _tts;
-        private readonly MultichannelAudioService _audio;
-        private readonly SimpleQueueChannel<string> _channel;
+        private readonly IGuildVoiceCollection _guildAudio;
 
-        public Voice(ITextToSpeech tts, MultichannelAudioService audio)
+        public Voice(ITextToSpeech tts, IGuildVoiceCollection guildAudio)
         {
             _tts = tts;
-            _audio = audio;
-            _channel = (SimpleQueueChannel<string>)_audio.GetOrOpen("voice_module", () => new SimpleQueueChannel<string>());
+            _guildAudio = guildAudio;
         }
 
         [RequireOwner]
@@ -27,17 +25,27 @@ namespace Mute.Moe.Discord.Modules.Audio
         [ThinkingReply(EmojiLookup.SpeakerMedVolume)]
         public async Task TextToSpeech([Remainder] string message)
         {
-            if (!await _audio.MoveChannel(Context.User))
+            var user = Context.User;
+
+            if (!(user is IVoiceState vs))
+            {
                 await ReplyAsync("You are not in a voice channel");
+            }
             else
             {
-                var audio = (await _tts.Synthesize(message)).Open();
+                var player = await _guildAudio.GetPlayer(vs.VoiceChannel.Guild);
+                await player.Move(vs.VoiceChannel);
 
-                //Wait for audio to finish
-                await _channel.Enqueue(message, audio);
+                var queue = player.Open<string>("tts");
 
-                if (audio is IDisposable ad)
-                    ad.Dispose();
+                //Create audio clip
+                var audio = await (await _tts.Synthesize(message)).Open();
+
+                //Enqueue to TTS channel
+                var playing = await queue.Enqueue(message, audio);
+
+                //Wait for it to finish playing
+                await playing;
             }
         }
     }

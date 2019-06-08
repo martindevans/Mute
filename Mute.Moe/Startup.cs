@@ -16,8 +16,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Mute.Moe.Discord;
 using Mute.Moe.Discord.Services;
-using Mute.Moe.Discord.Services.Audio;
-using Mute.Moe.Discord.Services.Audio.Playback;
 using Mute.Moe.Discord.Services.Games;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services;
@@ -44,8 +42,11 @@ using Mute.Moe.Auth.Asp;
 using Mute.Moe.Auth.GraphQL;
 using Mute.Moe.GQL;
 using Mute.Moe.GQL.Schema;
+using Mute.Moe.Services.Audio;
+using Mute.Moe.Services.Audio.Sources.Youtube;
 using Mute.Moe.Services.Information.UrbanDictionary;
 using Mute.Moe.Services.Information.Wikipedia;
+using Mute.Moe.Services.Music;
 using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
@@ -104,20 +105,18 @@ namespace Mute.Moe
             services.AddSingleton<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
             services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
             services.AddSingleton<ITextToSpeech, MicrosoftCognitiveTextToSpeech>();
-
-            services.AddSingleton<AutoReactionTrainer>();
-            services.AddSingleton<Status>();
+            services.AddSingleton<IYoutubeDownloader, YoutubeDlDownloader>();
+            services.AddSingleton<IWordTraining, DatabaseWordTraining>();
+            services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();
+            services.AddSingleton<IGuildVoiceCollection, InMemoryGuildVoiceCollection>();
 
             //Eventually these should all become interface -> concrete type bindings
+            services.AddSingleton<AutoReactionTrainer>();
+            services.AddSingleton<Status>();
             services
-                .AddSingleton<MusicPlayerService>()
-                .AddSingleton<YoutubeService>()
-                .AddSingleton<MusicRatingService>()
                 .AddSingleton<GameService>()
                 .AddSingleton<ConversationalResponseService>()
-                .AddSingleton<WordsService>()
-                .AddSingleton<WordTrainingService>()
-                .AddSingleton<MultichannelAudioService>();
+                .AddSingleton<WordsService>();
         }
 
         public void ConfigureServices(IServiceCollection services)

@@ -1,15 +1,12 @@
-﻿using System;
-using System.IO.Abstractions;
+﻿using System.IO.Abstractions;
 using System.Threading.Tasks;
 using Discord;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services.Audio.Playback;
+using Mute.Moe.Services.Audio;
 using NAudio.Wave;
 
 namespace Mute.Moe.Services.SoundEffects
 {
-    //todo: this needs to be modified to support multiple guilds
-
     public interface ISoundEffectPlayer
     {
         Task<(PlayResult, Task)> Play([NotNull] IUser player, [NotNull] ISoundEffect sfx);
@@ -25,30 +22,29 @@ namespace Mute.Moe.Services.SoundEffects
     public class SoundEffectPlayer
         : ISoundEffectPlayer
     {
-        private readonly SimpleQueueChannel<ISoundEffect> _queue = new SimpleQueueChannel<ISoundEffect>();
-        private readonly MultichannelAudioService _audio;
+        private readonly IGuildVoiceCollection _guildAudio;
         private readonly IFileSystem _fs;
 
-        public SoundEffectPlayer([NotNull] MultichannelAudioService audio, [NotNull] IFileSystem fs)
+        public SoundEffectPlayer([NotNull] IGuildVoiceCollection guildAudio, [NotNull] IFileSystem fs)
         {
-            _audio = audio;
+            _guildAudio = guildAudio;
             _fs = fs;
-
-            _audio.Open(_queue);
         }
 
         public async Task<(PlayResult, Task)> Play(IUser user, ISoundEffect sfx)
         {
             if (!_fs.File.Exists(sfx.Path))
-            {
-                Console.WriteLine($"SFX not found: {sfx.Path}");
                 return (PlayResult.FileNotFound, Task.CompletedTask);
-            }
 
-            if (!await _audio.MoveChannel(user))
+            if (!(user is IVoiceState vs))
                 return (PlayResult.UserNotInVoice, Task.CompletedTask);
 
-            var finishedTask = _queue.Enqueue(sfx, new AudioFileReader(sfx.Path));
+            var player = await _guildAudio.GetPlayer(vs.VoiceChannel.Guild);
+            await player.Move(vs.VoiceChannel);
+
+            var queue = player.Open<ISoundEffect>("sfx");
+
+            var finishedTask = await queue.Enqueue(sfx, new AudioFileReader(sfx.Path));
             return (PlayResult.Enqueued, finishedTask);
         }
     }

@@ -17,7 +17,7 @@ namespace Mute.Moe.Services.Music
         ulong ID { get; }
 
         /// <summary>
-        /// Path to the file which contains this audio track
+        /// Path to the file on disk with this audio
         /// </summary>
         [NotNull] string Path { get; }
 
@@ -32,9 +32,9 @@ namespace Mute.Moe.Services.Music
         [CanBeNull] string Url { get; }
 
         /// <summary>
-        /// The artist who composed/performed this track
+        /// Url of a thumbnail for this track
         /// </summary>
-        [CanBeNull] IReadOnlyList<IArtist> Artists { get; }
+        [CanBeNull] string ThumbnailUrl { get; }
 
         /// <summary>
         /// Duration of this track

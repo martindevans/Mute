@@ -134,9 +134,8 @@ namespace Mute.Moe.Extensions
 
             unchecked
             {
-                //This number
-                number = number * MultiplyInverse;
-                number = number - Offset;
+                number *= MultiplyInverse;
+                number -= Offset;
             }
 
             return new FriendlyId32(number);
@@ -146,7 +145,7 @@ namespace Mute.Moe.Extensions
         {
             var number = Value;
             unchecked {
-                number = number + Offset;
+                number += Offset;
                 number *= Multiply;
             }
 

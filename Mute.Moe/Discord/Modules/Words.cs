@@ -17,9 +17,9 @@ namespace Mute.Moe.Discord.Modules
         : BaseModule
     {
         private readonly IWords _wordVectors;
-        private readonly WordTrainingService _training;
+        private readonly IWordTraining _training;
 
-        public Words(IWords wordVectors, WordTrainingService training)
+        public Words(IWords wordVectors, IWordTraining training)
         {
             _wordVectors = wordVectors;
             _training = training;
@@ -134,7 +134,7 @@ namespace Mute.Moe.Discord.Modules
                 if (!content.Contains(word))
                     continue;
 
-                await _training.Teach(word, content);
+                await _training.Train(word, content);
                 timer.Restart();
                 if (message is IUserMessage um)
                     await um.AddReactionAsync(new Emoji(EmojiLookup.OpenBook));

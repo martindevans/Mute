@@ -4,10 +4,9 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services.Audio.Playback;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services.Speech.TTS;
+using Mute.Moe.Services.Audio.Sources.Youtube;
 
 namespace Mute.Moe.Discord.Modules.Introspection
 {
@@ -17,11 +16,13 @@ namespace Mute.Moe.Discord.Modules.Introspection
     {
         private readonly DiscordSocketClient _client;
         private readonly ConversationalResponseService _conversations;
+        private readonly IYoutubeDownloader _yt;
 
-        public Administration(DiscordSocketClient client, ConversationalResponseService conversations)
+        public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IYoutubeDownloader yt)
         {
             _client = client;
             _conversations = conversations;
+            _yt = yt;
         }
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -81,6 +82,24 @@ namespace Mute.Moe.Discord.Modules.Introspection
         public async Task Nickname([Remainder] string name)
         {
             await Context.Guild.CurrentUser.ModifyAsync(a => a.Nickname = name);
+        }
+
+        [Command("test-yt")]
+        public async Task TestYt([NotNull] string url)
+        {
+            var result = await _yt.DownloadAudio(url);
+
+            await ReplyAsync(result.Status.ToString());
+
+            if (result.Status == YoutubeDownloadStatus.Success && result.File != null)
+            {
+                await ReplyAsync(result.File.File.FullName);
+                await ReplyAsync(result.File.ThumbnailUrl);
+                await ReplyAsync(result.File.Title);
+                await ReplyAsync(result.File.Url);
+            }
+
+            result.File?.Dispose();
         }
     }
 }

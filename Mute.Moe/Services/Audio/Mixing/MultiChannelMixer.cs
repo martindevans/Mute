@@ -18,7 +18,7 @@ namespace Mute.Moe.Services.Audio.Mixing
         private readonly MixingSampleProvider _inputs;
         private readonly IWaveProvider _output;
 
-        WaveFormat IWaveProvider.WaveFormat => _output.WaveFormat;
+        public WaveFormat WaveFormat => _output.WaveFormat;
 
         public bool IsPlaying => _inputMap.Keys.Any(a => a.IsPlaying);
 

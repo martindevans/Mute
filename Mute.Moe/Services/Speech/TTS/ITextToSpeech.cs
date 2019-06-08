@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Mute.Moe.Discord.Services.Audio.Clips;
+using Mute.Moe.Services.Audio.Clips;
 
 namespace Mute.Moe.Services.Speech.TTS
 {

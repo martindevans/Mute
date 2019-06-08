@@ -18,7 +18,7 @@ namespace Mute.Moe.Services.SoundEffects
     public class DatabaseSoundEffectLibrary
         : ISoundEffectLibrary
     {
-        private const string InsertSfxSql = "INSERT INTO `Sfx2` (`GuildId`, `Name`, `FileName`) VALUES (@GuildId, @Name, @FileName)";
+        private const string InsertSfxSql = "INSERT INTO `Sfx2` (`GuildId`, `Name`, `FileName`) VALUES (@GuildId, @Name, @FileName);";
         private const string GetSfxByNameSql = "Select * from Sfx2 where Name = @Name AND GuildId = @GuildId";
         private const string FindSfxSql = "Select * from Sfx2 where GuildId = @GuildId AND Name like '%' || @Search || '%'";
         private const string FindAllSfxSql = "Select * from Sfx2";

@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
-using Mute.Moe.Discord.Services.Audio.Clips;
+using Mute.Moe.Services.Audio.Clips;
+using Mute.Moe.Services.Music;
 using NAudio.Wave;
 
 namespace Mute.Moe.Services.Speech.TTS
@@ -49,7 +50,7 @@ namespace Mute.Moe.Services.Speech.TTS
             private readonly PullAudioOutputStream _stream;
             private readonly WaveFormat _format;
 
-            public AudioOutputStreamClip(string name, PullAudioOutputStream stream, WaveFormat format)
+            public AudioOutputStreamClip([NotNull] string name, PullAudioOutputStream stream, WaveFormat format)
             {
                 Name = name;
 
@@ -57,11 +58,13 @@ namespace Mute.Moe.Services.Speech.TTS
                 _format = format;
             }
 
+            public Task<ITrack> Track { get; } = Task.FromResult<ITrack>(null);
+
             public string Name { get; }
 
-            public ISampleProvider Open()
+            public async Task<IOpenAudioClip> Open()
             {
-                return new WaveProvider(_stream, _format).ToSampleProvider();
+                return new OpenAudioClipWaveWrapper<WaveProvider>(this, new WaveProvider(_stream, _format));
             }
 
             private class WaveProvider

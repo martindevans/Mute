@@ -20,6 +20,7 @@ namespace Mute.Moe
         [UsedImplicitly] public WordVectorsConfig WordVectors;
         [UsedImplicitly] public UrbanDictionaryConfig UrbanDictionary;
         [UsedImplicitly] public TTSConfig TTS;
+        [UsedImplicitly] public MusicLibraryConfig MusicLibrary;
 
         [UsedImplicitly] public bool ProcessMessagesFromSelf = false;
         [UsedImplicitly] public char PrefixCharacter = '!';
@@ -59,10 +60,9 @@ namespace Mute.Moe
     {
         [UsedImplicitly] public string RateLimit;
         [UsedImplicitly] public string InProgressDownloadFolder;
-        [UsedImplicitly] public string CompleteDownloadFolder;
 
         [UsedImplicitly] public string YoutubeDlBinaryPath;
-        [UsedImplicitly] public string FprobeBinaryPath;
+        [UsedImplicitly] public string FfmpegBinaryPath;
     }
 
     public class SentimentConfig
@@ -125,5 +125,10 @@ namespace Mute.Moe
         }
 
         public MsCongnitiveConfig MsCognitive; 
+    }
+
+    public class MusicLibraryConfig
+    {
+        [UsedImplicitly] public string MusicFolder;
     }
 }
