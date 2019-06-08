@@ -172,7 +172,7 @@ namespace Mute.Moe.Discord.Modules.Audio
         [NotNull, Command("play"), Summary("Play a track which best matches the given search parameter")]
         [RequireVoiceChannel]
         [ThinkingReply]
-        public async Task Play([NotNull] string search)
+        public async Task Play([NotNull, Remainder] string search)
         {
             // Tolerate misusing the play command to invoke `play-random`
             if (search.ToLowerInvariant() == "random")
@@ -215,7 +215,7 @@ namespace Mute.Moe.Discord.Modules.Audio
 
         [NotNull, Command("find"), Summary("Find tracks by a search string")]
         [ThinkingReply]
-        public async Task Find([NotNull] string search)
+        public async Task Find([NotNull, Remainder] string search)
         {
             // Tolerate misusing the play command to invoke `play-random`
             if (search.ToLowerInvariant() == "random")
