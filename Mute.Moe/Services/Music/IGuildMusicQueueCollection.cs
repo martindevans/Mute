@@ -1,0 +1,56 @@
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
+using Mute.Moe.Services.Audio;
+using Mute.Moe.Services.Audio.Mixing.Channels;
+using NAudio.Wave;
+
+namespace Mute.Moe.Services.Music
+{
+    public interface IGuildMusicQueueCollection
+    {
+        Task<IGuildMusicQueue> Get(ulong guild);
+    }
+
+    public interface IGuildMusicQueue
+    {
+        IGuildVoice VoicePlayer { get; }
+
+        void Stop();
+
+        void Skip();
+
+        bool IsPlaying { get; }
+
+        (ITrack Metadata, Task Completion) Playing { get; }
+
+        IEnumerable<ITrack> Queue { get; }
+
+        Task<Task> Enqueue(ITrack metadata, ISampleProvider audio);
+    }
+
+    public class InMemoryGuildMusicQueueCollection
+        : BaseInMemoryAudioPlayerQueueCollection<InMemoryGuildMusicQueue, IGuildMusicQueue>, IGuildMusicQueueCollection
+    {
+        public InMemoryGuildMusicQueueCollection(IGuildVoiceCollection voice)
+            : base(voice)
+        {
+        }
+
+        [NotNull] protected override InMemoryGuildMusicQueue Create(IGuildVoice voice)
+        {
+            return new InMemoryGuildMusicQueue(voice);
+        }
+    }
+
+    public class InMemoryGuildMusicQueue
+        : SimpleQueueChannel<ITrack>, IGuildMusicQueue
+    {
+        public IGuildVoice VoicePlayer { get; }
+
+        public InMemoryGuildMusicQueue(IGuildVoice voice)
+        {
+            VoicePlayer = voice;
+        }
+    }
+}

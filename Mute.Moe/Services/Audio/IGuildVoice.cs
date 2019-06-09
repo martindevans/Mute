@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using JetBrains.Annotations;
 using Mute.Moe.Services.Audio.Mixing.Channels;
@@ -19,6 +18,6 @@ namespace Mute.Moe.Services.Audio
 
         Task Stop();
 
-        [NotNull] SimpleQueueChannel<T> Open<T>(string name);
+        void Open(IMixerChannel channel);
     }
 }

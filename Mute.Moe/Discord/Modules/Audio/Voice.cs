@@ -2,7 +2,7 @@
 using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Services.Audio;
+using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Utilities;
 
@@ -12,12 +12,12 @@ namespace Mute.Moe.Discord.Modules.Audio
         : BaseModule
     {
         private readonly ITextToSpeech _tts;
-        private readonly IGuildVoiceCollection _guildAudio;
+        private readonly IGuildSpeechQueueCollection _queueCollection;
 
-        public Voice(ITextToSpeech tts, IGuildVoiceCollection guildAudio)
+        public Voice(ITextToSpeech tts, IGuildSpeechQueueCollection queueCollection)
         {
             _tts = tts;
-            _guildAudio = guildAudio;
+            _queueCollection = queueCollection;
         }
 
         [RequireOwner]
@@ -33,16 +33,14 @@ namespace Mute.Moe.Discord.Modules.Audio
             }
             else
             {
-                var player = await _guildAudio.GetPlayer(vs.VoiceChannel.Guild);
-                await player.Move(vs.VoiceChannel);
-
-                var queue = player.Open<string>("tts");
+                var q = await _queueCollection.Get(Context.Guild.Id);
+                await q.VoicePlayer.Move(vs.VoiceChannel);
 
                 //Create audio clip
                 var audio = await (await _tts.Synthesize(message)).Open();
 
                 //Enqueue to TTS channel
-                var playing = await queue.Enqueue(message, audio);
+                var playing = await q.Enqueue(message, audio);
 
                 //Wait for it to finish playing
                 await playing;

@@ -9,11 +9,23 @@ using NAudio.Wave.SampleProviders;
 
 namespace Mute.Moe.Services.Audio.Mixing.Channels
 {
+    public interface ISimpleQueueChannel<TMetadata>
+        : IMixerChannel
+    {
+        void Skip();
+
+        (TMetadata Metadata, Task Completion) Playing { get; }
+
+        IEnumerable<TMetadata> Queue { get; }
+
+        Task<Task> Enqueue(TMetadata metadata, ISampleProvider audio);
+    }
+
     /// <summary>
     /// Plays a queue of audio in order
     /// </summary>
     public class SimpleQueueChannel<T>
-        : IMixerChannel
+        : ISimpleQueueChannel<T>
     {
         public WaveFormat WaveFormat { get; }
 

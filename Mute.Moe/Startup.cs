@@ -51,6 +51,7 @@ using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
 using Mute.Moe.Services.SoundEffects;
+using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Words;
 using Mute.Moe.Utilities;
@@ -109,6 +110,9 @@ namespace Mute.Moe
             services.AddSingleton<IWordTraining, DatabaseWordTraining>();
             services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();
             services.AddSingleton<IGuildVoiceCollection, InMemoryGuildVoiceCollection>();
+            services.AddSingleton<IGuildMusicQueueCollection, InMemoryGuildMusicQueueCollection>();
+            services.AddSingleton<IGuildSpeechQueueCollection, InMemoryGuildSpeechQueueCollection>();
+            services.AddSingleton<IGuildSoundEffectQueueCollection, InMemoryGuildSoundEffectQueueCollection>();
 
             //Eventually these should all become interface -> concrete type bindings
             services.AddSingleton<AutoReactionTrainer>();

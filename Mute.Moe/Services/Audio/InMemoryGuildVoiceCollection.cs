@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using Discord;
 using Discord.WebSocket;
 
 namespace Mute.Moe.Services.Audio
@@ -16,9 +15,9 @@ namespace Mute.Moe.Services.Audio
             _client = client;
         }
 
-        public Task<IGuildVoice> GetPlayer(IGuild guild)
+        public Task<IGuildVoice> GetPlayer(ulong guild)
         {
-            return Task.FromResult(_lookup.GetOrAdd(guild.Id, _ => new ThreadedGuildVoice(guild, _client)));
+            return Task.FromResult(_lookup.GetOrAdd(guild, _ => new ThreadedGuildVoice(_client.GetGuild(guild), _client)));
         }
     }
 }

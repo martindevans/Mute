@@ -22,9 +22,9 @@ namespace Mute.Moe.Services.Audio.Mixing.Extensions
 
         [NotNull] public static ISampleProvider AutoGainControl(
             [NotNull] this ISampleProvider provider,
-            float maxVolume = -10, float minVolume = -17,
+            float maxVolume = -10, float minVolume = -25,
             float minGain = 0.5f, float maxGain = 3f,
-            float upRate = 1, float downRate = -1)
+            float upRate = 0.5f, float downRate = -2)
         {
             return new AutoGainControl(provider, maxVolume, minVolume, minGain, maxGain, upRate, downRate);
         }

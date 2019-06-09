@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Discord;
 using JetBrains.Annotations;
-using Mute.Moe.Services.Audio;
 using NAudio.Wave;
 
 namespace Mute.Moe.Services.SoundEffects
@@ -22,12 +21,12 @@ namespace Mute.Moe.Services.SoundEffects
     public class SoundEffectPlayer
         : ISoundEffectPlayer
     {
-        private readonly IGuildVoiceCollection _guildAudio;
+        [NotNull] private readonly IGuildSoundEffectQueueCollection _queueCollection;
         private readonly IFileSystem _fs;
 
-        public SoundEffectPlayer([NotNull] IGuildVoiceCollection guildAudio, [NotNull] IFileSystem fs)
+        public SoundEffectPlayer([NotNull] IGuildSoundEffectQueueCollection queueCollection, [NotNull] IFileSystem fs)
         {
-            _guildAudio = guildAudio;
+            _queueCollection = queueCollection;
             _fs = fs;
         }
 
@@ -39,12 +38,10 @@ namespace Mute.Moe.Services.SoundEffects
             if (!(user is IVoiceState vs))
                 return (PlayResult.UserNotInVoice, Task.CompletedTask);
 
-            var player = await _guildAudio.GetPlayer(vs.VoiceChannel.Guild);
-            await player.Move(vs.VoiceChannel);
+            var q = await _queueCollection.Get(vs.VoiceChannel.Guild.Id);
+            await q.VoicePlayer.Move(vs.VoiceChannel);
 
-            var queue = player.Open<ISoundEffect>("sfx");
-
-            var finishedTask = await queue.Enqueue(sfx, new AudioFileReader(sfx.Path));
+            var finishedTask = await q.Enqueue(sfx, new AudioFileReader(sfx.Path));
             return (PlayResult.Enqueued, finishedTask);
         }
     }

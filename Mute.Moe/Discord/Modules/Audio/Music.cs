@@ -8,7 +8,6 @@ using JetBrains.Annotations;
 using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Audio.Sources.Youtube;
 using Mute.Moe.Services.Music;
 using Mute.Moe.Services.Music.Extensions;
@@ -22,35 +21,31 @@ namespace Mute.Moe.Discord.Modules.Audio
     public class Music
         : BaseModule
     {
-        private const string MusicChannel = "music";
-
-        private readonly IGuildVoiceCollection _voiceCollection;
         private readonly IYoutubeDownloader _youtube;
         private readonly IMusicLibrary _library;
         private readonly Random _rng;
+        private readonly IGuildMusicQueueCollection _queueCollection;
 
-        public Music(IGuildVoiceCollection voiceCollection, IYoutubeDownloader youtube, IMusicLibrary library, Random rng)
+        public Music(IGuildMusicQueueCollection queueCollection, IYoutubeDownloader youtube, IMusicLibrary library, Random rng)
         {
-            _voiceCollection = voiceCollection;
+            _queueCollection = queueCollection;
             _youtube = youtube;
             _library = library;
             _rng = rng;
         }
 
         [NotNull, Command("playing"), Summary("Get information about the currently playing track")]
-        [RequireVoiceChannel]
         public async Task NowPlaying()
         {
-            var player = await _voiceCollection.GetPlayer(Context.Guild);
-            var channel = player.Open<ITrack>(MusicChannel);
+            var q = await _queueCollection.Get(Context.Guild.Id);
 
-            if (!channel.IsPlaying)
+            if (!q.IsPlaying)
             {
                 await ReplyAsync("Nothing is currently playing");
                 return;
             }
 
-            var (metadata, completion) = channel.Playing;
+            var (metadata, completion) = q.Playing;
             var embed = (await metadata.DiscordEmbed());
 
             //Show embed with green border (indicates it is playing)
@@ -67,18 +62,16 @@ namespace Mute.Moe.Discord.Modules.Audio
         [RequireVoiceChannel]
         public async Task ClearQueue()
         {
-            var player = await _voiceCollection.GetPlayer(Context.Guild);
-            var channel = player.Open<ITrack>(MusicChannel);
-            channel.Stop();
+            var q = await _queueCollection.Get(Context.Guild.Id);
+            q.Stop();
         }
 
         [NotNull, Command("skip"), Summary("Skip the currently playing track")]
         [RequireVoiceChannel]
         public async Task SkipTrack()
         {
-            var player = await _voiceCollection.GetPlayer(Context.Guild);
-            var channel = player.Open<ITrack>(MusicChannel);
-            channel.Skip();
+            var q = await _queueCollection.Get(Context.Guild.Id);
+            q.Skip();
         }
 
         [NotNull, Command("playlist"), Summary("Show the current playlist")]
@@ -86,8 +79,7 @@ namespace Mute.Moe.Discord.Modules.Audio
         public async Task PlayList()
         {
             // Get music queue
-            var player = await _voiceCollection.GetPlayer(Context.Guild);
-            var channel = player.Open<ITrack>(MusicChannel);
+            var channel = await _queueCollection.Get(Context.Guild.Id);
 
             // Early out for empty queue
             var q = channel.Queue.ToArray();
@@ -250,17 +242,18 @@ namespace Mute.Moe.Discord.Modules.Audio
 
         [NotNull] private async Task Enqueue([NotNull] ITrack track)
         {
+            // Get music queue
+            var channel = await _queueCollection.Get(Context.Guild.Id);
+
             // Move into channel with user
-            var player = await _voiceCollection.GetPlayer(Context.Guild);
             if (!(Context.User is IVoiceState vs) || vs.VoiceChannel == null)
             {
                 await ReplyAsync("You must be in a voice channel!");
                 return;
             }
-            await player.Move(vs.VoiceChannel);
+            await channel.VoicePlayer.Move(vs.VoiceChannel);
 
             // Enqueue track
-            var channel = player.Open<ITrack>(MusicChannel);
             var completion = await channel.Enqueue(track, new AudioFileReader(track.Path));
 
             // Create embed for this track (with no colour)

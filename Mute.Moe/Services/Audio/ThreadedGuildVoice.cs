@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,8 +21,6 @@ namespace Mute.Moe.Services.Audio
         public IVoiceChannel Channel => _pump?.Channel;
 
         private readonly MultiChannelMixer _mixer = new MultiChannelMixer();
-        private readonly ConcurrentDictionary<string, IMixerChannel> _channels = new ConcurrentDictionary<string, IMixerChannel>();
-
         private readonly DiscordSocketClient _client;
 
         public ThreadedGuildVoice([NotNull] IGuild guild, [NotNull] DiscordSocketClient client)
@@ -78,15 +75,9 @@ namespace Mute.Moe.Services.Audio
                 _pump = new AudioPump(channel, _mixer);
         }
 
-        public SimpleQueueChannel<T> Open<T>(string name)
+        public void Open([NotNull] IMixerChannel channel)
         {
-            var n = $"{name} {typeof(T).FullName}";
-
-            return (SimpleQueueChannel<T>)_channels.GetOrAdd(n, _ => {
-                var c = new SimpleQueueChannel<T>();
-                _mixer.Add(c);
-                return c;
-            });
+            _mixer.Add(channel);
         }
 
         private class AudioPump
