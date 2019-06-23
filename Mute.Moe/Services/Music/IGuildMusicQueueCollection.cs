@@ -13,20 +13,9 @@ namespace Mute.Moe.Services.Music
     }
 
     public interface IGuildMusicQueue
+        : ISimpleQueueChannel<ITrack>
     {
         IGuildVoice VoicePlayer { get; }
-
-        void Stop();
-
-        void Skip();
-
-        bool IsPlaying { get; }
-
-        (ITrack Metadata, Task Completion) Playing { get; }
-
-        IEnumerable<ITrack> Queue { get; }
-
-        Task<Task> Enqueue(ITrack metadata, ISampleProvider audio);
     }
 
     public class InMemoryGuildMusicQueueCollection

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -134,8 +135,9 @@ namespace Mute.Moe.Discord
                 }
                 else
                 {
-                    foreach (var post in _services.GetServices<IUnsuccessfulCommandPostprocessor>())
-                        await post.Process(context, result);
+                    foreach (var post in _services.GetServices<IUnsuccessfulCommandPostprocessor>().OrderBy(a => a.Order))
+                        if (await post.Process(context, result))
+                            break;
                 }
             }
             catch (Exception e)
@@ -159,6 +161,7 @@ namespace Mute.Moe.Discord
             services.AddSingleton(client);
             services.AddSingleton<IDiscordClient>(client);
 
+            services.AddTransient<IUnsuccessfulCommandPostprocessor, EnhanceYourChill>();
             services.AddTransient<IUnsuccessfulCommandPostprocessor, DisplayCommandError>();
         }
     }

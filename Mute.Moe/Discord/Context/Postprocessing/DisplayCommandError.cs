@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Modules;
 using Mute.Moe.Discord.Modules.Introspection;
 using Mute.Moe.Extensions;
 
@@ -25,7 +24,9 @@ namespace Mute.Moe.Discord.Context.Postprocessing
             _prefix = config.PrefixCharacter;
         }
 
-        public async Task Process(MuteCommandContext context, [NotNull] IResult result)
+        public uint Order => uint.MaxValue;
+
+        public async Task<bool> Process(MuteCommandContext context, [NotNull] IResult result)
         {
             if (result.Error == CommandError.UnknownCommand)
             {
@@ -48,7 +49,7 @@ namespace Mute.Moe.Discord.Context.Postprocessing
                 if (closest == null || closest.d >= inputCmd.Length * 0.5)
                 {
                     await context.Channel.SendMessageAsync("I don't know that command :confused:");
-                    return;
+                    return false;
                 }
 
                 //Suggest a potential matched command
@@ -59,6 +60,8 @@ namespace Mute.Moe.Discord.Context.Postprocessing
                 if (result.ErrorReason != null)
                     await context.Channel.SendMessageAsync(result.ErrorReason);
             }
+
+            return false;
         }
     }
 }
