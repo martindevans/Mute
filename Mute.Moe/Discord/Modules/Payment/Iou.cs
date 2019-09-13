@@ -60,8 +60,8 @@ namespace Mute.Moe.Discord.Modules.Payment
                                          .ToArray();
 
                     var r = new StringBuilder("```\nTotals:\n");
-                    foreach (var total in totals)
-                        r.AppendLine($" => {TransactionFormatting.FormatCurrency(total.Item2, total.Key)}");
+                    foreach (var (key, amount) in totals)
+                        r.AppendLine($" => {TransactionFormatting.FormatCurrency(amount, key)}");
                     r.AppendLine("```");
 
                     await ReplyAsync(r.ToString());

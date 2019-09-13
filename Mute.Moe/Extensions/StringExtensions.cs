@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 
 namespace Mute.Moe.Extensions
@@ -98,6 +99,26 @@ namespace Mute.Moe.Extensions
             }
 
             return (uint)matrix[aLength, bLength];
+        }
+
+        [NotNull] public static IEnumerable<ulong> FindUserMentions([NotNull] this string str)
+        {
+            return FindMentions(str, '@');
+        }
+
+        [NotNull] public static IEnumerable<ulong> FindChannelMentions([NotNull] this string str)
+        {
+            return FindMentions(str, '#');
+        }
+
+        [NotNull]
+        private static IEnumerable<ulong> FindMentions([NotNull] this string str, char prefix)
+        {
+            var r = new Regex($"\\<{prefix}(!?)(?<id>[0-9]+)\\>");
+
+            var matches = r.Matches(str);
+
+            return matches.SelectMany(m => m.Groups["id"].Captures.Select(c => c.Value)).Select(ulong.Parse);
         }
     }
 }

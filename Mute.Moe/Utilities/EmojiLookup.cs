@@ -19,8 +19,11 @@
         public const string Pensive = "😔";
         public const string SlightlyFrowning = "🙁";
         public const string Crying = "😢";
-            
 
+        public const string SkullAndCrossbones = "☠️";
+        public const string Skull = "💀";
+        public const string Coffin = "⚰️";
+        
         public const string Shuffle = "🔀";
         public const string Play = "▶";
         public const string Pause = "⏸";

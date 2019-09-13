@@ -44,12 +44,15 @@ using Mute.Moe.GQL;
 using Mute.Moe.GQL.Schema;
 using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Audio.Sources.Youtube;
+using Mute.Moe.Services.Information.RSS;
 using Mute.Moe.Services.Information.UrbanDictionary;
 using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Music;
+using Mute.Moe.Services.Notifications.RSS;
 using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
+using Mute.Moe.Services.SolariumGame;
 using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.TTS;
@@ -113,6 +116,11 @@ namespace Mute.Moe
             services.AddSingleton<IGuildMusicQueueCollection, InMemoryGuildMusicQueueCollection>();
             services.AddSingleton<IGuildSpeechQueueCollection, InMemoryGuildSpeechQueueCollection>();
             services.AddSingleton<IGuildSoundEffectQueueCollection, InMemoryGuildSoundEffectQueueCollection>();
+            services.AddSingleton<IRss, HttpRss>();
+            services.AddSingleton<IRssNotifications, DatabaseRssNotifications>();
+            services.AddSingleton<IRssNotificationsSender, DatabaseRssNotificationsSender>();
+
+            services.AddSingleton<ISolarium, DatabaseSolarium>();
 
             //Eventually these should all become interface -> concrete type bindings
             services.AddSingleton<AutoReactionTrainer>();

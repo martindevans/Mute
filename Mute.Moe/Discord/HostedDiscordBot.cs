@@ -43,6 +43,12 @@ namespace Mute.Moe.Discord
 
             _commands.CommandExecuted += CommandExecuted;
 
+            var tcs = new TaskCompletionSource<bool>();
+            _client.Ready += () => {
+                tcs.SetResult(true);
+                return Task.CompletedTask;
+            };
+
             // Log the bot in
             await _client.LogoutAsync();
             await _client.LoginAsync(TokenType.Bot, _config.Auth.Token);
@@ -59,6 +65,9 @@ namespace Mute.Moe.Discord
                 await _client.SetActivityAsync(null);
                 await _client.SetStatusAsync(UserStatus.Online);
             }
+
+            // Wait for ready
+            await tcs.Task;
         }
 
         private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context, [NotNull] IResult result)

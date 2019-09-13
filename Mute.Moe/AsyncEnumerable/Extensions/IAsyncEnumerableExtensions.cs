@@ -115,6 +115,11 @@ namespace Mute.Moe.AsyncEnumerable.Extensions
             return await (await task).FirstOrDefault();
         }
 
+        public static async Task<T> SingleOrDefault<T>([NotNull] this Task<IAsyncEnumerable<T>> task)
+        {
+            return await (await task).SingleOrDefault();
+        }
+
         public static async Task<IOrderedAsyncEnumerable<T>> OrderBy<T, TKey>([NotNull] this Task<IAsyncEnumerable<T>> task, Func<T, TKey> keySelector)
         {
             return (await task).OrderBy(keySelector);

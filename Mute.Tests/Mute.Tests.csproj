@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
@@ -10,17 +10,18 @@
 
   <ItemGroup>
     <PackageReference Include="Discord.Net" Version="2.1.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.1.1" />
-    <PackageReference Include="Microsoft.Recognizers.Text" Version="1.2.2" />
-    <PackageReference Include="Microsoft.Recognizers.Text.Choice" Version="1.2.2" />
-    <PackageReference Include="Microsoft.Recognizers.Text.DataTypes.TimexExpression" Version="1.2.2" />
-    <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.2.2" />
-    <PackageReference Include="Microsoft.Recognizers.Text.NumberWithUnit" Version="1.2.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
+    <PackageReference Include="Microsoft.Recognizers.Text" Version="1.2.5" />
+    <PackageReference Include="Microsoft.Recognizers.Text.Choice" Version="1.2.5" />
+    <PackageReference Include="Microsoft.Recognizers.Text.DataTypes.TimexExpression" Version="1.2.5" />
+    <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.2.5" />
+    <PackageReference Include="Microsoft.Recognizers.Text.NumberWithUnit" Version="1.2.5" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.4.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.4.0" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.109.2" />
-    <PackageReference Include="System.IO.Abstractions" Version="6.0.11" />
-    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="6.0.11" />
+    <PackageReference Include="System.IO.Abstractions" Version="6.0.15" />
+    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="6.0.15" />
+    <PackageReference Include="System.ServiceModel.Syndication" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>

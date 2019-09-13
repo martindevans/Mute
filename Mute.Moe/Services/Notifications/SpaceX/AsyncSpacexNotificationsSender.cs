@@ -114,7 +114,13 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             }
             catch (Exception e)
             {
-                Console.WriteLine("Spacex notifier killed by uncaught exception " + e);
+                var info = await _client.GetApplicationInfoAsync();
+                if (info.Owner != null)
+                {
+                    var channel = await info.Owner.GetOrCreateDMChannelAsync();
+                    await channel.SendMessageAsync($"{nameof(AsyncSpacexNotificationsSender)} notifications thread crashed");
+                    await channel.SendMessageAsync(e.ToString());
+                }
             }
         }
 

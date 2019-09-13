@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Linq;
+using System.ServiceModel.Syndication;
+using System.Xml;
 using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
 
 namespace Mute.Tests
@@ -8,6 +12,13 @@ namespace Mute.Tests
     [TestClass]
     public class Playground
     {
+        [TestMethod]
+        public void MethodName()
+        {
+            var m = "hello <@!2334>".FindUserMentions();
+            Console.WriteLine(m.Single());
+        }
+
         [TestMethod]
         public void BooleanChoices()
         {

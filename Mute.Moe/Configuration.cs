@@ -21,6 +21,7 @@ namespace Mute.Moe
         [UsedImplicitly] public UrbanDictionaryConfig UrbanDictionary;
         [UsedImplicitly] public TTSConfig TTS;
         [UsedImplicitly] public MusicLibraryConfig MusicLibrary;
+        [UsedImplicitly] public SolariumConfig Solarium;
 
         [UsedImplicitly] public bool ProcessMessagesFromSelf = false;
         [UsedImplicitly] public char PrefixCharacter = '!';
@@ -130,5 +131,10 @@ namespace Mute.Moe
     public class MusicLibraryConfig
     {
         [UsedImplicitly] public string MusicFolder;
+    }
+
+    public class SolariumConfig
+    {
+        [UsedImplicitly] public string SolariumHostAddress;
     }
 }
