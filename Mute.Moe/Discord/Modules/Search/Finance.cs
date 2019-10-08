@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
@@ -109,15 +110,25 @@ namespace Mute.Moe.Discord.Modules.Search
 
             if (result != null)
             {
+                //Try to find the name of the stock
+                var symbol = await (await _search.Search(result.Symbol)).Where(a => a.Symbol.Equals(result.Symbol, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+
                 var change = "";
                 var delta = result.Price - result.Open;
-                if (delta > 0)
-                    change += "up ";
+                if (delta != 0)
+                {
+                    if (delta > 0)
+                        change += "up";
+                    else if (delta < 0)
+                        change += "down";
+                    change += $" {(delta / result.Price):P}";
+                }
                 else
-                    change += "down";
-                change += $"{(delta / result.Price):P}";
+                    change += "no change";
 
-                await TypingReplyAsync($"{result.Symbol} is trading at {result.Price:0.00}, {change} since opening today");
+                var name = symbol == null ? "" : $"({symbol.Name}) ";
+
+                await TypingReplyAsync($"{result.Symbol} {name}is trading at {result.Price:0.00}, {change} since opening today");
                 return true;
             }
 

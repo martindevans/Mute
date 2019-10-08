@@ -45,7 +45,7 @@ namespace Mute.Moe.Services.Information.Stocks
                 using (var jsonTextReader = new JsonTextReader(sr))
                     response = serializer.Deserialize<StockQuoteResponseContainer>(jsonTextReader);
 
-                if (response.Response == null || response.Response.Symbol == null)
+                if (response.Response?.Symbol == null)
                     return null;
 
                 _cache.Add(response.Response);
