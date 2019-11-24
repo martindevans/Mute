@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Humanizer;
+using Humanizer.Configuration;
 using JetBrains.Annotations;
 using Oddity.API.Models.Launch;
 using Oddity.API.Models.Launch.Rocket.FirstStage;
@@ -88,13 +90,48 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 
         [NotNull] public static string Summary([NotNull] this LaunchInfo launch)
         {
-            var date = launch.LaunchDateUtc.HasValue ? launch.LaunchDateUtc.Value.Humanize() : "";
+            var date = DateString(launch.LaunchDateUtc, launch.TentativeMaxPrecision);
             var num = launch.FlightNumber;
             var site = launch.LaunchSite;
             var name = launch.MissionName;
             var reuse = launch.Reuse;
             var type = launch.Rocket.RocketName;
-            return $"Flight {num} will launch '{name}' from {site.SiteName} on a{(reuse.Core ?? false ? " reused" : "")} {type} rocket {date}";
+            return $"Flight {num}: `{name}` from `{site.SiteName}` on a{(reuse.Core ?? false ? " reused" : "")} {type} rocket {date}";
+        }
+
+        private static string DateString(DateTime? date, TentativeMaxPrecision? precision)
+        {
+            if (!date.HasValue)
+                return "";
+
+            if (!precision.HasValue)
+                return date.Value.Humanize();
+
+            switch (precision.Value)
+            {
+                case TentativeMaxPrecision.Hour:
+                    if ((date.Value - DateTime.UtcNow) > TimeSpan.FromDays(1))
+                        return date.Value.Humanize();
+                    else
+                        return $"about {date.Value.Humanize()}";
+
+                case TentativeMaxPrecision.Day:
+                    return $"on {date.Value.ToString("m")}";
+
+                case TentativeMaxPrecision.Month:
+                    return $"in {CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(date.Value.Month)} {date.Value.Year}";
+
+                case TentativeMaxPrecision.Quarter:
+                    return $"in Q{date.Value.Month / 4 + 1} {date.Value.Year}";
+
+                case TentativeMaxPrecision.Half:
+                    return $"in H{date.Value.Month / 6 + 1} {date.Value.Year}";
+
+                case TentativeMaxPrecision.Year:
+                    return $"in {date.Value.Year.ToString()}";
+
+                default: throw new NotSupportedException($"Unknown tenatative date time `{precision.Value}`");
+            }
         }
     }
 }

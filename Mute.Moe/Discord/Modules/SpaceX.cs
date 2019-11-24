@@ -67,7 +67,7 @@ namespace Mute.Moe.Discord.Modules
             }
             else
             {
-                var launches = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.LaunchDateUtc.Value).Take(count).ToArray();
+                var launches = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.FlightNumber).Take(count).ToArray();
                 await DisplayItemList(
                     launches,
                     () => "There are no upcoming SpaceX launches!",

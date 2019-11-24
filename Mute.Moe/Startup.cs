@@ -58,6 +58,7 @@ using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Words;
 using Mute.Moe.Utilities;
+using System.Net.Http;
 
 namespace Mute.Moe
 {
@@ -80,6 +81,7 @@ namespace Mute.Moe
 
             services.AddSingleton<IFileSystem, FileSystem>();
             services.AddSingleton<IHttpClient, SimpleHttpClient>();
+            services.AddSingleton<HttpClient, HttpClient>();
             services.AddSingleton<IDatabaseService, SqliteDatabase>();
             services.AddSingleton<ISentimentEvaluator, TensorflowSentiment>();
             services.AddSingleton<ISentimentTrainer, DatabaseSentimentTrainer>();

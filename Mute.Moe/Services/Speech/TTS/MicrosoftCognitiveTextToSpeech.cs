@@ -24,7 +24,7 @@ namespace Mute.Moe.Services.Speech.TTS
         [ItemNotNull]
         public async Task<IAudioClip> Synthesize(string text)
         {
-            var stream = AudioOutputStream.CreatePullStream(AudioStreamFormat.GetWaveFormatPCM(16000, 16, 1));
+            var stream = AudioOutputStream.CreatePullStream();
 
             //Generate voice data into stream
             using (var streamConfig = AudioConfig.FromStreamOutput(stream))

@@ -1,9 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Steam.Models.SteamCommunity;
 using Steam.Models.SteamPlayer;
 using Steam.Models.SteamStore;
 using SteamWebAPI2.Interfaces;
+using SteamWebAPI2.Utilities;
 
 namespace Mute.Moe.Services.Information.Steam
 {
@@ -14,11 +16,13 @@ namespace Mute.Moe.Services.Information.Steam
         private readonly SteamStore _store;
         private readonly SteamUserStats _stats;
 
-        public SteamApi([NotNull] Configuration config)
+        public SteamApi([NotNull] Configuration config, [NotNull] HttpClient http)
         {
-            _user = new SteamUser(config.Steam.WebApiKey);
-            _store = new SteamStore();
-            _stats = new SteamUserStats(config.Steam.WebApiKey);
+            var factory = new SteamWebInterfaceFactory(config.Steam.WebApiKey);
+
+            _user = factory.CreateSteamWebInterface<SteamUser>(http);
+            _store = factory.CreateSteamWebInterface<SteamStore>(http);
+            _stats = factory.CreateSteamWebInterface<SteamUserStats>(http);
         }
 
         public async Task<PlayerSummaryModel> GetUserSummary(ulong userSteamId)
