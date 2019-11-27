@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
@@ -13,7 +14,7 @@ namespace Mute.Moe.Services.Words
     public class HttpWordVectors
         : IWords
     {
-        private readonly IHttpClient _client;
+        private readonly HttpClient _client;
         private readonly WordVectorsConfig _config;
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
@@ -24,9 +25,11 @@ namespace Mute.Moe.Services.Words
         private readonly FluidCache<SimilarResult> _similarCache;
         private readonly IIndex<string, SimilarResult> _indexSimilarByWord;
 
-        public HttpWordVectors([NotNull] Configuration config, IHttpClient client)
+        public HttpWordVectors([NotNull] Configuration config, IHttpClientFactory client)
         {
-            _client = client;
+            _client = client.CreateClient();
+            _client.Timeout = TimeSpan.FromMilliseconds(25);
+
             _config = config.WordVectors;
 
             _vectorCache = new FluidCache<WordVector>((int)_config.CacheSize, TimeSpan.FromSeconds(_config.CacheMinTimeSeconds), TimeSpan.FromMinutes(_config.CacheMaxTimeSeconds), () => DateTime.UtcNow);

@@ -29,12 +29,12 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
 
         private readonly ConcurrentDictionary<string, string> _nameToSymbolMap = new ConcurrentDictionary<string, string>();
 
-        private readonly IHttpClient _http;
+        private readonly HttpClient _http;
         private readonly string _key;
 
-        public ProCoinMarketCapCrypto([NotNull] Configuration config, [NotNull] IHttpClient http)
+        public ProCoinMarketCapCrypto([NotNull] Configuration config, [NotNull] IHttpClientFactory http)
         {
-            _http = http;
+            _http = http.CreateClient();
             _key = config.CoinMarketCap.Key;
 
             _currencyCache = new FluidCache<ICurrency>(config.CoinMarketCap.CacheSize, TimeSpan.FromSeconds(config.CoinMarketCap.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.CoinMarketCap.CacheMaxAgeSeconds), () => DateTime.UtcNow);

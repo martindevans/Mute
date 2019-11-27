@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Mute.Moe.AsyncEnumerable;
@@ -13,13 +14,13 @@ namespace Mute.Moe.Services.Information.Stocks
     public class AlphaVantageStockSearch
         : IStockSearch
     {
-        private readonly IHttpClient _http;
+        private readonly HttpClient _http;
         private readonly AlphaAdvantageConfig _config;
 
-        public AlphaVantageStockSearch([NotNull] Configuration config, IHttpClient http)
+        public AlphaVantageStockSearch([NotNull] Configuration config, IHttpClientFactory http)
         {
             _config = config.AlphaAdvantage;
-            _http = http;
+            _http = http.CreateClient();
         }
 
         public async Task<IAsyncEnumerable<IStockSearchResult>> Search(string search)

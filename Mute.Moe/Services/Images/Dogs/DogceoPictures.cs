@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Mute.Moe.Utilities;
@@ -10,12 +11,12 @@ namespace Mute.Moe.Services.Images.Dogs
         : IDogPictureService
     {
         private readonly string _url;
-        private readonly IHttpClient _client;
+        private readonly HttpClient _client;
 
-        public DogceoPictures(IHttpClient client, string url = "https://dog.ceo/api/breeds/image/random")
+        public DogceoPictures(IHttpClientFactory client, string url = "https://dog.ceo/api/breeds/image/random")
         {
             _url = url;
-            _client = client;
+            _client = client.CreateClient();
         }
 
         [ItemNotNull] public async Task<Stream> GetDogPictureAsync()

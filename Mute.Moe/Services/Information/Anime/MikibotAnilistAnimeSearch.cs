@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Miki.Anilist;
-using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.Information.Anime
 {
     public class MikibotAnilistAnimeSearch
         : BaseMikibotMediaSearchService<IAnime>, IAnimeInfo
     {
-        public MikibotAnilistAnimeSearch(IHttpClient http)
+        public MikibotAnilistAnimeSearch(IHttpClientFactory http)
             : base(MediaFormat.MANGA, MediaFormat.NOVEL, MediaFormat.MUSIC)    //This is a list of formats _not_ to return!
         {
         }

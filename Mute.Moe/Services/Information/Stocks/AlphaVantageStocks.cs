@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
@@ -11,16 +12,16 @@ namespace Mute.Moe.Services.Information.Stocks
     public class AlphaVantageStocks
         : IStockQuotes
     {
-        private readonly IHttpClient _http;
+        private readonly HttpClient _http;
         private readonly AlphaAdvantageConfig _config;
 
         private readonly FluidCache<IStockQuote> _cache;
         private readonly IIndex<string, IStockQuote> _bySymbol;
 
-        public AlphaVantageStocks([NotNull] Configuration config, IHttpClient http)
+        public AlphaVantageStocks([NotNull] Configuration config, IHttpClientFactory http)
         {
             _config = config.AlphaAdvantage;
-            _http = http;
+            _http = http.CreateClient();
 
             _cache = new FluidCache<IStockQuote>(_config.CacheSize, TimeSpan.FromSeconds(_config.CacheMinAgeSeconds), TimeSpan.FromSeconds(_config.CacheMaxAgeSeconds), () => DateTime.UtcNow);
             _bySymbol = _cache.AddIndex("BySymbol", a => a.Symbol);

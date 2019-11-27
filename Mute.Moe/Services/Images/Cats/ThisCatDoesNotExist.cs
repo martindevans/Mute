@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Mute.Moe.Utilities;
@@ -9,11 +10,11 @@ namespace Mute.Moe.Services.Images.Cats
         : IArtificialCatPictureProvider
     {
         private const string URL = "https://thiscatdoesnotexist.com/";
-        private readonly IHttpClient _client;
+        private readonly HttpClient _client;
 
-        public ThisCatDoesNotExist(IHttpClient client)
+        public ThisCatDoesNotExist(IHttpClientFactory client)
         {
-            _client = client;
+            _client = client.CreateClient();
         }
 
         [ItemNotNull]

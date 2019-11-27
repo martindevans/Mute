@@ -29,14 +29,21 @@ namespace Mute.Moe.Discord.Modules
         [Command("core"), Alias("booster"), Summary("I will tell you about a specific SpaceX vehicle")]
         public async Task CoreDetails(string id)
         {
-            var details = await _spacex.Core(id);
+            var details = (await _spacex.Core(id)) ?? await _spacex.Core($"B{id}");
             if (details == null)
             {
                 await TypingReplyAsync("There doesn't seem to be a core by that ID");
                 return;
             }
 
-            await ReplyAsync(await details.DiscordEmbed());
+            var embed = await details.DiscordEmbed();
+            var msg = await ReplyAsync(embed);
+
+            if (details.Missions.Count > 1)
+            {
+                var embed2 = await details.AugmentDiscordEmbed(embed, _spacex);
+                await msg.ModifyAsync(p => p.Embed = embed2.Build());
+            }
         }
 
         [Command("details"), Alias("flight-no", "flight-num"), Summary("I will tell you about a specific spacex launch")]

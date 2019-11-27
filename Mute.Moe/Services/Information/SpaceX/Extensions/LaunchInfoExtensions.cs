@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Humanizer;
-using Humanizer.Configuration;
 using JetBrains.Annotations;
 using Oddity.API.Models.Launch;
 using Oddity.API.Models.Launch.Rocket.FirstStage;

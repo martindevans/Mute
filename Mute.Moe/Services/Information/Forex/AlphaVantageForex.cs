@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
@@ -12,16 +13,16 @@ namespace Mute.Moe.Services.Information.Forex
     public class AlphaVantageForex
         : IForexInfo
     {
-        private readonly IHttpClient _http;
+        private readonly HttpClient _http;
         private readonly AlphaAdvantageConfig _config;
 
         private readonly FluidCache<IForexQuote> _cache;
         private readonly IIndex<KeyValuePair<string, string>, IForexQuote> _bySymbolPair;
 
-        public AlphaVantageForex([NotNull] Configuration config, IHttpClient http)
+        public AlphaVantageForex([NotNull] Configuration config, IHttpClientFactory http)
         {
             _config = config.AlphaAdvantage;
-            _http = http;
+            _http = http.CreateClient();
 
             _cache = new FluidCache<IForexQuote>(_config.CacheSize, TimeSpan.FromSeconds(_config.CacheMinAgeSeconds), TimeSpan.FromSeconds(_config.CacheMaxAgeSeconds), () => DateTime.UtcNow);
             _bySymbolPair = _cache.AddIndex("BySymbolPair", a => new KeyValuePair<string, string>(a.FromCode, a.ToCode));

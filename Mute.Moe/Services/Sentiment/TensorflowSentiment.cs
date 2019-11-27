@@ -43,9 +43,12 @@ namespace Mute.Moe.Services.Sentiment
                     //Create input tensor (1 sentence, N words, 300 word vector dimensions)
                     var input = new float[1, words.Length, 300];
 
+                    var tasks = words.Select(_wordVectors.Vector).ToArray();
+                    await Task.WhenAll(tasks);
+
                     //Copy in word vectors element by element
                     var wordIndex = 0;
-                    foreach (var wordVector in words.AsParallel().AsOrdered().Select(_wordVectors.Vector))
+                    foreach (var wordVector in tasks)
                     {
                         for (var i = 0; i < 300; i++)
                         {

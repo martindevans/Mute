@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -20,14 +21,14 @@ namespace Mute.Moe.Discord.Modules.Audio
     {
         private readonly ISoundEffectLibrary _library;
         private readonly ISoundEffectPlayer _player;
-        private readonly IHttpClient _http;
+        private readonly HttpClient _http;
         private readonly Random _random;
 
-        public SoundEffects(ISoundEffectLibrary library, ISoundEffectPlayer player, IHttpClient http, Random random)
+        public SoundEffects(ISoundEffectLibrary library, ISoundEffectPlayer player, IHttpClientFactory http, Random random)
         {
             _library = library;
             _player = player;
-            _http = http;
+            _http = http.CreateClient();
             _random = random;
         }
 

@@ -73,6 +73,8 @@ namespace Mute.Moe
 
         private static void ConfigureBaseServices(IServiceCollection services)
         {
+            services.AddHttpClient();
+
             services.AddSingleton(services);
             services.AddSingleton<InteractiveService>();
 
@@ -80,7 +82,6 @@ namespace Mute.Moe
             services.AddTransient<IDiceRoller, CryptoDiceRoller>();
 
             services.AddSingleton<IFileSystem, FileSystem>();
-            services.AddSingleton<IHttpClient, SimpleHttpClient>();
             services.AddSingleton<HttpClient, HttpClient>();
             services.AddSingleton<IDatabaseService, SqliteDatabase>();
             services.AddSingleton<ISentimentEvaluator, TensorflowSentiment>();

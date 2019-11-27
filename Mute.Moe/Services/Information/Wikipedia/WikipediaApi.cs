@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
-using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Wikipedia
@@ -11,14 +11,14 @@ namespace Mute.Moe.Services.Information.Wikipedia
     public class WikipediaApi
         : IWikipedia
     {
-        private readonly IHttpClient _client;
+        private readonly HttpClient _client;
 
         private readonly FluidCache<Tuple<string, IReadOnlyList<IDefinition>>> _cache;
         private readonly IIndex<string, Tuple<string, IReadOnlyList<IDefinition>>> _bySearchTerm;
 
-        public WikipediaApi(IHttpClient client)
+        public WikipediaApi(IHttpClientFactory client)
         {
-            _client = client;
+            _client = client.CreateClient();
 
             _cache = new FluidCache<Tuple<string, IReadOnlyList<IDefinition>>>(1024, TimeSpan.FromMinutes(5), TimeSpan.FromDays(1), () => DateTime.UtcNow);
             _bySearchTerm = _cache.AddIndex("bySearchTerm", a => a.Item1);

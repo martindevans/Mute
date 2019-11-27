@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -19,12 +20,12 @@ namespace Mute.Moe.Discord.Modules.Introspection
         : BaseModule, IKeyProvider
     {
         private readonly DiscordSocketClient _client;
-        private readonly IHttpClient _http;
+        private readonly HttpClient _http;
 
-        public UserInfo(DiscordSocketClient client, IHttpClient http)
+        public UserInfo(DiscordSocketClient client, IHttpClientFactory http)
         {
             _client = client;
-            _http = http;
+            _http = http.CreateClient();
         }
 
         [Command("userid"), Summary("I will type out the ID of the specified user")]

@@ -1,13 +1,28 @@
-﻿using System.Linq;
+﻿using System;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Humanizer;
 using JetBrains.Annotations;
 using Oddity.API.Models.DetailedCore;
+using Oddity.API.Models.Launch;
 
 namespace Mute.Moe.Services.Information.SpaceX.Extensions
 {
     public static class DetailedCoreInfoExtensions
     {
+        public static async Task<EmbedBuilder> AugmentDiscordEmbed([NotNull] this DetailedCoreInfo info, EmbedBuilder builder, ISpacexInfo spacex)
+        {
+            var missions = await info.Missions.ToAsyncEnumerable().Select(async a => (await spacex.Launch(a.Flight)).FirstOrDefault()).Where(a => a != null).ToArray();
+            await Task.WhenAll(missions);
+
+            if (missions.Length > 0)
+                builder = builder.WithDescription(string.Join("\n", missions.Select(a => MissionLine(a.Result))));
+
+            return builder;
+        }
+
         public static async Task<EmbedBuilder> DiscordEmbed([NotNull] this DetailedCoreInfo info)
         {
             //Choose color based on status
@@ -21,7 +36,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
                     color = Color.Red;
                     break;
                 case DetailedCoreStatus.Inactive:
-                    color = Color.Orange;
+                    color = Color.DarkGrey;
                     break;
                 case DetailedCoreStatus.Unknown:
                 case null:
@@ -57,7 +72,32 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             if (info.OriginalLaunch.HasValue)
                 builder = builder.AddField("First Launch Date", info.OriginalLaunch.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
 
+            if (info.Missions.Count > 1)
+                builder = builder.WithDescription(string.Join("\n", info.Missions.Select(MissionLine)));
+
             return builder;
+        }
+
+        private static string MissionLine(LaunchInfo mission)
+        {
+            var fname = $"{mission.MissionName}";
+
+            var url = mission.Links.Wikipedia ?? mission.Links.RedditCampaign ?? mission.Links.RedditLaunch ?? mission.Links.Presskit;
+            if (url != null)
+                fname = $"[{fname}]({url})";
+
+            var ago = (DateTime.UtcNow - mission.LaunchDateUtc.Value).Humanize(2, maxUnit: Humanizer.Localisation.TimeUnit.Year, minUnit: Humanizer.Localisation.TimeUnit.Hour);
+            var txt = $" • ({mission.FlightNumber}) {fname} {ago} ago";
+
+            if (mission.LaunchSuccess.HasValue && !mission.LaunchSuccess.Value)
+                txt += " ❌";
+
+            return txt;
+        }
+
+        private static string MissionLine(CoreMissionInfo mission)
+        {
+            return $" • ({mission.Flight}) {mission.Name}";
         }
     }
 }

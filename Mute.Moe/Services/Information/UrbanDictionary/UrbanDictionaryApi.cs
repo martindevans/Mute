@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using FluidCaching;
 using JetBrains.Annotations;
-using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.UrbanDictionary
@@ -12,15 +12,15 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
     public class UrbanDictionaryApi
         : IUrbanDictionary
     {
-        [NotNull] private readonly IHttpClient _http;
+        [NotNull] private readonly HttpClient _http;
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly FluidCache<CacheEntry> _definitionCache;
         private readonly IIndex<string, CacheEntry> _definitionsByWord;
 
-        public UrbanDictionaryApi([NotNull] Configuration config, [NotNull] IHttpClient http)
+        public UrbanDictionaryApi([NotNull] Configuration config, [NotNull] IHttpClientFactory http)
         {
-            _http = http;
+            _http = http.CreateClient();
             _definitionCache = new FluidCache<CacheEntry>(
                 (int)config.UrbanDictionary.CacheSize,
                 TimeSpan.FromSeconds(config.UrbanDictionary.CacheMinTimeSeconds),
