@@ -1,8 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Steam.Models.SteamCommunity;
 using Steam.Models.SteamPlayer;
-using Steam.Models.SteamStore;
 
 namespace Mute.Moe.Services.Information.Steam
 {
@@ -14,8 +14,10 @@ namespace Mute.Moe.Services.Information.Steam
 
         [NotNull, ItemCanBeNull] Task<UserStatsForGameResultModel> GetUserStatsForGame(ulong userSteamId, uint appId);
 
-        [NotNull, ItemCanBeNull] Task<StoreAppDetailsDataModel> GetStoreAppDetail(uint appId);
-
         [NotNull] Task<uint> GetCurrentPlayerCount(uint appId);
+
+        [NotNull, ItemCanBeNull] Task<IReadOnlyCollection<OwnedGameModel>> GetOwnedGames(ulong userSteamId);
+
+        [NotNull, ItemCanBeNull] Task<IReadOnlyCollection<RecentlyPlayedGameModel>> GetRecentlyPlayedGames(ulong userSteamId);
     }
 }

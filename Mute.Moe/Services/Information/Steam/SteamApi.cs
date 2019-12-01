@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Steam.Models.SteamCommunity;
@@ -13,16 +14,28 @@ namespace Mute.Moe.Services.Information.Steam
         : ISteamInfo
     {
         private readonly SteamUser _user;
-        private readonly SteamStore _store;
         private readonly SteamUserStats _stats;
+        private readonly PlayerService _players;
 
         public SteamApi([NotNull] Configuration config, [NotNull] HttpClient http)
         {
             var factory = new SteamWebInterfaceFactory(config.Steam.WebApiKey);
 
             _user = factory.CreateSteamWebInterface<SteamUser>(http);
-            _store = factory.CreateSteamWebInterface<SteamStore>(http);
             _stats = factory.CreateSteamWebInterface<SteamUserStats>(http);
+            _players = factory.CreateSteamWebInterface<PlayerService>(http);
+        }
+
+        public async Task<IReadOnlyCollection<OwnedGameModel>> GetOwnedGames(ulong userSteamId)
+        {
+            var response = await _players.GetOwnedGamesAsync(userSteamId, true, true);
+            return response.Data.OwnedGames;
+        }
+
+        public async Task<IReadOnlyCollection<RecentlyPlayedGameModel>> GetRecentlyPlayedGames(ulong userSteamId)
+        {
+            var response = await _players.GetRecentlyPlayedGamesAsync(userSteamId);
+            return response.Data.RecentlyPlayedGames;
         }
 
         public async Task<PlayerSummaryModel> GetUserSummary(ulong userSteamId)
@@ -41,12 +54,6 @@ namespace Mute.Moe.Services.Information.Steam
         {
             var result = await _stats.GetUserStatsForGameAsync(userSteamId, appId);
             return result.Data;
-        }
-
-        public async Task<StoreAppDetailsDataModel> GetStoreAppDetail(uint appId)
-        {
-            var response = await _store.GetStoreAppDetailsAsync(appId);
-            return response;
         }
 
         public async Task<uint> GetCurrentPlayerCount(uint appId)

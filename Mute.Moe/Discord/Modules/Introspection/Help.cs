@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Addons.Interactive;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.AsyncEnumerable.Extensions;
@@ -36,13 +37,19 @@ namespace Mute.Moe.Discord.Modules.Introspection
             //Find modules which have at least one permitted command
             var modules = await FindModules();
 
-            //Display information
-            var embed = new EmbedBuilder()
-                .WithDescription($"Use `{_prefixCharacter}help name` to find out about a specific command or module")
-                .WithAuthor(Context.Client.CurrentUser);
-            foreach (var item in modules)
-                embed = embed.AddField(item.Key.Name, string.Join(", ", item.Value.Select(c => $"`{c.Name}`")));
-            await ReplyAsync(embed);
+            string CommandsStr(IEnumerable<CommandInfo> cmds)
+            {
+                return string.Join(", ", cmds.Select(a => $"`{a.Name}`").Distinct());
+            }
+
+            var pages = MoreLinq.Extensions.BatchExtension.Batch(modules.Select(m => $"**{m.Key.Name}**\n{CommandsStr(m.Value)}"), 10).Select(b => string.Join("\n", b)).ToArray();
+
+            await PagedReplyAsync(new PaginatedMessage
+            {
+                Pages = pages,
+                Color = Color.Green,
+                Title = $"Use `{_prefixCharacter}help name` to find out about a specific command or module"
+            });
         }
 
         [Command("help"), Summary("I will tell you about commands or modules")]
@@ -96,8 +103,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
             return from kvp in await FindModules()
                    let module = kvp.Key
                    from command in kvp.Value
-                   from alias in command.Aliases.Append(command.Name)
-                   let distance = alias.Levenshtein(search)
+                   let distance = command.Aliases.Append(command.Name).Distinct().Select(a => a.Levenshtein(search)).Min()
                    group command by distance
                    into grp
                    orderby grp.Key
@@ -124,6 +130,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
             //Find non hidden modules
             var modules = _commands
                 .Modules
+                .Distinct()
                 .Where(m => !m.Attributes.OfType<HiddenAttribute>().Any());
 
             //Filter to modules which have commands we are allowed to execute

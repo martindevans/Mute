@@ -97,6 +97,7 @@ namespace Mute.Moe
             services.AddSingleton<ISpacexInfo, OdditySpaceX>();
             services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
             services.AddSingleton<ISteamInfo, SteamApi>();
+            services.AddSingleton<ISteamIdStorage, SteamIdDatabaseStorage>();
             services.AddSingleton<IUptime, UtcDifferenceUptime>();
             services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
             services.AddSingleton<IForexInfo, AlphaVantageForex>();
