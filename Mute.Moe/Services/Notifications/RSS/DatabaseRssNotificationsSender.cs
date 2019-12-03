@@ -54,17 +54,23 @@ namespace Mute.Moe.Services.Notifications.RSS
                 {
                     foreach (var feed in await _notifications.GetSubscriptions().ToArray())
                     {
-                        var syndication = await _rss.Fetch(feed.FeedUrl);
-
-                        foreach (var item in syndication)
+                        try
                         {
-                            if (!await HasBeenPublished(feed.Channel.ToString(), feed.FeedUrl, item.Id))
+                            var syndication = await _rss.Fetch(feed.FeedUrl);
+
+                            foreach (var item in syndication)
                             {
-                                await Publish(feed, item);
-                                await Task.Delay(100);
+                                if (!await HasBeenPublished(feed.Channel.ToString(), feed.FeedUrl, item.Id))
+                                {
+                                    await Publish(feed, item);
+                                    await Task.Delay(100);
+                                }
                             }
                         }
-
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"{nameof(DatabaseRssNotificationsSender)} Swallowed exception:\n{e}");
+                        }
                     }
 
                     await Task.Delay(TimeSpan.FromMinutes(5));
@@ -76,8 +82,8 @@ namespace Mute.Moe.Services.Notifications.RSS
                 if (info.Owner != null)
                 {
                     var channel = await info.Owner.GetOrCreateDMChannelAsync();
-                    await channel.SendMessageAsync($"{nameof(DatabaseRssNotificationsSender)} notifications thread crashed");
-                    await channel.SendMessageAsync(e.ToString());
+                    await channel.SendMessageAsync($"{nameof(DatabaseRssNotificationsSender)} notifications thread crashed:");
+                    await channel.SendLongMessageAsync(e.ToString());
                 }
             }
         }

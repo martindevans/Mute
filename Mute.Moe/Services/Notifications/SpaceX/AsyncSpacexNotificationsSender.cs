@@ -7,6 +7,7 @@ using Discord.WebSocket;
 using Humanizer;
 using JetBrains.Annotations;
 using Mute.Moe.AsyncEnumerable.Extensions;
+using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.SpaceX;
 using Oddity.API.Models.Launch;
 
@@ -118,8 +119,8 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                 if (info.Owner != null)
                 {
                     var channel = await info.Owner.GetOrCreateDMChannelAsync();
-                    await channel.SendMessageAsync($"{nameof(AsyncSpacexNotificationsSender)} notifications thread crashed");
-                    await channel.SendMessageAsync(e.ToString());
+                    await channel.SendMessageAsync($"{nameof(AsyncSpacexNotificationsSender)} notifications thread crashed:");
+                    await channel.SendLongMessageAsync(e.ToString());
                 }
             }
         }

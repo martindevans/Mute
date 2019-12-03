@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using JetBrains.Annotations;
+using MoreLinq;
 
 namespace Mute.Moe.Extensions
 {
@@ -33,6 +34,19 @@ namespace Mute.Moe.Extensions
 
             //Beyond the soft max only increase the delay very slowly
             return SoftMaxDelay + TimeSpan.FromSeconds(Math.Pow((delay - SoftMaxDelay).TotalSeconds, 0.25f));
+        }
+
+
+
+        public static async Task SendLongMessageAsync([NotNull] this IMessageChannel channel, string message)
+        {
+            var strings = message.Batch(1900).Select(a => new string(a.ToArray())).ToArray();
+
+            foreach (var item in strings)
+            {
+                await channel.SendMessageAsync(item);
+                await Task.Delay(200);
+            }
         }
     }
 }
