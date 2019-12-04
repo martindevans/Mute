@@ -34,7 +34,7 @@ namespace Mute.Moe.Services.Reminders
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<bool> Delete(uint id);
+        Task<bool> Delete(ulong userId, uint id);
 
         /// <summary>
         /// Action invoked when a new reminder is created

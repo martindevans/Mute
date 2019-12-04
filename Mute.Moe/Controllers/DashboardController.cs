@@ -4,7 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Mute.Moe.Controllers
 {
-    public class DashboardController : Controller
+    public class DashboardController
+        : Controller
     {
         private readonly DiscordSocketClient _client;
 

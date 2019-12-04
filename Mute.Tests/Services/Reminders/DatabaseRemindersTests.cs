@@ -113,7 +113,7 @@ namespace Mute.Tests.Services.Reminders
             var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
             var r = await rm.Create(t, "pre", "msg", 17, 28);
 
-            Assert.IsTrue(await rm.Delete(r.ID));
+            Assert.IsTrue(await rm.Delete(28, r.ID));
 
             var rs = await rm.Get(channel: 17).ToArray();
 

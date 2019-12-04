@@ -207,7 +207,7 @@ namespace Mute.Moe.Services.Reminders
                         Console.WriteLine($"Cannot send reminder: Channel `{_reminder.ChannelId}` is null");
                     }
 
-                    await _reminders.Delete(_reminder.ID);
+                    await _reminders.Delete(_reminder.UserId, _reminder.ID);
                 });
             }
         }

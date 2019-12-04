@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Discord.WebSocket;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Mute.Moe.Extensions;
+using Mute.Moe.Services.Reminders;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Controllers
 {
@@ -7,10 +11,39 @@ namespace Mute.Moe.Controllers
     public class RemindersController
         : Controller
     {
+        private readonly IReminders _reminders;
+        private readonly DiscordSocketClient _client;
+
+        public RemindersController(IReminders reminders, DiscordSocketClient client)
+        {
+            _reminders = reminders;
+            _client = client;
+        }
+
         [HttpGet]
         public IActionResult Index()
         {
+            ViewData["_client"] = _client;
+            ViewData["_reminders"] = _reminders;
             return View();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> Delete(string strId)
+        {
+            var discorduser = User.TryGetDiscordUser(_client);
+            if (discorduser == null)
+                return Unauthorized();
+
+            var id = FriendlyId32.Parse(strId);
+            if (id == null)
+                return BadRequest();
+
+            var success = await _reminders.Delete(discorduser.Id, id.Value.Value);
+            if (success)
+                return Ok();
+            else
+                return NotFound();
         }
     }
 }

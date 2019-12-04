@@ -15,7 +15,7 @@ namespace Mute.Moe.Services.Reminders
         : IReminders
     {
         private const string InsertReminder = "INSERT into Reminders2 (InstantUnix, ChannelId, Prelude, Message, Deleted, UserId) values(@InstantUnix, @ChannelId, @Prelude, @Message, False, @UserId); SELECT last_insert_rowid();";
-        private const string DeleteReminder = "UPDATE Reminders2 SET Deleted = True Where ROWID = @ID";
+        private const string DeleteReminder = "UPDATE Reminders2 SET Deleted = True Where ROWID = @ID AND (UserId = @UserId or @UserId IS null)";
 
         private const string GetFilteredRemindersSql = "SELECT *, rowid FROM Reminders2 " +
                                                        "WHERE NOT Deleted " +
@@ -75,22 +75,25 @@ namespace Mute.Moe.Services.Reminders
             }
         }
 
-        public async Task<bool> Delete(uint id)
+        public async Task<bool> Delete(ulong userId, uint reminderId)
         {
             bool deleted;
             using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = DeleteReminder;
-                cmd.Parameters.Add(new SQLiteParameter("@ID", System.Data.DbType.UInt32) {Value = id});
+                cmd.Parameters.Add(new SQLiteParameter("@ID", System.Data.DbType.UInt32) { Value = reminderId });
+                cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = userId });
 
                 deleted = await cmd.ExecuteNonQueryAsync() > 0;
             }
 
             if (deleted)
-                ReminderDeleted?.Invoke(id);
+                ReminderDeleted?.Invoke(reminderId);
 
             return deleted;
         }
+
+
 
         public async Task<IOrderedAsyncEnumerable<IReminder>> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
         {

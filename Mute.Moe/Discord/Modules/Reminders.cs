@@ -83,7 +83,7 @@ namespace Mute.Moe.Discord.Modules
                 return;
             }
 
-            if (await _reminders.Delete(parsed.Value.Value))
+            if (await _reminders.Delete(Context.User.Id, parsed.Value.Value))
                 await TypingReplyAsync($"Deleted reminder `{id}`");
             else
                 await TypingReplyAsync($"I can't find a reminder with id `{id}`");
