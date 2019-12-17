@@ -4,6 +4,8 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
+using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Audio.Sources.Youtube;
@@ -17,12 +19,14 @@ namespace Mute.Moe.Discord.Modules.Introspection
         private readonly DiscordSocketClient _client;
         private readonly ConversationalResponseService _conversations;
         private readonly IYoutubeDownloader _yt;
+        private readonly SeasonalAvatar _avatar;
 
-        public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IYoutubeDownloader yt)
+        public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IYoutubeDownloader yt, SeasonalAvatar avatar)
         {
             _client = client;
             _conversations = conversations;
             _yt = yt;
+            _avatar = avatar;
         }
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -85,6 +89,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
         }
 
         [Command("test-yt")]
+        [ThinkingReply]
         public async Task TestYt([NotNull] string url)
         {
             var result = await _yt.DownloadAudio(url);
@@ -100,6 +105,13 @@ namespace Mute.Moe.Discord.Modules.Introspection
             }
 
             result.File?.Dispose();
+        }
+
+        [Command("repick-avatar")]
+        [ThinkingReply]
+        public async Task RepickAvatar()
+        {
+            await _avatar.PickDaily();
         }
     }
 }

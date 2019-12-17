@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Discord.WebSocket;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
+using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Games;
 using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.Notifications.RSS;
@@ -29,7 +30,8 @@ namespace Mute.Moe.Services
             typeof(ISentimentEvaluator),
             typeof(IUptime),
             typeof(ISpacexNotificationsSender),
-            typeof(IRssNotificationsSender)
+            typeof(IRssNotificationsSender),
+            typeof(SeasonalAvatar)
         };
 
         public ServicePreloader(DiscordSocketClient client, IServiceProvider services)

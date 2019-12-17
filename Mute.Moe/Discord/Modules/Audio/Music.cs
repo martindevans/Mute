@@ -298,5 +298,13 @@ namespace Mute.Moe.Discord.Modules.Audio
             // Get all potential tracks from those searches
             return results.ToAsyncEnumerable().SelectMany(a => a).OrderBy(a => a.ID);
         }
+
+        [NotNull, Command("upgrade-youtubedl")]
+        [ThinkingReply]
+        [RequireOwner]
+        public async Task Upgrade()
+        {
+            await Context.Channel.TypingReplyAsync((await _youtube.PerformMaintenance()).ToString());
+        }
     }
 }

@@ -15,8 +15,16 @@ namespace Mute.Moe.Services.Information.SpaceX
     {
         public async Task<LaunchInfo> NextLaunch()
         {
-            using (var o = new OddityCore())
-                return await o.Launches.GetNext().ExecuteAsync();
+            try
+            {
+                using (var o = new OddityCore())
+                    return await o.Launches.GetNext().ExecuteAsync();
+            }
+            catch (TaskCanceledException e)
+            {
+                Console.WriteLine($"`NextLaunch` failed: {e}");
+                return null;
+            }
         }
 
         public async Task<IReadOnlyList<LaunchInfo>> Launch(int id)

@@ -57,8 +57,9 @@ using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Words;
-using Mute.Moe.Utilities;
 using System.Net.Http;
+using Mute.Moe.Services.Notifications.Cron;
+using Mute.Moe.Discord.Services.Avatar;
 
 namespace Mute.Moe
 {
@@ -123,6 +124,7 @@ namespace Mute.Moe
             services.AddSingleton<IRss, HttpRss>();
             services.AddSingleton<IRssNotifications, DatabaseRssNotifications>();
             services.AddSingleton<IRssNotificationsSender, DatabaseRssNotificationsSender>();
+            services.AddSingleton<ICron, InMemoryCron>();
 
             services.AddSingleton<ISolarium, DatabaseSolarium>();
 
@@ -132,7 +134,8 @@ namespace Mute.Moe
             services
                 .AddSingleton<GameService>()
                 .AddSingleton<ConversationalResponseService>()
-                .AddSingleton<WordsService>();
+                .AddSingleton<WordsService>()
+                .AddSingleton<SeasonalAvatar>();
         }
 
         public void ConfigureServices(IServiceCollection services)

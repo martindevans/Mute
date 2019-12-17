@@ -72,7 +72,9 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                            $" --limit-rate {_config.RateLimit ?? "1.5M"}" +
                            $" --extract-audio" +
                            $" --audio-format wav" +
-                           $" --ffmpeg-location \"{_config.FfmpegBinaryPath}\"";
+                           $" --ffmpeg-location \"{_config.FfmpegBinaryPath}\"" +
+                           $" --geo-bypass" +
+                           $" --no-call-home";
 
                 //Download to the in-progress-download folder, early out if anything goes wrong
                 try
@@ -159,6 +161,21 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                 }
 
                 throw;
+            }
+        }
+
+        public async Task<int> PerformMaintenance()
+        {
+            var args = "--update";
+
+            //Lock on the mutex to ensure no downloads are in flight
+            using (await _mutex.LockAsync())
+            {
+                return await AsyncProcess.StartProcess(
+                    Path.GetFullPath(_config.YoutubeDlBinaryPath),
+                    args,
+                    Path.GetFullPath(_config.InProgressDownloadFolder)
+                );
             }
         }
 

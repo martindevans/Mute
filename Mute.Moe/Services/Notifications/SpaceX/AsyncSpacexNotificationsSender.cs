@@ -47,8 +47,20 @@ namespace Mute.Moe.Services.Notifications.SpaceX
         {
             try
             {
-                //Set up the initial state as if we just notified about this flight
-                _state = new NotificationState(await _spacex.NextLaunch(), DateTime.UtcNow);
+                // Initial setup
+                while (true)
+                {
+                    var state = await _spacex.NextLaunch();
+                    if (state == null)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(30));
+                        continue;
+                    }
+
+                    //Set up the initial state as if we just notified about this flight
+                    _state = new NotificationState(state, DateTime.UtcNow);
+                    break;
+                }
 
                 while (true)
                 {
@@ -57,6 +69,11 @@ namespace Mute.Moe.Services.Notifications.SpaceX
 
                     //Get the next launch according to the API
                     var newNext = await _spacex.NextLaunch();
+                    if (newNext == null)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(1));
+                        continue;
+                    }
 
                     //There are 4 possibilities here:
                     // 1. Scrub, launch time of same flight has been pushed back

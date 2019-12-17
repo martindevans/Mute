@@ -7,6 +7,7 @@ namespace Mute.Moe
     public class Configuration
     {
         [UsedImplicitly] public AuthConfig Auth;
+        [UsedImplicitly] public AvatarConfig Avatar;
         [UsedImplicitly] public AlphaAdvantageConfig AlphaAdvantage;
         [UsedImplicitly] public CoinMarketCapConfig CoinMarketCap;
         [UsedImplicitly] public DatabaseConfig Database;
@@ -25,6 +26,18 @@ namespace Mute.Moe
 
         [UsedImplicitly] public bool ProcessMessagesFromSelf = false;
         [UsedImplicitly] public char PrefixCharacter = '!';
+    }
+
+    public class AvatarConfig
+    {
+        public class AvatarSet
+        {
+            [UsedImplicitly] public int StartDay;
+            [UsedImplicitly] public int EndDay;
+            [UsedImplicitly] public string Path;
+        }
+
+        [UsedImplicitly] public AvatarSet[] Avatars;
     }
 
     public class AuthConfig

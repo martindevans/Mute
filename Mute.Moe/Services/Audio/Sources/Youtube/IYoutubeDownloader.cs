@@ -11,6 +11,8 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
         [NotNull] Task<bool> IsValidUrl([NotNull] string url);
 
         [NotNull, ItemNotNull] Task<IYoutubeDownloadResult> DownloadAudio([NotNull] string url);
+
+        [NotNull] Task<int> PerformMaintenance();
     }
 
     public interface IYoutubeDownloadResult
