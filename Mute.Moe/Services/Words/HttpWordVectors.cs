@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
-using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -24,6 +23,8 @@ namespace Mute.Moe.Services.Words
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly FluidCache<SimilarResult> _similarCache;
         private readonly IIndex<string, SimilarResult> _indexSimilarByWord;
+
+        private readonly Backoff _backoff = new Backoff();
 
         public HttpWordVectors([NotNull] Configuration config, IHttpClientFactory client)
         {
@@ -56,20 +57,35 @@ namespace Mute.Moe.Services.Words
         [ItemCanBeNull, NotNull]
         private async Task<WordVector> GetVectorNonCached(string word)
         {
-            var url = new UriBuilder(_config.WordVectorsBaseUrl) {Path = $"get_vector/{Uri.EscapeUriString(word)}"};
+            if (!_backoff.MayTry())
+                return null;
 
-            using (var resp = await _client.GetAsync(url.ToString()))
+            try
             {
-                if (!resp.IsSuccessStatusCode)
-                    return null;
+                var url = new UriBuilder(_config.WordVectorsBaseUrl) {Path = $"get_vector/{Uri.EscapeUriString(word)}"};
 
-                var arr = JArray.Parse(await resp.Content.ReadAsStringAsync());
+                using (var resp = await _client.GetAsync(url.ToString()))
+                {
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        _backoff.Fail();
+                        return null;
+                    }
 
-                var vector = new List<float>(300);
-                foreach (var jToken in arr)
-                    vector.Add((float)jToken);
+                    var arr = JArray.Parse(await resp.Content.ReadAsStringAsync());
 
-                return new WordVector(word, vector);
+                    var vector = new List<float>(300);
+                    foreach (var jToken in arr)
+                        vector.Add((float)jToken);
+
+                    _backoff.Success();
+                    return new WordVector(word, vector);
+                }
+            }
+            catch (Exception)
+            {
+                _backoff.Fail();
+                throw;
             }
         }
 
@@ -90,20 +106,35 @@ namespace Mute.Moe.Services.Words
         [ItemCanBeNull, NotNull]
         private async Task<SimilarResult> GetSimilarNonCached(string word)
         {
-            var url = new UriBuilder(_config.WordVectorsBaseUrl) {Path = $"get_similar/{Uri.EscapeUriString(word)}"};
+            if (!_backoff.MayTry())
+                return null;
 
-            using (var resp = await _client.GetAsync(url.ToString()))
+            try
             {
-                if (!resp.IsSuccessStatusCode)
-                    return null;
+                var url = new UriBuilder(_config.WordVectorsBaseUrl) {Path = $"get_similar/{Uri.EscapeUriString(word)}"};
 
-                SimilarWord[] results;
-                var serializer = new JsonSerializer();
-                using (var sr = new StreamReader(await resp.Content.ReadAsStreamAsync()))
-                using (var jsonTextReader = new JsonTextReader(sr))
-                    results = serializer.Deserialize<SimilarWord[]>(jsonTextReader);
+                using (var resp = await _client.GetAsync(url.ToString()))
+                {
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        _backoff.Fail();
+                        return null;
+                    }
 
-                return new SimilarResult(word, results);
+                    SimilarWord[] results;
+                    var serializer = new JsonSerializer();
+                    using (var sr = new StreamReader(await resp.Content.ReadAsStreamAsync()))
+                    using (var jsonTextReader = new JsonTextReader(sr))
+                        results = serializer.Deserialize<SimilarWord[]>(jsonTextReader);
+
+                    _backoff.Success();
+                    return new SimilarResult(word, results);
+                }
+            }
+            catch (Exception)
+            {
+                _backoff.Fail();
+                throw;
             }
         }
 
@@ -176,6 +207,48 @@ namespace Mute.Moe.Services.Words
             {
                 _word = word;
                 _distance = difference;
+            }
+        }
+
+        private class Backoff
+        {
+            private readonly object _lock = new object();
+
+            private int _failures = 0;
+            private DateTime _previousFailure;
+
+            public void Fail()
+            {
+                lock (_lock)
+                {
+                    _failures = Math.Max(_failures * 2, 1);
+                    _previousFailure = DateTime.UtcNow;
+                }
+            }
+
+            public void Success()
+            {
+                lock (_lock)
+                {
+                    lock (_lock)
+                    {
+                        _failures = Math.Max(0, _failures - 1);
+                        _previousFailure = DateTime.UtcNow;
+                    }
+                }
+            }
+
+            public bool MayTry()
+            {
+                lock (_lock)
+                {
+                    if (_failures <= 5)
+                        return true;
+
+                    // How long between attempts should we wait?
+                    var time = Math.Min(5000, _failures * 3);
+                    return (DateTime.UtcNow - TimeSpan.FromMilliseconds(time) > _previousFailure);
+                }
             }
         }
     }

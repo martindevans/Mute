@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Information.UrbanDictionary;
 using Mute.Moe.Services.Information.Wikipedia;
 
@@ -20,12 +21,14 @@ namespace Mute.Moe.Discord.Modules.Search
         }
 
         [Command("define"), Summary("I will briefly explain what a thing is")]
+        [ThinkingReply]
         public async Task DefineAsync([Remainder] string thing)
         {
             await DefineAsync(3, thing);
         }
 
         [Command("define"), Summary("I will briefly explain what a thing is, within a specified number of sentences")]
+        [ThinkingReply]
         public async Task DefineAsync(int sentences, [Remainder] string thing)
         {
             //Get definitions from wikipedia
@@ -50,7 +53,7 @@ namespace Mute.Moe.Discord.Modules.Search
                 () => "I don't know anything about that, sorry",
                 SingleDefinition,
                 items => $"I have found {items.Count} possible items, could you be more specific?",
-                (item, index) => $"{index + 1}. [{item.Title}]({item.Url})"
+                (item, index) => $"{index + 1}. `{item.Title}` - `{item.Definition}`"
             );
         }
 

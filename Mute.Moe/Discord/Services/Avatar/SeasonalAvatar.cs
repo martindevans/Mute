@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Notifications.Cron;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,11 +24,11 @@ namespace Mute.Moe.Discord.Services.Avatar
             _rng = new Random();
 
             // Do not start avatar update job if no avatar sets are configured
-            if ((_config.Avatars?.Length ?? 0) != 0)
+            if ((_config?.Avatars?.Length ?? 0) != 0)
                 cron.Interval(TimeSpan.FromDays(1), PickDaily, int.MaxValue);
         }
 
-        public async Task PickDaily()
+        [NotNull, ItemNotNull] public async Task<SeasonalAvatarPickResult> PickDaily()
         {
             var now = DateTime.UtcNow.Date.DayOfYear;
 
@@ -42,7 +43,7 @@ namespace Mute.Moe.Discord.Services.Avatar
 
             var avatar = avatars.Random(_rng);
             if (avatar == null)
-                return;
+                return new SeasonalAvatarPickResult(avatars, null);
 
             Console.WriteLine($"Setting avatar to `{avatar}`");
             using (var stream = File.OpenRead(avatar))
@@ -50,6 +51,20 @@ namespace Mute.Moe.Discord.Services.Avatar
                 var image = new Image(stream);
                 await _discord.CurrentUser.ModifyAsync(self => self.Avatar = image);
             }
+
+            return new SeasonalAvatarPickResult(avatars, avatar);
+        }
+    }
+
+    public class SeasonalAvatarPickResult
+    {
+        [NotNull] public IReadOnlyList<string> Options { get; }
+        [CanBeNull] public string Choice { get; }
+
+        public SeasonalAvatarPickResult([NotNull] IReadOnlyList<string> options, string choice)
+        {
+            Options = options;
+            Choice = choice;
         }
     }
 }

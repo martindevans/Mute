@@ -111,7 +111,12 @@ namespace Mute.Moe.Discord.Modules.Introspection
         [ThinkingReply]
         public async Task RepickAvatar()
         {
-            await _avatar.PickDaily();
+            var result = await _avatar.PickDaily();
+
+            if (result.Choice == null)
+                await Context.Channel.SendMessageAsync($"Failed to choose an avatar from `{result.Options.Count}` options");
+            else
+                await Context.Channel.SendMessageAsync($"Chose `{result.Choice}` from `{result.Options.Count}` options");
         }
     }
 }

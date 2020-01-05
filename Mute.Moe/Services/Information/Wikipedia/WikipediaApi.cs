@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
@@ -26,16 +27,16 @@ namespace Mute.Moe.Services.Information.Wikipedia
 
         [ItemCanBeNull] public async Task<IReadOnlyList<IDefinition>> Define([NotNull] string topic, int length = 3)
         {
-            var escTopic = Uri.EscapeUriString(topic.ToLowerInvariant());
+            var key = topic + length;
 
-            //Get data about this topic from cache
-            var item = await _bySearchTerm.GetItem(escTopic);
+            // Get data about this topic from cache
+            var item = await _bySearchTerm.GetItem(key);
             if (item != null)
                 return item.Item2;
 
-            //Download it and add to cache
-            var def = await FetchDefinitionAsync(escTopic, length);
-            _cache.Add(Tuple.Create(escTopic, def));
+            // Download it and add to cache
+            var def = await FetchDefinitionAsync(topic, length);
+            _cache.Add(Tuple.Create(key, def));
 
             return def;
         }
@@ -43,32 +44,91 @@ namespace Mute.Moe.Services.Information.Wikipedia
         [ItemNotNull]
         private async Task<IReadOnlyList<IDefinition>> FetchDefinitionAsync([NotNull] string escapedTopic, int length)
         {
-            using (var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles={escapedTopic}&exsentences={length}"))
+            async Task<IReadOnlyList<IDefinition>> GetPageDefinitions(PropPage page)
+            {
+                if (page.Categories.Any(a => a.Title.Equals("Category:All disambiguation pages") || a.Title.Equals("Category:Disambiguation pages")))
+                {
+                    // This is a disambiguation page, get all links on the page and fetch those definitions instead
+                    using (var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&titles={escapedTopic}&prop=links"))
+                    {
+                        if (!httpResponse.IsSuccessStatusCode)
+                            return Array.Empty<IDefinition>();
+
+                        //Parse JSON of response
+                        var response = JsonConvert.DeserializeObject<PropResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
+
+                        // Find all links
+                        var links = response?.Query?.Pages?.Select(p => p.Value).SelectMany(a => a.Links);
+                        if (links == null)
+                            return Array.Empty<IDefinition>();
+
+                        // Fetch all the links
+                        var results = new List<IDefinition>();
+                        foreach (var link in links.Where(a => !string.IsNullOrWhiteSpace(a.Title)))
+                            results.AddRange(await Define(link.Title, 1));
+
+                        return results;
+                    }
+                }
+                else
+                {
+                    // This is an actual page, fetch the definition
+                    using (var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles={page.Title}&exsentences={length}"))
+                    {
+                        if (!httpResponse.IsSuccessStatusCode)
+                            return Array.Empty<IDefinition>();
+
+                        //Parse JSON of response
+                        var response = JsonConvert.DeserializeObject<DefinitionResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
+
+                        //If the response contains no useful data return nothing
+                        var pages = response?.Query?.Pages;
+                        if (pages == null)
+                            return Array.Empty<IDefinition>();
+
+                        //Extract all the valid items we can from the response
+                        var result = new List<IDefinition>();
+                        foreach (var (_, value) in pages)
+                        {
+                            if (value.Title == null || value.Extract == null)
+                                continue;
+                            if (!ulong.TryParse(value.PageId, out var id))
+                                continue;
+
+                            result.Add(new WikipediaApiDefinition(value.Title, id, value.Extract));
+                        }
+
+                        return result;
+                    }
+                }
+            }
+
+            // Find the page and get the categories for it, this way we can tell if it's a disambiguation page
+            using (var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&titles={escapedTopic}&prop=categories"))
             {
                 if (!httpResponse.IsSuccessStatusCode)
                     return Array.Empty<IDefinition>();
 
                 //Parse JSON of response
-                var response = JsonConvert.DeserializeObject<DefinitionResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
+                var response = JsonConvert.DeserializeObject<PropResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
 
-                //If the response contains no useful data return nothing
+                // Early exit if no pages were found
                 var pages = response?.Query?.Pages;
                 if (pages == null)
                     return Array.Empty<IDefinition>();
 
-                //Extract all the valid items we can from the response
-                var result = new List<IDefinition>();
-                foreach (var (_, value) in pages)
-                {
-                    if (value.Title == null || value.Extract == null)
-                        continue;
-                    if (!ulong.TryParse(value.PageId, out var id))
-                        continue;
+                // Start tasks to get definitions
+                var definitionsTasks = pages
+                    .Select(a => Task.Run(async () => await GetPageDefinitions(a.Value)))
+                    .ToArray();
 
-                    result.Add(new WikipediaApiDefinition(value.Title, id, value.Extract));
-                }
+                // Wait on all the tasks and save them in a list
+                var definitions = new List<IDefinition>();
+                foreach (var definitionsTask in definitionsTasks)
+                foreach (var definition in await definitionsTask)
+                    definitions.Add(definition);
 
-                return result;
+                return definitions;
             }
         }
 
@@ -97,15 +157,39 @@ namespace Mute.Moe.Services.Information.Wikipedia
 
         private class DefinitionResponse
         {
-            [JsonProperty("pages")] public Dictionary<string, Page> Pages;
+            [JsonProperty("pages")] public Dictionary<string, DefinitionPage> Pages;
         }
 
-        private class Page
+        private class DefinitionPage
         {
             [JsonProperty("pageid")] public string PageId;
             [JsonProperty("title")] public string Title;
             [JsonProperty("extract")] public string Extract;
         }
-        #pragma warning restore CS0649
+
+        private class PropResponseContainer
+        {
+            [JsonProperty("query")] public PropResponse Query;
+        }
+
+        private class PropResponse
+        {
+            [JsonProperty("pages")] public Dictionary<string, PropPage> Pages;
+        }
+
+        private class PropPage
+        {
+            [JsonProperty("pageid")] public string PageId;
+            [JsonProperty("title")] public string Title;
+
+            [JsonProperty("categories")] public Property[] Categories;
+            [JsonProperty("links")] public Property[] Links;
+        }
+
+        private class Property
+        {
+            [JsonProperty("title")] public string Title;
+        }
+#pragma warning restore CS0649
     }
 }
