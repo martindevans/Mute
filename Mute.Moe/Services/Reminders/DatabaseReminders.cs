@@ -152,7 +152,7 @@ namespace Mute.Moe.Services.Reminders
             {
                 if (ReferenceEquals(this, other))
                     return 0;
-                if (ReferenceEquals(null, other))
+                if (other is null)
                     return 1;
 
                 // ReSharper disable once ImpureMethodCallOnReadonlyValueField
@@ -160,18 +160,18 @@ namespace Mute.Moe.Services.Reminders
             }
 
             #region equality
-            public bool Equals([CanBeNull] IReminder other)
+            public bool Equals(IReminder other)
             {
-                if (ReferenceEquals(null, other))
+                if (other is null)
                     return false;
                 if (ReferenceEquals(this, other))
                     return true;
                 return ID == other.ID;
             }
 
-            public override bool Equals([CanBeNull] object obj)
+            public override bool Equals(object obj)
             {
-                if (ReferenceEquals(null, obj))
+                if (obj is null)
                     return false;
                 if (ReferenceEquals(this, obj))
                     return true;

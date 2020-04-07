@@ -58,8 +58,10 @@ using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Words;
 using System.Net.Http;
+using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
+using Mute.Moe.Services.Imitation;
 
 namespace Mute.Moe
 {
@@ -125,6 +127,8 @@ namespace Mute.Moe
             services.AddSingleton<IRssNotifications, DatabaseRssNotifications>();
             services.AddSingleton<IRssNotificationsSender, DatabaseRssNotificationsSender>();
             services.AddSingleton<ICron, InMemoryCron>();
+            services.AddSingleton<IImitationModelProvider, MarkovModelImitation>();
+            services.AddSingleton<IMessagePreprocessor>(a => a.GetService<IImitationModelProvider>());
 
             services.AddSingleton<ISolarium, DatabaseSolarium>();
 

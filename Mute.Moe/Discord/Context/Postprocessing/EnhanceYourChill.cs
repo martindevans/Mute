@@ -49,7 +49,7 @@ namespace Mute.Moe.Discord.Context.Postprocessing
             var responses = _responses.Random(_random);
 
             // If user is in voice and bot is already in channel, use TTS to respond
-            if (context.User is IVoiceState vs && context.Guild != null)
+            if (context.User is IVoiceState vs && vs.VoiceChannel != null && context.Guild != null)
             {
                 var ttsQueue = await _ttsQueue.Get(context.Guild.Id);
                 if (ttsQueue.VoicePlayer.Channel?.Id == vs.VoiceChannel.Id)

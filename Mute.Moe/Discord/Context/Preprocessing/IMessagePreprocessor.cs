@@ -1,9 +1,10 @@
 ﻿using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Mute.Moe.Discord.Context.Preprocessing
 {
     public interface IMessagePreprocessor
     {
-        Task Process(MuteCommandContext context);
+        [NotNull] Task Process([NotNull] MuteCommandContext context);
     }
 }
