@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive;
 using System.ServiceModel.Syndication;
 using System.Threading.Tasks;
+using System.Xml;
 using Discord;
 using Discord.WebSocket;
 using JetBrains.Annotations;
@@ -130,9 +131,17 @@ namespace Mute.Moe.Services.Notifications.RSS
             desc = desc.Substring(0, Math.Min(desc.Length, 1000));
 
             var embed = new EmbedBuilder()
-                .WithTitle(item.Title.Text)
-                .WithDescription(desc)
-                .WithTimestamp(item.PublishDate);
+                        .WithTitle(item.Title.Text)
+                        .WithDescription(desc);
+
+            // Try to get the date, if this is malformed the property throws in which case we'll just not include a date
+            try
+            {
+                embed.WithTimestamp(item.PublishDate);
+            }
+            catch (XmlException)
+            {
+            }
 
             if (item.Links.Count > 0)
                 embed = embed.WithUrl(item.Links[0].Uri.ToString());
