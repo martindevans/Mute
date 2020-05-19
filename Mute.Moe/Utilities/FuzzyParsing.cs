@@ -11,7 +11,97 @@ namespace Mute.Moe.Utilities
 {
     public static class FuzzyParsing
     {
-        [NotNull] public static MomentExtraction Moment(string userInput, string culture = Culture.EnglishOthers)
+        [NotNull] public static MomentRangeExtraction MomentRange(string userInput, string culture = Culture.EnglishOthers)
+        {
+            TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
+            {
+                if (values.TryGetValue("utcOffsetMins", out var utcOff))
+                {
+                    var offset = int.Parse(utcOff);
+                    return -TimeSpan.FromMinutes(offset);
+                }
+
+                return TimeSpan.Zero;
+            }
+
+            MomentRangeExtraction Extract(string input)
+            {
+                // Get DateTime for the specified culture
+                var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview, DateTime.UtcNow);
+
+                //Try to get the date/time range
+                var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2.daterange"));
+                if (dt == null)
+                    return null;
+
+                var resolutionValues = ((IList<Dictionary<string, string>>)dt.Resolution["values"])?.FirstOrDefault();
+                if (resolutionValues == null)
+                    return null;
+
+                //The time result could be one of several types
+                var subType = dt.TypeName.Split('.').Last();
+
+                //Check if it's a date/time, in which case return a range that starts and ends at that time
+                if ((subType.Contains("date") && !subType.Contains("range")) || subType.Contains("time"))
+                {
+                    if (!resolutionValues.TryGetValue("value", out var value))
+                        return null;
+                    
+                    if (!DateTime.TryParse(value, out var moment))
+                        return null;
+
+                    moment += ApplyTimezone(resolutionValues);
+                    return new MomentRangeExtraction { IsValid = true, Value = (moment, moment) };
+                }
+
+                //Check if it's a range of times
+                if (subType.Contains("date") && subType.Contains("range"))
+                {
+                    if (!resolutionValues.TryGetValue("start", out var valueStart))
+                        return null;
+                    if (!resolutionValues.TryGetValue("end", out var valueEnd))
+                        return null;
+
+                    if (!DateTime.TryParse(valueStart, out var momentStart))
+                        return null;
+                    if (!DateTime.TryParse(valueEnd, out var momentEnd))
+                        return null;
+
+                    momentStart += ApplyTimezone(resolutionValues);
+                    momentEnd += ApplyTimezone(resolutionValues);
+
+                    return new MomentRangeExtraction { IsValid = true, Value = (momentStart, momentEnd) };
+                }
+
+                return null;
+            }
+
+            return Extract(userInput)
+                ?? new MomentRangeExtraction
+            {
+                IsValid = false,
+                Value = (DateTime.MinValue, DateTime.MaxValue),
+                ErrorMessage = "That doesn't seem to be a valid time range."
+            };
+        }
+
+        public class MomentRangeExtraction
+        {
+            public bool IsValid { get; set; }
+
+            public (DateTime, DateTime) Value { get; set; }
+
+            public string ErrorMessage { get; set; }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userInput"></param>
+        /// <param name="culture"></param>
+        /// <param name="biasNext">If there are multiple resolutions take the first one in the future</param>
+        /// <returns></returns>
+        [NotNull] public static MomentExtraction Moment(string userInput, string culture = Culture.EnglishOthers, bool biasNext = true)
         {
             TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
             {
@@ -34,9 +124,27 @@ namespace Mute.Moe.Utilities
                 if (dt == null)
                     return null;
 
-                var resolutionValues = ((IList<Dictionary<string, string>>)dt.Resolution["values"])?.FirstOrDefault();
-                if (resolutionValues == null)
+                var values = (IList<Dictionary<string, string>>)dt.Resolution["values"];
+                if (values == null || values.Count == 0)
                     return null;
+
+                // Select a resolution
+                Dictionary<string, string> resolutionValues;
+                if (biasNext)
+                {
+                    resolutionValues = (from v in values
+                                        let date = DateTime.Parse(v["value"])
+                                        where date > DateTime.UtcNow
+                                        orderby date
+                                        select v).FirstOrDefault();
+
+                    if (resolutionValues == null)
+                        return null;
+                }
+                else
+                {
+                    resolutionValues = values.First();
+                }
 
                 //The time result could be one of several types
                 var subType = dt.TypeName.Split('.').Last();
@@ -52,20 +160,6 @@ namespace Mute.Moe.Utilities
 
                     moment += ApplyTimezone(resolutionValues);
                     return new MomentExtraction { IsValid = true, Value = moment };
-                }
-
-                //Check if it's a range of times, in which case return the start of the range
-                if (subType.Contains("date") && subType.Contains("range"))
-                {
-                    if (!resolutionValues.TryGetValue("start", out var value))
-                        return null;
-
-                    if (!DateTime.TryParse(value, out var moment))
-                        return null;
-
-                    moment += ApplyTimezone(resolutionValues);
-
-                    return new MomentExtraction {IsValid = true, Value = moment};
                 }
 
                 return null;

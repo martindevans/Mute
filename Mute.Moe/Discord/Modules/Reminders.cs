@@ -92,34 +92,39 @@ namespace Mute.Moe.Discord.Modules
         [ItemCanBeNull]
         private async Task<string> CreateReminder(ICommandContext context, string message)
         {
+            DateTime triggerMoment;
 
-            var result = FuzzyParsing.Moment(message);
-
-            string error = null;
-            if (!result.IsValid)
-                error = result.ErrorMessage;
-            else if (result.Value < DateTime.UtcNow)
-                error = PastValueErrorMessage.Replace("$moment$", result.Value.ToString(CultureInfo.InvariantCulture));
-
-            if (error != null)
+            // Parse a moment from message
+            var exactTimeResult = FuzzyParsing.Moment(message);
+            if (exactTimeResult.IsValid)
             {
-                return error;
+                if (exactTimeResult.Value < DateTime.UtcNow)
+                    return PastValueErrorMessage.Replace("$moment$", exactTimeResult.Value.ToString(CultureInfo.InvariantCulture));
+
+                triggerMoment = exactTimeResult.Value;
             }
             else
             {
-                var triggerTime = result.Value;
-                var duration = triggerTime - DateTime.UtcNow;
+                // Attempt to parse a time range instead of an exact time (e.g. `next week`)
+                var rangeTimeResult = FuzzyParsing.MomentRange(message);
+                if (!rangeTimeResult.IsValid)
+                    return "That doesn't seem to be a valid moment.";
 
-                //Add some context to the message
-                var prelude = $"{context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerTime, culture: CultureInfo.GetCultureInfo("en-gn"))}...";
-                var msg = $"remind me {message}";
-
-                //Save to database
-                var n = await _reminders.Create(triggerTime, prelude, msg, context.Message.Channel.Id, context.User.Id);
-
-                var friendlyId = new FriendlyId32(n.ID);
-                return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{friendlyId}`)";
+                // Send the reminder just after the start of the range
+                triggerMoment = rangeTimeResult.Value.Item1 + (rangeTimeResult.Value.Item2 - rangeTimeResult.Value.Item1) * 0.05f;
             }
+
+            var duration = triggerMoment - DateTime.UtcNow;
+
+            // Add some context to the message
+            var prelude = $"{context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerMoment, culture: CultureInfo.GetCultureInfo("en-gn"))}...";
+            var msg = $"remind me {message}";
+
+            // Save to database
+            var n = await _reminders.Create(triggerMoment, prelude, msg, context.Message.Channel.Id, context.User.Id);
+
+            var friendlyId = new FriendlyId32(n.ID);
+            return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{friendlyId}`)";
         }
 
         public IEnumerable<Key> Keys

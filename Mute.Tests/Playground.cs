@@ -6,9 +6,11 @@ using System.Xml;
 using Humanizer;
 using Humanizer.DateTimeHumanizeStrategy;
 using JetBrains.Annotations;
+using Microsoft.Recognizers.Text.DateTime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
+using Newtonsoft.Json;
 
 namespace Mute.Tests
 {
@@ -70,6 +72,19 @@ namespace Mute.Tests
                 return null;
 
             return (extr.Currency, extr.Amount);
+        }
+
+        [TestMethod]
+        public void DateTimeRange()
+        {
+            var r1 = DateTimeRecognizer.RecognizeDateTime("next week", "en-gb");
+            Console.WriteLine(JsonConvert.SerializeObject(r1));
+
+            var r2 = FuzzyParsing.MomentRange("next week");
+            Console.WriteLine(JsonConvert.SerializeObject(r2));
+
+            var r3 = FuzzyParsing.Moment("monday");
+            Console.WriteLine(JsonConvert.SerializeObject(r3));
         }
     }
 }
