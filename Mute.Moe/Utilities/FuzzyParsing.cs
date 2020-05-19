@@ -119,8 +119,8 @@ namespace Mute.Moe.Utilities
                 // Get DateTime for the specified culture
                 var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview, DateTime.UtcNow);
 
-                //Try to get the date/time
-                var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2"));
+                // Try to get the date/time
+                var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2.datetime"));
                 if (dt == null)
                     return null;
 
