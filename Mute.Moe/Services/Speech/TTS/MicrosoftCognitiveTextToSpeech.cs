@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
 using Mute.Moe.Services.Audio.Clips;
@@ -14,14 +13,13 @@ namespace Mute.Moe.Services.Speech.TTS
     {
         private readonly SpeechConfig _config;
 
-        public MicrosoftCognitiveTextToSpeech([NotNull] Configuration config)
+        public MicrosoftCognitiveTextToSpeech( Configuration config)
         {
             _config = SpeechConfig.FromSubscription(config.TTS.MsCognitive.Key, config.TTS.MsCognitive.Region);
             _config.SpeechSynthesisLanguage = config.TTS.MsCognitive.Language;
             _config.SpeechSynthesisVoiceName = config.TTS.MsCognitive.Voice;
         }
 
-        [ItemNotNull]
         public async Task<IAudioClip> Synthesize(string text)
         {
             var stream = AudioOutputStream.CreatePullStream();
@@ -50,7 +48,7 @@ namespace Mute.Moe.Services.Speech.TTS
             private readonly PullAudioOutputStream _stream;
             private readonly WaveFormat _format;
 
-            public AudioOutputStreamClip([NotNull] string name, PullAudioOutputStream stream, WaveFormat format)
+            public AudioOutputStreamClip( string name, PullAudioOutputStream stream, WaveFormat format)
             {
                 Name = name;
 
@@ -58,7 +56,7 @@ namespace Mute.Moe.Services.Speech.TTS
                 _format = format;
             }
 
-            public Task<ITrack> Track { get; } = Task.FromResult<ITrack>(null);
+            public Task<ITrack?> Track { get; } = Task.FromResult<ITrack?>(null);
 
             public string Name { get; }
 
@@ -70,14 +68,13 @@ namespace Mute.Moe.Services.Speech.TTS
             private class WaveProvider
                 : IWaveProvider, IDisposable
             {
-                private PullAudioOutputStream _stream;
+                private PullAudioOutputStream? _stream;
 
                 public WaveFormat WaveFormat { get; }
 
                 public WaveProvider(PullAudioOutputStream stream, WaveFormat format)
                 {
                     WaveFormat = format;
-
                     _stream = stream;
                 }
 

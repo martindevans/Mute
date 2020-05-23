@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using JetBrains.Annotations;
+
 using NAudio.Utils;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
@@ -27,7 +27,7 @@ namespace Mute.Moe.Services.Audio.Mixing
 
         public double Dbfs { get; private set; }
 
-        public AutoGainControl([NotNull] ISampleProvider upstream, double maxDbfs, double minDbfs, double minGain, double maxGain, double upRate, double downRate)
+        public AutoGainControl( ISampleProvider upstream, double maxDbfs, double minDbfs, double minGain, double maxGain, double upRate, double downRate)
         {
             _upstream = new VolumeSampleProvider(upstream) { Volume = 1 };
             _maxVolume = maxDbfs;

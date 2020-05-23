@@ -12,7 +12,7 @@
             _message = message;
         }
 
-        public (string, IKnowledge) Reply(IKnowledge knowledge, IUtterance message)
+        public (string, IKnowledge?) Reply(IKnowledge knowledge, IUtterance message)
         {
             return (_message, null);
         }

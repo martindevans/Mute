@@ -1,16 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 
 namespace Mute.Moe.Services.Information.Anime
 {
     public interface IMangaInfo
     {
-        [ItemCanBeNull] Task<IManga> GetMangaInfoAsync(string search);
+        Task<IManga?> GetMangaInfoAsync(string search);
 
-        [ItemCanBeNull] Task<IAsyncEnumerable<IManga>> GetMangasInfoAsync(string search);
+        IAsyncEnumerable<IManga> GetMangasInfoAsync(string search);
 
-        [ItemCanBeNull] Task<IAsyncEnumerable<IManga>> GetMangasInfoAsync(ICharacter character);
+        IAsyncEnumerable<IManga> GetMangasInfoAsync(ICharacter character);
     }
 
     public interface IManga

@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Reminders;
@@ -37,7 +36,7 @@ namespace Mute.Tests.Services.Reminders
             var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
             var r = await rm.Create(t, "pre", "msg", 17, 28);
 
-            var rs = await rm.Get(userId: 28).ToArray();
+            var rs = await rm.Get(userId: 28).ToArrayAsync();
 
             Assert.AreEqual(r, rs.Single());
         }
@@ -52,7 +51,7 @@ namespace Mute.Tests.Services.Reminders
             var r1 = await rm.Create(t, "pre", "msg2", 17, 28);
             var r2 = await rm.Create(t + TimeSpan.FromHours(1), "pre", "msg2", 17, 28);
 
-            var rs = await rm.Get(after: DateTime.UtcNow + TimeSpan.FromHours(0.5f)).ToArray();
+            var rs = await rm.Get(after: DateTime.UtcNow + TimeSpan.FromHours(0.5f)).ToArrayAsync();
 
             Assert.AreEqual(r2, rs.Single());
         }
@@ -67,7 +66,7 @@ namespace Mute.Tests.Services.Reminders
             var r1 = await rm.Create(t, "pre", "msg2", 17, 28);
             var r2 = await rm.Create(t + TimeSpan.FromHours(1), "pre", "msg2", 17, 28);
 
-            var rs = await rm.Get(before: t + TimeSpan.FromHours(0.5f)).ToArray();
+            var rs = await rm.Get(before: t + TimeSpan.FromHours(0.5f)).ToArrayAsync();
 
             Assert.AreEqual(r1, rs.Single());
         }
@@ -81,7 +80,7 @@ namespace Mute.Tests.Services.Reminders
             var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
             var r = await rm.Create(t, "pre", "msg", 17, 28);
 
-            var rs = await rm.Get(channel: 17).ToArray();
+            var rs = await rm.Get(channel: 17).ToArrayAsync();
 
             Assert.AreEqual(r, rs.Single());
         }
@@ -96,7 +95,7 @@ namespace Mute.Tests.Services.Reminders
             for (var i = 0; i < 10; i++)
                 await rm.Create(t + TimeSpan.FromMinutes(i), "pre", "msg " + i, 17, 28);
 
-            var rs = await rm.Get(channel: 17, count: 3).ToArray();
+            var rs = await rm.Get(channel: 17, count: 3).ToArrayAsync();
 
             Assert.AreEqual(3, rs.Length);
             Assert.AreEqual((t + TimeSpan.FromMinutes(0)).UnixTimestamp(), rs[0].TriggerTime.UnixTimestamp());
@@ -115,7 +114,7 @@ namespace Mute.Tests.Services.Reminders
 
             Assert.IsTrue(await rm.Delete(28, r.ID));
 
-            var rs = await rm.Get(channel: 17).ToArray();
+            var rs = await rm.Get(channel: 17).ToArrayAsync();
 
             Assert.AreEqual(0, rs.Length);
         }

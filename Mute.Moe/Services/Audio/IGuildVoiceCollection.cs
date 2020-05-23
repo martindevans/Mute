@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Audio
 {
@@ -13,6 +13,6 @@ namespace Mute.Moe.Services.Audio
         /// </summary>
         /// <param name="guild"></param>
         /// <returns></returns>
-        [NotNull, ItemNotNull] Task<IGuildVoice> GetPlayer(ulong guild);
+        Task<IGuildVoice> GetPlayer(ulong guild);
     }
 }

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Groups;
 using IRole = Discord.IRole;
@@ -22,7 +22,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("id"), Summary("I will type out the ID of the specified role")]
-        public async Task RoleId([NotNull] IRole role)
+        public async Task RoleId( IRole role)
         {
             await TypingReplyAsync($"ID for `{role.Name}` is `{role.Id}`");
         }
@@ -38,7 +38,7 @@ namespace Mute.Moe.Discord.Modules
                 return;
             }
 
-            var role = await Context.Guild.CreateRoleAsync(name, GuildPermissions.None);
+            var role = await Context.Guild.CreateRoleAsync(name, GuildPermissions.None, null, false, null);
             await role.ModifyAsync(r => r.Mentionable = true);
             await _groups.Unlock(role);
 
@@ -48,7 +48,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("join"), Summary("I will give you the given role (if the role is unlocked)")]
-        public async Task JoinRole([NotNull] IRole role)
+        public async Task JoinRole( IRole role)
         {
             if (!await _groups.IsUnlocked(role))
             {
@@ -67,7 +67,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("leave"), Summary("I will remove the given role (if the role is unlocked)")]
-        public async Task LeaveRole([NotNull] IRole role)
+        public async Task LeaveRole( IRole role)
         {
             if (!await _groups.IsUnlocked(role))
             {
@@ -86,7 +86,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("who"), Summary("I will tell you who has a given role")]
-        public async Task RoleWho([NotNull] IRole role)
+        public async Task RoleWho( IRole role)
         {
             var users = (from user in await role.Guild.GetUsersAsync()
                          where user.RoleIds.Contains(role.Id)
@@ -100,7 +100,7 @@ namespace Mute.Moe.Discord.Modules
         [Command("list"), Alias("show", "unlocked"), Summary("I will list the unlocked roles")]
         public async Task ListRoles()
         {
-            var roles = await _groups.GetUnlocked(Context.Guild).ToArray();
+            var roles = await _groups.GetUnlocked(Context.Guild).ToArrayAsync();
             await DisplayItemList(
                 roles,
                 () => "There are no unlocked roles",
@@ -111,7 +111,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("test"), Alias("query"), Summary("I will tell you if the given role is unlocked")]
-        public async Task TestRole([NotNull] IRole role)
+        public async Task TestRole( IRole role)
         {
             if (await _groups.IsUnlocked(role))
                 await TypingReplyAsync($"The role `{role.Name}` is **unlocked**");
@@ -120,14 +120,14 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [RequireOwner, Command("unlock"), Summary("I will unlock the given role (allow anyone to join/leave it)")]
-        public async Task UnlockRole([NotNull] IRole role)
+        public async Task UnlockRole( IRole role)
         {
             await _groups.Unlock(role);
             await TypingReplyAsync($"Unlocked `{role.Name}`");
         }
 
         [RequireOwner, Command("lock"), Summary("I will lock the given role (stop allowing anyone to join/leave it)")]
-        public async Task LockRole([NotNull] IRole role)
+        public async Task LockRole( IRole role)
         {
             await _groups.Lock(role);
             await TypingReplyAsync($"Locked `{role.Name}`");

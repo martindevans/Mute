@@ -2,10 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>latest</LangVersion>
     <UserSecretsId>b2f53073-f376-4dd5-a403-8e14400411a8</UserSecretsId>
     <StartupObject></StartupObject>
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+
+    <Nullable>enable</Nullable>
+
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -29,40 +32,40 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.RouteAnalyzer" Version="0.5.3" />
-    <PackageReference Include="BuildBundlerMinifier" Version="3.2.435" />
-    <PackageReference Include="CommandLineParser" Version="2.6.0" />
+    <PackageReference Include="BuildBundlerMinifier" Version="3.2.447" />
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Discord.Addons.Interactive" Version="1.0.1" />
-    <PackageReference Include="Discord.Net" Version="2.1.1" />
+    <PackageReference Include="Discord.Net" Version="2.2.0" />
     <PackageReference Include="Discord.OAuth2" Version="2.0.0" />
     <PackageReference Include="FluidCaching.Sources" Version="1.3.2" />
-    <PackageReference Include="GraphiQL" Version="1.2.0" />
+    <PackageReference Include="GraphiQL" Version="2.0.0" />
     <PackageReference Include="GraphQL" Version="2.4.0" />
     <PackageReference Include="GraphQL.Authorization" Version="2.1.29" />
     <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="3.4.0" />
     <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="3.4.0" />
     <PackageReference Include="HashMedly" Version="1.1.0" />
-    <PackageReference Include="Humanizer" Version="2.7.9" />
-    <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" />
+    <PackageReference Include="Humanizer" Version="2.8.11" />
+    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.8.0" />
-    <PackageReference Include="Microsoft.Recognizers.Text" Version="1.2.8" />
-    <PackageReference Include="Microsoft.Recognizers.Text.Choice" Version="1.2.8" />
-    <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.2.8" />
-    <PackageReference Include="Microsoft.Recognizers.Text.Number" Version="1.2.8" />
-    <PackageReference Include="Microsoft.Recognizers.Text.NumberWithUnit" Version="1.2.8" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0" />
-    <PackageReference Include="Miki.Anilist" Version="0.6.0" />
-    <PackageReference Include="morelinq" Version="3.2.0" />
-    <PackageReference Include="NAudio" Version="1.9.0" />
-    <PackageReference Include="Oddity" Version="1.0.11" />
+    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.12.0" />
+    <PackageReference Include="Microsoft.Recognizers.Text" Version="1.3.2" />
+    <PackageReference Include="Microsoft.Recognizers.Text.Choice" Version="1.3.2" />
+    <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.3.2" />
+    <PackageReference Include="Microsoft.Recognizers.Text.Number" Version="1.3.2" />
+    <PackageReference Include="Microsoft.Recognizers.Text.NumberWithUnit" Version="1.3.2" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.3" />
+    <PackageReference Include="Miki.Anilist" Version="0.6.3" />
+    <PackageReference Include="morelinq" Version="3.3.2" />
+    <PackageReference Include="NAudio" Version="1.10.0" />
+    <PackageReference Include="Oddity" Version="1.0.12" />
     <PackageReference Include="Solarium" Version="3.1.0" />
     <PackageReference Include="SteamWebAPI2" Version="4.0.9" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.112" />
-    <PackageReference Include="System.IO.Abstractions" Version="6.0.15" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.112.2" />
+    <PackageReference Include="System.IO.Abstractions" Version="11.0.6" />
     <PackageReference Include="System.Linq.LevenshteinDistance" Version="0.99.0-beta" />
-    <PackageReference Include="System.ServiceModel.Syndication" Version="4.6.0" />
-    <PackageReference Include="TensorFlowSharp" Version="1.13.0" />
+    <PackageReference Include="System.ServiceModel.Syndication" Version="4.7.0" />
+    <PackageReference Include="TensorFlowSharp" Version="1.15.1" />
   </ItemGroup>
 
   <ItemGroup>

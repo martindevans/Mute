@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using HashMedly.Generators.Generator32;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Controllers
 {
@@ -10,7 +10,7 @@ namespace Mute.Moe.Controllers
     {
         [HttpGet("/Sigil/{data}")]
         [ResponseCache(Duration = 86400, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "foreground", "background" })]
-        public IActionResult Index([CanBeNull, FromRoute] string data, [CanBeNull, FromQuery] string foreground, [CanBeNull, FromQuery] string background)
+        public IActionResult Index([FromRoute] string? data, [FromQuery] string? foreground, [FromQuery] string? background)
         {
             var hash = Murmur3.Create().Mix(data ?? "").Hash;
 

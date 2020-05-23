@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Mute.Moe.Discord.Context;
@@ -70,7 +70,7 @@ namespace Mute.Moe.Discord
             await tcs.Task;
         }
 
-        private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context, [NotNull] IResult result)
+        private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context,  IResult result)
         {
             //Only pay attention to commands which fail due to an exception
             if (result.IsSuccess || !result.Error.HasValue || result.Error != CommandError.Exception)
@@ -88,7 +88,7 @@ namespace Mute.Moe.Discord
             await _client.StopAsync();
         }
 
-        [NotNull] private async Task HandleMessage([NotNull] SocketMessage socketMessage)
+         private async Task HandleMessage( SocketMessage socketMessage)
         {
             // Don't process the command if it was a System Message
             if (!(socketMessage is SocketUserMessage message))
@@ -124,7 +124,7 @@ namespace Mute.Moe.Discord
             }
         }
 
-        private async Task ProcessAsCommand(int offset, [NotNull] MuteCommandContext context)
+        private async Task ProcessAsCommand(int offset,  MuteCommandContext context)
         {
             // When there's a mention the command may or may not include the prefix. Check if it does include it and skip over it if so
             if (context.Message.Content[offset] == _config.PrefixCharacter)

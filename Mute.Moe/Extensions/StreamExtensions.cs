@@ -1,12 +1,12 @@
 ﻿using System.IO;
 using System.Text;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Extensions
 {
     public static class StreamExtensions
     {
-        public static string SHA256([NotNull] this Stream stream)
+        public static string SHA256( this Stream stream)
         {
             var result = new StringBuilder();
 

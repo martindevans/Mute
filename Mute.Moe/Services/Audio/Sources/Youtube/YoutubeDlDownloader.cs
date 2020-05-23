@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
-using JetBrains.Annotations;
+
 using Mute.Moe.Utilities;
 using Newtonsoft.Json.Linq;
 
@@ -13,11 +13,11 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
     public class YoutubeDlDownloader
         : IYoutubeDownloader
     {
-        [NotNull] private readonly YoutubeDlConfig _config;
+         private readonly YoutubeDlConfig _config;
 
         private readonly AsyncLock _mutex = new AsyncLock();
 
-        public YoutubeDlDownloader([NotNull] Configuration config)
+        public YoutubeDlDownloader(Configuration config)
         {
             _config = config.YoutubeDl;
         }
@@ -120,16 +120,16 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                     return new FailedDownloadResult(YoutubeDownloadStatus.FailedInvalidDownloadResult);
 
                 //Find a thumbnail
-                var thumbnail = (string)null;
-                var thumbnails = (JArray)metadata["thumbnails"];
+                var thumbnail = (string?)null;
+                var thumbnails = (JArray?)metadata["thumbnails"];
                 if (thumbnails != null && thumbnails.Count > 0)
-                    thumbnail = thumbnails[0]["url"].Value<string>();
+                    thumbnail = thumbnails[0]["url"]?.Value<string>();
 
                 //Find artist
                 var artist = metadata["artist"]?.Value<string>();
 
                 //Find length
-                var duration = TimeSpan.FromSeconds(int.Parse(metadata["duration"].Value<string>()));
+                var duration = TimeSpan.FromSeconds(int.Parse(metadata["duration"]?.Value<string>()));
 
                 //Delete temp files
                 metadataFile.Delete();
@@ -140,7 +140,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                         title,
                         url.ToString(),
                         thumbnail,
-                        string.IsNullOrWhiteSpace(artist) ? Array.Empty<string>() : new[] { artist },
+                        string.IsNullOrWhiteSpace(artist) ? Array.Empty<string>() : new[] { artist! },
                         duration
                     )
                 );
@@ -187,7 +187,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                 Status = status;
             }
 
-            public IYoutubeFile File => null;
+            public IYoutubeFile? File => null;
 
             public YoutubeDownloadStatus Status { get; }
         }
@@ -208,7 +208,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
         private class YoutubeFile
             : IYoutubeFile
         {
-            public YoutubeFile([NotNull] FileInfo file, [NotNull] string title, [NotNull] string url, [CanBeNull] string thumbnail, [NotNull] IReadOnlyList<string> artists, TimeSpan duration)
+            public YoutubeFile( FileInfo file, string title, string url, string? thumbnail, IReadOnlyList<string> artists, TimeSpan duration)
             {
                 File = file;
                 Title = title;
@@ -224,7 +224,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
 
             public string Url { get; }
 
-            public string ThumbnailUrl { get; }
+            public string? ThumbnailUrl { get; }
 
             public IReadOnlyList<string> Artists { get; }
 

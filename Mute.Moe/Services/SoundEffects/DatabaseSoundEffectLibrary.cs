@@ -6,7 +6,7 @@ using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Audio.Mixing;
 using Mute.Moe.Services.Database;
@@ -21,22 +21,22 @@ namespace Mute.Moe.Services.SoundEffects
         private const string InsertSfxSql = "INSERT INTO `Sfx2` (`GuildId`, `Name`, `FileName`) VALUES (@GuildId, @Name, @FileName);";
         private const string GetSfxByNameSql = "Select * from Sfx2 where Name = @Name AND GuildId = @GuildId";
         private const string FindSfxSql = "Select * from Sfx2 where GuildId = @GuildId AND Name like '%' || @Search || '%'";
-        private const string FindAllSfxSql = "Select * from Sfx2";
+        private const string FindAllSfxSql = "Select * from Sfx2 where GuildId = @GuildId";
 
-        [NotNull] private readonly SoundEffectConfig _config;
-        [NotNull] private readonly IDatabaseService _database;
-        [NotNull] private readonly IFileSystem _fs;
+         private readonly SoundEffectConfig _config;
+         private readonly IDatabaseService _database;
+         private readonly IFileSystem _fs;
 
-        public DatabaseSoundEffectLibrary([NotNull] Configuration config, [NotNull] IDatabaseService database, [NotNull] IFileSystem fs)
-        {
-            _config = config.SoundEffects;
-            _database = database;
-            _fs = fs;
+         public DatabaseSoundEffectLibrary(Configuration config, IDatabaseService database, IFileSystem fs)
+         {
+             _config = config.SoundEffects;
+             _database = database;
+             _fs = fs;
 
-            _database.Exec("CREATE TABLE IF NOT EXISTS `Sfx2` (`GuildId` TEXT NOT NULL, `Name` TEXT NOT NULL, `FileName` TEXT NOT NULL)");
-        }
+             _database.Exec("CREATE TABLE IF NOT EXISTS `Sfx2` (`GuildId` TEXT NOT NULL, `Name` TEXT NOT NULL, `FileName` TEXT NOT NULL)");
+         }
 
-        public async Task<ISoundEffect> Create(ulong guild, string name, byte[] data)
+         public async Task<ISoundEffect> Create(ulong guild, string name, byte[] data)
         {
             var normalized = NormalizeAudioData(data);
 
@@ -73,28 +73,28 @@ namespace Mute.Moe.Services.SoundEffects
             return new DatabaseSoundEffect(_config.SfxFolder, guild, fileName, name);
         }
 
-        public async Task<ISoundEffect> Alias([NotNull] string alias, [NotNull] ISoundEffect sfx)
-        {
-            alias = alias.ToLowerInvariant();
+         public async Task<ISoundEffect> Alias(string alias, ISoundEffect sfx)
+         {
+             alias = alias.ToLowerInvariant();
 
-            //Check if this sfx alias already exists
-            if (await Get(sfx.Guild, alias) != null)
-                throw new InvalidOperationException("Sound effect `{alias}` already exists in this guild");
+             //Check if this sfx alias already exists
+             if (await Get(sfx.Guild, alias) != null)
+                 throw new InvalidOperationException("Sound effect `{alias}` already exists in this guild");
 
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertSfxSql;
-                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = sfx.Guild });
-                cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) { Value = alias });
-                cmd.Parameters.Add(new SQLiteParameter("@FileName", System.Data.DbType.String) { Value = sfx.Path });
+             using (var cmd = _database.CreateCommand())
+             {
+                 cmd.CommandText = InsertSfxSql;
+                 cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) {Value = sfx.Guild});
+                 cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) {Value = alias});
+                 cmd.Parameters.Add(new SQLiteParameter("@FileName", System.Data.DbType.String) {Value = sfx.Path});
 
-                await cmd.ExecuteNonQueryAsync();
-            }
+                 await cmd.ExecuteNonQueryAsync();
+             }
 
-            return new DatabaseSoundEffect(_config.SfxFolder, sfx.Guild, sfx.Path, alias);
-        }
+             return new DatabaseSoundEffect(_config.SfxFolder, sfx.Guild, sfx.Path, alias);
+         }
 
-        public async Task<ISoundEffect> Get(ulong guild, string name)
+         public async Task<ISoundEffect?> Get(ulong guild, string name)
         {
             ISoundEffect Parse(DbDataReader reader)
             {
@@ -115,10 +115,10 @@ namespace Mute.Moe.Services.SoundEffects
                 return cmd;
             }
 
-            return await new SqlAsyncResult<ISoundEffect>(_database, Prepare, Parse).FirstOrDefault();
+            return await new SqlAsyncResult<ISoundEffect>(_database, Prepare, Parse).FirstOrDefaultAsync();
         }
 
-        public async Task<IAsyncEnumerable<ISoundEffect>> Find(ulong guild, string search)
+        public IAsyncEnumerable<ISoundEffect> Find(ulong guild, string search)
         {
             ISoundEffect Parse(DbDataReader reader)
             {
@@ -146,7 +146,7 @@ namespace Mute.Moe.Services.SoundEffects
             return new SqlAsyncResult<ISoundEffect>(_database, Prepare, Parse);
         }
 
-        [NotNull] private static MemoryStream NormalizeAudioData(byte[] data)
+         private static MemoryStream NormalizeAudioData(byte[] data)
         {
             #if NCRUNCH
                 return new MemoryStream(data);

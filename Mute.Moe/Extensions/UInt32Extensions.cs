@@ -1,5 +1,5 @@
 ﻿using System;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Extensions
 {
@@ -86,7 +86,7 @@ namespace Mute.Moe.Extensions
             Value = value;
         }
 
-        public static FriendlyId32? Parse([NotNull] string str)
+        public static FriendlyId32? Parse( string str)
         {
             var parts = str.Split('-');
             if (parts.Length != 2)
@@ -141,7 +141,7 @@ namespace Mute.Moe.Extensions
             return new FriendlyId32(number);
         }
 
-        [NotNull] public override string ToString()
+         public override string ToString()
         {
             var number = Value;
             unchecked {
@@ -165,7 +165,7 @@ namespace Mute.Moe.Extensions
 
     public static class UInt32Extensions
     {
-        [NotNull] public static string MeaninglessString(this uint number)
+         public static string MeaninglessString(this uint number)
         {
             return new FriendlyId32(number).ToString();
         }

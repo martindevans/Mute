@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Data.SQLite;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Words
@@ -29,7 +29,7 @@ namespace Mute.Moe.Services.Words
             }
         }
 
-        public async Task Train([NotNull] string word, [NotNull] string exampleSentence)
+        public async Task Train( string word,  string exampleSentence)
         {
             using (var cmd = _database.CreateCommand())
             {

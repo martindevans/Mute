@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses;
@@ -30,19 +30,17 @@ namespace Mute.Moe.Discord.Modules.Introspection
         }
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
-        public async Task Say([NotNull] string message, IMessageChannel channel = null)
+        public async Task Say( string message, IMessageChannel? channel = null)
         {
-            if (channel == null)
-                channel = Context.Channel;
+            channel ??= Context.Channel;
 
             await channel.TypingReplyAsync(message);
         }
 
         [Command("conversation-status"), Summary("I will show the status of my current conversation with a user")]
-        public async Task ConversationState([CanBeNull] IGuildUser user = null)
+        public async Task ConversationState(IGuildUser? user = null)
         {
-            if (user == null)
-                user = Context.Message.Author as IGuildUser;
+            user ??= Context.Message.Author as IGuildUser;
 
             if (user == null)
                 await TypingReplyAsync("No user!");
@@ -62,7 +60,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
         }
 
         [Command("presence"), Summary("I will set my presence")]
-        public async Task SetPresence(ActivityType activity, [CanBeNull, Remainder] string presence)
+        public async Task SetPresence(ActivityType activity, [Remainder] string? presence)
         {
             if (!string.IsNullOrEmpty(presence))
                 await _client.SetActivityAsync(new Game(presence, activity));
@@ -90,7 +88,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
 
         [Command("test-yt")]
         [ThinkingReply]
-        public async Task TestYt([NotNull] string url)
+        public async Task TestYt( string url)
         {
             var result = await _yt.DownloadAudio(url);
 

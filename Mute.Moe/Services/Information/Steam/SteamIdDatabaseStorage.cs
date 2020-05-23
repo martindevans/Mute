@@ -1,6 +1,5 @@
 ﻿using Mute.Moe.Services.Database;
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Linq;
@@ -11,7 +10,7 @@ namespace Mute.Moe.Services.Information.Steam
     public class SteamIdDatabaseStorage
         : ISteamIdStorage
     {
-        private IDatabaseService _database;
+        private readonly IDatabaseService _database;
 
         private const string InsertIdSql = "INSERT into SteamIds (DiscordId, SteamId) values(@DiscordId, @SteamId)";
         private const string GetIdSql = "SELECT * FROM SteamIds WHERE DiscordId = @DiscordId";
@@ -32,7 +31,7 @@ namespace Mute.Moe.Services.Information.Steam
 
         public async Task<ulong?> Get(ulong discordId)
         {
-            ulong? ParseId(DbDataReader reader)
+            static ulong? ParseId(DbDataReader reader)
             {
                 var data = reader["SteamId"].ToString();
                 return ulong.Parse(data);
@@ -46,7 +45,7 @@ namespace Mute.Moe.Services.Information.Steam
                 return cmd;
             }
 
-            return await ((IAsyncEnumerable<ulong?>)new SqlAsyncResult<ulong?>(_database, PrepareQuery, ParseId)).SingleOrDefault();
+            return await new SqlAsyncResult<ulong?>(_database, PrepareQuery, ParseId).SingleOrDefaultAsync();
         }
 
         public async Task Set(ulong discordId, ulong steamId)

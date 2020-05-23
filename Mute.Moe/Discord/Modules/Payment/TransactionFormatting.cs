@@ -1,5 +1,5 @@
 ﻿using System;
-using JetBrains.Annotations;
+
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Payment;
 
@@ -7,7 +7,7 @@ namespace Mute.Moe.Discord.Modules.Payment
 {
     public static class TransactionFormatting
     {
-        [NotNull] public static string FormatCurrency(decimal amount, [NotNull] string unit)
+         public static string FormatCurrency(decimal amount,  string unit)
         {
             var sym = unit.TryGetCurrencySymbol();
 
@@ -17,17 +17,17 @@ namespace Mute.Moe.Discord.Modules.Payment
                 return $"{sym}{amount}";
         }
 
-        [NotNull] public static string FormatTransaction([NotNull] BaseModule module, [NotNull] ITransaction transaction, bool mention = false)
+         public static string FormatTransaction( BaseModule module,  ITransaction transaction, bool mention = false)
         {
             return FormatTransaction(module, transaction.FromId, transaction.ToId, transaction.Note, transaction.Instant, transaction.Amount, transaction.Unit, mention);
         }
 
-        [NotNull] public static string FormatTransaction([NotNull] BaseModule module, [NotNull] IPendingTransaction transaction, bool mention = false)
+         public static string FormatTransaction( BaseModule module,  IPendingTransaction transaction, bool mention = false)
         {
             return FormatTransaction(module, transaction.FromId, transaction.ToId, transaction.Note, transaction.Instant, transaction.Amount, transaction.Unit, mention);
         }
 
-        [NotNull] public static string FormatTransaction([NotNull] BaseModule module, ulong from, ulong to, [CanBeNull] string note, DateTime instant, decimal amount, [NotNull] string unit, bool mention = false)
+         public static string FormatTransaction( BaseModule module, ulong from, ulong to, string? note, DateTime instant, decimal amount,  string unit, bool mention = false)
         {
             var fromName = module.Name(from, mention);
             var toName = module.Name(to, mention);
@@ -36,7 +36,7 @@ namespace Mute.Moe.Discord.Modules.Payment
             return $"[{instant:HH\\:mm UTC dd-MMM-yyyy}] {FormatCurrency(amount, unit)} {fromName} => {toName} {noteFormat}";
         }
 
-        [NotNull] public static string FormatBalance([NotNull] BaseModule module, [NotNull] IBalance balance)
+         public static string FormatBalance( BaseModule module,  IBalance balance)
         {
             var a = module.Name(balance.UserA);
             var b = module.Name(balance.UserB);

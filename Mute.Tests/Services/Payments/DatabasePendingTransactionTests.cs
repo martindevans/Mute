@@ -42,7 +42,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var results = await (await pending.Get(debtId: a)).ToArray();
+            var results = await pending.Get(debtId: a).ToArrayAsync();
 
             Assert.AreEqual(1, results.Length);
             Assert.AreEqual("test", results[0].Unit);
@@ -63,7 +63,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var results = await (await pending.Get(fromId: 1)).ToArray();
+            var results = await (pending.Get(fromId: 1)).ToArrayAsync();
 
             Assert.AreEqual(2, results.Length);
             Assert.AreEqual("test", results[0].Unit);
@@ -80,7 +80,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var results = await (await pending.Get(toId: 1)).ToArray();
+            var results = await (pending.Get(toId: 1)).ToArrayAsync();
 
             Assert.AreEqual(2, results.Length);
             Assert.AreEqual("test", results[0].Unit);
@@ -97,7 +97,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var results = await (await pending.Get(unit: "test")).ToArray();
+            var results = await (pending.Get(unit: "test")).ToArrayAsync();
 
             Assert.AreEqual(2, results.Length);
             Assert.AreEqual("Note 1", results[0].Note);
@@ -114,7 +114,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var results = await (await pending.Get(before: now + TimeSpan.FromMinutes(2.5))).ToArray();
+            var results = await (pending.Get(before: now + TimeSpan.FromMinutes(2.5))).ToArrayAsync();
 
             Assert.AreEqual(2, results.Length);
             Assert.AreEqual("test", results[0].Unit);
@@ -131,7 +131,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var results = await (await pending.Get(after: now + TimeSpan.FromMinutes(2.5))).ToArray();
+            var results = await (pending.Get(after: now + TimeSpan.FromMinutes(2.5))).ToArrayAsync();
 
             Assert.AreEqual(2, results.Length);
             Assert.AreEqual("test2", results[0].Unit);
@@ -148,7 +148,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var results = await (await pending.Get(state: PendingState.Pending)).ToArray();
+            var results = await (pending.Get(state: PendingState.Pending)).ToArrayAsync();
 
             Assert.AreEqual(4, results.Length);
             Assert.AreEqual(a, results[0].Id);
@@ -167,15 +167,15 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var transactionsBefore = await (await tsx.GetTransactions(0, 1, "TEST")).ToArray();
+            var transactionsBefore = await (tsx.GetTransactions(0, 1, "TEST")).ToArrayAsync();
             Assert.AreEqual(0, transactionsBefore.Length);
 
             Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(a));
 
-            var notConfirmed = await (await pending.Get(state: PendingState.Pending)).ToArray();
+            var notConfirmed = await (pending.Get(state: PendingState.Pending)).ToArrayAsync();
             Assert.AreEqual(3, notConfirmed.Length);
 
-            var transactionsAfter = await (await tsx.GetTransactions(0, 1, "TEST")).ToArray();
+            var transactionsAfter = await (tsx.GetTransactions(0, 1, "TEST")).ToArrayAsync();
             Assert.AreEqual(1, transactionsAfter.Length);
         }
 
@@ -192,7 +192,7 @@ namespace Mute.Tests.Services.Payments
             Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(a));
             Assert.AreEqual(ConfirmResult.AlreadyConfirmed, await pending.ConfirmPending(a));
 
-            var notConfirmed = await (await pending.Get(state: PendingState.Pending)).ToArray();
+            var notConfirmed = await (pending.Get(state: PendingState.Pending)).ToArrayAsync();
             Assert.AreEqual(3, notConfirmed.Length);
         }
 
@@ -209,7 +209,7 @@ namespace Mute.Tests.Services.Payments
             Assert.AreEqual(DenyResult.Denied, await pending.DenyPending(a));
             Assert.AreEqual(ConfirmResult.AlreadyDenied, await pending.ConfirmPending(a));
 
-            var notConfirmed = await (await pending.Get(state: PendingState.Pending)).ToArray();
+            var notConfirmed = await (pending.Get(state: PendingState.Pending)).ToArrayAsync();
             Assert.AreEqual(3, notConfirmed.Length);
         }
 
@@ -225,7 +225,7 @@ namespace Mute.Tests.Services.Payments
 
             Assert.AreEqual(ConfirmResult.IdNotFound, await pending.ConfirmPending(d + 10));
             
-            var notConfirmed = await (await pending.Get(state: PendingState.Pending)).ToArray();
+            var notConfirmed = await (pending.Get(state: PendingState.Pending)).ToArrayAsync();
             Assert.AreEqual(4, notConfirmed.Length);
         }
 
@@ -239,15 +239,15 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var transactionsBefore = await (await tsx.GetTransactions(0, 1, "TEST")).ToArray();
+            var transactionsBefore = await (tsx.GetTransactions(0, 1, "TEST")).ToArrayAsync();
             Assert.AreEqual(0, transactionsBefore.Length);
 
             Assert.AreEqual(DenyResult.Denied, await pending.DenyPending(a));
 
-            var notConfirmed = await (await pending.Get(state: PendingState.Pending)).ToArray();
+            var notConfirmed = await (pending.Get(state: PendingState.Pending)).ToArrayAsync();
             Assert.AreEqual(3, notConfirmed.Length);
 
-            var transactionsAfter = await (await tsx.GetTransactions(0, 1, "TEST")).ToArray();
+            var transactionsAfter = await (tsx.GetTransactions(0, 1, "TEST")).ToArrayAsync();
             Assert.AreEqual(0, transactionsAfter.Length);
         }
 
@@ -264,7 +264,7 @@ namespace Mute.Tests.Services.Payments
             Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(a));
             Assert.AreEqual(DenyResult.AlreadyConfirmed, await pending.DenyPending(a));
 
-            var notConfirmed = await (await pending.Get(state: PendingState.Pending)).ToArray();
+            var notConfirmed = await (pending.Get(state: PendingState.Pending)).ToArrayAsync();
             Assert.AreEqual(3, notConfirmed.Length);
         }
 
@@ -281,7 +281,7 @@ namespace Mute.Tests.Services.Payments
             Assert.AreEqual(DenyResult.Denied, await pending.DenyPending(a));
             Assert.AreEqual(DenyResult.AlreadyDenied, await pending.DenyPending(a));
 
-            var notConfirmed = await (await pending.Get(state: PendingState.Pending)).ToArray();
+            var notConfirmed = await (pending.Get(state: PendingState.Pending)).ToArrayAsync();
             Assert.AreEqual(3, notConfirmed.Length);
         }
 
@@ -297,7 +297,7 @@ namespace Mute.Tests.Services.Payments
 
             Assert.AreEqual(DenyResult.IdNotFound, await pending.DenyPending(d + 10));
 
-            var notConfirmed = await (await pending.Get(state: PendingState.Pending)).ToArray();
+            var notConfirmed = await (pending.Get(state: PendingState.Pending)).ToArrayAsync();
             Assert.AreEqual(4, notConfirmed.Length);
         }
     }

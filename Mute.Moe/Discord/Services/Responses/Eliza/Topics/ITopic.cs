@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Topics
 {
@@ -11,7 +10,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Topics
         /// <summary>
         /// A set of topic keys provided by this
         /// </summary>
-        [NotNull] IEnumerable<ITopicKey> Keys { get; }
+         IEnumerable<ITopicKey> Keys { get; }
     }
 
     /// <summary>
@@ -22,7 +21,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Topics
         /// <summary>
         /// Get the keyword which will trigger an attempt to use this key
         /// </summary>
-        [NotNull] string Keyword { get; }
+         string Keyword { get; }
 
         /// <summary>
         /// Get the rank of this key, higher ranks will be matched first
@@ -44,7 +43,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Topics
     {
         bool IsComplete { get; }
 
-        (string, IKnowledge) Reply([NotNull] IKnowledge knowledge, [NotNull] IUtterance message);
+        (string, IKnowledge?) Reply(IKnowledge knowledge, IUtterance message);
     }
 
     /// <summary>
@@ -57,6 +56,4 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Topics
         string When { get; }
         string Where { get; }
     }
-
-    
 }

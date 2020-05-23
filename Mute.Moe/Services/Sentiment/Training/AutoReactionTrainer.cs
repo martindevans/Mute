@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Services.Responses;
 
 namespace Mute.Moe.Services.Sentiment.Training
@@ -11,14 +11,14 @@ namespace Mute.Moe.Services.Sentiment.Training
     {
         private readonly ISentimentTrainer _sentiment;
 
-        public AutoReactionTrainer([NotNull] DiscordSocketClient client, ISentimentTrainer sentiment)
+        public AutoReactionTrainer( DiscordSocketClient client, ISentimentTrainer sentiment)
         {
             _sentiment = sentiment;
 
             client.ReactionAdded += OnReactionAdded;
         }
 
-        private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> message, [NotNull] ISocketMessageChannel channel, [NotNull] SocketReaction reaction)
+        private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> message,  ISocketMessageChannel channel,  SocketReaction reaction)
         {
             if (SentimentResponse.Happy.Contains(reaction.Emote.Name))
                 await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Positive);
@@ -28,7 +28,7 @@ namespace Mute.Moe.Services.Sentiment.Training
                 await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Neutral);
         }
 
-        private async Task TryLearn([NotNull] IUserMessage message, [NotNull] IReaction reaction, Sentiment sentiment)
+        private async Task TryLearn( IUserMessage message,  IReaction reaction, Sentiment sentiment)
         {
             //Early exit if channel is not a guild channel
             if (!(message.Channel is SocketGuildChannel gc))
@@ -40,13 +40,13 @@ namespace Mute.Moe.Services.Sentiment.Training
                 .Select(u => u as IGuildUser ?? g.GetUser(u.Id))
                 .Where(u => u != null)
                 .Distinct()
-                .ToArray();
+                .ToArrayAsync();
 
             if (users.Length >= 3 || users.Any(IsTeacher))
                 await _sentiment.Teach(message.Content, sentiment);
         }
 
-        private bool IsTeacher([NotNull] IGuildUser user)
+        private bool IsTeacher( IGuildUser user)
         {
             //Check if the user has the `*MuteTeacher` role (hardcoded ID for now)
             return user.RoleIds.Contains<ulong>(506127510740795393);

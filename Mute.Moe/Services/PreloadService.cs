@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Games;
@@ -12,7 +11,6 @@ using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment;
 using Mute.Moe.Services.Sentiment.Training;
-using Mute.Moe.Services.SolariumGame;
 
 namespace Mute.Moe.Services
 {
@@ -25,7 +23,6 @@ namespace Mute.Moe.Services
         private readonly Type[] _types = {
             typeof(GameService),
             typeof(AutoReactionTrainer),
-            typeof(ISolarium),
             typeof(IReminderSender),
             typeof(ISentimentEvaluator),
             typeof(IUptime),
@@ -40,7 +37,7 @@ namespace Mute.Moe.Services
             _services = services;
         }
 
-        [NotNull] public async Task StartAsync(CancellationToken cancellationToken)
+         public async Task StartAsync(CancellationToken cancellationToken)
         {
             // Get information about a guild, when this completes it means the bot is in a sensible state to start service preloading
             await _client.Rest.GetGuildAsync(415655090842763265);
@@ -55,7 +52,7 @@ namespace Mute.Moe.Services
             }
         }
 
-        [NotNull] public Task StopAsync(CancellationToken cancellationToken)
+         public Task StopAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }

@@ -5,7 +5,7 @@ using System.Data.SQLite;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 
@@ -56,7 +56,7 @@ namespace Mute.Moe.Services.Payment
 
         private readonly IDatabaseService _database;
 
-        public DatabasePendingTransactions([NotNull] IDatabaseService database, [NotNull] ITransactions dbTransactions)
+        public DatabasePendingTransactions( IDatabaseService database,  ITransactions dbTransactions)
         {
             if (!(dbTransactions is DatabaseTransactions))
                 throw new ArgumentException("Transactions service paired with `DatabasePendingTransactions` must be `DatabaseTransactions`");
@@ -66,7 +66,7 @@ namespace Mute.Moe.Services.Payment
             _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_PendingTransactions` (`FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT NOT NULL, `Pending` TEXT NOT NULL);");
         }
 
-        public async Task<uint> CreatePending(ulong fromId, ulong toId, decimal amount, string unit, string note, DateTime instant)
+        public async Task<uint> CreatePending(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
         {
             if (amount < 0)
                 throw new ArgumentOutOfRangeException(nameof(amount), "Cannot transact a negative amount");
@@ -75,24 +75,22 @@ namespace Mute.Moe.Services.Payment
             if (fromId == toId)
                 throw new InvalidOperationException("Cannot transact from self to self");
 
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertPendingSql;
-                cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
-                cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
-                cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = instant.UnixTimestamp() });
-                cmd.Parameters.Add(new SQLiteParameter("@Pending", System.Data.DbType.String) { Value = PendingState.Pending.ToString() });
+            using var cmd = _database.CreateCommand();
+            cmd.CommandText = InsertPendingSql;
+            cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId.ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId.ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
+            cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
+            cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
+            cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = instant.UnixTimestamp() });
+            cmd.Parameters.Add(new SQLiteParameter("@Pending", System.Data.DbType.String) { Value = PendingState.Pending.ToString() });
 
-                return (uint)(long)await cmd.ExecuteScalarAsync();
-            }
+            return (uint)(long)await cmd.ExecuteScalarAsync();
         }
 
-        public async Task<IAsyncEnumerable<IPendingTransaction>> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string unit = null, DateTime? after = null, DateTime? before = null)
+        public IAsyncEnumerable<IPendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
         {
-            IPendingTransaction ParsePendingTransaction(DbDataReader reader)
+            static IPendingTransaction ParsePendingTransaction(DbDataReader reader)
             {
                 return new PendingTransaction(
                     ulong.Parse((string)reader["FromId"]),
@@ -138,7 +136,7 @@ namespace Mute.Moe.Services.Payment
                 return cmd;
             }
 
-            var results = await new SqlAsyncResult<PendingState>(_database, PrepareQuery, ParseResult).ToArray();
+            var results = await new SqlAsyncResult<PendingState>(_database, PrepareQuery, ParseResult).ToArrayAsync();
 
             if (results.Length > 1)
                 throw new InvalidOperationException($"Modified more than 1 payment at once! ID:{id}");

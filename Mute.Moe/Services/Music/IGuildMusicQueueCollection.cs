@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Audio.Mixing.Channels;
 using NAudio.Wave;
@@ -26,7 +26,7 @@ namespace Mute.Moe.Services.Music
         {
         }
 
-        [NotNull] protected override InMemoryGuildMusicQueue Create(IGuildVoice voice)
+         protected override InMemoryGuildMusicQueue Create(IGuildVoice voice)
         {
             return new InMemoryGuildMusicQueue(voice);
         }

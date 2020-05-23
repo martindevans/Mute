@@ -4,8 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using JetBrains.Annotations;
-using Mute.Moe.AsyncEnumerable.Extensions;
+
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Audio.Sources.Youtube;
@@ -34,7 +33,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             _rng = rng;
         }
 
-        [NotNull, Command("playing"), Summary("Get information about the currently playing track")]
+        [Command("playing"), Summary("Get information about the currently playing track")]
         public async Task NowPlaying()
         {
             var q = await _queueCollection.Get(Context.Guild.Id);
@@ -58,7 +57,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             await message.ModifyAsync(a => a.Embed = embed.WithColor(Color.DarkPurple).Build());
         }
 
-        [NotNull, Command("stop"), Summary("Clear the music queue")]
+        [Command("stop"), Summary("Clear the music queue")]
         [RequireVoiceChannel]
         public async Task ClearQueue()
         {
@@ -66,7 +65,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             q.Stop();
         }
 
-        [NotNull, Command("skip"), Summary("Skip the currently playing track")]
+        [Command("skip"), Summary("Skip the currently playing track")]
         [RequireVoiceChannel]
         public async Task SkipTrack()
         {
@@ -74,7 +73,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             q.Skip();
         }
 
-        [NotNull, Command("playlist"), Summary("Show the current playlist")]
+        [Command("playlist"), Summary("Show the current playlist")]
         [RequireVoiceChannel]
         public async Task PlayList()
         {
@@ -98,13 +97,13 @@ namespace Mute.Moe.Discord.Modules.Audio
             );
         }
 
-        [NotNull, Command("play-random"), Summary("Play a random track from the library")]
+        [Command("play-random"), Summary("Play a random track from the library")]
         [RequireVoiceChannel]
         [ThinkingReply]
         public async Task PlayRandom()
         {
             // Pick a track
-            var track = await (await _library.Get(Context.Guild.Id, order: TrackOrder.Random, limit: 1)).SingleOrDefault();
+            var track = await (await _library.Get(Context.Guild.Id, order: TrackOrder.Random, limit: 1)).SingleOrDefaultAsync();
             if (track == null)
             {
                 await ReplyAsync("Failed to find a single random track in the library!");
@@ -114,10 +113,10 @@ namespace Mute.Moe.Discord.Modules.Audio
             await Enqueue(track);
         }
 
-        [NotNull, Command("play-url"), Summary("Play a track from a given URL")]
+        [Command("play-url"), Summary("Play a track from a given URL")]
         [RequireVoiceChannel]
         [ThinkingReply]
-        public async Task PlayUrl([NotNull] string url)
+        public async Task PlayUrl( string url)
         {
             // Tolerate misusing the play command to invoke `play-random`
             if (url.ToLowerInvariant() == "random")
@@ -127,7 +126,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             }
 
             // Try to find this item in the library
-            var match = await (await _library.Get(Context.Guild.Id, url: url.ToLowerInvariant())).SingleOrDefault();
+            var match = await (await _library.Get(Context.Guild.Id, url: url.ToLowerInvariant())).SingleOrDefaultAsync();
             if (match != null)
             {
                 await Enqueue(match);
@@ -161,10 +160,10 @@ namespace Mute.Moe.Discord.Modules.Audio
             
         }
 
-        [NotNull, Command("play"), Summary("Play a track which best matches the given search parameter")]
+        [Command("play"), Summary("Play a track which best matches the given search parameter")]
         [RequireVoiceChannel]
         [ThinkingReply]
-        public async Task Play([NotNull, Remainder] string search)
+        public async Task Play([Remainder] string search)
         {
             // Tolerate misusing the play command to invoke `play-random`
             if (search.ToLowerInvariant() == "random")
@@ -174,7 +173,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             }
 
             // Get all potential tracks from those searches
-            var tracks = await Search(search).ToArray();
+            var tracks = await Search(search).ToArrayAsync();
 
             // if we failed to find a track in the database, try to treat the search string as a URL
             if (tracks.Length == 0)
@@ -205,9 +204,9 @@ namespace Mute.Moe.Discord.Modules.Audio
 
         }
 
-        [NotNull, Command("find"), Summary("Find tracks by a search string")]
+        [Command("find"), Summary("Find tracks by a search string")]
         [ThinkingReply]
-        public async Task Find([NotNull, Remainder] string search)
+        public async Task Find([Remainder] string search)
         {
             // Tolerate misusing the play command to invoke `play-random`
             if (search.ToLowerInvariant() == "random")
@@ -217,7 +216,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             }
 
             // Get all potential tracks from those searches
-            var tracks = await Search(search).ToArray();
+            var tracks = await Search(search).ToArrayAsync();
 
             // if we failed to find a track in the database, try to treat the search string as a URL
             if (tracks.Length == 0)
@@ -240,7 +239,7 @@ namespace Mute.Moe.Discord.Modules.Audio
 
         }
 
-        [NotNull] private async Task Enqueue([NotNull] ITrack track)
+         private async Task Enqueue( ITrack track)
         {
             // Get music queue
             var channel = await _queueCollection.Get(Context.Guild.Id);
@@ -269,13 +268,13 @@ namespace Mute.Moe.Discord.Modules.Audio
             await message.ModifyAsync(a => a.Embed = embed.WithColor(Color.DarkPurple).Build());
         }
 
-        [NotNull] private static string TrackString([NotNull] ITrack track, int index)
+         private static string TrackString( ITrack track, int index)
         {
             return $"{index}. **{track.Title}** (`{track.ID.MeaninglessString()}`)";
         }
 
-        [NotNull, ItemNotNull]
-        private async Task<IAsyncEnumerable<ITrack>> Search(string search)
+        
+        private async IAsyncEnumerable<ITrack> Search(string search)
         {
             var results = new List<IAsyncEnumerable<ITrack>>();
 
@@ -296,10 +295,11 @@ namespace Mute.Moe.Discord.Modules.Audio
             results.Add(await _library.Get(Context.Guild.Id, url: search, order: TrackOrder.Id));
 
             // Get all potential tracks from those searches
-            return results.ToAsyncEnumerable().SelectMany(a => a).OrderBy(a => a.ID);
+            await foreach (var item in results.ToAsyncEnumerable().SelectMany(a => a).OrderBy(a => a.ID))
+                yield return item;
         }
 
-        [NotNull, Command("upgrade-youtubedl")]
+        [Command("upgrade-youtubedl")]
         [ThinkingReply]
         [RequireOwner]
         public async Task Upgrade()

@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Linq;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
-using Mute.Moe.AsyncEnumerable.Extensions;
+
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 
@@ -26,12 +24,12 @@ namespace Mute.Moe.Services.Reminders
                                                        "ORDER BY InstantUnix " +
                                                        "LIMIT @Limit";
 
-        [NotNull] private readonly IDatabaseService _database;
+         private readonly IDatabaseService _database;
 
-        public event Action<IReminder> ReminderCreated;
-        public event Action<uint> ReminderDeleted;
+        public event Action<IReminder>? ReminderCreated;
+        public event Action<uint>? ReminderDeleted;
 
-        public DatabaseReminders([NotNull] IDatabaseService database)
+        public DatabaseReminders( IDatabaseService database)
         {
             _database = database;
 
@@ -95,9 +93,9 @@ namespace Mute.Moe.Services.Reminders
 
 
 
-        public async Task<IOrderedAsyncEnumerable<IReminder>> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
+        public IOrderedAsyncEnumerable<IReminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
         {
-            IReminder ParseReminder(DbDataReader reader)
+            static IReminder ParseReminder(DbDataReader reader)
             {
                 return new Reminder(
                     uint.Parse(reader["rowid"].ToString()),
@@ -121,7 +119,7 @@ namespace Mute.Moe.Services.Reminders
                 return cmd;
             }
 
-            return new SqlAsyncResult<IReminder>(_database, PrepareQuery, ParseReminder).AsOrderedEnumerable(a => a.TriggerTime, Comparer<DateTime>.Default);
+            return new SqlAsyncResult<IReminder>(_database, PrepareQuery, ParseReminder).OrderBy(a => a.TriggerTime);
         }
 
         public class Reminder
@@ -134,9 +132,9 @@ namespace Mute.Moe.Services.Reminders
             public DateTime TriggerTime { get; }
 
             public string Message { get; }
-            public string Prelude { get; }
+            public string? Prelude { get; }
 
-            public Reminder(uint id, DateTime triggerTime, string prelude, string message, ulong channelId, ulong userId)
+            public Reminder(uint id, DateTime triggerTime, string? prelude, string message, ulong channelId, ulong userId)
             {
                 ID = id;
                 UserId = userId;
@@ -185,22 +183,22 @@ namespace Mute.Moe.Services.Reminders
                 return (int)ID;
             }
 
-            public static bool operator ==([CanBeNull] Reminder left, [CanBeNull] IReminder right)
+            public static bool operator ==(Reminder? left, IReminder? right)
             {
                 return Equals(left, right);
             }
 
-            public static bool operator !=([CanBeNull] Reminder left, [CanBeNull] IReminder right)
+            public static bool operator !=(Reminder? left, IReminder? right)
             {
                 return !Equals(left, right);
             }
 
-            public static bool operator ==([CanBeNull] IReminder left, [CanBeNull] Reminder right)
+            public static bool operator ==(IReminder? left, Reminder? right)
             {
                 return Equals(left, right);
             }
 
-            public static bool operator !=([CanBeNull] IReminder left, [CanBeNull] Reminder right)
+            public static bool operator !=(IReminder? left, Reminder? right)
             {
                 return !Equals(left, right);
             }

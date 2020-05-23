@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
@@ -18,7 +18,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
         public IReadOnlyList<string> Final { get; }
         public IReadOnlyList<string> Quit { get; }
 
-        public Script([NotNull] IEnumerable<string> lines, [NotNull] IEnumerable<IKeyProvider> keyProviders)
+        public Script( IEnumerable<string> lines,  IEnumerable<IKeyProvider> keyProviders)
         {
             List<Decomposition> lastDecomp = null;
             List<IReassembly> lastReasemb = null;
@@ -53,7 +53,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             ));
         }
 
-        [NotNull] public IEnumerable<Key> GetKeys(string keyword)
+         public IEnumerable<Key> GetKeys(string keyword)
         {
             //Get keys from script
             if (!_keys.TryGetValue(keyword, out var results))
@@ -64,7 +64,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
         }
 
         #region parsing
-        private static void ExpandSynonymKeys([NotNull] IList<Key> keysList, IReadOnlyList<IReadOnlyCollection<string>> syns)
+        private static void ExpandSynonymKeys( IList<Key> keysList, IReadOnlyList<IReadOnlyCollection<string>> syns)
         {
             for (var i = keysList.Count - 1; i >= 0; i--)
             {
@@ -88,7 +88,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             }
         }
 
-        private static bool DecompositionRule([NotNull] string s, ref List<Decomposition> lastDecomp, ref List<IReassembly> lastReasemb)
+        private static bool DecompositionRule( string s, ref List<Decomposition> lastDecomp, ref List<IReassembly> lastReasemb)
         {
             var m = Regex.Match(s, "^.*?decomp:(?<modifiers>[~\\$ ]*)(?<value>.*)$");
             if (!m.Success)
@@ -107,7 +107,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool ReassemblyRule([NotNull] string s, ICollection<IReassembly> lr)
+        private static bool ReassemblyRule( string s, ICollection<IReassembly> lr)
         {
             var m = Regex.Match(s, "^.*?reasmb:( )+(?<value>.*)$");
             if (m.Success)
@@ -119,7 +119,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return false;
         }
 
-        private static bool KeysRule([NotNull] string s, ICollection<Key> keys, [NotNull] ref List<Decomposition> lastDecomp, ref List<IReassembly> lastReasemb)
+        private static bool KeysRule( string s, ICollection<Key> keys,  ref List<Decomposition> lastDecomp, ref List<IReassembly> lastReasemb)
         {
             var m = Regex.Match(s, "^.*?key:( )+(?<value>.*?)( )*(?<rank>\\d*)$");
             if (!m.Success)
@@ -138,7 +138,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool SynonymRule([NotNull] string s, ICollection<HashSet<string>> synonyms)
+        private static bool SynonymRule( string s, ICollection<HashSet<string>> synonyms)
         {
             var m = Regex.Match(s, "^.*?synon:( )+(?<value>.*)$");
             if (!m.Success)
@@ -148,7 +148,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool PreRule([NotNull] string s, ICollection<Transform> pre)
+        private static bool PreRule( string s, ICollection<Transform> pre)
         {
             var m = Regex.Match(s, "^.*?pre:( )+(?<a>.*?)( )+(?<b>.*?)$");
             if (!m.Success)
@@ -158,7 +158,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool PostRule([NotNull] string s, ICollection<Transform> post)
+        private static bool PostRule( string s, ICollection<Transform> post)
         {
             var m = Regex.Match(s, "^.*?post:( )+(?<a>.*?)( )+(?<b>.*?)$");
             if (!m.Success)
@@ -168,7 +168,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool FinalRule([NotNull] string s, ICollection<string> final)
+        private static bool FinalRule( string s, ICollection<string> final)
         {
             var m = Regex.Match(s, "^.*?final:( )+(?<value>.*)$");
             if (!m.Success)
@@ -178,7 +178,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool QuitRule([NotNull] string s, ICollection<string> quit)
+        private static bool QuitRule( string s, ICollection<string> quit)
         {
             var m = Regex.Match(s, "^.*?quit:( )+(?<value>.*)$");
             if (!m.Success)
@@ -190,9 +190,9 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
 
         /// <summary>Process a line of script input.</summary>
 		/// <remarks>Process a line of script input.</remarks>
-		private static bool ParseLine([CanBeNull] string line, ref List<IReassembly> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, ICollection<HashSet<string>> syns, ICollection<string> final)
+		private static bool ParseLine(string? line, ref List<IReassembly> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, ICollection<HashSet<string>> syns, ICollection<string> final)
         {
-            if (string.IsNullOrWhiteSpace(line))
+            if (line == null || string.IsNullOrWhiteSpace(line))
                 return false;
 
             return ReassemblyRule(line, lastReasemb)

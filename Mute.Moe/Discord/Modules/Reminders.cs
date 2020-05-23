@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Humanizer;
 using Humanizer.Localisation;
-using JetBrains.Annotations;
-using Mute.Moe.AsyncEnumerable.Extensions;
+
+
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Extensions;
@@ -31,7 +32,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder"), Summary("I will remind you of something after a period of time")]
-        public async Task CreateReminderCmd([CanBeNull, Remainder] string message)
+        public async Task CreateReminderCmd([Remainder] string message)
         {
             var msg = await CreateReminder(Context, message);
             if (msg != null)
@@ -45,9 +46,9 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("reminders"), Summary("I will give you a list of all pending reminders for a user"), RequireOwner]
-        public async Task ListReminders([NotNull] IUser user)
+        public async Task ListReminders( IUser user)
         {
-            var items = await _reminders.Get(user.Id).ToArray();
+            var items = await _reminders.Get(user.Id).ToArrayAsync();
 
             await DisplayItemList(
                 items,
@@ -61,7 +62,7 @@ namespace Mute.Moe.Discord.Modules
             );
         }
 
-        private async Task DisplayReminder([NotNull] IReminder reminder)
+        private async Task DisplayReminder( IReminder reminder)
         {
             var embed = new EmbedBuilder()
                  .WithColor(Color)
@@ -74,7 +75,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("cancel-reminder"), Alias("reminder-cancel", "remind-cancel", "cancel-remind", "unremind"), Summary("I will delete a reminder with the given ID")]
-        public async Task CancelReminder([NotNull] string id)
+        public async Task CancelReminder( string id)
         {
             var parsed = FriendlyId32.Parse(id);
             if (!parsed.HasValue)
@@ -89,7 +90,6 @@ namespace Mute.Moe.Discord.Modules
                 await TypingReplyAsync($"I can't find a reminder with id `{id}`");
         }
 
-        [ItemCanBeNull]
         private async Task<string> CreateReminder(ICommandContext context, string message)
         {
             DateTime triggerMoment;
@@ -132,7 +132,7 @@ namespace Mute.Moe.Discord.Modules
             get
             {
                 yield return new Key("remind", 10,
-                    new Decomposition("remind me *", (c, d) => CreateReminder(c, d[0]))
+                    new Decomposition("remind me *", (c, d) => CreateReminder(c, d[0] ?? ""))
                 );
             }
         }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
 
@@ -25,16 +25,16 @@ namespace Mute.Moe.Discord.Services.Responses
             _random = random;
         }
 
-        public Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
+        public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
         {
             var rgx = new Regex("[^a-zA-Z0-9 -]");
             var msg = rgx.Replace(context.Message.Content, "");
 
             var words = msg.ToLowerInvariant().Split(' ');
             if (_triggerWords.Overlaps(words))
-                return Task.FromResult<IConversation>(new UrbitConversation(Sarcasm()));
+                return new UrbitConversation(Sarcasm());
             else
-                return Task.FromResult<IConversation>(null);
+                return null;
         }
 
         private class UrbitConversation
@@ -47,18 +47,18 @@ namespace Mute.Moe.Discord.Services.Responses
         }
 
         #region response generator
-        [NotNull] private static string Plural([NotNull] string noun)
+         private static string Plural( string noun)
         {
             var suffix = (noun.EndsWith('s') || noun.EndsWith("sh")) ? "es" : "s";
             return noun + suffix;
         }
 
-        [NotNull] private static string Article([NotNull] string word)
+         private static string Article( string word)
         {
             return Regex.IsMatch(word, "^[aeiou]") ? "an" : "a";
         }
 
-        [NotNull] private string Sarcasm()
+         private string Sarcasm()
         {
             var intro = _intros.Random(_random);
             var thirdPerson = intro.Contains("Hoon");

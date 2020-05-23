@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Newtonsoft.Json.Serialization;
 using Oddity;
 using Oddity.API.Models.DetailedCore;
@@ -13,12 +13,12 @@ namespace Mute.Moe.Services.Information.SpaceX
     public class OdditySpaceX
         : ISpacexInfo
     {
-        public async Task<LaunchInfo> NextLaunch()
+        public async Task<LaunchInfo?> NextLaunch()
         {
             try
             {
-                using (var o = new OddityCore())
-                    return await o.Launches.GetNext().ExecuteAsync();
+                using var o = new OddityCore();
+                return await o.Launches.GetNext().ExecuteAsync();
             }
             catch (TaskCanceledException e)
             {
@@ -27,34 +27,32 @@ namespace Mute.Moe.Services.Information.SpaceX
             }
         }
 
-        public async Task<IReadOnlyList<LaunchInfo>> Launch(int id)
+        public async Task<IReadOnlyList<LaunchInfo>?> Launch(int id)
         {
-            using (var o = new OddityCore())
-                return (await o.Launches.GetAll().WithFlightNumber(id).ExecuteAsync());
+            using var o = new OddityCore();
+            return (await o.Launches.GetAll().WithFlightNumber(id).ExecuteAsync());
         }
 
-        public async Task<DetailedCoreInfo> Core(string id)
+        public async Task<DetailedCoreInfo?> Core(string id)
         {
-            using (var o = new OddityCore())
-                return (await o.DetailedCores.GetAbout(id).ExecuteAsync());
+            using var o = new OddityCore();
+            return (await o.DetailedCores.GetAbout(id).ExecuteAsync());
         }
 
         public async Task<IReadOnlyList<LaunchInfo>> Upcoming()
         {
-            using (var o = new OddityCore())
-            {
-                o.OnDeserializationError += OddityOnOnDeserializationError;
-                return (await o.Launches.GetUpcoming().ExecuteAsync());
-            }
+            using var o = new OddityCore();
+            o.OnDeserializationError += OddityOnOnDeserializationError;
+            return (await o.Launches.GetUpcoming().ExecuteAsync());
         }
 
         public async Task<IRoadsterInfo> Roadster()
         {
-            using (var o = new OddityCore())
-                return new OddityRoadsterInfo(await o.Roadster.Get().ExecuteAsync());
+            using var o = new OddityCore();
+            return new OddityRoadsterInfo(await o.Roadster.Get().ExecuteAsync());
         }
 
-        private static void OddityOnOnDeserializationError(object _, [NotNull] ErrorEventArgs e)
+        private static void OddityOnOnDeserializationError(object _,  ErrorEventArgs e)
         {
             Console.WriteLine("Oddity Serialization Error: " + e.ErrorContext.Path);
             e.ErrorContext.Handled = true;

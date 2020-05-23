@@ -26,7 +26,7 @@ namespace Mute.Moe.Services.Words
 
         private readonly Backoff _backoff = new Backoff();
 
-        public HttpWordVectors([NotNull] Configuration config, IHttpClientFactory client)
+        public HttpWordVectors( Configuration config, IHttpClientFactory client)
         {
             _client = client.CreateClient();
             _client.Timeout = TimeSpan.FromMilliseconds(25);
@@ -40,22 +40,20 @@ namespace Mute.Moe.Services.Words
             _indexSimilarByWord = _similarCache.AddIndex("byWord", a => a.Root);
         }
 
-        public async Task<IReadOnlyList<float>> Vector(string word)
+        public async Task<IReadOnlyList<float>?> Vector(string word)
         {
             return (await GetVectorObject(word))?.Vector;
         }
 
-        [ItemCanBeNull, NotNull]
-        private async Task<WordVector> GetVectorObject(string word)
+        private async Task<WordVector?> GetVectorObject(string word)
         {
             word = word.ToLowerInvariant();
 
-            var item = await _indexByWord.GetItem(word, GetVectorNonCached);
+            var item = await _indexByWord.GetItem(word, GetVectorNonCached!);
             return item;
         }
 
-        [ItemCanBeNull, NotNull]
-        private async Task<WordVector> GetVectorNonCached(string word)
+        private async Task<WordVector?> GetVectorNonCached(string word)
         {
             if (!_backoff.MayTry())
                 return null;
@@ -64,23 +62,21 @@ namespace Mute.Moe.Services.Words
             {
                 var url = new UriBuilder(_config.WordVectorsBaseUrl) {Path = $"get_vector/{Uri.EscapeUriString(word)}"};
 
-                using (var resp = await _client.GetAsync(url.ToString()))
+                using var resp = await _client.GetAsync(url.ToString());
+                if (!resp.IsSuccessStatusCode)
                 {
-                    if (!resp.IsSuccessStatusCode)
-                    {
-                        _backoff.Fail();
-                        return null;
-                    }
-
-                    var arr = JArray.Parse(await resp.Content.ReadAsStringAsync());
-
-                    var vector = new List<float>(300);
-                    foreach (var jToken in arr)
-                        vector.Add((float)jToken);
-
-                    _backoff.Success();
-                    return new WordVector(word, vector);
+                    _backoff.Fail();
+                    return null;
                 }
+
+                var arr = JArray.Parse(await resp.Content.ReadAsStringAsync());
+
+                var vector = new List<float>(300);
+                foreach (var jToken in arr)
+                    vector.Add((float)jToken);
+
+                _backoff.Success();
+                return new WordVector(word, vector);
             }
             catch (Exception)
             {
@@ -89,22 +85,20 @@ namespace Mute.Moe.Services.Words
             }
         }
 
-        public async Task<IReadOnlyList<ISimilarWord>> Similar(string word)
+        public async Task<IReadOnlyList<ISimilarWord>?> Similar(string word)
         {
             return (await GetSimilarObject(word))?.Similar;
         }
 
-        [ItemCanBeNull, NotNull]
-        private async Task<SimilarResult> GetSimilarObject(string word)
+        private async Task<SimilarResult?> GetSimilarObject(string word)
         {
             word = word.ToLowerInvariant();
 
-            var item = await _indexSimilarByWord.GetItem(word, GetSimilarNonCached);
+            var item = await _indexSimilarByWord.GetItem(word, GetSimilarNonCached!);
             return item;
         }
 
-        [ItemCanBeNull, NotNull]
-        private async Task<SimilarResult> GetSimilarNonCached(string word)
+        private async Task<SimilarResult?> GetSimilarNonCached(string word)
         {
             if (!_backoff.MayTry())
                 return null;
@@ -113,23 +107,23 @@ namespace Mute.Moe.Services.Words
             {
                 var url = new UriBuilder(_config.WordVectorsBaseUrl) {Path = $"get_similar/{Uri.EscapeUriString(word)}"};
 
-                using (var resp = await _client.GetAsync(url.ToString()))
+                using var resp = await _client.GetAsync(url.ToString());
+                if (!resp.IsSuccessStatusCode)
                 {
-                    if (!resp.IsSuccessStatusCode)
-                    {
-                        _backoff.Fail();
-                        return null;
-                    }
-
-                    SimilarWord[] results;
-                    var serializer = new JsonSerializer();
-                    using (var sr = new StreamReader(await resp.Content.ReadAsStreamAsync()))
-                    using (var jsonTextReader = new JsonTextReader(sr))
-                        results = serializer.Deserialize<SimilarWord[]>(jsonTextReader);
-
-                    _backoff.Success();
-                    return new SimilarResult(word, results);
+                    _backoff.Fail();
+                    return null;
                 }
+
+                SimilarWord[]? results;
+                var serializer = new JsonSerializer();
+                using (var sr = new StreamReader(await resp.Content.ReadAsStreamAsync()))
+                using (var jsonTextReader = new JsonTextReader(sr))
+                    results = serializer.Deserialize<SimilarWord[]>(jsonTextReader);
+                if (results == null)
+                    return null;
+
+                _backoff.Success();
+                return new SimilarResult(word, results);
             }
             catch (Exception)
             {

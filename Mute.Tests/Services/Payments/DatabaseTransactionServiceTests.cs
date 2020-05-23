@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Payment;
 
@@ -54,7 +53,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
 
-            var tsx = await (await svc.GetTransactions(fromId: 0)).OrderBy(a => a.Instant).ToArray();
+            var tsx = await svc.GetTransactions(fromId: 0).OrderBy(a => a.Instant).ToArrayAsync();
 
             Assert.AreEqual(2, tsx.Length);
             Assert.AreEqual("test", tsx[0].Unit);
@@ -69,7 +68,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
 
-            var tsx = await (await svc.GetTransactions(toId: 0)).OrderBy(a => a.Instant).ToArray();
+            var tsx = await (svc.GetTransactions(toId: 0)).OrderBy(a => a.Instant).ToArrayAsync();
 
             Assert.AreEqual(1, tsx.Length);
             Assert.AreEqual("test", tsx[0].Unit);
@@ -83,7 +82,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
 
-            var tsx = await (await svc.GetTransactions(unit: "test")).OrderBy(a => a.Instant).ToArray();
+            var tsx = await (svc.GetTransactions(unit: "test")).OrderBy(a => a.Instant).ToArrayAsync();
 
             Assert.AreEqual(2, tsx.Length);
             Assert.AreEqual("test", tsx[0].Unit);
@@ -98,7 +97,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
 
-            var tsx = await (await svc.GetTransactions(before: now + TimeSpan.FromMinutes(2.5))).OrderBy(a => a.Instant).ToArray();
+            var tsx = await (svc.GetTransactions(before: now + TimeSpan.FromMinutes(2.5))).OrderBy(a => a.Instant).ToArrayAsync();
 
             Assert.AreEqual(2, tsx.Length);
             Assert.AreEqual("test", tsx[0].Unit);
@@ -113,7 +112,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             await CreateTestTransactions(now, svc);
 
-            var tsx = await (await svc.GetTransactions(after: now + TimeSpan.FromMinutes(2.5))).OrderBy(a => a.Instant).ToArray();
+            var tsx = await (svc.GetTransactions(after: now + TimeSpan.FromMinutes(2.5))).OrderBy(a => a.Instant).ToArrayAsync();
 
             Assert.AreEqual(2, tsx.Length);
             Assert.AreEqual("test2", tsx[0].Unit);

@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using JetBrains.Annotations;
-using Mute.Moe.AsyncEnumerable.Extensions;
+
+
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Services.Reminders
@@ -34,7 +35,8 @@ namespace Mute.Moe.Services.Reminders
                 while (true)
                 {
                     //Get the first unsent reminder
-                    var next = await _reminders.Get(count: 1).FirstOrDefault();
+                    // ReSharper disable once RedundantCast
+                    var next = (IReminder?)await _reminders.Get(count: 1).FirstOrDefaultAsync();
 
                     //Wait for one of these events to happen
                     var cts = new CancellationTokenSource();
@@ -57,7 +59,7 @@ namespace Mute.Moe.Services.Reminders
             }
         }
 
-        [ItemNotNull] private async Task<BaseEventAction> WaitForCreation(CancellationToken ct)
+        private async Task<BaseEventAction> WaitForCreation(CancellationToken ct)
         {
             //Create a task which will complete when a new reminder is created
             var tcs = new TaskCompletionSource<IReminder>();
@@ -74,7 +76,7 @@ namespace Mute.Moe.Services.Reminders
             return new EventCreatedAction(reminder);
         }
 
-        [ItemNotNull] private async Task<BaseEventAction> WaitForDeletion(CancellationToken ct)
+        private async Task<BaseEventAction> WaitForDeletion(CancellationToken ct)
         {
             //Create a task which will complete when a reminder is deleted
             var tcs = new TaskCompletionSource<uint>();
@@ -91,7 +93,7 @@ namespace Mute.Moe.Services.Reminders
             return new EventDeletedAction(id);
         }
 
-        [ItemNotNull] private async Task<BaseEventAction> WaitForTimeout(CancellationToken ct, [CanBeNull] IReminder next)
+        private async Task<BaseEventAction> WaitForTimeout(CancellationToken ct, IReminder? next)
         {
             //If there is no next event then just hang forever
             if (next == null)
@@ -114,7 +116,7 @@ namespace Mute.Moe.Services.Reminders
 
         private abstract class BaseEventAction
         {
-            [NotNull] public abstract Task Run([CanBeNull] ref IReminder next);
+             public abstract Task Run(ref IReminder? next);
         }
 
         private class EventCreatedAction
@@ -122,12 +124,12 @@ namespace Mute.Moe.Services.Reminders
         {
             private readonly IReminder _reminder;
 
-            public EventCreatedAction([NotNull] IReminder reminder)
+            public EventCreatedAction( IReminder reminder)
             {
                 _reminder = reminder;
             }
 
-            public override Task Run(ref IReminder next)
+            public override Task Run(ref IReminder? next)
             {
                 Console.WriteLine("Create reminder " + _reminder.ID);
 
@@ -148,7 +150,7 @@ namespace Mute.Moe.Services.Reminders
                 _id = id;
             }
 
-            public override Task Run(ref IReminder next)
+            public override Task Run(ref IReminder? next)
             {
                 Console.WriteLine("Delete reminder " + _id);
 
@@ -172,7 +174,7 @@ namespace Mute.Moe.Services.Reminders
                 _client = client;
             }
 
-            public override Task Run(ref IReminder _)
+            public override Task Run(ref IReminder? _)
             {
                 Console.WriteLine("Send reminder " + _reminder.ID);
 

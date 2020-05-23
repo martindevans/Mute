@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
@@ -89,7 +89,7 @@ namespace Mute.Moe.Discord.Modules.Games
             await TypingReplyAsync(Magic8Ball());
         }
 
-        [NotNull] private string Flip()
+         private string Flip()
         {
             if (_dice.Flip())
                 return "Heads";
@@ -97,7 +97,7 @@ namespace Mute.Moe.Discord.Modules.Games
                 return "Tails";
         }
 
-        [CanBeNull] private string Roll(string dice, string sides)
+        private string? Roll(string dice, string sides)
         {
             if (!byte.TryParse(dice, out var pdice))
                 return null;
@@ -106,7 +106,7 @@ namespace Mute.Moe.Discord.Modules.Games
             return Roll(pdice, psides);
         }
 
-        [NotNull] private string Roll(byte dice, ulong sides)
+         private string Roll(byte dice, ulong sides)
         {
             var results = Enumerable.Range(0, dice).Select(_ => _dice.Roll(sides)).ToArray();
             var total = results.Select(a => (int)a).Sum();
@@ -114,7 +114,7 @@ namespace Mute.Moe.Discord.Modules.Games
             return $"{string.Join('+', results)} = {total}";
         }
 
-        [NotNull] private string Magic8Ball()
+         private string Magic8Ball()
         {
             var index = (int)(_dice.Roll(20) - 1);
             return Ball8Replies[index];

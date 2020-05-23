@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
@@ -37,14 +37,14 @@ namespace Mute.Moe.Services.Audio.Mixing.Channels
 
         public (T Metadata, Task Completion) Playing => (_playing.Metadata, _playing.Completion);
 
-        [NotNull] public IEnumerable<T> Queue => _queue.Select(a => a.Metadata).ToArray();
+         public IEnumerable<T> Queue => _queue.Select(a => a.Metadata).ToArray();
 
         public SimpleQueueChannel()
         {
             WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
         }
 
-        [NotNull] public Task<Task> Enqueue<TAudio>(T metadata, TAudio audio)
+         public Task<Task> Enqueue<TAudio>(T metadata, TAudio audio)
             where TAudio : ISampleProvider, IDisposable
         {
             var q = new QueueClip(metadata, new WdlResamplingSampleProvider(audio, WaveFormat.SampleRate).ToMono());
@@ -55,7 +55,7 @@ namespace Mute.Moe.Services.Audio.Mixing.Channels
             return Task.FromResult(q.Completion);
         }
 
-        [NotNull] public Task<Task> Enqueue(T metadata, ISampleProvider audio)
+         public Task<Task> Enqueue(T metadata, ISampleProvider audio)
         {
             var q = new QueueClip(metadata, new WdlResamplingSampleProvider(audio, WaveFormat.SampleRate).ToMono());
 

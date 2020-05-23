@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
-using JetBrains.Annotations;
 using MoreLinq;
 
 namespace Mute.Moe.Extensions
@@ -14,7 +13,7 @@ namespace Mute.Moe.Extensions
 
         private static readonly TimeSpan SoftMaxDelay = TimeSpan.FromSeconds(2.0);
 
-        public static async Task<IUserMessage> TypingReplyAsync([NotNull] this IMessageChannel channel, [NotNull] string message, bool isTTS = false, [CanBeNull] Embed embed = null, [CanBeNull] RequestOptions options = null)
+        public static async Task<IUserMessage> TypingReplyAsync(this IMessageChannel channel,  string message, bool isTTS = false, Embed? embed = null, RequestOptions? options = null)
         {
             using (channel.EnterTypingState())
             {
@@ -23,7 +22,7 @@ namespace Mute.Moe.Extensions
             }
         }
 
-        private static TimeSpan Delay([NotNull] string message)
+        private static TimeSpan Delay( string message)
         {
             var wordTime = message.Count(c => c == ' ') / WordsPerMinute;
             var symbTime = (message.Length - message.Count(char.IsLetter)) / (CharactersPerSecond * 180);
@@ -38,7 +37,7 @@ namespace Mute.Moe.Extensions
 
 
 
-        public static async Task SendLongMessageAsync([NotNull] this IMessageChannel channel, string message)
+        public static async Task SendLongMessageAsync( this IMessageChannel channel, string message)
         {
             var strings = message.Batch(1900).Select(a => new string(a.ToArray())).ToArray();
 

@@ -1,14 +1,14 @@
 ﻿using System.IO.Abstractions;
 using System.Threading.Tasks;
 using Discord;
-using JetBrains.Annotations;
+
 using NAudio.Wave;
 
 namespace Mute.Moe.Services.SoundEffects
 {
     public interface ISoundEffectPlayer
     {
-        Task<(PlayResult, Task)> Play([NotNull] IUser player, [NotNull] ISoundEffect sfx);
+        Task<(PlayResult, Task)> Play( IUser player,  ISoundEffect sfx);
     }
 
     public enum PlayResult
@@ -21,10 +21,10 @@ namespace Mute.Moe.Services.SoundEffects
     public class SoundEffectPlayer
         : ISoundEffectPlayer
     {
-        [NotNull] private readonly IGuildSoundEffectQueueCollection _queueCollection;
+         private readonly IGuildSoundEffectQueueCollection _queueCollection;
         private readonly IFileSystem _fs;
 
-        public SoundEffectPlayer([NotNull] IGuildSoundEffectQueueCollection queueCollection, [NotNull] IFileSystem fs)
+        public SoundEffectPlayer( IGuildSoundEffectQueueCollection queueCollection,  IFileSystem fs)
         {
             _queueCollection = queueCollection;
             _fs = fs;

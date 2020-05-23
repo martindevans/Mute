@@ -10,8 +10,8 @@ namespace Mute.Moe.Discord.Modules
     public class Steam
         : BaseModule
     {
-        private ISteamInfo _steamApi;
-        private ISteamIdStorage _ids;
+        private readonly ISteamInfo _steamApi;
+        private readonly ISteamIdStorage _ids;
 
         public Steam(ISteamInfo steamApi, ISteamIdStorage ids)
         {
@@ -26,9 +26,9 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("recent")]
-        public async Task GetRecentGames(IUser user = null)
+        public async Task GetRecentGames(IUser? user = null)
         {
-            user = user ?? Context.User;
+            user ??= Context.User;
 
             var steamId = await _ids.Get(user.Id);
             if (!steamId.HasValue)

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
@@ -28,7 +28,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
 
         //private readonly IReadOnlyList<ITopic> _topics;
 
-        public ElizaResponse([NotNull] Configuration config, IServiceProvider services)
+        public ElizaResponse(Configuration config, IServiceProvider services)
         {
             ////Get topics
             //_topics = (from t in Assembly.GetExecutingAssembly().GetTypes()
@@ -46,7 +46,9 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
                         where kp != null
                        select kp).ToArray();
 
-            foreach (var path in config.ElizaConfig.Scripts)
+            var scripts = new List<Script>();
+            _scripts = scripts;
+            foreach (var path in config.ElizaConfig?.Scripts ?? new List<string>())
             {
                 if (!File.Exists(path))
                     continue;
@@ -55,7 +57,6 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
                 if (txt == null || txt.Length == 0)
                     continue;
 
-                var scripts = new List<Script>();
                 try
                 {
                     scripts.Add(new Script(txt, keys));
@@ -64,13 +65,12 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
                 {
                     Console.WriteLine($"Encountered exception {e} trying to read Eliza script {path}");
                 }
-                _scripts = scripts;
             }
         }
 
-        public Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
+        public Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
         {
-            return Task.Run<IConversation>(() => {
+            return Task.Run<IConversation?>(() => {
 
                 if (_scripts.Count == 0)
                     return null;
@@ -90,7 +90,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
             });
         }
 
-        [NotNull] private static string CleanWord([NotNull] string word)
+         private static string CleanWord( string word)
         {
             return new string(word
                 .ToLowerInvariant()
@@ -111,9 +111,9 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
 
             public bool IsComplete { get; private set; }
 
-            public Task<string> Respond(MuteCommandContext context, bool containsMention, CancellationToken ct)
+            public Task<string?> Respond(MuteCommandContext context, bool containsMention, CancellationToken ct)
             {
-                return Task.Run(() => {
+                return Task.Run<string?>(() => {
                     lock (_eliza)
                     {
                         var response = _eliza.ProcessInput(context);

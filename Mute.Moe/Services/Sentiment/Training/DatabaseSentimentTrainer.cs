@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Data.SQLite;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Sentiment.Training
@@ -13,7 +13,7 @@ namespace Mute.Moe.Services.Sentiment.Training
 
         private readonly IDatabaseService _database;
 
-        public DatabaseSentimentTrainer([NotNull] Configuration config, IDatabaseService database)
+        public DatabaseSentimentTrainer( Configuration config, IDatabaseService database)
         {
             _database = database;
 

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 {
@@ -23,7 +23,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	    /// # matches a number (eager)
 	    /// @word matches word or any of it's synonyms
 	    /// </remarks>
-	    [CanBeNull] public static IReadOnlyList<string> Match([NotNull] string str, [NotNull] string pat, IReadOnlyList<IReadOnlyCollection<string>> synonyms)
+	    public static IReadOnlyList<string>? Match(string str, string pat, IReadOnlyList<IReadOnlyCollection<string>> synonyms)
 	    {
             var regexPattern = BuildRegex(pat, synonyms);
 
@@ -34,7 +34,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	        return match.Groups.Skip(1).Select(m => m.Value).ToArray();
 		}
 
-	    [NotNull] private static string BuildRegex([NotNull] string pattern, IReadOnlyList<IReadOnlyCollection<string>> synonyms)
+	     private static string BuildRegex(string pattern, IReadOnlyList<IReadOnlyCollection<string>> synonyms)
 	    {
 	        //Transform pattern into a regex
 	        var regexPattern = new StringBuilder(pattern.Length);
@@ -67,7 +67,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	        return regexPattern.ToString();
 	    }
 
-	    private static int BuildSynonym(int index, [NotNull] string pat, [NotNull] StringBuilder regex, [NotNull] IEnumerable<IReadOnlyCollection<string>> synonyms)
+	    private static int BuildSynonym(int index,  string pat,  StringBuilder regex,  IEnumerable<IReadOnlyCollection<string>> synonyms)
 	    {
 	        int FindEndOfWord()
 	        {

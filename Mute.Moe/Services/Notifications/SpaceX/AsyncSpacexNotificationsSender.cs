@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Humanizer;
-using JetBrains.Annotations;
-using Mute.Moe.AsyncEnumerable.Extensions;
+
+
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.SpaceX;
 using Oddity.API.Models.Launch;
@@ -32,7 +32,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
         public bool Status => !_thread.IsFaulted;
 
         private readonly Task _thread;
-        private NotificationState _state;
+        private NotificationState? _state;
 
         public AsyncSpacexNotificationsSender(DiscordSocketClient client, ISpacexNotifications notifications, ISpacexInfo spacex)
         {
@@ -142,18 +142,18 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             }
         }
 
-        [NotNull] private static string NextLaunchChangedMessage([NotNull] LaunchInfo previous, [NotNull] LaunchInfo next)
+         private static string NextLaunchChangedMessage( LaunchInfo previous,  LaunchInfo next)
         {
             return $"The next SpaceX Launch has changed from {previous.MissionName} to {next.MissionName}";
         }
 
-        [NotNull] private static string ExpectedLaunchTimeChangedMessage([NotNull] LaunchInfo launch, DateTime previousT, DateTime newT)
+         private static string ExpectedLaunchTimeChangedMessage( LaunchInfo launch, DateTime previousT, DateTime newT)
         {
             var delay = newT - previousT;
             return $"SpaceX launch {launch.MissionName} has been delayed by {delay.Humanize()} to {newT:HH\\:mm UTC dd-MMM-yyyy}";
         }
 
-        [NotNull] private static string PeriodicReminderMessage([NotNull] LaunchInfo launch)
+         private static string PeriodicReminderMessage( LaunchInfo launch)
         {
             //Append video link if there is one.
             var video = "";
@@ -163,14 +163,14 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             return $"SpaceX launch {launch.MissionName} will launch in {launch.LaunchDateUtc.Humanize()} {video}";
         }
 
-        [NotNull, ItemNotNull]
-        private async Task<NotificationState> SendNotification([NotNull] LaunchInfo launch, string message)
+        private async Task<NotificationState> SendNotification( LaunchInfo launch, string message)
         {
             var subs = await _notifications.GetSubscriptions();
-            await subs.EnumerateAsync(async s =>
+
+            await foreach (var s in subs)
             {
                 if (!(_client.GetChannel(s.Channel) is ITextChannel channel))
-                    return;
+                    continue;
 
                 var m = message;
                 if (s.MentionRole.HasValue && channel is IGuildChannel gc)
@@ -181,7 +181,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                 }
 
                 await channel.SendMessageAsync(m);
-            });
+            }
 
             return new NotificationState(launch, DateTime.UtcNow);
         }
@@ -192,7 +192,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             public TimeSpan? TimeToLaunch { get; }
             public DateTime? LaunchTimeUtc { get; }
 
-            public NotificationState([NotNull] LaunchInfo launch, DateTime utcNow)
+            public NotificationState( LaunchInfo launch, DateTime utcNow)
             {
                 Launch = launch;
 

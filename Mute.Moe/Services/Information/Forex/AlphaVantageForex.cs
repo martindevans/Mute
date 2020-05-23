@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
-using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Forex
@@ -19,7 +18,7 @@ namespace Mute.Moe.Services.Information.Forex
         private readonly FluidCache<IForexQuote> _cache;
         private readonly IIndex<KeyValuePair<string, string>, IForexQuote> _bySymbolPair;
 
-        public AlphaVantageForex([NotNull] Configuration config, IHttpClientFactory http)
+        public AlphaVantageForex( Configuration config, IHttpClientFactory http)
         {
             _config = config.AlphaAdvantage;
             _http = http.CreateClient();
@@ -28,7 +27,7 @@ namespace Mute.Moe.Services.Information.Forex
             _bySymbolPair = _cache.AddIndex("BySymbolPair", a => new KeyValuePair<string, string>(a.FromCode, a.ToCode));
         }
 
-        public async Task<IForexQuote> GetExchangeRate(string fromSymbol, string toSymbol)
+        public async Task<IForexQuote?> GetExchangeRate(string fromSymbol, string toSymbol)
         {
             var cached = await _bySymbolPair.GetItem(new KeyValuePair<string, string>(fromSymbol, toSymbol));
             if (cached != null)
@@ -37,27 +36,28 @@ namespace Mute.Moe.Services.Information.Forex
             var from = Uri.EscapeUriString(fromSymbol);
             var to = Uri.EscapeUriString(toSymbol);
 
-            using (var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={from}&to_currency={to}&apikey={_config.Key}"))
-            {
-                if (!result.IsSuccessStatusCode)
-                    return null;
+            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={@from}&to_currency={to}&apikey={_config.Key}");
+            if (!result.IsSuccessStatusCode)
+                return null;
 
-                ExchangeRateResponseContainer response;
-                var serializer = new JsonSerializer();
-                using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
-                using (var jsonTextReader = new JsonTextReader(sr))
-                    response = serializer.Deserialize<ExchangeRateResponseContainer>(jsonTextReader);
+            ExchangeRateResponseContainer response;
+            var serializer = new JsonSerializer();
+            using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
+            using (var jsonTextReader = new JsonTextReader(sr))
+                response = serializer.Deserialize<ExchangeRateResponseContainer>(jsonTextReader)!;
 
-                _cache.Add(response.Response);
-                return response.Response;
-            }
+            if (response?.Response == null)
+                return null;
+
+            _cache.Add(response.Response);
+            return response.Response;
         }
 
         #region model
         private class ExchangeRateResponseContainer
         {
             [JsonProperty("Realtime Currency Exchange Rate"), UsedImplicitly]
-            public ExchangeRateResponse Response;
+            public ExchangeRateResponse? Response;
         }
 
         public class ExchangeRateResponse

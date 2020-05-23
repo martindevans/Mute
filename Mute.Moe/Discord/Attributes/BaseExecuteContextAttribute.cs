@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Attributes
@@ -13,7 +13,7 @@ namespace Mute.Moe.Discord.Attributes
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        [NotNull] protected internal abstract IEndExecute StartExecute([NotNull] MuteCommandContext context);
+         protected internal abstract IEndExecute StartExecute( MuteCommandContext context);
     }
 
     public class DisposableEnd

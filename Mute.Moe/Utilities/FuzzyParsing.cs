@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
+
 using Microsoft.Recognizers.Text;
 using Microsoft.Recognizers.Text.Choice;
 using Microsoft.Recognizers.Text.DateTime;
@@ -11,9 +11,9 @@ namespace Mute.Moe.Utilities
 {
     public static class FuzzyParsing
     {
-        [NotNull] public static MomentRangeExtraction MomentRange(string userInput, string culture = Culture.EnglishOthers)
+         public static MomentRangeExtraction MomentRange(string userInput, string culture = Culture.EnglishOthers)
         {
-            TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
+            static TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
             {
                 if (values.TryGetValue("utcOffsetMins", out var utcOff))
                 {
@@ -24,7 +24,7 @@ namespace Mute.Moe.Utilities
                 return TimeSpan.Zero;
             }
 
-            MomentRangeExtraction Extract(string input)
+            MomentRangeExtraction? Extract(string input)
             {
                 // Get DateTime for the specified culture
                 var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview, DateTime.UtcNow);
@@ -91,7 +91,7 @@ namespace Mute.Moe.Utilities
 
             public (DateTime, DateTime) Value { get; set; }
 
-            public string ErrorMessage { get; set; }
+            public string? ErrorMessage { get; set; }
         }
 
         /// <summary>
@@ -101,9 +101,9 @@ namespace Mute.Moe.Utilities
         /// <param name="culture"></param>
         /// <param name="biasNext">If there are multiple resolutions take the first one in the future</param>
         /// <returns></returns>
-        [NotNull] public static MomentExtraction Moment(string userInput, string culture = Culture.EnglishOthers, bool biasNext = true)
+         public static MomentExtraction Moment(string userInput, string culture = Culture.EnglishOthers, bool biasNext = true)
         {
-            TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
+            static TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
             {
                 if (values.TryGetValue("utcOffsetMins", out var utcOff))
                 {
@@ -114,7 +114,7 @@ namespace Mute.Moe.Utilities
                 return TimeSpan.Zero;
             }
 
-            MomentExtraction Extract(string input)
+            MomentExtraction? Extract(string input)
             {
                 // Get DateTime for the specified culture
                 var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview, DateTime.UtcNow);
@@ -181,12 +181,12 @@ namespace Mute.Moe.Utilities
 
             public DateTime Value { get; set; }
 
-            public string ErrorMessage { get; set; }
+            public string? ErrorMessage { get; set; }
         }
 
-        [NotNull] public static TimeOffsetExtraction TimeOffset(string input, string culture = Culture.EnglishOthers)
+         public static TimeOffsetExtraction TimeOffset(string input, string culture = Culture.EnglishOthers)
         {
-            TimeOffsetExtraction Extract()
+            TimeOffsetExtraction? Extract()
             {
                 var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview);
 
@@ -234,10 +234,10 @@ namespace Mute.Moe.Utilities
 
             public TimeSpan UtcOffset { get; set; }
 
-            public string ErrorMessage { get; set; }
+            public string? ErrorMessage { get; set; }
         }
 
-        [NotNull] public static BooleanChoiceExtraction BooleanChoice(string input, string culture = Culture.EnglishOthers)
+         public static BooleanChoiceExtraction BooleanChoice(string input, string culture = Culture.EnglishOthers)
         {
             var bools = ChoiceRecognizer.RecognizeBoolean(input, culture).Where(a => a.TypeName == "boolean").ToArray();
 
@@ -283,9 +283,9 @@ namespace Mute.Moe.Utilities
             }
         }
 
-        [NotNull] public static Extraction CurrencyAndAmount(string input, string culture = Culture.EnglishOthers)
+         public static Extraction CurrencyAndAmount(string input, string culture = Culture.EnglishOthers)
         {
-            Extraction Extract()
+            Extraction? Extract()
             {
                 var results = NumberWithUnitRecognizer.RecognizeCurrency(input, culture);
 
@@ -315,10 +315,10 @@ namespace Mute.Moe.Utilities
         {
             public bool IsValid { get; }
 
-            public string Currency { get; }
+            public string? Currency { get; }
             public decimal Amount { get; }
 
-            public string ErrorMessage { get; }
+            public string? ErrorMessage { get; }
 
             public Extraction(string error)
             {

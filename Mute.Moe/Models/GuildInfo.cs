@@ -1,6 +1,6 @@
 ﻿using System;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Models
 {
@@ -15,7 +15,7 @@ namespace Mute.Moe.Models
         public int Members { get; }
         public ulong Id { get; }
 
-        public GuildInfo([NotNull] SocketGuild guild)
+        public GuildInfo( SocketGuild guild)
         {
             CreatedAtUtc = guild.CreatedAt.UtcDateTime;
             IconUrl = guild.IconUrl;

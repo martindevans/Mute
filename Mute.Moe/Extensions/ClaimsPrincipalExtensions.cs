@@ -1,13 +1,13 @@
 ﻿using System.Security.Claims;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Extensions
 {
     public static class ClaimsPrincipalExtensions
     {
-        public static SocketUser TryGetDiscordUser([NotNull] this ClaimsPrincipal user, DiscordSocketClient client)
+        public static SocketUser? TryGetDiscordUser(this ClaimsPrincipal user, DiscordSocketClient client)
         {
             var idClaim = user.FindFirst(c => c.Type == ClaimTypes.NameIdentifier && c.Issuer == "Discord");
             if (idClaim == null)
@@ -19,7 +19,7 @@ namespace Mute.Moe.Extensions
             return client.GetUser(id);
         }
 
-        public static async Task<bool> IsBotOwner([NotNull] this ClaimsPrincipal user, DiscordSocketClient client)
+        public static async Task<bool> IsBotOwner(this ClaimsPrincipal user, DiscordSocketClient client)
         {
             var discordUser = user.TryGetDiscordUser(client);
             if (discordUser == null)
@@ -32,7 +32,7 @@ namespace Mute.Moe.Extensions
             return info.Owner.Id == discordUser.Id;
         }
 
-        public static async Task<bool> IsInBotGuild([NotNull] this ClaimsPrincipal user, DiscordSocketClient client)
+        public static async Task<bool> IsInBotGuild(this ClaimsPrincipal user, DiscordSocketClient client)
         {
             var discordUser = user.TryGetDiscordUser(client);
             if (discordUser == null)

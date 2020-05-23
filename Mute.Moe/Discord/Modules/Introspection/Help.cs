@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
-using JetBrains.Annotations;
-using Mute.Moe.AsyncEnumerable.Extensions;
+
+
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
@@ -22,7 +22,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
 
         private readonly char _prefixCharacter;
 
-        public Help(CommandService commands, IServiceProvider services, [NotNull] Configuration config)
+        public Help(CommandService commands, IServiceProvider services,  Configuration config)
         {
             _commands = commands;
             _services = services;
@@ -37,7 +37,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
             //Find modules which have at least one permitted command
             var modules = await FindModules();
 
-            string CommandsStr(IEnumerable<CommandInfo> cmds)
+            static string CommandsStr(IEnumerable<CommandInfo> cmds)
             {
                 return string.Join(", ", cmds.Select(a => $"`{a.Name}`").Distinct());
             }
@@ -55,8 +55,8 @@ namespace Mute.Moe.Discord.Modules.Introspection
         [Command("help"), Summary("I will tell you about commands or modules")]
         public async Task ListDetails([Remainder] string search)
         {
-            var commands = await FindCommands(search).ToArray();
-            var modules = await FindModules(search).ToArray();
+            var commands = (await FindCommands(search)).ToArray();
+            var modules = (await FindModules(search)).ToArray();
 
             if (commands[0].Key == 0)
                 await ReplyAsync(FormatCommandDetails(Context, _prefixCharacter, commands[0]));
@@ -75,7 +75,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
         [Summary("I will tell you about the commands in a specific module")]
         public async Task ListModuleDetails([Remainder] string search)
         {
-            var modules = await FindModules(search).ToArray();
+            var modules = (await FindModules(search)).ToArray();
             if (modules[0].Item1 == 0)
                 await ReplyAsync(FormatModuleDetails(Context, _prefixCharacter, modules[0].Item2));
             else
@@ -86,7 +86,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
         [Summary("I will tell you about a specific command")]
         public async Task ListCommandDetails([Remainder] string name)
         {
-            var commands = await FindCommands(name).ToArray();
+            var commands = (await FindCommands(name)).ToArray();
             if (commands[0].Key == 0)
             {
                 await ReplyAsync(FormatCommandDetails(Context, _prefixCharacter, commands[0]));
@@ -98,7 +98,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
             }
         }
 
-        [ItemNotNull] private async Task<IEnumerable<IGrouping<uint, CommandInfo>>> FindCommands(string search)
+        private async Task<IEnumerable<IGrouping<uint, CommandInfo>>> FindCommands(string search)
         {
             return from kvp in await FindModules()
                    let module = kvp.Key
@@ -110,7 +110,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
                    select grp;
         }
 
-        [ItemNotNull] private async Task<IEnumerable<(uint, ModuleInfo, IReadOnlyList<CommandInfo>)>> FindModules(string search)
+        private async Task<IEnumerable<(uint, ModuleInfo, IReadOnlyList<CommandInfo>)>> FindModules(string search)
         {
             //Find modules with at least one command we can execute, ordered by levenshtein distance to name or alias
             return from moduleKvp in await FindModules()
@@ -125,7 +125,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
         /// <summary>
         /// Find modules which have at least one command the user can execute
         /// </summary>
-        [ItemNotNull] private async Task<IReadOnlyDictionary<ModuleInfo, IReadOnlyList<CommandInfo>>> FindModules()
+        private async Task<IReadOnlyDictionary<ModuleInfo, IReadOnlyList<CommandInfo>>> FindModules()
         {
             //Find non hidden modules
             var modules = _commands
@@ -149,7 +149,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
             return output;
         }
 
-        [NotNull] private static EmbedBuilder CreateEmbed([NotNull] ICommandContext context, char prefix, string title, string description)
+         private static EmbedBuilder CreateEmbed( ICommandContext context, char prefix, string title, string description)
         {
             return new EmbedBuilder()
                 .WithAuthor(context.Client.CurrentUser)
@@ -158,14 +158,14 @@ namespace Mute.Moe.Discord.Modules.Introspection
                 .WithDescription(description);
         }
 
-        [NotNull] private static string FormatCommandName([NotNull] CommandInfo cmd, char prefix)
+         private static string FormatCommandName( CommandInfo cmd, char prefix)
         {
             return cmd.Aliases.Count == 1
                  ? $"`{prefix}{cmd.Aliases[0].ToLowerInvariant()}`"
                  : $"`!({string.Join('/', cmd.Aliases.Select(a => a.ToLowerInvariant()))})`";
         }
 
-        [NotNull] public static EmbedBuilder FormatCommandDetails([NotNull] ICommandContext context, char prefix, [NotNull] IEnumerable<CommandInfo> cmds)
+         public static EmbedBuilder FormatCommandDetails( ICommandContext context, char prefix,  IEnumerable<CommandInfo> cmds)
         {
             EmbedBuilder SingleCommandDetails(CommandInfo cmd)
             {
@@ -227,7 +227,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
                  : MultiCommandDetails(cmdArr);
         }
 
-        [NotNull] private static EmbedBuilder FormatModuleDetails([NotNull] ICommandContext context, char prefix, [NotNull] ModuleInfo module)
+         private static EmbedBuilder FormatModuleDetails( ICommandContext context, char prefix,  ModuleInfo module)
         {
             return CreateEmbed(context, prefix, module.Name, module.Summary ?? module.Remarks)
                 .AddField("Commands:", string.Join(", ", module.Commands.Select(a => FormatCommandName(a, prefix))));

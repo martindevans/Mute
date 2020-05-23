@@ -1,5 +1,5 @@
 ﻿using System;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Extensions
 {
@@ -17,7 +17,7 @@ namespace Mute.Moe.Extensions
             Value = value;
         }
 
-        public static FriendlyId64? Parse([NotNull] string str)
+        public static FriendlyId64? Parse( string str)
         {
             var parts = str.Split('-');
             if (parts.Length != 4)
@@ -52,7 +52,7 @@ namespace Mute.Moe.Extensions
             return new FriendlyId64(value);
         }
 
-        [NotNull] public override string ToString()
+         public override string ToString()
         {
             var number = Value;
             unchecked
@@ -78,7 +78,7 @@ namespace Mute.Moe.Extensions
 
     public static class UInt64Extensions
     {
-        [NotNull] public static string MeaninglessString(this ulong number)
+         public static string MeaninglessString(this ulong number)
         {
             return new FriendlyId64(number).ToString();
         }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Database
 {
@@ -26,43 +26,46 @@ namespace Mute.Moe.Services.Database
             _read = read;
         }
 
-        [NotNull]
-        IAsyncEnumerator<TItem> IAsyncEnumerable<TItem>.GetEnumerator()
+        
+        IAsyncEnumerator<TItem> IAsyncEnumerable<TItem>.GetAsyncEnumerator(CancellationToken ct)
         {
-            return new AsyncEnumerator(_prepare(_database), _read);
+            return new AsyncEnumerator(_prepare(_database), _read, ct);
         }
 
         private class AsyncEnumerator
-            : IAsyncEnumerator<TItem>, IDisposable
+            : IAsyncEnumerator<TItem>
         {
             private readonly DbCommand _query;
             private readonly Func<DbDataReader, TItem> _read;
+            private readonly CancellationToken _cancellation;
 
-            private DbDataReader _reader;
+            private DbDataReader? _reader;
 
-            public AsyncEnumerator(DbCommand query, Func<DbDataReader, TItem> read)
+            public AsyncEnumerator(DbCommand query, Func<DbDataReader, TItem> read, CancellationToken cancellation)
             {
                 _query = query;
                 _read = read;
+                _cancellation = cancellation;
             }
 
-            public void Dispose()
+            public async ValueTask<bool> MoveNextAsync()
+            {
+                _reader ??= await _query.ExecuteReaderAsync(_cancellation);
+
+                return await _reader.ReadAsync(_cancellation);
+            }
+
+            public TItem Current => _reader == null ? throw new InvalidOperationException("Called `Current` before `MoveNextAsync` or after `Dispose`") : _read(_reader);
+
+            public ValueTask DisposeAsync()
             {
                 _query.Dispose();
 
                 _reader?.Dispose();
                 _reader = null;
+
+                return new ValueTask(Task.CompletedTask);
             }
-
-            public async Task<bool> MoveNext(CancellationToken cancellationToken)
-            {
-                if (_reader == null)
-                    _reader = await _query.ExecuteReaderAsync(cancellationToken);
-
-                return await _reader.ReadAsync(cancellationToken);
-            }
-
-            public TItem Current => _read(_reader);
         }
     }
 }

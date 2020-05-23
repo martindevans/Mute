@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Payment
 {
     public interface IPendingTransactions
     {
-        [NotNull] Task<uint> CreatePending(ulong fromId, ulong toId, decimal amount, [NotNull] string unit, [CanBeNull] string note, DateTime instant);
+         Task<uint> CreatePending(ulong fromId, ulong toId, decimal amount,  string unit, string? note, DateTime instant);
 
-        [NotNull, ItemNotNull] Task<IAsyncEnumerable<IPendingTransaction>> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, [CanBeNull] string unit = null, DateTime? after = null, DateTime? before = null);
+         IAsyncEnumerable<IPendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
 
-        [NotNull] Task<ConfirmResult> ConfirmPending(uint id);
+         Task<ConfirmResult> ConfirmPending(uint id);
 
-        [NotNull] Task<DenyResult> DenyPending(uint id);
+         Task<DenyResult> DenyPending(uint id);
     }
 
     public enum ConfirmResult
@@ -57,8 +57,8 @@ namespace Mute.Moe.Services.Payment
         decimal Amount { get; }
         DateTime Instant { get; }
 
-        [NotNull] string Unit { get; }
-        [CanBeNull] string Note { get; }
+        string Unit { get; }
+        string? Note { get; }
 
         PendingState State { get; }
     }
@@ -72,12 +72,12 @@ namespace Mute.Moe.Services.Payment
         public DateTime Instant { get; }
 
         public string Unit { get; }
-        public string Note { get; }
+        public string? Note { get; }
 
         public PendingState State { get; }
         public uint Id { get; }
 
-        public PendingTransaction(ulong fromId, ulong toId, decimal amount, [NotNull] string unit, [CanBeNull] string note, DateTime instant, PendingState state, uint id)
+        public PendingTransaction(ulong fromId, ulong toId, decimal amount,  string unit, string? note, DateTime instant, PendingState state, uint id)
         {
             FromId = fromId;
             ToId = toId;

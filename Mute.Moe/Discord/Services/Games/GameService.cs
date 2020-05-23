@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Discord.Services.Games
@@ -11,10 +11,10 @@ namespace Mute.Moe.Discord.Services.Games
     {
         private const string InsertGamePlayed = "INSERT OR IGNORE INTO `Games_Played` (`UserId`,`GameId`) VALUES (@UserId,@GameId);";
 
-        [NotNull] private readonly DiscordSocketClient _client;
-        [NotNull] private readonly IDatabaseService _database;
+         private readonly DiscordSocketClient _client;
+         private readonly IDatabaseService _database;
 
-        public GameService([NotNull] DiscordSocketClient client, [NotNull] IDatabaseService database)
+        public GameService( DiscordSocketClient client,  IDatabaseService database)
         {
             _client = client;
             _database = database;
@@ -26,7 +26,7 @@ namespace Mute.Moe.Discord.Services.Games
             database.Exec("CREATE INDEX IF NOT EXISTS `GamesPlayedByGame` ON `Games_Played` (`GameId` ASC);");
         }
 
-        private async Task Updated([NotNull] SocketUser _, [NotNull] SocketUser b)
+        private async Task Updated( SocketUser _,  SocketUser b)
         {
             if (b.Activity.Type != ActivityType.Playing)
                 return;

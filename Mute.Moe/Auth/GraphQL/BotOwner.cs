@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord.WebSocket;
 using GraphQL.Authorization;
-using JetBrains.Annotations;
 using Mute.Moe.Extensions;
 using Mute.Moe.GQL;
 
@@ -17,7 +16,7 @@ namespace Mute.Moe.Auth.GraphQL
             _client = client;
         }
 
-        public async Task Authorize([NotNull] AuthorizationContext context)
+        public async Task Authorize(AuthorizationContext context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;

@@ -21,10 +21,9 @@ namespace Mute.Moe.Discord.Context.Postprocessing
         public uint Order => 0;
 
         private readonly IReadOnlyList<string[]> _responses = new[] {
-            new[] { "What?" },
             new[] { "Enhance your calm" },
             new[] { "Alright, don't shout at me!" },
-            new[] { "EVERYONE STAY CALM", "NOBODY PANIC!" }
+            new[] { "EVERYONE STAY CALM", "NOBODY PANIC!", "IT'S NOT AS BAD AS IT LOOKS" }
         };
 
         public EnhanceYourChill(Configuration config, Random random, ITextToSpeech tts, IGuildSpeechQueueCollection ttsQueue)

@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Steam.Models.SteamCommunity;
 using Steam.Models.SteamPlayer;
-using Steam.Models.SteamStore;
 using SteamWebAPI2.Interfaces;
 using SteamWebAPI2.Utilities;
 
@@ -17,7 +15,7 @@ namespace Mute.Moe.Services.Information.Steam
         private readonly SteamUserStats _stats;
         private readonly PlayerService _players;
 
-        public SteamApi([NotNull] Configuration config, [NotNull] HttpClient http)
+        public SteamApi( Configuration config,  HttpClient http)
         {
             var factory = new SteamWebInterfaceFactory(config.Steam.WebApiKey);
 
@@ -26,31 +24,31 @@ namespace Mute.Moe.Services.Information.Steam
             _players = factory.CreateSteamWebInterface<PlayerService>(http);
         }
 
-        public async Task<IReadOnlyCollection<OwnedGameModel>> GetOwnedGames(ulong userSteamId)
+        public async Task<IReadOnlyCollection<OwnedGameModel>?> GetOwnedGames(ulong userSteamId)
         {
             var response = await _players.GetOwnedGamesAsync(userSteamId, true, true);
             return response.Data.OwnedGames;
         }
 
-        public async Task<IReadOnlyCollection<RecentlyPlayedGameModel>> GetRecentlyPlayedGames(ulong userSteamId)
+        public async Task<IReadOnlyCollection<RecentlyPlayedGameModel>?> GetRecentlyPlayedGames(ulong userSteamId)
         {
             var response = await _players.GetRecentlyPlayedGamesAsync(userSteamId);
             return response.Data.RecentlyPlayedGames;
         }
 
-        public async Task<PlayerSummaryModel> GetUserSummary(ulong userSteamId)
+        public async Task<PlayerSummaryModel?> GetUserSummary(ulong userSteamId)
         {
             var response = await _user.GetPlayerSummaryAsync(userSteamId);
             return response.Data;
         }
 
-        public async Task<SteamCommunityProfileModel> GetUserCommunityProfile(ulong userSteamId)
+        public async Task<SteamCommunityProfileModel?> GetUserCommunityProfile(ulong userSteamId)
         {
             var response = await _user.GetCommunityProfileAsync(userSteamId);
             return response;
         }
 
-        public async Task<UserStatsForGameResultModel> GetUserStatsForGame(ulong userSteamId, uint appId)
+        public async Task<UserStatsForGameResultModel?> GetUserStatsForGame(ulong userSteamId, uint appId)
         {
             var result = await _stats.GetUserStatsForGameAsync(userSteamId, appId);
             return result.Data;

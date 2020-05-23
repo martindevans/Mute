@@ -1,20 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Information.Cryptocurrency
 {
     public interface ICryptocurrencyInfo
     {
-        [ItemCanBeNull] Task<ICurrency> FindBySymbol([NotNull] string symbol);
+        Task<ICurrency?> FindBySymbol(string symbol);
 
-        [ItemCanBeNull] Task<ICurrency> FindByName([NotNull] string name);
+        Task<ICurrency?> FindByName(string name);
 
-        [ItemCanBeNull] Task<ICurrency> FindBySymbolOrName([NotNull] string symbolOrName);
+        Task<ICurrency?> FindBySymbolOrName(string symbolOrName);
 
-        [ItemCanBeNull] Task<ICurrency> FindById(uint id);
+        Task<ICurrency?> FindById(uint id);
 
-        [ItemCanBeNull] Task<ITicker> GetTicker([NotNull] ICurrency currency, [CanBeNull] string quote = null);
+        Task<ITicker?> GetTicker(ICurrency currency, string? quote = null);
     }
 
     public interface IQuote

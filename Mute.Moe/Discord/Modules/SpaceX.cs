@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Services.Information.SpaceX;
@@ -90,16 +91,16 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("subscribe"), RequireOwner]
-        public async Task Subscribe([CanBeNull] IRole role = null)
+        public async Task Subscribe(IRole? role = null)
         {
             await _notifications.Subscribe(Context.Channel.Id, role?.Id);
             await TypingReplyAsync("Subscribed to receive SpaceX mission updates");
         }
 
         #region helpers
-        [ItemNotNull] private async Task<IReadOnlyList<string>> DescribeUpcomingFlights(int count)
+        private async Task<IReadOnlyList<string>> DescribeUpcomingFlights(int count)
         {
-            var next = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.LaunchDateUtc.Value).Take(count).ToArray();
+            var next = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a?.LaunchDateUtc ?? DateTime.MaxValue).Take(count).ToArray();
 
             var responses = new List<string>();
             foreach (var item in next)

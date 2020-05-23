@@ -9,10 +9,8 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
-using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.Introspection
 {
@@ -29,33 +27,31 @@ namespace Mute.Moe.Discord.Modules.Introspection
         }
 
         [Command("userid"), Summary("I will type out the ID of the specified user")]
-        public async Task UserId(IUser user = null)
+        public async Task UserId(IUser? user = null)
         {
-            user = user ?? Context.User;
+            user ??= Context.User;
 
             await TypingReplyAsync($"User ID for {user.Username} is `{user.Id}`");
         }
 
         [Command("whois"), Summary("I will print out a summary of information about the given user")]
-        public async Task Whois([CanBeNull] IUser user = null)
+        public async Task Whois(IUser? user = null)
         {
             await TypingReplyAsync(GetUserInfo(user ?? Context.User));
         }
 
         [Command("avatar"), Summary("I will show the avatar for a user")]
-        public async Task Avatar([CanBeNull] IUser user = null)
+        public async Task Avatar(IUser? user = null)
         {
             var u = user ?? Context.User;
             var url = u.GetAvatarUrl(ImageFormat.Png, 2048);
-            
-            using (var resp = await _http.GetAsync(url))
-            {
-                var m = new MemoryStream();
-                await resp.Content.CopyToAsync(m);
-                m.Position = 0;
 
-                await Context.Channel.SendFileAsync(m, $"{Name(u)}.png");
-            }
+            using var resp = await _http.GetAsync(url);
+            var m = new MemoryStream();
+            await resp.Content.CopyToAsync(m);
+            m.Position = 0;
+
+            await Context.Channel.SendFileAsync(m, $"{Name(u)}.png");
         }
 
         private string GetUserInfo(string userid)
@@ -73,7 +69,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
                 return GetUserInfo(_client.GetUser(id));
         }
 
-        private static string GetUserInfo([NotNull] IUser user)
+        private static string GetUserInfo( IUser user)
         {
             var str = new StringBuilder($"{user.Username}");
 

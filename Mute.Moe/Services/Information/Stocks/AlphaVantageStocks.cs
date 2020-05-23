@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
 using JetBrains.Annotations;
-using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Stocks
@@ -18,7 +17,7 @@ namespace Mute.Moe.Services.Information.Stocks
         private readonly FluidCache<IStockQuote> _cache;
         private readonly IIndex<string, IStockQuote> _bySymbol;
 
-        public AlphaVantageStocks([NotNull] Configuration config, IHttpClientFactory http)
+        public AlphaVantageStocks( Configuration config, IHttpClientFactory http)
         {
             _config = config.AlphaAdvantage;
             _http = http.CreateClient();
@@ -27,7 +26,7 @@ namespace Mute.Moe.Services.Information.Stocks
             _bySymbol = _cache.AddIndex("BySymbol", a => a.Symbol);
         }
 
-        public async Task<IStockQuote> GetQuote(string stock)
+        public async Task<IStockQuote?> GetQuote(string stock)
         {
             //https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=msft&apikey=demo
 
@@ -40,13 +39,13 @@ namespace Mute.Moe.Services.Information.Stocks
                 if (!result.IsSuccessStatusCode)
                     return null;
 
-                StockQuoteResponseContainer response;
+                StockQuoteResponseContainer? response;
                 var serializer = new JsonSerializer();
                 using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
                 using (var jsonTextReader = new JsonTextReader(sr))
                     response = serializer.Deserialize<StockQuoteResponseContainer>(jsonTextReader);
 
-                if (response.Response?.Symbol == null)
+                if (response?.Response?.Symbol == null)
                     return null;
 
                 _cache.Add(response.Response);
@@ -57,13 +56,13 @@ namespace Mute.Moe.Services.Information.Stocks
         private class StockQuoteResponseContainer
         {
             [JsonProperty("Global Quote"), UsedImplicitly]
-            public StockQuoteResponse Response;
+            public StockQuoteResponse? Response;
         }
 
         public class StockQuoteResponse
             : IStockQuote
         {
-            [JsonProperty("01. symbol"), UsedImplicitly] public string Symbol { get; private set; }
+            [JsonProperty("01. symbol"), UsedImplicitly] public string? Symbol { get; private set; }
 
             [JsonProperty("02. open"), UsedImplicitly] public decimal Open { get; private set; }
             [JsonProperty("03. high"), UsedImplicitly] public decimal High { get; private set; }

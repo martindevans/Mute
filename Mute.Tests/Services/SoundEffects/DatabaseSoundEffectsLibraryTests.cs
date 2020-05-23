@@ -128,7 +128,7 @@ namespace Mute.Tests.Services.SoundEffects
             var aliased2 = await sx.Alias("na", created);
             var aliased3 = await sx.Alias("n", created);
 
-            var found = await (await sx.Find(123, "na")).ToArray();
+            var found = await (sx.Find(123, "na")).ToArrayAsync();
 
             Assert.AreEqual(3, found.Length);
             Assert.IsTrue(found.Any(a => a.Name == "na"));

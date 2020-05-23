@@ -1,7 +1,7 @@
 ﻿using Discord;
 using GraphQL.Authorization;
 using GraphQL.Types;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.GQL.Schema
 {
@@ -22,7 +22,7 @@ namespace Mute.Moe.GQL.Schema
             Field(typeof(StringGraphType), "avatarUrl", resolve: GetAvatarUrl);
         }
 
-        private object GetAvatarUrl([NotNull] ResolveFieldContext<IGuildUser> ctx)
+        private object GetAvatarUrl( ResolveFieldContext<IGuildUser> ctx)
         {
             return ctx.Source.GetAvatarUrl(ImageFormat.Jpeg, 512)
                 ?? ctx.Source.GetDefaultAvatarUrl();

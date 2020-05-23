@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Discord.Context
 {
@@ -20,7 +20,7 @@ namespace Mute.Moe.Discord.Context
             Services = services;
         }
 
-        public bool TryGet<T>(out T value)
+        public bool TryGet<T>(out T? value)
             where T : class
         {
             if (_resources.TryGetValue(typeof(T), out var obj))
@@ -33,7 +33,7 @@ namespace Mute.Moe.Discord.Context
             return false;
         }
 
-        [NotNull] public Task<T> GetOrAdd<T>(Func<Task<T>> create)
+         public Task<T> GetOrAdd<T>(Func<Task<T>> create)
             where T : class
         {
             return Task.FromResult((T)_resources.GetOrAdd(typeof(T), _ => Task.Run(async () => await create()).Result));

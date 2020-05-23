@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Data.SQLite;
 using System.Globalization;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 
@@ -29,7 +29,7 @@ namespace Mute.Moe.Services.Payment
             _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_Transactions` (`FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT);");
         }
 
-        public async Task CreateTransaction(ulong fromId, ulong toId, decimal amount, string unit, string note, DateTime instant)
+        public async Task CreateTransaction(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
         {
             if (amount < 0)
                 throw new ArgumentOutOfRangeException(nameof(amount), "Cannot transact a negative amount");
@@ -38,24 +38,22 @@ namespace Mute.Moe.Services.Payment
             if (fromId == toId)
                 throw new InvalidOperationException("Cannot transact from self to self");
 
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertTransactionSql;
-                cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
-                cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
-                cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = instant.UnixTimestamp() });
+            using var cmd = _database.CreateCommand();
+            cmd.CommandText = InsertTransactionSql;
+            cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId.ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId.ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
+            cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
+            cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
+            cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = instant.UnixTimestamp() });
 
-                // ReSharper disable once UnusedVariable
-                var id = await cmd.ExecuteScalarAsync();
-            }
+            // ReSharper disable once UnusedVariable
+            var id = await cmd.ExecuteScalarAsync();
         }
 
-        public async Task<IAsyncEnumerable<ITransaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, [CanBeNull] string unit = null, DateTime? after = null, DateTime? before = null)
+        public IAsyncEnumerable<ITransaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
         {
-            ITransaction ParseTransaction(DbDataReader reader)
+            static ITransaction ParseTransaction(DbDataReader reader)
             {
                 return new Transaction(
                     ulong.Parse((string)reader["FromId"]),

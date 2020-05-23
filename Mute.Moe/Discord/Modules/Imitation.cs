@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Imitation;
 using Mute.Moe.Utilities;
@@ -19,7 +18,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("imitate"), Summary("I will speak with the voice of another user")]
-        public async Task ImitateAsync([NotNull] IUser user, string prompt = null)
+        public async Task ImitateAsync( IUser user, string? prompt = null)
         {
             var model = await _models.GetModel(user);
 
@@ -38,7 +37,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [RequireOwner, Command("imitate-train"), Summary("I will begin training an imitation model for the given user"), ThinkingReply(EmojiLookup.Loading)]
-        public async Task ImitateTrainAsync([NotNull] IUser user)
+        public async Task ImitateTrainAsync( IUser user)
         {
             var model = await _models.GetModel(user);
             if (model != null)

@@ -7,7 +7,7 @@ namespace Mute.Moe.Services.Notifications.RSS
     {
         Task Subscribe(string feedUrl, ulong channel, ulong? mentionGroup);
 
-        Task<IAsyncEnumerable<IRssSubscription>> GetSubscriptions();
+        IAsyncEnumerable<IRssSubscription> GetSubscriptions();
     }
 
     public interface IRssSubscription

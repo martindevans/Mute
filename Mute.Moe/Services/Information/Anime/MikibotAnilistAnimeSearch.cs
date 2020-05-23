@@ -1,31 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Miki.Anilist;
+using Miki.Anilist.Objects;
 
 namespace Mute.Moe.Services.Information.Anime
 {
     public class MikibotAnilistAnimeSearch
         : BaseMikibotMediaSearchService<IAnime>, IAnimeInfo
     {
-        public MikibotAnilistAnimeSearch(IHttpClientFactory http)
+        public MikibotAnilistAnimeSearch()
             : base(MediaFormat.MANGA, MediaFormat.NOVEL, MediaFormat.MUSIC)    //This is a list of formats _not_ to return!
         {
         }
 
-        public Task<IAnime> GetAnimeInfoAsync(string search)
+        public Task<IAnime?> GetAnimeInfoAsync(string search)
         {
             return GetItemInfoAsync(search);
         }
 
-        public Task<IAsyncEnumerable<IAnime>> GetAnimesInfoAsync(string search)
+        public IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search)
         {
             return GetItemsInfoAsync(search);
         }
 
-        public Task<IAsyncEnumerable<IAnime>> GetAnimesInfoAsync(ICharacter search)
+        public IAsyncEnumerable<IAnime> GetAnimesInfoAsync(ICharacter search)
         {
             return GetItemsInfoAsync(search);
         }
@@ -43,7 +42,7 @@ namespace Mute.Moe.Services.Information.Anime
         private class MikibotAnime
             : IAnime
         {
-            public MikibotAnime([NotNull] IMedia media)
+            public MikibotAnime( IMedia media)
             {
                 Id = media.Id.ToString();
 

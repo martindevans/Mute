@@ -5,9 +5,8 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using MoreLinq;
-using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Utilities;
@@ -33,9 +32,9 @@ namespace Mute.Moe.Discord.Modules.Audio
         }
 
         [Command, Summary("I will join the voice channel you are in and play a sound effect"), Priority(0)]
-        public async Task Play([NotNull] string id)
+        public async Task Play( string id)
         {
-            var found = await _library.Find(Context.Guild.Id, id).ToArray();
+            var found = await _library.Find(Context.Guild.Id, id).ToArrayAsync();
 
             if (found.Length == 0)
             {
@@ -65,9 +64,9 @@ namespace Mute.Moe.Discord.Modules.Audio
         }
 
         [Command("find"), Summary("I will list all available sfx"), Priority(1)]
-        public async Task Find([NotNull] string search)
+        public async Task Find( string search)
         {
-            var sfx = await _library.Find(Context.Guild.Id, search).OrderBy(a => a.Name).ToArray();
+            var sfx = await _library.Find(Context.Guild.Id, search).OrderBy(a => a.Name).ToArrayAsync();
 
             if (sfx.Length == 0)
             {
@@ -88,7 +87,7 @@ namespace Mute.Moe.Discord.Modules.Audio
         }
 
         [Command("create"), Summary("I will add a new sound effect to the database"), Priority(1)]
-        public async Task Create([NotNull] string name)
+        public async Task Create( string name)
         {
             await TypingReplyAsync("Please upload an audio file for this sound effect. It must be under 15s and 1MiB!");
 
@@ -146,7 +145,7 @@ namespace Mute.Moe.Discord.Modules.Audio
         }
 
         [Command("alias"), Summary("I will create an alias for another sound effect"), Priority(1)]
-        public async Task Alias([NotNull] string name, [NotNull] string alias)
+        public async Task Alias( string name,  string alias)
         {
             var a = await _library.Get(Context.Guild.Id, name);
             var b = await _library.Get(Context.Guild.Id, alias);
@@ -165,8 +164,8 @@ namespace Mute.Moe.Discord.Modules.Audio
 
             if (a == null)
             {
-                await _library.Alias(name, b);
-                await TypingReplyAsync($"Aliased `{b.Name}` as `{name}`");
+                await _library.Alias(name, b!);
+                await TypingReplyAsync($"Aliased `{b!.Name}` as `{name}`");
             }
             else
             {

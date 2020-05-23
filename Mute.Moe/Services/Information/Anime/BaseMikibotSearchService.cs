@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using FluidCaching;
-using JetBrains.Annotations;
 using Miki.Anilist;
-using Mute.Moe.AsyncEnumerable;
-using Mute.Moe.AsyncEnumerable.Extensions;
+using Miki.Anilist.Objects;
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Services.Information.Anime
@@ -32,7 +30,7 @@ namespace Mute.Moe.Services.Information.Anime
             return client.SearchMediaAsync(search, index, false, filter: _formats);
         }
 
-        protected override async Task<TItem> GetItemAsync(AnilistClient client, IMediaSearchResult item)
+        protected override async Task<TItem?> GetItemAsync(AnilistClient client, IMediaSearchResult item)
         {
             var mediaItem = await client.GetMediaAsync(item.Id);
             if (mediaItem == null)
@@ -52,7 +50,7 @@ namespace Mute.Moe.Services.Information.Anime
             return itemTitle.Levenshtein(searchTerm);
         }
 
-        [NotNull] protected abstract TItem WrapItem([NotNull] IMedia media);
+         protected abstract TItem WrapItem( IMedia media);
     }
 
     public abstract class BaseMikibotSearchService<TSearchItem, TItem>
@@ -68,53 +66,52 @@ namespace Mute.Moe.Services.Information.Anime
             _itemById = _cache.AddIndex("id", ExtractId);
         }
 
-        [ItemCanBeNull] protected async Task<TItem> GetItemInfoAsync(string search)
+        protected async Task<TItem?> GetItemInfoAsync(string search)
         {
             search = search.ToLowerInvariant();
 
             var client = new AnilistClient();
 
-            var result = await (await GetSearchItemsAsync(client, search)).FirstOrDefault();
+            var result = await GetSearchItemsAsync(client, search).FirstOrDefaultAsync();
             if (result == null)
                 return null;
 
             return await GetItemAsyncCached(client, result);
         }
 
-        protected async Task<IAsyncEnumerable<TItem>> GetItemsInfoAsync(ICharacter character)
+        protected IAsyncEnumerable<TItem> GetItemsInfoAsync(ICharacter character)
         {
             throw new NotImplementedException();
         }
 
-        protected async Task<IAsyncEnumerable<TItem>> GetItemsInfoAsync(string search)
+         protected IAsyncEnumerable<TItem> GetItemsInfoAsync(string search)
         {
             var client = new AnilistClient();
 
-            return (await GetSearchItemsAsync(client, search))
+            return GetSearchItemsAsync(client, search)
                 .OrderBy(i => Distance(i, search))
-                .Select(async i => await GetItemAsyncCached(client, i));
+                .SelectAwait(async i => await GetItemAsyncCached(client, i))
+                .Where(a => a != null)
+                .Select(a => a!);
         }
 
-        private async Task<IAsyncEnumerable<TSearchItem>> GetSearchItemsAsync(AnilistClient client, string search)
+        private async IAsyncEnumerable<TSearchItem> GetSearchItemsAsync(AnilistClient client, string search)
         {
             search = search.ToLowerInvariant();
 
-            async Task<ISearchResult<TSearchItem>> Page(ISearchResult<TSearchItem> previous)
+            for (var i = 0; i < 2; i++)
             {
-                //Stop once there is no next page
-                if (!(previous?.PageInfo.HasNextPage ?? true))
-                    return null;
+                var page = await SearchPage(client, search, i);
 
-                //Get next page
-                var index = (previous?.PageInfo.CurrentPage ?? -1) + 1;
-                var r = await SearchPage(client, search, index);
-                return r;
+                foreach (var item in page.Items)
+                    yield return item;
+
+                if (!page.PageInfo.HasNextPage)
+                    break;
             }
-
-            return new SearchResultAsyncEnumerable<TSearchItem>(Page, 2);
         }
 
-        [ItemCanBeNull] private async Task<TItem> GetItemAsyncCached([NotNull] AnilistClient client, [NotNull] TSearchItem searchItem)
+        private async Task<TItem?> GetItemAsyncCached(AnilistClient client, TSearchItem searchItem)
         {
             var cached = await _itemById.GetItem(ExtractId(searchItem));
             if (cached != null)
@@ -129,23 +126,14 @@ namespace Mute.Moe.Services.Information.Anime
             return item;
         }
 
-        [ItemCanBeNull] protected abstract Task<TItem> GetItemAsync([NotNull] AnilistClient client, [NotNull] TSearchItem searchItem);
+        protected abstract Task<TItem?> GetItemAsync(AnilistClient client, TSearchItem searchItem);
 
-        protected abstract uint Distance([NotNull] TSearchItem item, string search);
+        protected abstract uint Distance( TSearchItem item, string search);
 
-        protected abstract string ExtractId([NotNull] TSearchItem item);
+        protected abstract string ExtractId( TSearchItem item);
 
-        protected abstract string ExtractId([NotNull] TItem item);
+        protected abstract string ExtractId( TItem item);
 
-        protected abstract Task<ISearchResult<TSearchItem>> SearchPage([NotNull] AnilistClient client, string search, int index);
-
-        private class SearchResultAsyncEnumerable<T>
-            : PagedAsyncEnumerable<ISearchResult<T>, T>
-        {
-            public SearchResultAsyncEnumerable(Func<ISearchResult<T>, Task<ISearchResult<T>>> page, uint batchLimit = uint.MaxValue)
-                : base(page, p => p.Items.GetEnumerator(), batchLimit)
-            {
-            }
-        }
+        protected abstract Task<ISearchResult<TSearchItem>> SearchPage(AnilistClient client, string search, int index);
     }
 }

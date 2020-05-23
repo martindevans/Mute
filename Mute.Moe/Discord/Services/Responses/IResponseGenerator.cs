@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Services.Responses
@@ -23,7 +23,7 @@ namespace Mute.Moe.Discord.Services.Responses
         /// <param name="context"></param>
         /// <param name="containsMention"></param>
         /// <returns></returns>
-        [NotNull, ItemCanBeNull] Task<IConversation> TryRespond([NotNull] MuteCommandContext context, bool containsMention);
+        Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention);
     }
 
     public interface IConversation
@@ -37,6 +37,6 @@ namespace Mute.Moe.Discord.Services.Responses
         /// Generate a response for the given message
         /// </summary>
         /// <returns></returns>
-        [NotNull, ItemCanBeNull] Task<string> Respond([NotNull] MuteCommandContext message, bool containsMention, CancellationToken ct);
+        Task<string?> Respond(MuteCommandContext message, bool containsMention, CancellationToken ct);
     }
 }

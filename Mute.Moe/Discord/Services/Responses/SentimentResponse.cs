@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Sentiment;
@@ -41,13 +41,13 @@ namespace Mute.Moe.Discord.Services.Responses
 
         private readonly SentimentReactionConfig _config;
 
-        public SentimentResponse([NotNull] Configuration config, [NotNull] Random random)
+        public SentimentResponse( Configuration config,  Random random)
         {
             _config = config.SentimentReactions;
             _random = random;
         }
 
-        public async Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
+        public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
         {
             var s = await context.Sentiment();
 
@@ -63,7 +63,7 @@ namespace Mute.Moe.Discord.Services.Responses
         private class SentimentConversation
             : TerminalConversation
         {
-            public SentimentConversation([CanBeNull] params IEmote[] reactions)
+            public SentimentConversation(params IEmote[]? reactions)
                 : base(null, reactions)
             {
             }

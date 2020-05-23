@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 using Microsoft.AspNetCore.Authorization;
 using Mute.Moe.Extensions;
 
@@ -21,7 +21,7 @@ namespace Mute.Moe.Auth.Asp
             _client = client;
         }
 
-        [NotNull] protected override async Task HandleRequirementAsync([NotNull] AuthorizationHandlerContext context, DiscordUserRequirement requirement)
+        protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, DiscordUserRequirement requirement)
         {
             if (context.User.TryGetDiscordUser(_client) != null)
                 context.Succeed(requirement);

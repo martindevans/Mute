@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Modules.Introspection;
 using Mute.Moe.Extensions;
 
@@ -16,7 +16,7 @@ namespace Mute.Moe.Discord.Context.Postprocessing
         private readonly Configuration _config;
         private readonly char _prefix;
 
-        public DisplayCommandError([NotNull] Configuration config, CommandService commands, Random random)
+        public DisplayCommandError( Configuration config, CommandService commands, Random random)
         {
             _commands = commands;
             _random = random;
@@ -26,7 +26,7 @@ namespace Mute.Moe.Discord.Context.Postprocessing
 
         public uint Order => uint.MaxValue;
 
-        public async Task<bool> Process(MuteCommandContext context, [NotNull] IResult result)
+        public async Task<bool> Process(MuteCommandContext context,  IResult result)
         {
             if (result.Error == CommandError.UnknownCommand)
             {

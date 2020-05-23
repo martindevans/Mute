@@ -6,8 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
-using JetBrains.Annotations;
-using Mute.Moe.Utilities;
+
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Cryptocurrency
@@ -32,7 +31,7 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
         private readonly HttpClient _http;
         private readonly string _key;
 
-        public ProCoinMarketCapCrypto([NotNull] Configuration config, [NotNull] IHttpClientFactory http)
+        public ProCoinMarketCapCrypto( Configuration config,  IHttpClientFactory http)
         {
             _http = http.CreateClient();
             _key = config.CoinMarketCap.Key;
@@ -47,21 +46,22 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
             _tickerBySymbol = _tickerCache.AddIndex("IndexBySymbol", a => a.Currency.Symbol);
         }
 
-        public async Task<ICurrency> FindBySymbol(string symbol)
+        public async Task<ICurrency?> FindBySymbol(string symbol)
         {
             symbol = Uri.EscapeUriString(symbol.ToUpperInvariant());
             var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?CMC_PRO_API_KEY={_key}&symbol={symbol}";
             return await GetOrDownload<string, ICurrency, CmcCurrencyResponse>(symbol, _currencyCache, _currencyBySymbol, _ => _http.GetAsync(url), a => a.Data.Values);
         }
 
-        public async Task<ICurrency> FindById(uint id)
+        public async Task<ICurrency?> FindById(uint id)
         {
             var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?CMC_PRO_API_KEY={_key}&id={id}";
             return await GetOrDownload<uint, ICurrency, CmcCurrencyResponse>(id, _currencyCache, _currencyById, _ => _http.GetAsync(url), a => a.Data.Values);
         }
 
-        private async Task<TItem> GetOrDownload<TKey, TItem, TResponse>(TKey key, FluidCache<TItem> cache, IIndex<TKey, TItem> index, Func<TKey, Task<HttpResponseMessage>> download, Func<TResponse, IEnumerable<TItem>> extract)
+        private async Task<TItem?> GetOrDownload<TKey, TItem, TResponse>(TKey key, FluidCache<TItem> cache, IIndex<TKey, TItem> index, Func<TKey, Task<HttpResponseMessage>> download, Func<TResponse, IEnumerable<TItem>> extract)
             where TItem : class
+            where TResponse : class
         {
             //Get it from the cache if possible
             var item = await index.GetItem(key);
@@ -74,7 +74,7 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
                 return null;
 
             //Deserialize response
-            TResponse model;
+            TResponse? model;
             var serializer = new JsonSerializer();
             using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
             using (var jsonTextReader = new JsonTextReader(sr))
@@ -95,39 +95,41 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
             return await index.GetItem(key);
         }
 
-        public async Task<ICurrency> FindByName(string name)
+        public async Task<ICurrency?> FindByName(string name)
         {
+            // Try to get cached data
             name = name.ToLowerInvariant();
             if (_nameToSymbolMap.TryGetValue(name, out var symbol))
                 return await FindBySymbol(symbol);
 
             //No luck, download the details from the API
             var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/map?CMC_PRO_API_KEY={_key}";
-            using (var result = await _http.GetAsync(url))
-            {
-                if (!result.IsSuccessStatusCode)
-                    return null;
+            using var result = await _http.GetAsync(url);
+            if (!result.IsSuccessStatusCode)
+                return null;
 
-                //Deserialize response
-                CmcMapResponse model;
-                var serializer = new JsonSerializer();
-                using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
-                using (var jsonTextReader = new JsonTextReader(sr))
-                    model = serializer.Deserialize<CmcMapResponse>(jsonTextReader);
+            //Deserialize response
+            CmcMapResponse? model;
+            var serializer = new JsonSerializer();
+            using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
+            using (var jsonTextReader = new JsonTextReader(sr))
+                model = serializer.Deserialize<CmcMapResponse>(jsonTextReader);
 
-                //Store the entire map
-                foreach (var cmcMap in model.Data)
-                    _nameToSymbolMap[cmcMap.Name.ToLowerInvariant()] = cmcMap.Symbol;
+            if (model == null)
+                return null;
 
-                //Get it from the cache again
-                if (_nameToSymbolMap.TryGetValue(name, out symbol))
-                    return await FindBySymbol(symbol);
-                else
-                    return null;
-            }
+            //Store the entire map
+            foreach (var cmcMap in model.Data)
+                _nameToSymbolMap[cmcMap.Name.ToLowerInvariant()] = cmcMap.Symbol;
+
+            //Get it from the cache again
+            if (_nameToSymbolMap.TryGetValue(name, out symbol))
+                return await FindBySymbol(symbol);
+            else
+                return null;
         }
 
-        public async Task<ICurrency> FindBySymbolOrName(string symbolOrName)
+        public async Task<ICurrency?> FindBySymbolOrName(string symbolOrName)
         {
             //Consult caches first
             var cacheSym = await _currencyBySymbol.GetItem(symbolOrName);
@@ -147,7 +149,7 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
             return await FindByName(symbolOrName);
         }
 
-        public async Task<ITicker> GetTicker(ICurrency currency, string quote = null)
+        public async Task<ITicker?> GetTicker(ICurrency currency, string? quote = null)
         {
             async Task<HttpResponseMessage> Download(string sym)
             {
@@ -184,7 +186,7 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
         #region model
         private class Status
         {
-            [JsonProperty("error_message")] public string Error { get; private set; }
+            [JsonProperty("error_message")] public string? Error { get; private set; }
         }
 
         private class CmcCurrency

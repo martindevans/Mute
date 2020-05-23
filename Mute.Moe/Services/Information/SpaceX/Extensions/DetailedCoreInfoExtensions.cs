@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Humanizer;
-using JetBrains.Annotations;
+
 using Oddity.API.Models.DetailedCore;
 using Oddity.API.Models.Launch;
 
@@ -11,9 +11,9 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 {
     public static class DetailedCoreInfoExtensions
     {
-        public static async Task<EmbedBuilder> AugmentDiscordEmbed([NotNull] this DetailedCoreInfo info, EmbedBuilder builder, ISpacexInfo spacex)
+        public static async Task<EmbedBuilder> AugmentDiscordEmbed( this DetailedCoreInfo info, EmbedBuilder builder, ISpacexInfo spacex)
         {
-            var missions = await info.Missions.ToAsyncEnumerable().Select(async a => (await spacex.Launch(a.Flight)).FirstOrDefault()).Where(a => a != null).ToArray();
+            var missions = await info.Missions.ToAsyncEnumerable().Select(async a => (await spacex.Launch(a.Flight)).FirstOrDefault()).Where(a => a != null).ToArrayAsync();
             await Task.WhenAll(missions);
 
             if (missions.Length > 0)
@@ -22,7 +22,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             return builder;
         }
 
-        public static async Task<EmbedBuilder> DiscordEmbed([NotNull] this DetailedCoreInfo info)
+        public static async Task<EmbedBuilder> DiscordEmbed( this DetailedCoreInfo info)
         {
             //Choose color based on status
             Color color;
@@ -85,8 +85,13 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             if (url != null)
                 fname = $"[{fname}]({url})";
 
-            var ago = (DateTime.UtcNow - mission.LaunchDateUtc.Value).Humanize(2, maxUnit: Humanizer.Localisation.TimeUnit.Year, minUnit: Humanizer.Localisation.TimeUnit.Hour);
-            var txt = $" • ({mission.FlightNumber}) {fname} {ago} ago";
+            var txt = $" • ({mission.FlightNumber}) {fname}";
+
+            if (mission.LaunchDateUtc.HasValue)
+            {
+                var ago = (DateTime.UtcNow - mission.LaunchDateUtc.Value).Humanize(2, maxUnit: Humanizer.Localisation.TimeUnit.Year, minUnit: Humanizer.Localisation.TimeUnit.Hour);
+                txt += $" {ago} ago";
+            }
 
             if (mission.LaunchSuccess.HasValue && !mission.LaunchSuccess.Value)
                 txt += " ❌";

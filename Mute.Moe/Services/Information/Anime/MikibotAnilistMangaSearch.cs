@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Miki.Anilist;
-using Mute.Moe.Utilities;
+using Miki.Anilist.Objects;
 
 namespace Mute.Moe.Services.Information.Anime
 {
@@ -15,17 +14,17 @@ namespace Mute.Moe.Services.Information.Anime
         {
         }
 
-        [NotNull] public Task<IManga> GetMangaInfoAsync(string search)
+        public Task<IManga?> GetMangaInfoAsync(string search)
         {
             return GetItemInfoAsync(search);
         }
 
-        public Task<IAsyncEnumerable<IManga>> GetMangasInfoAsync(string search)
+        public IAsyncEnumerable<IManga> GetMangasInfoAsync(string search)
         {
             return GetItemsInfoAsync(search);
         }
 
-        public Task<IAsyncEnumerable<IManga>> GetMangasInfoAsync(ICharacter search)
+        public IAsyncEnumerable<IManga> GetMangasInfoAsync(ICharacter search)
         {
             return GetItemsInfoAsync(search);
         }
@@ -43,7 +42,7 @@ namespace Mute.Moe.Services.Information.Anime
         private class MikibotManga
             : IManga
         {
-            public MikibotManga([NotNull] IMedia media)
+            public MikibotManga( IMedia media)
             {
                 Id = media.Id.ToString();
 

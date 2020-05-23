@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Notifications.SpaceX
@@ -42,7 +42,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             }
         }
 
-        [NotNull, ItemNotNull] public Task<IAsyncEnumerable<ISpacexSubscription>> GetSubscriptions()
+        public Task<IAsyncEnumerable<ISpacexSubscription>> GetSubscriptions()
         {
             ISpacexSubscription ParseSubscription(DbDataReader reader)
             {

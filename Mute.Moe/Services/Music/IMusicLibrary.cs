@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Music
 {
@@ -19,7 +19,7 @@ namespace Mute.Moe.Services.Music
         /// <param name="url">URL related to this track</param>
         /// <param name="thumbnailUrl"></param>
         /// <returns></returns>
-        [NotNull, ItemNotNull] Task<ITrack> Add(ulong guild, ulong owner, [NotNull] Stream audio, [NotNull] string title, TimeSpan duration, [CanBeNull] string url = null, [CanBeNull] string thumbnailUrl = null);
+        Task<ITrack> Add(ulong guild, ulong owner,  Stream audio,  string title, TimeSpan duration, string? url = null, string? thumbnailUrl = null);
 
         /// <summary>
         /// Search for tracks in the music library
@@ -31,7 +31,7 @@ namespace Mute.Moe.Services.Music
         /// <param name="limit"></param>
         /// <param name="order"></param>
         /// <returns></returns>
-        [NotNull, ItemNotNull] Task<IAsyncEnumerable<ITrack>> Get(ulong guild, ulong? id = null, [CanBeNull] string titleSearch = null, [CanBeNull] string url = null, int? limit = null, TrackOrder? order = null);
+        Task<IAsyncEnumerable<ITrack>> Get(ulong guild, ulong? id = null, string? titleSearch = null, string? url = null, int? limit = null, TrackOrder? order = null);
     }
 
     public enum TrackOrder

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Discord.Services
 {
@@ -10,12 +10,12 @@ namespace Mute.Moe.Discord.Services
 
         public IEnumerable<string> Words => _words;
 
-        public WordsService([NotNull] Configuration config)
+        public WordsService( Configuration config)
         {
             _words = new HashSet<string>(File.ReadAllLines(config.Dictionary.WordListPath));
         }
 
-        public bool Contains([NotNull] string word)
+        public bool Contains( string word)
         {
             return _words.Contains(word.ToLowerInvariant());
         }

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Humanizer;
-using JetBrains.Annotations;
 using Oddity.API.Models.Launch;
 using Oddity.API.Models.Launch.Rocket.FirstStage;
 
@@ -12,12 +11,12 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 {
     public static class LaunchInfoExtensions
     {
-        [ItemNotNull, NotNull] public static async Task<EmbedBuilder> DiscordEmbed([NotNull, ItemCanBeNull] this Task<LaunchInfo> launch)
+        public static async Task<EmbedBuilder> DiscordEmbed(this Task<LaunchInfo?> launch)
         {
             return (await launch).DiscordEmbed();
         }
 
-        [NotNull] public static EmbedBuilder DiscordEmbed([CanBeNull] this LaunchInfo launch)
+         public static EmbedBuilder DiscordEmbed(this LaunchInfo? launch)
         {
             var builder = new EmbedBuilder()
                 .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
@@ -87,7 +86,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             return builder;
         }
 
-        [NotNull] public static string Summary([NotNull] this LaunchInfo launch)
+         public static string Summary( this LaunchInfo launch)
         {
             var date = DateString(launch.LaunchDateUtc, launch.TentativeMaxPrecision);
             var num = launch.FlightNumber;
@@ -115,7 +114,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
                         return $"about {date.Value.Humanize()}";
 
                 case TentativeMaxPrecision.Day:
-                    return $"on {date.Value.ToString("m")}";
+                    return $"on {date.Value:m}";
 
                 case TentativeMaxPrecision.Month:
                     return $"in {CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(date.Value.Month)} {date.Value.Year}";

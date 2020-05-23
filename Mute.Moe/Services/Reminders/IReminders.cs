@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using Discord;
 using GraphQL.Types;
 using Humanizer;
-using JetBrains.Annotations;
+
 using Microsoft.Extensions.DependencyInjection;
-using Mute.Moe.AsyncEnumerable.Extensions;
+
 using Mute.Moe.Extensions;
 using Mute.Moe.GQL;
 using Mute.Moe.GQL.Schema;
@@ -21,17 +21,18 @@ namespace Mute.Moe.Services.Reminders
         /// Create a new reminder
         /// </summary>
         /// <returns></returns>
-        [NotNull, ItemNotNull] Task<IReminder> Create(DateTime triggerTime, string prelude, string msg, ulong channelId, ulong userId);
+        Task<IReminder> Create(DateTime triggerTime, string prelude, string msg, ulong channelId, ulong userId);
 
         /// <summary>
         /// Get all reminders in date order filtered by user, time range, channel or status and limited by a max count
         /// </summary>
         /// <returns></returns>
-        [NotNull, ItemNotNull] Task<IOrderedAsyncEnumerable<IReminder>> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null);
+         IOrderedAsyncEnumerable<IReminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null);
 
         /// <summary>
         /// Delete a reminder
         /// </summary>
+        /// <param name="userId"></param>
         /// <param name="id"></param>
         /// <returns></returns>
         Task<bool> Delete(ulong userId, uint id);
@@ -53,7 +54,7 @@ namespace Mute.Moe.Services.Reminders
         ulong UserId { get; }
         ulong ChannelId { get; }
 
-        string Prelude { get; }
+        string? Prelude { get; }
         string Message { get; }
 
         DateTime TriggerTime { get; }
@@ -62,7 +63,7 @@ namespace Mute.Moe.Services.Reminders
     public class RemindersQuerySchema
         : InjectedSchema.IRootQuery
     {
-        private static async Task<IReadOnlyList<IReminder>> GetReminders(IReminders reminders, [NotNull] ResolveFieldContext<object> context)
+        private static async Task<IReadOnlyList<IReminder>> GetReminders(IReminders reminders,  ResolveFieldContext<object> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;
@@ -81,7 +82,7 @@ namespace Mute.Moe.Services.Reminders
             if (context.Arguments.TryGetValue("after", out var afterObj) && afterObj is DateTime afterTime)
                 after = afterTime;
 
-            return await reminders.Get(userId: dUser.Id, after: after, before: before).ToArray();
+            return await reminders.Get(userId: dUser.Id, after: after, before: before).ToArrayAsync();
         }
 
         public void Add(IServiceProvider services, ObjectGraphType ogt)
@@ -102,7 +103,7 @@ namespace Mute.Moe.Services.Reminders
     public class RemindersMutationSchema
         : InjectedSchema.IRootMutation
     {
-        [ItemCanBeNull] private async Task<IReminder> CreateReminder(IReminders reminders, [NotNull] ResolveFieldContext<object> context)
+        private async Task<IReminder?> CreateReminder(IReminders reminders,  ResolveFieldContext<object> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;
@@ -129,8 +130,7 @@ namespace Mute.Moe.Services.Reminders
             if (context.Arguments.TryGetValue("channel_id", out var channelIdStr) && ulong.TryParse(channelIdStr as string ?? "", out var channelId))
             {
                 //Get the channel or exit if it doesn't exist
-                var channel = client.GetChannel(channelId) as ITextChannel;
-                if (channel == null)
+                if (!(client.GetChannel(channelId) is ITextChannel channel))
                     return null;
 
                 //Check if user is in channel

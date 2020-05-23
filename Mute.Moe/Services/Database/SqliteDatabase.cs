@@ -1,6 +1,6 @@
 ﻿using System.Data.Common;
 using System.Data.SQLite;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Database
 {
@@ -9,13 +9,13 @@ namespace Mute.Moe.Services.Database
     {
         private readonly SQLiteConnection _dbConnection;
 
-        public SqliteDatabase([NotNull] Configuration config)
+        public SqliteDatabase( Configuration config)
         {
             _dbConnection = new SQLiteConnection(config.Database.ConnectionString);
             _dbConnection.Open();
         }
 
-        [NotNull] public DbCommand CreateCommand()
+         public DbCommand CreateCommand()
         {
             return new SQLiteCommand(_dbConnection);
         }
@@ -24,13 +24,11 @@ namespace Mute.Moe.Services.Database
     // ReSharper disable once InconsistentNaming
     public static class IDatabaseServiceExtensions
     {
-        public static int Exec([NotNull] this IDatabaseService db, string sql)
+        public static int Exec( this IDatabaseService db, string sql)
         {
-            using (var cmd = db.CreateCommand())
-            {
-                cmd.CommandText = sql;
-                return cmd.ExecuteNonQuery();
-            }
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = sql;
+            return cmd.ExecuteNonQuery();
         }
     }
 }

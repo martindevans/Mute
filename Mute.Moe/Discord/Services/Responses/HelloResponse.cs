@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
 
@@ -36,7 +36,7 @@ namespace Mute.Moe.Discord.Services.Responses
             _random = random;
         }
 
-        public Task<IConversation> TryRespond(MuteCommandContext context, bool containsMention)
+        public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
         {
             //Determine if thie message is a greeting
             var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(AllGreetings.Contains);
@@ -44,10 +44,9 @@ namespace Mute.Moe.Discord.Services.Responses
             var gu = (SocketGuildUser)context.User;
             var name = gu.Nickname ?? gu.Username;
 
-            return Task.FromResult<IConversation>(isGreeting
+            return isGreeting
                 ? new HelloConversation(string.Format(ChooseGreeting(), name))
-                : null
-            );
+                : null;
         }
 
         private string ChooseGreeting()
@@ -63,7 +62,7 @@ namespace Mute.Moe.Discord.Services.Responses
             return GeneralGreetings.Random(_random);
         }
 
-        [NotNull] private static string CleanWord([NotNull] string word)
+         private static string CleanWord( string word)
         {
             return new string(word
                 .ToLowerInvariant()

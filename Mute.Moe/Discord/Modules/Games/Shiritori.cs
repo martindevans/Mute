@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services;
 using Mute.Moe.Extensions;
@@ -46,7 +46,7 @@ namespace Mute.Moe.Discord.Modules.Games
         {
             var values = Get(mode);
 
-            string prev = null;
+            string? prev = null;
             var played = new HashSet<string>();
 
             while (played.Count < values.TurnLimit)
@@ -66,12 +66,12 @@ namespace Mute.Moe.Discord.Modules.Games
                     played.Add(myWord);
                 }
 
-                string theirWord;
+                string? theirWord;
                 if (auto)
                 {
                     //Generate a response
                     theirWord = Pick(prev, played, autoMode, Get(autoMode));
-                    if (string.IsNullOrEmpty(theirWord))
+                    if (theirWord == null || string.IsNullOrEmpty(theirWord))
                     {
                         await TypingReplyAsync("I can't think of a good followup for that. You win!");
                         return;
@@ -129,7 +129,7 @@ namespace Mute.Moe.Discord.Modules.Games
             await TypingReplyAsync($"Wow, {played.Count} turns! I surrender, you win.");
         }
 
-        [CanBeNull] private string Pick([CanBeNull] string previous, [NotNull] ISet<string> played, Mode mode, DifficultyValues values)
+        private string? Pick(string? previous, ISet<string> played, Mode mode, DifficultyValues values)
         {
             //Pick a random starting word
             if (previous == null)
@@ -183,7 +183,7 @@ namespace Mute.Moe.Discord.Modules.Games
             }
         }
 
-        private string PickMostSimilar(string previous, [NotNull] IEnumerable<string> options)
+        private string PickMostSimilar(string previous,  IEnumerable<string> options)
         {
             //Order by word vector similarity
             var sims = options.Select(a => (a, Task.Run(() => _wordVectors.Similarity(previous, a))))

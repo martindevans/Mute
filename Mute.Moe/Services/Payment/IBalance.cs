@@ -1,4 +1,4 @@
-﻿using JetBrains.Annotations;
+﻿
 
 namespace Mute.Moe.Services.Payment
 {
@@ -10,7 +10,7 @@ namespace Mute.Moe.Services.Payment
         /// <summary>
         /// Unit this balance is in
         /// </summary>
-        [NotNull] string Unit { get; }
+         string Unit { get; }
 
         /// <summary>
         /// User on the receiving end of this balance
@@ -36,7 +36,7 @@ namespace Mute.Moe.Services.Payment
         public ulong UserB { get; }
         public decimal Amount { get; }
 
-        public Balance([NotNull] string unit, ulong a, ulong b, decimal amount)
+        public Balance( string unit, ulong a, ulong b, decimal amount)
         {
             Unit = unit;
             UserA = a;

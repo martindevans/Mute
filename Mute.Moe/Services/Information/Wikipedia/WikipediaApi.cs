@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
-using JetBrains.Annotations;
+
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Wikipedia
@@ -25,8 +25,11 @@ namespace Mute.Moe.Services.Information.Wikipedia
             _bySearchTerm = _cache.AddIndex("bySearchTerm", a => a.Item1);
         }
 
-        [ItemCanBeNull] public async Task<IReadOnlyList<IDefinition>> Define([NotNull] string topic, int length = 3)
+        public async Task<IReadOnlyList<IDefinition>> Define(string? topic, int length = 3)
         {
+            if (topic == null)
+                return Array.Empty<IDefinition>();
+
             var key = topic + length;
 
             // Get data about this topic from cache
@@ -41,65 +44,60 @@ namespace Mute.Moe.Services.Information.Wikipedia
             return def;
         }
 
-        [ItemNotNull]
-        private async Task<IReadOnlyList<IDefinition>> FetchDefinitionAsync([NotNull] string escapedTopic, int length)
+        private async Task<IReadOnlyList<IDefinition>> FetchDefinitionAsync(string escapedTopic, int length)
         {
             async Task<IReadOnlyList<IDefinition>> GetPageDefinitions(PropPage page)
             {
-                if (page.Categories.Any(a => a.Title.Equals("Category:All disambiguation pages") || a.Title.Equals("Category:Disambiguation pages")))
+                if (page.Categories.Any(a => (a?.Title?.Equals("Category:All disambiguation pages") ?? false) || (a?.Title?.Equals("Category:Disambiguation pages") ?? false)))
                 {
                     // This is a disambiguation page, get all links on the page and fetch those definitions instead
-                    using (var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&titles={escapedTopic}&prop=links"))
-                    {
-                        if (!httpResponse.IsSuccessStatusCode)
-                            return Array.Empty<IDefinition>();
+                    using var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&titles={escapedTopic}&prop=links");
+                    if (!httpResponse.IsSuccessStatusCode)
+                        return Array.Empty<IDefinition>();
 
-                        //Parse JSON of response
-                        var response = JsonConvert.DeserializeObject<PropResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
+                    //Parse JSON of response
+                    var response = JsonConvert.DeserializeObject<PropResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
 
-                        // Find all links
-                        var links = response?.Query?.Pages?.Select(p => p.Value).SelectMany(a => a.Links);
-                        if (links == null)
-                            return Array.Empty<IDefinition>();
+                    // Find all links
+                    var links = response?.Query?.Pages?.Select(p => p.Value).SelectMany(a => a.Links);
+                    if (links == null)
+                        return Array.Empty<IDefinition>();
 
-                        // Fetch all the links
-                        var results = new List<IDefinition>();
-                        foreach (var link in links.Where(a => !string.IsNullOrWhiteSpace(a.Title)))
-                            results.AddRange(await Define(link.Title, 1));
+                    // Fetch all the links
+                    var results = new List<IDefinition>();
+                    foreach (var link in links.Where(a => !string.IsNullOrWhiteSpace(a.Title)))
+                        results.AddRange(await Define(link.Title, 1));
 
-                        return results;
-                    }
+                    return results;
                 }
                 else
                 {
                     // This is an actual page, fetch the definition
-                    using (var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles={page.Title}&exsentences={length}"))
+                    using var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles={page.Title}&exsentences={length}");
+                    if (!httpResponse.IsSuccessStatusCode)
+                        return Array.Empty<IDefinition>();
+
+                    //Parse JSON of response
+                    var response = JsonConvert.DeserializeObject<DefinitionResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
+
+                    //If the response contains no useful data return nothing
+                    var pages = response?.Query?.Pages;
+                    if (pages == null)
+                        return Array.Empty<IDefinition>();
+
+                    //Extract all the valid items we can from the response
+                    var result = new List<IDefinition>();
+                    foreach (var (_, value) in pages)
                     {
-                        if (!httpResponse.IsSuccessStatusCode)
-                            return Array.Empty<IDefinition>();
+                        if (value.Title == null || value.Extract == null)
+                            continue;
+                        if (!ulong.TryParse(value.PageId, out var id))
+                            continue;
 
-                        //Parse JSON of response
-                        var response = JsonConvert.DeserializeObject<DefinitionResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
-
-                        //If the response contains no useful data return nothing
-                        var pages = response?.Query?.Pages;
-                        if (pages == null)
-                            return Array.Empty<IDefinition>();
-
-                        //Extract all the valid items we can from the response
-                        var result = new List<IDefinition>();
-                        foreach (var (_, value) in pages)
-                        {
-                            if (value.Title == null || value.Extract == null)
-                                continue;
-                            if (!ulong.TryParse(value.PageId, out var id))
-                                continue;
-
-                            result.Add(new WikipediaApiDefinition(value.Title, id, value.Extract));
-                        }
-
-                        return result;
+                        result.Add(new WikipediaApiDefinition(value.Title, id, value.Extract));
                     }
+
+                    return result;
                 }
             }
 
@@ -139,9 +137,9 @@ namespace Mute.Moe.Services.Information.Wikipedia
             public string Definition { get; }
 
             private ulong PageId { get; }
-            [NotNull] public string Url => $"https://en.wikipedia.org/?curid={PageId}";
+            public string Url => $"https://en.wikipedia.org/?curid={PageId}";
 
-            public WikipediaApiDefinition([NotNull] string title, ulong pageId, [NotNull] string definition)
+            public WikipediaApiDefinition( string title, ulong pageId,  string definition)
             {
                 Title = title;
                 PageId = pageId;
@@ -152,43 +150,43 @@ namespace Mute.Moe.Services.Information.Wikipedia
         #pragma warning disable CS0649
         private class DefinitionResponseContainer
         {
-            [JsonProperty("query")] public DefinitionResponse Query;
+            [JsonProperty("query")] public DefinitionResponse? Query;
         }
 
         private class DefinitionResponse
         {
-            [JsonProperty("pages")] public Dictionary<string, DefinitionPage> Pages;
+            [JsonProperty("pages")] public Dictionary<string, DefinitionPage>? Pages;
         }
 
         private class DefinitionPage
         {
-            [JsonProperty("pageid")] public string PageId;
-            [JsonProperty("title")] public string Title;
-            [JsonProperty("extract")] public string Extract;
+            [JsonProperty("pageid")] public string? PageId;
+            [JsonProperty("title")] public string? Title;
+            [JsonProperty("extract")] public string? Extract;
         }
 
         private class PropResponseContainer
         {
-            [JsonProperty("query")] public PropResponse Query;
+            [JsonProperty("query")] public PropResponse? Query;
         }
 
         private class PropResponse
         {
-            [JsonProperty("pages")] public Dictionary<string, PropPage> Pages;
+            [JsonProperty("pages")] public Dictionary<string, PropPage>? Pages;
         }
 
         private class PropPage
         {
-            [JsonProperty("pageid")] public string PageId;
-            [JsonProperty("title")] public string Title;
+            [JsonProperty("pageid")] public string? PageId;
+            [JsonProperty("title")] public string? Title;
 
-            [JsonProperty("categories")] public Property[] Categories;
-            [JsonProperty("links")] public Property[] Links;
+            [JsonProperty("categories")] public Property[]? Categories;
+            [JsonProperty("links")] public Property[]? Links;
         }
 
         private class Property
         {
-            [JsonProperty("title")] public string Title;
+            [JsonProperty("title")] public string? Title;
         }
 #pragma warning restore CS0649
     }

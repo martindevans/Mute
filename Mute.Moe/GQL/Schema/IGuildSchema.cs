@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using GraphQL.Authorization;
 using GraphQL.Types;
-using JetBrains.Annotations;
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.GQL.Schema
@@ -36,7 +35,7 @@ namespace Mute.Moe.GQL.Schema
                 )).AuthorizeWith("InAnyBotGuild");
         }
 
-        [ItemNotNull] private async Task<IReadOnlyCollection<IRole>> GetRoles([NotNull] ResolveFieldContext<IGuild> context)
+        private async Task<IReadOnlyCollection<IRole>> GetRoles( ResolveFieldContext<IGuild> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;
@@ -65,7 +64,7 @@ namespace Mute.Moe.GQL.Schema
             return roles.ToArray();
         }
 
-        [ItemNotNull] private async Task<IReadOnlyCollection<IGuildUser>> GetMembers([NotNull] ResolveFieldContext<IGuild> context)
+        private async Task<IReadOnlyCollection<IGuildUser>> GetMembers( ResolveFieldContext<IGuild> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;
@@ -94,13 +93,13 @@ namespace Mute.Moe.GQL.Schema
             return list.Where(a => filter.Contains(a.Id)).ToArray();
         }
 
-        [NotNull] private static HashSet<ulong> GetUlongHashset([NotNull] object arg)
+         private static HashSet<ulong> GetUlongHashset( object arg)
         {
             return new HashSet<ulong>(((List<object>)arg)
                 .OfType<string>()
                 .Select(a => ulong.TryParse(a, out var r) ? (ulong?)r : null)
                 .Where(a => a.HasValue)
-                .Select(a => a.Value)
+                .Select(a => a!.Value)
                 .ToArray());
         }
     }

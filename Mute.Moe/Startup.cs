@@ -52,7 +52,6 @@ using Mute.Moe.Services.Notifications.RSS;
 using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
-using Mute.Moe.Services.SolariumGame;
 using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.TTS;
@@ -129,8 +128,6 @@ namespace Mute.Moe
             services.AddSingleton<ICron, InMemoryCron>();
             services.AddSingleton<IImitationModelProvider, MarkovModelImitation>();
             services.AddSingleton<IMessagePreprocessor>(a => a.GetService<IImitationModelProvider>());
-
-            services.AddSingleton<ISolarium, DatabaseSolarium>();
 
             //Eventually these should all become interface -> concrete type bindings
             services.AddSingleton<AutoReactionTrainer>();

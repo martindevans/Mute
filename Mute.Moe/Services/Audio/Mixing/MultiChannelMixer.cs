@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Linq;
-using JetBrains.Annotations;
+
 using Mute.Moe.Services.Audio.Mixing.Extensions;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
@@ -42,13 +42,13 @@ namespace Mute.Moe.Services.Audio.Mixing
             return _output.Read(buffer, offset, count);
         }
 
-        public void Add([NotNull] IMixerInput input)
+        public void Add( IMixerInput input)
         {
             var samples = _inputMap.GetOrAdd(input, a => input.ToMono().Resample(MixingFormat.SampleRate));
             _inputs.AddMixerInput(samples);
         }
 
-        public void Remove([NotNull] IMixerInput input)
+        public void Remove( IMixerInput input)
         {
             if (_inputMap.TryRemove(input, out var value))
                 _inputs.RemoveMixerInput(value);

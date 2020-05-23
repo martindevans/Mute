@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 {
@@ -14,7 +14,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         /// <param name="context"></param>
         /// <param name="decomposition">The values pulled out from the input string by the decomposition pattern</param>
         /// <returns></returns>
-        Task<string> Rule(ICommandContext context, IReadOnlyList<string> decomposition);
+        Task<string?> Rule(ICommandContext context, IReadOnlyList<string> decomposition);
     }
 
     public class ConstantReassembly
@@ -27,20 +27,20 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
             _value = value;
         }
 
-        [NotNull]
-        public Task<string> Rule(ICommandContext _, IReadOnlyList<string> __) => Task.FromResult(_value);
+        
+        public Task<string?> Rule(ICommandContext _, IReadOnlyList<string> __) => Task.FromResult<string?>(_value);
     }
 
     public class FuncReassembly
         : IReassembly
     {
-        private readonly Func<ICommandContext, IReadOnlyList<string>, Task<string>> _func;
+        private readonly Func<ICommandContext, IReadOnlyList<string>, Task<string?>> _func;
 
-        public FuncReassembly([NotNull] Func<ICommandContext, IReadOnlyList<string>, Task<string>> func)
+        public FuncReassembly(Func<ICommandContext, IReadOnlyList<string>, Task<string?>> func)
         {
             _func = func;
         }
 
-        public Task<string> Rule(ICommandContext context, IReadOnlyList<string> decomposition) => _func(context, decomposition);
+        public Task<string?> Rule(ICommandContext context, IReadOnlyList<string> decomposition) => _func(context, decomposition);
     }
 }

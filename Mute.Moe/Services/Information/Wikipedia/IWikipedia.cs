@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Information.Wikipedia
 {
@@ -11,8 +11,8 @@ namespace Mute.Moe.Services.Information.Wikipedia
 
     public interface IDefinition
     {
-        [NotNull] string Definition { get; }
-        [NotNull] string Title { get; }
-        [CanBeNull] string Url { get; }
+        string Definition { get; }
+        string Title { get; }
+        string? Url { get; }
     }
 }

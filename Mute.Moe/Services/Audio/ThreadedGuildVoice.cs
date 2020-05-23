@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using Discord.WebSocket;
-using JetBrains.Annotations;
 using Mute.Moe.Services.Audio.Mixing;
 using Mute.Moe.Services.Audio.Mixing.Channels;
 using NAudio.Wave;
@@ -17,13 +16,13 @@ namespace Mute.Moe.Services.Audio
     {
         public IGuild Guild { get; }
 
-        private AudioPump _pump;
-        public IVoiceChannel Channel => _pump?.Channel;
+        private AudioPump? _pump;
+        public IVoiceChannel? Channel => _pump?.Channel;
 
         private readonly MultiChannelMixer _mixer = new MultiChannelMixer();
         private readonly DiscordSocketClient _client;
 
-        public ThreadedGuildVoice([NotNull] IGuild guild, [NotNull] DiscordSocketClient client)
+        public ThreadedGuildVoice( IGuild guild,  DiscordSocketClient client)
         {
             Guild = guild ?? throw new ArgumentNullException(nameof(guild));
 
@@ -46,7 +45,7 @@ namespace Mute.Moe.Services.Audio
                 return;
 
             //If there are other users in the channel stay in the channel
-            var count = await Channel.GetUsersAsync().Select(a => a.Count).Sum();
+            var count = await Channel.GetUsersAsync().Select(a => a.Count).SumAsync();
             if (count > 1)
                 return;
 
@@ -59,7 +58,7 @@ namespace Mute.Moe.Services.Audio
             await Move(null);
         }
 
-        public async Task Move(IVoiceChannel channel)
+        public async Task Move(IVoiceChannel? channel)
         {
             if (Channel?.Id == channel?.Id)
                 return;
@@ -75,7 +74,7 @@ namespace Mute.Moe.Services.Audio
                 _pump = new AudioPump(channel, _mixer);
         }
 
-        public void Open([NotNull] IMixerChannel channel)
+        public void Open( IMixerChannel channel)
         {
             _mixer.Add(channel);
         }

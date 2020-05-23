@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Extensions
 {
@@ -15,15 +15,20 @@ namespace Mute.Moe.Extensions
 
         static StringExtensions()
         {
-            CurrencyNameToSymbol = CultureInfo.GetCultures(CultureTypes.AllCultures).Where(c => !c.IsNeutralCulture).Select(culture => RegionInfo(culture.LCID)).Where(ri => ri != null).GroupBy(ri => ri.ISOCurrencySymbol.ToLowerInvariant()).ToDictionary(x => x.Key, x => x.First().CurrencySymbol);
+            CurrencyNameToSymbol = (from culture in CultureInfo.GetCultures(CultureTypes.AllCultures)
+                                    where !culture.IsNeutralCulture
+                                    let ri = RegionInfo(culture.LCID)
+                                    where ri != null
+                                    group ri by ri.ISOCurrencySymbol.ToLowerInvariant()
+                                    into iso
+                                    select (iso.Key, iso.First().CurrencySymbol)).ToDictionary(x => x.Key, x => x.CurrencySymbol);
 
             CurrencySymbolToName = new Dictionary<string, string>();
-            foreach (var kvp in CurrencyNameToSymbol)
-                CurrencySymbolToName[kvp.Value] = kvp.Key;
+            foreach (var (key, value) in CurrencyNameToSymbol)
+                CurrencySymbolToName[value] = key;
         }
 
-        [CanBeNull]
-        private static RegionInfo RegionInfo(int lcid)
+        private static RegionInfo? RegionInfo(int lcid)
         {
             try
             {
@@ -35,14 +40,14 @@ namespace Mute.Moe.Extensions
             }
         }
 
-        public static string TryGetCurrencySymbol([NotNull] this string isoCurrencySymbol)
+        public static string TryGetCurrencySymbol(this string isoCurrencySymbol)
         {
             if (CurrencyNameToSymbol.TryGetValue(isoCurrencySymbol.ToLowerInvariant(), out var symbol))
                 return symbol;
             return isoCurrencySymbol;
         }
 
-        public static string TryGetCurrencyIsoName([NotNull] this string symbol)
+        public static string? TryGetCurrencyIsoName(this string symbol)
         {
             if (CurrencySymbolToName.TryGetValue(symbol, out var result))
                 return result;
@@ -53,28 +58,27 @@ namespace Mute.Moe.Extensions
         {
             var result = new StringBuilder();
 
-            using (var hash = System.Security.Cryptography.SHA256.Create())
-            {
-                var bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(str));
+            using var hash = System.Security.Cryptography.SHA256.Create();
+            var bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(str));
 
-                foreach (var b in bytes)
-                    result.Append(b.ToString("x2"));
-            }
+            foreach (var b in bytes)
+                result.Append(b.ToString("x2"));
 
             return result.ToString();
         }
 
-        public static uint Levenshtein([CanBeNull] this string a, [CanBeNull] string b)
+        public static uint Levenshtein(this string? a, string? b)
         {
-            var an = string.IsNullOrEmpty(a);
-            var bn = string.IsNullOrEmpty(b);
-
-            if (an && bn)
+            if (a == null && b == null)
                 return 0;
-            else if (an)
-                return (uint)b.Length;
-            else if (bn)
-                return (uint)a.Length;
+            
+            if (a == null)
+                return (uint)b!.Length;
+            else if (b == null)
+                return (uint)a!.Length;
+
+            if (a == null || b == null)
+                return 0;
 
             var aLength = (uint)a.Length;
             var bLength = (uint)b.Length;
@@ -89,7 +93,7 @@ namespace Mute.Moe.Extensions
             {
                 for (var j = 1; j <= bLength; j++)
                 {
-                    var cost = (b[j - 1] == a[i - 1]) ? 0 : 1;
+                    var cost = b[j - 1] == a[i - 1] ? 0 : 1;
 
                     matrix[i, j] = Math.Min(
                         Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
@@ -101,18 +105,18 @@ namespace Mute.Moe.Extensions
             return (uint)matrix[aLength, bLength];
         }
 
-        [NotNull] public static IEnumerable<ulong> FindUserMentions([NotNull] this string str)
+         public static IEnumerable<ulong> FindUserMentions( this string str)
         {
             return FindMentions(str, '@');
         }
 
-        [NotNull] public static IEnumerable<ulong> FindChannelMentions([NotNull] this string str)
+         public static IEnumerable<ulong> FindChannelMentions( this string str)
         {
             return FindMentions(str, '#');
         }
 
-        [NotNull]
-        private static IEnumerable<ulong> FindMentions([NotNull] this string str, char prefix)
+        
+        private static IEnumerable<ulong> FindMentions( this string str, char prefix)
         {
             var r = new Regex($"\\<{prefix}(!?)(?<id>[0-9]+)\\>");
 

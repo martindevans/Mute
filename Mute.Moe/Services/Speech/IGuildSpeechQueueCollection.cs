@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Audio.Mixing.Channels;
 
@@ -24,7 +24,7 @@ namespace Mute.Moe.Services.Speech
         {
         }
 
-        [NotNull] protected override InMemoryGuildSpeechQueue Create(IGuildVoice voice)
+         protected override InMemoryGuildSpeechQueue Create(IGuildVoice voice)
         {
             return new InMemoryGuildSpeechQueue(voice);
         }

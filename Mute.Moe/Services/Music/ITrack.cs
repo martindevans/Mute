@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace Mute.Moe.Services.Music
 {
@@ -19,22 +17,22 @@ namespace Mute.Moe.Services.Music
         /// <summary>
         /// Path to the file on disk with this audio
         /// </summary>
-        [NotNull] string Path { get; }
+         string Path { get; }
 
         /// <summary>
         /// Human readable title of this track
         /// </summary>
-        [NotNull] string Title { get; }
+         string Title { get; }
 
         /// <summary>
         /// Url related to this track
         /// </summary>
-        [CanBeNull] string Url { get; }
+        string? Url { get; }
 
         /// <summary>
         /// Url of a thumbnail for this track
         /// </summary>
-        [CanBeNull] string ThumbnailUrl { get; }
+        string? ThumbnailUrl { get; }
 
         /// <summary>
         /// Duration of this track

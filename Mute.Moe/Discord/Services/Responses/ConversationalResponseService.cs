@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
@@ -21,7 +21,7 @@ namespace Mute.Moe.Discord.Services.Responses
         private readonly Random _random;
         private readonly List<IResponse> _responses = new List<IResponse>();
 
-        private readonly ConcurrentDictionary<IUser, IConversation> _conversations = new ConcurrentDictionary<IUser, IConversation>();
+        private readonly ConcurrentDictionary<IUser, IConversation?> _conversations = new ConcurrentDictionary<IUser, IConversation?>();
 
         public ConversationalResponseService(DiscordSocketClient client, IServiceProvider services, Random random)
         {
@@ -41,7 +41,7 @@ namespace Mute.Moe.Discord.Services.Responses
                 Console.WriteLine($" - {response.GetType().Name}");
         }
 
-        public async Task Respond([NotNull] MuteCommandContext context)
+        public async Task Respond(MuteCommandContext context)
         {
             // Check if the bot is directly mentioned
             var mentionsBot = ((IMessage)context.Message).MentionedUserIds.Contains(_client.CurrentUser.Id);
@@ -58,7 +58,7 @@ namespace Mute.Moe.Discord.Services.Responses
             }
         }
 
-        private async Task<IConversation> GetOrCreateConversation([NotNull] MuteCommandContext context, bool mentionsBot)
+        private async Task<IConversation?> GetOrCreateConversation(MuteCommandContext context, bool mentionsBot)
         {
             //Create a new conversation starting with this message
             var newConv = await TryCreateConversation(context, mentionsBot);
@@ -71,7 +71,7 @@ namespace Mute.Moe.Discord.Services.Responses
             );
         }
 
-        [ItemCanBeNull] private async Task<IConversation> TryCreateConversation([NotNull] MuteCommandContext context, bool mentionsBot)
+        private async Task<IConversation?> TryCreateConversation(MuteCommandContext context, bool mentionsBot)
         {
             //Find generators which can respond to this message
             var random = new Random(context.Message.Id.GetHashCode());
@@ -87,11 +87,14 @@ namespace Mute.Moe.Discord.Services.Responses
                     candidates.Add(conversation);
             }
 
+            if (candidates.Count == 0)
+                return null;
+
             //If there are several pick a random one
             return IEnumerableExtensions.Random(candidates, _random);
         }
 
-        public IConversation GetConversation(IGuildUser user)
+        public IConversation? GetConversation(IGuildUser user)
         {
             if (_conversations.TryGetValue(user, out var conversation))
                 return conversation;

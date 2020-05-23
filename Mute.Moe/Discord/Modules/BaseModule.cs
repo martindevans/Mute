@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
@@ -18,7 +18,7 @@ namespace Mute.Moe.Discord.Modules
     {
         public new MuteCommandContext Context => (MuteCommandContext)base.Context;
 
-        private IEndExecute[] _afterExecuteDisposals;
+        private IEndExecute[]? _afterExecuteDisposals;
 
         #region display lists
         /// <summary>
@@ -30,7 +30,7 @@ namespace Mute.Moe.Discord.Modules
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<Task> nothing, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
+        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<Task> nothing, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
         {
             await DisplayItemList(
                 items,
@@ -49,7 +49,7 @@ namespace Mute.Moe.Discord.Modules
         /// <param name="nothing">Generate a string for no items</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<Task> nothing, Func<T, int, Task> displayItem)
+        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<Task> nothing, Func<T, int, Task> displayItem)
         {
             await DisplayItemList(
                 items,
@@ -70,7 +70,7 @@ namespace Mute.Moe.Discord.Modules
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<Task> nothing, Func<T, Task> singleResult, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
+        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<Task> nothing, Func<T, Task>? singleResult, Func<IReadOnlyList<T>, Task>? manyPrelude, Func<T, int, Task> displayItem)
         {
             if (items.Count == 0)
             {
@@ -96,7 +96,7 @@ namespace Mute.Moe.Discord.Modules
             }
         }
 
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
+        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
         {
             await DisplayItemList(
                 items,
@@ -117,7 +117,7 @@ namespace Mute.Moe.Discord.Modules
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="itemToString">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, Func<string> nothing, [CanBeNull] Func<T, Task> singleItem, [CanBeNull] Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
+        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<string> nothing, Func<T, Task>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
         {
             if (items.Count == 0)
             {
@@ -158,24 +158,24 @@ namespace Mute.Moe.Discord.Modules
             }
         }
 
-        protected async Task DisplayItemList<T>([NotNull] IReadOnlyList<T> items, string nothing, [CanBeNull] Func<T, Task> singleItem, [CanBeNull] Func<IReadOnlyList<T>, string> manyPrelude, Func<T, int, string> itemToString)
+        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, string nothing, Func<T, Task>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
         {
             await DisplayItemList(items, () => nothing, singleItem, manyPrelude, itemToString);
         }
         #endregion
 
         #region reply
-        protected async Task<IUserMessage> TypingReplyAsync([NotNull] string message, bool isTTS = false, [CanBeNull] Embed embed = null, [CanBeNull] RequestOptions options = null)
+        protected async Task<IUserMessage> TypingReplyAsync(string message, bool isTTS = false, Embed? embed = null, RequestOptions? options = null)
         {
             return await Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
         }
 
-        protected async Task<IUserMessage> TypingReplyAsync([NotNull] EmbedBuilder embed, [CanBeNull] RequestOptions options = null)
+        protected async Task<IUserMessage> TypingReplyAsync(EmbedBuilder embed, RequestOptions? options = null)
         {
             return await TypingReplyAsync("", false, embed.Build(), options);
         }
 
-        protected async Task<IUserMessage> ReplyAsync([NotNull] EmbedBuilder embed, [CanBeNull] RequestOptions options = null)
+        protected async Task<IUserMessage> ReplyAsync(EmbedBuilder embed, RequestOptions? options = null)
         {
             return await ReplyAsync("", false, embed.Build(), options);
         }
@@ -191,7 +191,7 @@ namespace Mute.Moe.Discord.Modules
             return Name(user, mention);
         }
 
-        public static string Name([NotNull] IUser user, bool mention = false)
+        public static string Name( IUser user, bool mention = false)
         {
             if (mention)
                 return user.Mention;
@@ -200,7 +200,7 @@ namespace Mute.Moe.Discord.Modules
         }
         #endregion
 
-        protected override void BeforeExecute([NotNull] CommandInfo command)
+        protected override void BeforeExecute(CommandInfo command)
         {
             var method = command.Attributes.OfType<BaseExecuteContextAttribute>();
             var module = GetType().GetCustomAttributes(typeof(BaseExecuteContextAttribute), true).Cast<BaseExecuteContextAttribute>();
@@ -211,8 +211,9 @@ namespace Mute.Moe.Discord.Modules
 
         protected override void AfterExecute(CommandInfo command)
         {
-            foreach (var item in _afterExecuteDisposals)
-                item.EndExecute().GetAwaiter().GetResult();
+            if (_afterExecuteDisposals != null)
+                foreach (var item in _afterExecuteDisposals)
+                    item.EndExecute().GetAwaiter().GetResult();
 
             base.AfterExecute(command);
         }

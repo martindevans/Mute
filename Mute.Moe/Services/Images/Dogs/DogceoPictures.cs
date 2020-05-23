@@ -2,7 +2,6 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Mute.Moe.Utilities;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Images.Dogs
@@ -19,7 +18,7 @@ namespace Mute.Moe.Services.Images.Dogs
             _client = client.CreateClient();
         }
 
-        [ItemNotNull] public async Task<Stream> GetDogPictureAsync()
+        public async Task<Stream> GetDogPictureAsync()
         {
             //Ask API for a dog image
             var httpResp = await _client.GetAsync(_url);
@@ -27,13 +26,11 @@ namespace Mute.Moe.Services.Images.Dogs
 
             // Fetch dog image, If there is no message, 
             // return a default image. (From their api)
-            using (var imgHttpResp = await _client.GetAsync(jsonResp?.message ?? "https://images.dog.ceo/breeds/elkhound-norwegian/n02091467_4951.jpg"))
-            {
-                var m = new MemoryStream();
-                await imgHttpResp.Content.CopyToAsync(m);
-                m.Position = 0;
-                return m;
-            }
+            using var imgHttpResp = await _client.GetAsync(jsonResp?.message ?? "https://images.dog.ceo/breeds/elkhound-norwegian/n02091467_4951.jpg");
+            var m = new MemoryStream();
+            await imgHttpResp.Content.CopyToAsync(m);
+            m.Position = 0;
+            return m;
         }
 
         #pragma warning disable CS0649
@@ -41,10 +38,10 @@ namespace Mute.Moe.Services.Images.Dogs
         private class Response
         {
             // ReSharper disable once InconsistentNaming
-            [UsedImplicitly] public string status;
+            [UsedImplicitly] public string? status;
 
             // ReSharper disable once InconsistentNaming
-            [UsedImplicitly] public string message;
+            [UsedImplicitly] public string? message;
         }
         #pragma warning restore CS0649
     }

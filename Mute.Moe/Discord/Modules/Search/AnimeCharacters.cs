@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Mute.Moe.AsyncEnumerable.Extensions;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Information.Anime;
 
@@ -29,7 +29,7 @@ namespace Mute.Moe.Discord.Modules.Search
         public async Task FindCharacter(int max, [Remainder] string term)
         {
             await DisplayItemList(
-                await _characters.GetCharactersInfoAsync(term).Take(max).ToArray(),
+                await _characters.GetCharactersInfoAsync(term).Take(max).ToArrayAsync(),
                 "I can't find a character by that name",
                 async c => await ReplyAsync(EmbedCharacter(c)),
                 l => $"I have found {l.Count} potential characters:",

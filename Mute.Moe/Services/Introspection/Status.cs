@@ -6,7 +6,7 @@ using Discord;
 using Discord.WebSocket;
 using GraphQL.Authorization;
 using GraphQL.Types;
-using JetBrains.Annotations;
+
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Introspection.Uptime;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,7 +55,7 @@ namespace Mute.Moe.Services.Introspection
                 )).AuthorizeWith("InAnyBotGuild");
         }
 
-        private async Task<IReadOnlyCollection<IGuild>> GetGuilds([NotNull] ResolveFieldContext<Status> context)
+        private async Task<IReadOnlyCollection<IGuild>> GetGuilds( ResolveFieldContext<Status> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;
@@ -74,7 +74,7 @@ namespace Mute.Moe.Services.Introspection
                 return list;
 
             //Pull all the ulong we can parse out of the filter list
-            var filter = new HashSet<ulong>(((List<object>)value).OfType<string>().Select(a => ulong.TryParse(a, out var r) ? (ulong?)r : null).Where(a => a.HasValue).Select(a => a.Value).ToArray());
+            var filter = new HashSet<ulong>(((List<object>)value).OfType<string>().Select(a => ulong.TryParse(a, out var r) ? (ulong?)r : null).Where(a => a.HasValue).Select(a => a!.Value).ToArray());
 
             //filter the list by that query
             return list.Where(a => filter.Contains(a.Id)).ToArray();

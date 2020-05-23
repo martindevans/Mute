@@ -57,7 +57,7 @@ namespace Mute.Moe.Discord.Modules.Search
                     builder = builder.WithTitle(anime.TitleEnglish ?? anime.TitleJapanese);
 
                 //Extract a string describing dates
-                string dateString = null;
+                string? dateString = null;
                 if (anime.StartDate.HasValue && anime.EndDate.HasValue)
                     dateString = $"{anime.StartDate.Value.UtcDateTime:dd-MMM-yyyy} -> {anime.EndDate.Value.UtcDateTime:dd-MMM-yyyy}";
                 else if (anime.StartDate.HasValue)

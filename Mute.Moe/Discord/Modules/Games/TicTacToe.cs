@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 
@@ -51,7 +51,7 @@ namespace Mute.Moe.Discord.Modules.Games
             }
         }
 
-        private async Task<bool> ApplyPlay([NotNull] GameBoard board, (byte, byte) position, CellState player, string illegal, string win, string draw)
+        private async Task<bool> ApplyPlay( GameBoard board, (byte, byte) position, CellState player, string illegal, string win, string draw)
         {
             var result = board.Play(position.Item1, position.Item2, player);
 
@@ -78,7 +78,7 @@ namespace Mute.Moe.Discord.Modules.Games
             return true;
         }
 
-        private async Task<(byte, byte)> GetAiPlay([NotNull] GameBoard board, [NotNull] Random rng)
+        private async Task<(byte, byte)> GetAiPlay( GameBoard board,  Random rng)
         {
                 var moves = from x in Enumerable.Range(0, 3)
                             from y in Enumerable.Range(0, 3)
@@ -131,7 +131,7 @@ namespace Mute.Moe.Discord.Modules.Games
         {
             private readonly CellState[,] _state = new CellState[3, 3];
 
-            [NotNull]
+            
             public override string ToString()
             {
                 string State(int x, int y)

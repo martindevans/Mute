@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Groups
 {
@@ -11,8 +11,8 @@ namespace Mute.Moe.Services.Groups
 
         IAsyncEnumerable<IRole> GetUnlocked(IGuild guild);
 
-        Task Unlock([NotNull] IRole role);
+        Task Unlock( IRole role);
 
-        Task Lock([NotNull] IRole role);
+        Task Lock( IRole role);
     }
 }

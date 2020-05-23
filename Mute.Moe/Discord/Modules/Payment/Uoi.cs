@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
-using JetBrains.Annotations;
 using MoreLinq;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
@@ -27,7 +26,7 @@ namespace Mute.Moe.Discord.Modules.Payment
         }
 
         [Command("uoi"), Summary("I will I will notify someone that they owe you something")]
-        public async Task CreatePendingUoi([NotNull] IUser user, decimal amount, [NotNull] string unit, [CanBeNull, Remainder] string note = null)
+        public async Task CreatePendingUoi( IUser user, decimal amount,  string unit, [Remainder] string? note = null)
         {
             if (amount < 0)
                 await TypingReplyAsync("You cannot owe a negative amount!");
@@ -40,7 +39,7 @@ namespace Mute.Moe.Discord.Modules.Payment
         }
 
         [Command("pay"), Summary("I will record that you have paid someone something")]
-        public async Task CreatePendingPayment([NotNull] IUser user, decimal amount, [NotNull] string unit, [CanBeNull, Remainder] string note = null)
+        public async Task CreatePendingPayment( IUser user, decimal amount,  string unit, [Remainder] string? note = null)
         {
             if (amount < 0)
                 await TypingReplyAsync("You cannot pay a negative amount!");
@@ -53,7 +52,7 @@ namespace Mute.Moe.Discord.Modules.Payment
         }
 
         [Command("confirm"), Summary("I will confirm a pending transaction")]
-        public async Task Confirm([NotNull] string input)
+        public async Task Confirm( string input)
         {
             var fid = FriendlyId32.Parse(input);
             if (!fid.HasValue)
@@ -62,7 +61,7 @@ namespace Mute.Moe.Discord.Modules.Payment
                 return;
             }
 
-            var transactions = await (await _pending.Get(debtId: fid.Value.Value)).ToArray();
+            var transactions = await _pending.Get(debtId: fid.Value.Value).ToArrayAsync();
             if (transactions.Length == 0)
             {
                 await TypingReplyAsync($"Cannot find a transaction with ID `{fid}`");
@@ -104,7 +103,7 @@ namespace Mute.Moe.Discord.Modules.Payment
         }
 
         [Command("deny"), Summary("I will deny a pending transaction")]
-        public async Task Deny([NotNull] string input)
+        public async Task Deny( string input)
         {
             var fid = FriendlyId32.Parse(input);
             if (!fid.HasValue)
@@ -113,7 +112,7 @@ namespace Mute.Moe.Discord.Modules.Payment
                 return;
             }
 
-            var transactions = await (await _pending.Get(debtId: fid.Value.Value)).ToArray();
+            var transactions = await _pending.Get(debtId: fid.Value.Value).ToArrayAsync();
             if (transactions.Length == 0)
             {
                 await TypingReplyAsync($"Cannot find a transaction with ID `{fid}`");
@@ -158,7 +157,7 @@ namespace Mute.Moe.Discord.Modules.Payment
         public async Task Pending()
         {
             await PaginatedPending(
-                await _pending.Get(toId: Context.User.Id, state: PendingState.Pending),
+                _pending.Get(toId: Context.User.Id, state: PendingState.Pending),
                 "No pending transactions to confirm",
                 "You have {0} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise",
                 mentionReceiver: false
@@ -169,14 +168,14 @@ namespace Mute.Moe.Discord.Modules.Payment
         public async Task ReversePending()
         {
             await PaginatedPending(
-                await _pending.Get(fromId: Context.User.Id, state: PendingState.Pending),
+                _pending.Get(fromId: Context.User.Id, state: PendingState.Pending),
                 "No pending transactions involving you for others to confirm",
                 "There are {0} unconfirmed payments to you. The other person should type `!confirm $id` or `!deny $id` to confirm or deny that the payment has happened",
                 mentionReceiver: true
             );
         }
 
-        private async Task PaginatedPending([NotNull] IAsyncEnumerable<IPendingTransaction> pending, string none, string paginatedHeader, bool mentionReceiver)
+        private async Task PaginatedPending( IAsyncEnumerable<IPendingTransaction> pending, string none, string paginatedHeader, bool mentionReceiver)
         {
             string FormatSinglePending(IPendingTransaction p, bool longForm)
             {
@@ -192,7 +191,7 @@ namespace Mute.Moe.Discord.Modules.Payment
                     return $"`{fid}`: {payer} paid {amount} to {receiver} {note}";
             }
 
-            var pendingArr = await pending.ToArray();
+            var pendingArr = await pending.ToArrayAsync();
 
             if (pendingArr.Length == 0)
                 await TypingReplyAsync(none);

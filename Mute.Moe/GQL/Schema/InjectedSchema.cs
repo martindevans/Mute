@@ -1,7 +1,7 @@
 ﻿using System;
 using GraphQL.Authorization;
 using GraphQL.Types;
-using JetBrains.Annotations;
+
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Auth;
 
@@ -33,7 +33,7 @@ namespace Mute.Moe.GQL.Schema
 
         public interface IRootQuery
         {
-            void Add([NotNull] IServiceProvider services, [NotNull] ObjectGraphType ogt);
+            void Add( IServiceProvider services,  ObjectGraphType ogt);
         }
 
         private class MuteMutation
@@ -51,7 +51,7 @@ namespace Mute.Moe.GQL.Schema
 
         public interface IRootMutation
         {
-            void Add([NotNull] IServiceProvider services, [NotNull] ObjectGraphType ogt);
+            void Add( IServiceProvider services,  ObjectGraphType ogt);
         }
     }
 }

@@ -2,14 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Xml.Linq;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Sigil
 {
     public class Sigil
     {
         public static readonly XNamespace SvgNamespace = "http://www.w3.org/2000/svg";
-        private static readonly string[,] Prefixes = {
+        private static readonly string?[,] Prefixes = {
             { "7a365cc2", "3cdcdb8c", null, null },
             { "7a365cc2", "3cdcdb8c", "fe5cf0f4", null },
             { "fbf3a00b", null, null, null },
@@ -267,7 +267,7 @@ namespace Mute.Moe.Sigil
             { "82ff5e94", "2befa75a", "fe5cf0f4", "f6bb8637" },
             { "b0ac0b82", "7faaca8c", "82610c41", "b397af9f" },
         };
-        private static readonly string[,] Suffixes = {
+        private static readonly string?[,] Suffixes = {
             { "7a365cc2", null, null, null },
             { "a5c31631", "6cf35bfb", null, null },
             { "a5c31631", "462c645e", "d1fb16cc", null },
@@ -529,7 +529,7 @@ namespace Mute.Moe.Sigil
         private readonly IReadOnlyList<Row> _symbols;
 
         #region construction
-        private Sigil([NotNull] IReadOnlyList<Row> value)
+        private Sigil(IReadOnlyList<Row> value)
         {
             _symbols = value;
         }
@@ -589,7 +589,7 @@ namespace Mute.Moe.Sigil
             return (byte)(value & 0xFF);
         }
 
-        [NotNull] public XDocument ToSvg([NotNull] string fg = "black", [NotNull] string bg = "white")
+         public XDocument ToSvg( string fg = "black",  string bg = "white")
         {
             var ns = SvgNamespace;
 
@@ -631,9 +631,11 @@ namespace Mute.Moe.Sigil
                 Layout(root, elements, dim, dim);
             }
             else
+            {
                 //ncrunch: no coverage start
                 throw new NotSupportedException($"Incorrect number of elements ({count})");
                 //ncrunch: no coverage end
+            }
 
             return doc;
         }
@@ -660,23 +662,23 @@ namespace Mute.Moe.Sigil
             }
         }
 
-        private struct Row
+        private readonly struct Row
             : IEnumerable<string>
         {
-            private readonly string[,] _matrix;
+            private readonly string?[,] _matrix;
             private readonly uint _row;
 
-            public Row(string[,] matrix, int row)
+            public Row(string?[,] matrix, int row)
                 : this(matrix, unchecked((uint)row))
             {
             }
 
-            public Row(string[,] matrix, ulong row)
+            public Row(string?[,] matrix, ulong row)
                 : this(matrix, unchecked((uint)row))
             {
             }
 
-            public Row(string[,] matrix, uint row)
+            public Row(string?[,] matrix, uint row)
             {
                 _matrix = matrix;
                 _row = row;

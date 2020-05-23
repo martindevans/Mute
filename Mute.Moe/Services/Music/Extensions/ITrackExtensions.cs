@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord;
-using JetBrains.Annotations;
+
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Services.Music.Extensions
@@ -8,7 +8,7 @@ namespace Mute.Moe.Services.Music.Extensions
     // ReSharper disable once InconsistentNaming
     public static class ITrackExtensions
     {
-        public static async Task<EmbedBuilder> DiscordEmbed([NotNull] this ITrack track)
+        public static async Task<EmbedBuilder> DiscordEmbed( this ITrack track)
         {
             var embed = new EmbedBuilder()
                         .WithTitle(track.Title)

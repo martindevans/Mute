@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord;
-using JetBrains.Annotations;
+
 using Mute.Moe.Services.Audio.Mixing.Channels;
 
 namespace Mute.Moe.Services.Audio
@@ -10,11 +10,11 @@ namespace Mute.Moe.Services.Audio
     /// </summary>
     public interface IGuildVoice
     {
-        [NotNull] IGuild Guild { get; }
+         IGuild Guild { get; }
 
-        [CanBeNull] IVoiceChannel Channel { get; }
+        IVoiceChannel? Channel { get; }
 
-        Task Move([CanBeNull] IVoiceChannel channel);
+        Task Move(IVoiceChannel? channel);
 
         Task Stop();
 

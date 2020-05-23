@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Information.Anime
 {
@@ -12,16 +12,16 @@ namespace Mute.Moe.Services.Information.Anime
         /// </summary>
         /// <param name="search"></param>
         /// <returns></returns>
-        [NotNull, ItemCanBeNull] Task<IAnime> GetAnimeInfoAsync(string search);
+        Task<IAnime?> GetAnimeInfoAsync(string search);
 
         /// <summary>
         /// Get all animes by the given search term
         /// </summary>
         /// <param name="search"></param>
         /// <returns></returns>
-        [NotNull, ItemNotNull] Task<IAsyncEnumerable<IAnime>> GetAnimesInfoAsync(string search);
+        IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search);
 
-        [NotNull, ItemNotNull] Task<IAsyncEnumerable<IAnime>> GetAnimesInfoAsync(ICharacter character);
+        IAsyncEnumerable<IAnime> GetAnimesInfoAsync(ICharacter character);
     }
 
     public interface IAnime

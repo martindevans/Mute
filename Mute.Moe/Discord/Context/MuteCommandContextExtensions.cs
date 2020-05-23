@@ -1,12 +1,12 @@
 ﻿using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Mute.Moe.Services.Sentiment;
 
 namespace Mute.Moe.Discord.Context
 {
     public static class MuteCommandContextExtensions
     {
-        public static async Task<SentimentResult> Sentiment([NotNull] this MuteCommandContext context)
+        public static async Task<SentimentResult> Sentiment( this MuteCommandContext context)
         {
             var r = await context.GetOrAdd(async () => {
                 var sentiment = (ISentimentEvaluator)context.Services.GetService(typeof(ISentimentEvaluator));

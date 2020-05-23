@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Utilities;
@@ -13,12 +13,12 @@ namespace Mute.Moe.Discord.Modules
         : BaseModule, IKeyProvider
     {
         [Command("time"), Summary("I will tell you the time")]
-        public async Task TimeAsync([Remainder, CanBeNull] string tz = null)
+        public async Task TimeAsync([Remainder] string? tz = null)
         {
             await TypingReplyAsync(GetTime(tz));
         }
 
-        [NotNull] private string GetTime([CanBeNull] string tz = null)
+         private string GetTime(string? tz = null)
         {
             var extract = FuzzyParsing.TimeOffset(tz ?? "");
             var offset = extract.IsValid ? extract.UtcOffset : TimeSpan.Zero;

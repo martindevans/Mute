@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Discord.WebSocket;
 using GraphQL.Server.Transports.AspNetCore;
-using JetBrains.Annotations;
+
 using Microsoft.AspNetCore.Http;
 
 namespace Mute.Moe.GQL
@@ -10,7 +10,7 @@ namespace Mute.Moe.GQL
     public class GraphQLUserContextBuilder
         : IUserContextBuilder
     {
-        [ItemNotNull] public async Task<object> BuildUserContext([NotNull] HttpContext httpContext)
+        public async Task<object> BuildUserContext( HttpContext httpContext)
         {
             var discord = (DiscordSocketClient)httpContext.RequestServices.GetService(typeof(DiscordSocketClient));
 

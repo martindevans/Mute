@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 using Mute.Moe.Discord.Services.Responses.Eliza.Scripts;
 using Mute.Moe.Extensions;
 
@@ -32,7 +32,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 		    _xnone = _script.GetKeys("xnone").ToArray();
 		}
 
-	    [NotNull] public string ProcessInput([NotNull] ICommandContext input)
+	     public string ProcessInput( ICommandContext input)
 	    {
 	        var ctx = new ElizaContext(input, CleanInput(input.Message.Content));
 
@@ -42,7 +42,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
                 ?? "I am at a loss for words";              //Return default default
 	    }
 
-	    [CanBeNull] private string ProcessSentences([NotNull] ElizaContext ctx)
+	    private string? ProcessSentences(ElizaContext ctx)
 	    {
 	        return (from sentence in ctx.Input.Split('.', StringSplitOptions.RemoveEmptyEntries)
                     let transformed = new ElizaContext(ctx.Base, Transform(_script.Pre, sentence).Trim())
@@ -51,13 +51,13 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	                select r).FirstOrDefault();
 	    }
 
-		[CanBeNull] private string Sentence([NotNull] ElizaContext ctx)
+		private string? Sentence(ElizaContext ctx)
 		{
             //Split sentence into words
 		    var words = ctx.Input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
 		    //Check if there are any exit words, if so immediately terminate
-		    if (words.Any(_script.Quit.Contains))
+		    if (words.Any(a => _script.Quit.Contains(a)))
 		    {
 		        Finished = true;
 		        return _script.Final.Random(_random);
@@ -87,7 +87,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 		/// fails, try another decomposition rule. If assembly is a goto rule, return
 		/// null and give the key. If assembly succeeds, return the reply;
 		/// </remarks>
-		[CanBeNull] private string TryKey([CanBeNull] Key key, ElizaContext ctx)
+		private string? TryKey(Key? key, ElizaContext ctx)
 		{
 		    if (key == null)
 		        return null;
@@ -132,7 +132,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         /// </summary>
         /// <param name="d"></param>
         /// <returns></returns>
-	    private IReassembly ChooseReassembly([NotNull] Decomposition d)
+	    private IReassembly ChooseReassembly( Decomposition d)
 	    {
 	        //Initialize index for this rule if it's not already set
 	        if (!_decompositionCount.ContainsKey(d))
@@ -155,7 +155,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 		/// is goto, return null and give the gotoKey to use. Otherwise return the
 		/// response.
 		/// </remarks>
-		[CanBeNull] private string Assemble(string reassembly, IReadOnlyList<string> decomposed)
+		private string? Assemble(string reassembly, IReadOnlyList<string> decomposed)
 	    {
 	        var response = new StringBuilder(reassembly);
 
@@ -189,7 +189,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-	    private string CleanInput([NotNull] string input)
+	    private string CleanInput( string input)
 	    {
 	        StringBuilder Compress(StringBuilder str)
 	        {
@@ -249,7 +249,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         /// <param name="transformations"></param>
         /// <param name="sentence"></param>
         /// <returns></returns>
-	    [NotNull] private static string Transform([NotNull] IReadOnlyDictionary<string, Transform> transformations, [NotNull] string sentence)
+	     private static string Transform( IReadOnlyDictionary<string, Transform> transformations,  string sentence)
 	    {
 	        var txs = from word in sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries)
 	                  let tx = transformations.GetValueOrDefault(word)

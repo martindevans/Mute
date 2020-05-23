@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Discord.Context.Postprocessing
 {
@@ -8,6 +8,6 @@ namespace Mute.Moe.Discord.Context.Postprocessing
     {
         uint Order { get; }
 
-        Task<bool> Process([NotNull] MuteCommandContext context, [NotNull] IResult result);
+        Task<bool> Process( MuteCommandContext context,  IResult result);
     }
 }

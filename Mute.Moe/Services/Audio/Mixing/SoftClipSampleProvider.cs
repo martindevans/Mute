@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using JetBrains.Annotations;
+
 using Mute.Moe.Extensions;
 using NAudio.Wave;
 
@@ -17,7 +17,7 @@ namespace Mute.Moe.Services.Audio.Mixing
 
         public WaveFormat WaveFormat => _upstream.WaveFormat;
 
-        public SoftClipSampleProvider([NotNull] ISampleProvider upstream)
+        public SoftClipSampleProvider( ISampleProvider upstream)
         {
             _upstream = upstream;
             _clipper = new OpusSoftClip(upstream.WaveFormat.Channels);

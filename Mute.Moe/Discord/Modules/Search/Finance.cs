@@ -4,8 +4,8 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
-using Mute.Moe.AsyncEnumerable.Extensions;
+
+
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.Cryptocurrency;
@@ -38,7 +38,7 @@ namespace Mute.Moe.Discord.Modules.Search
         }
 
         [Command("ticker"), Summary("I will find out information about a stock or currency")]
-        public async Task Ticker([NotNull] string symbolOrName, string quote = "USD")
+        public async Task Ticker( string symbolOrName, string quote = "USD")
         {
             if (await TickerAsCrypto(symbolOrName, quote))
                 return;
@@ -53,7 +53,7 @@ namespace Mute.Moe.Discord.Modules.Search
         }
 
         [Command("crypto")]
-        public async Task TickerCrypto([NotNull] string symbolOrName, string quote = "USD")
+        public async Task TickerCrypto( string symbolOrName, string quote = "USD")
         {
             if (!await TickerAsCrypto(symbolOrName, quote))
             {
@@ -66,7 +66,7 @@ namespace Mute.Moe.Discord.Modules.Search
         }
 
         [Command("forex")]
-        public async Task TickerForex([NotNull] string symbolOrName, string quote = "USD")
+        public async Task TickerForex( string symbolOrName, string quote = "USD")
         {
             if (!await TickerAsForex(symbolOrName, quote))
             {
@@ -79,7 +79,7 @@ namespace Mute.Moe.Discord.Modules.Search
         }
 
         [Command("stock")]
-        public async Task TickerStock([NotNull] string symbolOrName)
+        public async Task TickerStock( string symbolOrName)
         {
             if (!await TickerAsStock(symbolOrName))
             {
@@ -95,7 +95,7 @@ namespace Mute.Moe.Discord.Modules.Search
                                     .Search(symbolOrName)
                                     .Select(a => $" • {a.Name} (`{a.Symbol}`)")
                                     .Take(10)
-                                    .ToArray();
+                                    .ToArrayAsync();
             if (suggestions.Length > 0)
                 reply += "Did you mean one of these stocks:\n" + string.Join("\n", suggestions);
             else if (_random.NextDouble() < 0.25f)
@@ -111,7 +111,7 @@ namespace Mute.Moe.Discord.Modules.Search
             if (result != null)
             {
                 //Try to find the name of the stock
-                var symbol = await (await _search.Search(result.Symbol)).Where(a => a.Symbol.Equals(result.Symbol, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var symbol = await _search.Search(result.Symbol).Where(a => a.Symbol.Equals(result.Symbol, StringComparison.OrdinalIgnoreCase)).FirstOrDefaultAsync();
 
                 var change = "";
                 var delta = result.Price - result.Open;
@@ -148,7 +148,7 @@ namespace Mute.Moe.Discord.Modules.Search
             return false;
         }
 
-        private async Task<bool> TickerAsCrypto([NotNull] string symbolOrName, string quote)
+        private async Task<bool> TickerAsCrypto( string symbolOrName, string quote)
         {
             //Try to parse the sym/name as a cryptocurrency
             var currency = await _crypto.FindBySymbolOrName(symbolOrName);

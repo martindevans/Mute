@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 using Miki.Anilist;
 using Mute.Moe.Extensions;
 
@@ -10,7 +10,7 @@ namespace Mute.Moe.Services.Information.Anime
     public class MikibotAnilistCharacterSearch
         : BaseMikibotSearchService<ICharacterSearchResult, ICharacter>, ICharacterInfo
     {
-        protected override async Task<ICharacter> GetItemAsync(AnilistClient client, ICharacterSearchResult searchItem)
+        protected override async Task<ICharacter?> GetItemAsync(AnilistClient client, ICharacterSearchResult searchItem)
         {
             var item = await client.GetCharacterAsync(searchItem.Id);
             if (item == null)
@@ -19,12 +19,12 @@ namespace Mute.Moe.Services.Information.Anime
             return new MikibotCharacter(item);
         }
 
-        [NotNull] public Task<ICharacter> GetCharacterInfoAsync(string search)
+        public Task<ICharacter?> GetCharacterInfoAsync(string search)
         {
             return GetItemInfoAsync(search);
         }
 
-        public Task<IAsyncEnumerable<ICharacter>> GetCharactersInfoAsync(string search)
+        public IAsyncEnumerable<ICharacter> GetCharactersInfoAsync(string search)
         {
             return GetItemsInfoAsync(search);
         }
@@ -65,7 +65,7 @@ namespace Mute.Moe.Services.Information.Anime
         private class MikibotCharacter
             : ICharacter
         {
-            public MikibotCharacter([NotNull] Miki.Anilist.ICharacter item)
+            public MikibotCharacter( Miki.Anilist.ICharacter item)
             {
                 Id = item.Id.ToString();
 

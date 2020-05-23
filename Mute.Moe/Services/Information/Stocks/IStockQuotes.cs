@@ -1,11 +1,10 @@
 ﻿using System.Threading.Tasks;
-using JetBrains.Annotations;
 
 namespace Mute.Moe.Services.Information.Stocks
 {
     public interface IStockQuotes
     {
-        [ItemCanBeNull] Task<IStockQuote> GetQuote(string symbol);
+        Task<IStockQuote?> GetQuote(string symbol);
     }
 
     public interface IStockQuote

@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Humanizer;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.Sentiment;
@@ -18,14 +17,14 @@ namespace Mute.Moe.Discord.Modules
         private readonly ISentimentEvaluator _sentiment;
         private readonly SentimentReactionConfig _config;
 
-        public Sentiment([NotNull] Configuration config, ISentimentEvaluator sentiment)
+        public Sentiment(Configuration config, ISentimentEvaluator sentiment)
         {
             _sentiment = sentiment;
             _config = config.SentimentReactions;
         }
 
         [Command("sentiment"), Summary("I will show my opinion of a message")]
-        public async Task AskSentiment([NotNull, Remainder] string message)
+        public async Task AskSentiment([Remainder] string message)
         {
             await ReactWithSentiment(Context.Message, await Context.Sentiment());
         }
@@ -40,7 +39,7 @@ namespace Mute.Moe.Discord.Modules
             await ReactWithSentiment(msg);
         }
 
-        private async Task ReactWithSentiment([NotNull] IUserMessage message, SentimentResult? score = null)
+        private async Task ReactWithSentiment(IUserMessage message, SentimentResult? score = null)
         {
             var result = score ?? await _sentiment.Predict(message.Content);
             if (result.ClassificationScore < _config.CertaintyThreshold)
@@ -61,7 +60,7 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("sentiment-score"), Summary("I will show my opinion of a message numerically")]
-        public async Task AskSentimentScore([NotNull, Remainder] string message)
+        public async Task AskSentimentScore([Remainder] string message)
         {
             await ShowSentimentScore(await Context.Sentiment());
         }
@@ -76,7 +75,7 @@ namespace Mute.Moe.Discord.Modules
             await ShowSentimentScore(await _sentiment.Predict(msg.Content), msg.Content);
         }
 
-        private async Task ShowSentimentScore(SentimentResult score, [CanBeNull] string quote = null)
+        private async Task ShowSentimentScore(SentimentResult score, string? quote = null)
         {
             var embed = new EmbedBuilder()
                 .WithTitle(quote)
@@ -103,7 +102,7 @@ namespace Mute.Moe.Discord.Modules
             await ReplyAsync(embed);
         }
 
-        [ItemCanBeNull] private async Task<IUserMessage> GetPreviousMessage(byte offset)
+        private async Task<IUserMessage?> GetPreviousMessage(byte offset)
         {
             var messages = await Context.Channel.GetMessagesAsync(Context.Message, Direction.Before, byte.MaxValue).FlattenAsync();
             return messages.Skip(offset).FirstOrDefault() as IUserMessage;

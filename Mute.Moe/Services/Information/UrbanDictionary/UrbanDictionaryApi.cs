@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using FluidCaching;
-using JetBrains.Annotations;
+
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.UrbanDictionary
@@ -12,25 +12,25 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
     public class UrbanDictionaryApi
         : IUrbanDictionary
     {
-        [NotNull] private readonly HttpClient _http;
+         private readonly HttpClient _http;
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly FluidCache<CacheEntry> _definitionCache;
         private readonly IIndex<string, CacheEntry> _definitionsByWord;
 
-        public UrbanDictionaryApi([NotNull] Configuration config, [NotNull] IHttpClientFactory http)
+        public UrbanDictionaryApi(Configuration config,  IHttpClientFactory http)
         {
             _http = http.CreateClient();
             _definitionCache = new FluidCache<CacheEntry>(
-                (int)config.UrbanDictionary.CacheSize,
-                TimeSpan.FromSeconds(config.UrbanDictionary.CacheMinTimeSeconds),
-                TimeSpan.FromSeconds(config.UrbanDictionary.CacheMaxTimeSeconds),
+                (int)(config.UrbanDictionary?.CacheSize ?? 128),
+                TimeSpan.FromSeconds(config.UrbanDictionary?.CacheMinTimeSeconds ?? 30),
+                TimeSpan.FromSeconds(config.UrbanDictionary?.CacheMaxTimeSeconds ?? 3600),
                 () => DateTime.UtcNow
             );
             _definitionsByWord = _definitionCache.AddIndex("byWord", a => a.Word);
         }
 
-        [NotNull, ItemNotNull] public async Task<IReadOnlyList<IUrbanDefinition>> SearchTermAsync(string term)
+        public async Task<IReadOnlyList<IUrbanDefinition>> SearchTermAsync(string term)
         {
             //Sanity check term encodes into URL form
             var urlTerm = HttpUtility.UrlEncode(term);
@@ -54,38 +54,36 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
             return response.Entries;
         }
 
-        [NotNull, ItemCanBeNull] private async Task<CacheEntry> SearchTermNoCacheAsync(string key)
+        private async Task<CacheEntry?> SearchTermNoCacheAsync(string key)
         {
-            using (var httpResponse = await _http.GetAsync($"http://api.urbandictionary.com/v0/define?term={key}"))
-            {
-                if (!httpResponse.IsSuccessStatusCode)
-                    return null;
+            using var httpResponse = await _http.GetAsync($"http://api.urbandictionary.com/v0/define?term={key}");
+            if (!httpResponse.IsSuccessStatusCode)
+                return null;
 
-                //Parse JSON of response
-                var response = JsonConvert.DeserializeObject<Response>(await httpResponse.Content.ReadAsStringAsync());
+            //Parse JSON of response
+            var response = JsonConvert.DeserializeObject<Response>(await httpResponse.Content.ReadAsStringAsync());
 
-                //If the response contains no useful data return nothing
-                var items = response?.Items;
-                if (items == null)
-                    return null;
+            //If the response contains no useful data return nothing
+            var items = response?.Items;
+            if (items == null)
+                return null;
 
-                return new CacheEntry(key, items);
-            }
+            return new CacheEntry(key, items);
         }
 
         private class CacheEntry
             : IEquatable<CacheEntry>
         {
-            [NotNull] public readonly string Word;
-            [NotNull] public readonly IReadOnlyList<IUrbanDefinition> Entries;
+             public readonly string Word;
+             public readonly IReadOnlyList<IUrbanDefinition> Entries;
 
-            public CacheEntry([NotNull] string word, [NotNull] IReadOnlyList<IUrbanDefinition> entries)
+            public CacheEntry( string word,  IReadOnlyList<IUrbanDefinition> entries)
             {
                 Word = word;
                 Entries = entries;
             }
 
-            public bool Equals([CanBeNull] CacheEntry other)
+            public bool Equals(CacheEntry? other)
             {
                 if (ReferenceEquals(null, other))
                     return false;
@@ -94,7 +92,7 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
                 return string.Equals(Word, other.Word);
             }
 
-            public override bool Equals([CanBeNull] object obj)
+            public override bool Equals(object? obj)
             {
                 if (ReferenceEquals(null, obj))
                     return false;
@@ -110,12 +108,12 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
                 return Word.GetHashCode();
             }
 
-            public static bool operator ==([CanBeNull] CacheEntry left, [CanBeNull] CacheEntry right)
+            public static bool operator ==(CacheEntry? left, CacheEntry? right)
             {
                 return Equals(left, right);
             }
 
-            public static bool operator !=([CanBeNull] CacheEntry left, [CanBeNull] CacheEntry right)
+            public static bool operator !=(CacheEntry? left, CacheEntry? right)
             {
                 return !Equals(left, right);
             }

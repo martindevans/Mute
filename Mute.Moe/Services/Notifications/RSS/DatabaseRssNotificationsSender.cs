@@ -8,8 +8,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Discord;
 using Discord.WebSocket;
-using JetBrains.Annotations;
-using Mute.Moe.AsyncEnumerable.Extensions;
+
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Information.RSS;
@@ -27,7 +26,7 @@ namespace Mute.Moe.Services.Notifications.RSS
         private readonly IRssNotifications _notifications;
         private readonly IRss _rss;
 
-        private Task _thread;
+        private readonly Task _thread;
         
         public DatabaseRssNotificationsSender(DiscordSocketClient client, IRssNotifications notifications, IRss rss, IDatabaseService database)
         {
@@ -54,7 +53,7 @@ namespace Mute.Moe.Services.Notifications.RSS
             {
                 while (true)
                 {
-                    foreach (var feed in await _notifications.GetSubscriptions().ToArray())
+                    foreach (var feed in await _notifications.GetSubscriptions().ToArrayAsync())
                     {
                         try
                         {
@@ -92,7 +91,7 @@ namespace Mute.Moe.Services.Notifications.RSS
 
         private async Task<bool> HasBeenPublished(string channelId, string feedUrl, string uniqueId)
         {
-            Unit ParseSubscription(DbDataReader reader)
+            static Unit ParseSubscription(DbDataReader reader)
             {
                 return Unit.Default;
             }
@@ -107,25 +106,23 @@ namespace Mute.Moe.Services.Notifications.RSS
                 return cmd;
             }
 
-            return await new SqlAsyncResult<Unit>(_database, PrepareQuery, ParseSubscription).Any();
+            return await new SqlAsyncResult<Unit>(_database, PrepareQuery, ParseSubscription).AnyAsync();
         }
 
-        private async Task Publish([NotNull] IRssSubscription feed, [NotNull] SyndicationItem item)
+        private async Task Publish( IRssSubscription feed,  SyndicationItem item)
         {
             await SendMessage(feed, item);
 
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertNotificationSql;
-                cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = feed.Channel.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@FeedUrl", System.Data.DbType.String) { Value = feed.FeedUrl });
-                cmd.Parameters.Add(new SQLiteParameter("@UniqueId", System.Data.DbType.String) { Value = item.Id });
+            using var cmd = _database.CreateCommand();
+            cmd.CommandText = InsertNotificationSql;
+            cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = feed.Channel.ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@FeedUrl", System.Data.DbType.String) { Value = feed.FeedUrl });
+            cmd.Parameters.Add(new SQLiteParameter("@UniqueId", System.Data.DbType.String) { Value = item.Id });
 
-                await cmd.ExecuteNonQueryAsync();
-            }
+            await cmd.ExecuteNonQueryAsync();
         }
 
-        private static EmbedBuilder FormatMessage([NotNull] SyndicationItem item)
+        private static EmbedBuilder FormatMessage( SyndicationItem item)
         {
             var desc = item.Summary?.Text ?? "";
             desc = desc.Substring(0, Math.Min(desc.Length, 1000));
@@ -149,7 +146,7 @@ namespace Mute.Moe.Services.Notifications.RSS
             return embed;
         }
 
-        private async Task SendMessage([NotNull] IRssSubscription feed, [NotNull] SyndicationItem item)
+        private async Task SendMessage( IRssSubscription feed,  SyndicationItem item)
         {
             if (!(_client.GetChannel(feed.Channel) is ITextChannel channel))
                 return;

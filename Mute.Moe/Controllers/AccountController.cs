@@ -3,7 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-using JetBrains.Annotations;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -63,7 +63,6 @@ namespace Mute.Moe.Controllers
             return Redirect($"https://cdn.discordapp.com/avatars/{id}/{avatar}.jpeg");
         }
 
-        [ItemNotNull]
         [HttpGet("Guilds")]
         public async Task<GuildInfo[]> AccountGuilds()
         {

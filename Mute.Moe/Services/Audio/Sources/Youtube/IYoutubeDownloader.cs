@@ -2,22 +2,22 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Services.Audio.Sources.Youtube
 {
     public interface IYoutubeDownloader
     {
-        [NotNull] Task<bool> IsValidUrl([NotNull] string url);
+         Task<bool> IsValidUrl( string url);
 
-        [NotNull, ItemNotNull] Task<IYoutubeDownloadResult> DownloadAudio([NotNull] string url);
+        Task<IYoutubeDownloadResult> DownloadAudio( string url);
 
-        [NotNull] Task<int> PerformMaintenance();
+         Task<int> PerformMaintenance();
     }
 
     public interface IYoutubeDownloadResult
     {
-        [CanBeNull] IYoutubeFile File { get; }
+        IYoutubeFile? File { get; }
 
         YoutubeDownloadStatus Status { get; }
     }
@@ -28,15 +28,15 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
     public interface IYoutubeFile
         : IDisposable
     {
-        [NotNull] FileInfo File { get; }
+        FileInfo File { get; }
 
-        [NotNull] string Title { get; }
+        string Title { get; }
 
-        [NotNull] string Url { get; }
+        string Url { get; }
 
-        [CanBeNull] string ThumbnailUrl { get; }
+        string? ThumbnailUrl { get; }
 
-        [NotNull] IReadOnlyList<string> Artists { get; }
+        IReadOnlyList<string> Artists { get; }
 
         TimeSpan Duration { get; }
     }

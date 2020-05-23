@@ -5,8 +5,6 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
-using JetBrains.Annotations;
-using Mute.Moe.AsyncEnumerable;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.Database;
 
@@ -33,18 +31,16 @@ namespace Mute.Moe.Services.Imitation
             }
         }
 
-        private async Task<bool> HasModel([NotNull] IUser user)
+        private async Task<bool> HasModel( IUser user)
         {
             try
             {
-                using (var cmd = _db.CreateCommand())
-                {
-                    cmd.CommandText = HasModelSql;
-                    cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = user.Id.ToString()});
+                using var cmd = _db.CreateCommand();
+                cmd.CommandText = HasModelSql;
+                cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = user.Id.ToString()});
 
-                    var result = (uint)(long)await cmd.ExecuteScalarAsync();
-                    return (int)result != 0;
-                }
+                var result = (uint)(long)await cmd.ExecuteScalarAsync();
+                return (int)result != 0;
             }
             catch (Exception e)
             {
@@ -53,7 +49,7 @@ namespace Mute.Moe.Services.Imitation
             }
         }
 
-        public async Task<IImitationModel> GetModel(IUser user)
+        public async Task<IImitationModel?> GetModel(IUser user)
         {
             // Early out if no model exists for this user
             if (!await HasModel(user))
@@ -63,7 +59,7 @@ namespace Mute.Moe.Services.Imitation
             return new DatabaseMarkovModel(_db, user, new Random());
         }
 
-        [ItemNotNull, NotNull] public async Task<IImitationModel> BeginTraining([NotNull] IUser user, [NotNull] IMessageChannel channel, Func<string, Task> statusCallback = null)
+        public async Task<IImitationModel> BeginTraining( IUser user,  IMessageChannel channel, Func<string, Task>? statusCallback = null)
         {
             // Return existing model if one is already trained
             var m = await GetModel(user);
@@ -73,50 +69,46 @@ namespace Mute.Moe.Services.Imitation
             m = new DatabaseMarkovModel(_db, user, new Random());
 
             // Train on the empty string to initialise database with a single value for this user
-            await statusCallback("Initialising DB");
+            if (statusCallback != null)
+                await statusCallback("Initialising DB");
             await m.Train("");
 
             // Train on all messages
             var count = 0;
-            await (await Scrape(channel)).Where(msg => msg.Author.Id == user.Id).ForEachAsync(async msg => {
+            await Scrape(channel).Where(msg => msg.Author.Id == user.Id).ForEachAsync(async msg => {
                 count++;
-                if (count % 250 == 0)
+                if (count % 250 == 0 && statusCallback != null)
                     await statusCallback($"Processed {count} messages");
                 await m.Train(msg.Content);
             });
 
-            await statusCallback($"Completed training with {count} messages");
+            if (statusCallback != null)
+                await statusCallback($"Completed training with {count} messages");
 
             return m;
         }
 
-        [NotNull, ItemNotNull] private async Task<IAsyncEnumerable<IMessage>> Scrape([NotNull] IMessageChannel channel)
+        private async IAsyncEnumerable<IMessage> Scrape( IMessageChannel channel)
         {
             //If start message is not set then get the latest message in the channel now
             var start = (await channel.GetMessagesAsync(1).FlattenAsync()).SingleOrDefault();
 
-            //If message is still null that means we failed to get a start message (no messages in channel?)
-            if (start == null)
-                return new EmptyAsyncEnumerable<IMessage>();
+            // Keep loading pages until the start message is null
+            while (start != null)
+            {
+                // Add a slight delay between fetching pages so we don't hammer discord too hard
+                await Task.Delay(150);
 
-            return new PagedAsyncEnumerable<IReadOnlyList<IMessage>, IMessage>(
-                async page => {
+                // Get the next page of messages
+                var page = (await channel.GetMessagesAsync(start, Direction.Before, 99).FlattenAsync()).OrderByDescending(a => a.CreatedAt).ToArray();
 
-                    //Add a slight delay between fetching pages so we don't hammer discord too hard
-                    await Task.Delay(150);
+                // Set the start of the next page to the end of this page
+                start = page.LastOrDefault();
 
-                    var startMessage = start;
-                    if (page != null)
-                        startMessage = page.LastOrDefault();
-
-                    if (startMessage == null)
-                        return Array.Empty<IMessage>();
-
-                    return (await channel.GetMessagesAsync(startMessage, Direction.Before, 99).FlattenAsync()).OrderByDescending(a => a.CreatedAt).ToArray();
-
-                },
-                page => page.GetEnumerator()
-            );
+                // yield every message in page
+                foreach (var message in page)
+                    yield return message;
+            }
         }
 
         public async Task Process(MuteCommandContext context)
@@ -148,9 +140,9 @@ namespace Mute.Moe.Services.Imitation
             _random = random;
         }
 
-        [ItemCanBeNull, NotNull] private async Task<string> NextWord([NotNull] string input, float exhaustion)
+        private async Task<string?> NextWord( string input, float exhaustion)
         {
-            (string, int) ParseWord(DbDataReader reader)
+            static (string?, int) ParseWord(DbDataReader reader)
             {
                 return (
                     reader["NextWord"]?.ToString(),
@@ -168,7 +160,7 @@ namespace Mute.Moe.Services.Imitation
             }
 
             // Select all next possible words
-            var words = await new SqlAsyncResult<(string, int)>(_db, PrepareQuery, ParseWord).Select(a => (a.Item1, (float)a.Item2)).ToArray();
+            var words = await new SqlAsyncResult<(string?, int)>(_db, PrepareQuery, ParseWord).Select(a => (a.Item1, (float)a.Item2)).ToArrayAsync();
 
             // If model doesn't know of any next words end here
             if (words.Length == 0)
@@ -200,7 +192,7 @@ namespace Mute.Moe.Services.Imitation
             return words.Last().Item1;
         }
 
-        public async Task<string> Predict(string prompt)
+        public async Task<string> Predict(string? prompt)
         {
             const int targetLength = 10;
             const int maxLength = 30;
@@ -210,7 +202,7 @@ namespace Mute.Moe.Services.Imitation
             {
                 // Predict next word, if it's null that's the end of the sentence
                 var word = await NextWord(sentence.LastOrDefault() ?? "", sentence.Count / (float)targetLength);
-                if (string.IsNullOrEmpty(word))
+                if (word == null || string.IsNullOrEmpty(word))
                     break;
 
                 // It wasn't null, extend sentence and increase exhaustion
@@ -237,15 +229,12 @@ namespace Mute.Moe.Services.Imitation
 
                 try
                 {
-                    using (var cmd = _db.CreateCommand())
-                    {
-                        cmd.CommandText = UpdateModel;
-                        cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = _user.Id.ToString()});
-                        cmd.Parameters.Add(new SQLiteParameter("@PreviousWord", System.Data.DbType.String) {Value = p});
-                        cmd.Parameters.Add(new SQLiteParameter("@NextWord", System.Data.DbType.String) {Value = n});
-
-                        await cmd.ExecuteNonQueryAsync();
-                    }
+                    using var cmd = _db.CreateCommand();
+                    cmd.CommandText = UpdateModel;
+                    cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = _user.Id.ToString()});
+                    cmd.Parameters.Add(new SQLiteParameter("@PreviousWord", System.Data.DbType.String) {Value = p});
+                    cmd.Parameters.Add(new SQLiteParameter("@NextWord", System.Data.DbType.String) {Value = n});
+                    await cmd.ExecuteNonQueryAsync();
                 }
                 catch (Exception e)
                 {

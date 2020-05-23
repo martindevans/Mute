@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 {
@@ -46,39 +46,39 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 		{
 		}
 
-	    public Decomposition(string pattern, bool memorise, bool randomise, [NotNull] params string[] reassemblies)
+	    public Decomposition(string pattern, bool memorise, bool randomise,  params string[] reassemblies)
             : this(pattern, memorise, randomise, reassemblies.Select(r => new ConstantReassembly(r)).ToArray<IReassembly>())
 	    {
 	    }
 
 
-	    public Decomposition(string pattern, bool memorise, bool randomise, [NotNull] params Func<ICommandContext, IReadOnlyList<string>, Task<string>>[] reassemblies)
+	    public Decomposition(string pattern, bool memorise, bool randomise,  params Func<ICommandContext, IReadOnlyList<string>, Task<string?>>[] reassemblies)
 	        : this(pattern, memorise, randomise, reassemblies.Select(f => new FuncReassembly(f)).ToArray<IReassembly>())
 	    {
 	    }
 
-	    public Decomposition(string pattern, bool memorise, bool randomise, [NotNull] params Func<ICommandContext, IReadOnlyList<string>, string>[] reassemblies)
-	        : this(pattern, memorise, randomise, reassemblies.Select(f => new FuncReassembly((c, s) => Task.FromResult(f(c, s)))).ToArray<IReassembly>())
+	    public Decomposition(string pattern, bool memorise, bool randomise,  params Func<ICommandContext, IReadOnlyList<string?>, string>[] reassemblies)
+	        : this(pattern, memorise, randomise, reassemblies.Select(f => new FuncReassembly((c, s) => Task.FromResult<string?>(f(c, s)))).ToArray<IReassembly>())
 	    {
 	    }
 
-	    public Decomposition(string pattern, [NotNull] params Func<ICommandContext, IReadOnlyList<string>, Task<string>>[] reassemblies)
+	    public Decomposition(string pattern,  params Func<ICommandContext, IReadOnlyList<string>, Task<string?>>[] reassemblies)
 	        : this(pattern, reassemblies.Select(f => new FuncReassembly(f)).ToArray<IReassembly>())
 	    {
 	    }
 
 
-	    public Decomposition(string pattern, bool memorise, bool randomise, [NotNull] params Func<IReadOnlyList<string>, Task<string>>[] reassemblies)
+	    public Decomposition(string pattern, bool memorise, bool randomise,  params Func<IReadOnlyList<string>, Task<string?>>[] reassemblies)
 	        : this(pattern, memorise, randomise, reassemblies.Select(f => new FuncReassembly((_, i) => f(i))).ToArray<IReassembly>())
 	    {
 	    }
 
-	    public Decomposition(string pattern, [NotNull] params Func<IReadOnlyList<string>, string>[] reassemblies)
+	    public Decomposition(string pattern,  params Func<IReadOnlyList<string>, string?>[] reassemblies)
 	        : this(pattern, reassemblies.Select(f => new FuncReassembly((_, s) => Task.FromResult(f(s)))).ToArray<IReassembly>())
 	    {
 	    }
 
-	    public Decomposition(string pattern, [NotNull] params Func<IReadOnlyList<string>, Task<string>>[] reassemblies)
+	    public Decomposition(string pattern,  params Func<IReadOnlyList<string>, Task<string?>>[] reassemblies)
 	        : this(pattern, reassemblies.Select(f => new FuncReassembly((_, i) => f(i))).ToArray<IReassembly>())
 	    {
 	    }
@@ -94,7 +94,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	    {
 	    }
 
-	    public Decomposition(string pattern, [NotNull] params string[] reassemblies)
+	    public Decomposition(string pattern,  params string[] reassemblies)
 	        : this(pattern, reassemblies.Select(r => new ConstantReassembly(r)).ToArray<IReassembly>())
 	    {
 	    }

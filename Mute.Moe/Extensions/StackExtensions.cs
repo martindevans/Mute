@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Extensions
 {
     public static class StackExtensions
     {
-        public static T PopOrDefault<T>([NotNull] this Stack<T> stack)
+        public static T? PopOrDefault<T>(this Stack<T> stack)
+            where T : class
         {
             if (stack.Count == 0)
                 return default;

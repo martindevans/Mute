@@ -1,11 +1,10 @@
-﻿using JetBrains.Annotations;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Information.Forex
 {
     public interface IForexInfo
     {
-        [ItemCanBeNull] Task<IForexQuote> GetExchangeRate(string fromSymbol, string toSymbol);
+        Task<IForexQuote?> GetExchangeRate(string fromSymbol, string toSymbol);
     }
 
     public interface IForexQuote

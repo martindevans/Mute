@@ -5,7 +5,6 @@ using System.Data.SQLite;
 using System.IO;
 using System.IO.Abstractions;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 
@@ -17,15 +16,15 @@ namespace Mute.Moe.Services.Music
         private const string InsertTrackSql = "INSERT INTO `MusicLibrary2` (`GuildId`, `OwnerId`, `Title`, `FileName`, `Url`, `ThumbnailUrl`, `Duration`) VALUES (@GuildId, @Owner, @Title, @FileName, @Url, @ThumbnailUrl, @Duration);  SELECT last_insert_rowid();";
         private const string FindTrackSql = "SELECT *, rowid as Id FROM MusicLibrary2 WHERE GuildId = @GuildId AND (rowid = @Id or @Id IS null) AND (Url = @Url or @Url IS null) AND (Title like '%' || @Title || '%' or @Title IS null) ORDER BY {{order}} LIMIT ifnull(@Limit, -1)";
 
-        [NotNull] private readonly MusicLibraryConfig _config;
-        [NotNull] private readonly IDatabaseService _database;
-        [NotNull] private readonly IFileSystem _fs;
+         private readonly MusicLibraryConfig _config;
+         private readonly IDatabaseService _database;
+         private readonly IFileSystem _fs;
 
-        public DatabaseMusicLibrary([NotNull] Configuration config, [NotNull] IDatabaseService database, [NotNull] IFileSystem fs)
+        public DatabaseMusicLibrary(Configuration config, IDatabaseService database, IFileSystem fs)
         {
-            _config = config.MusicLibrary;
-            _database = database;
-            _fs = fs;
+            _config = config.MusicLibrary ?? throw new ArgumentNullException(nameof(config.MusicLibrary));
+            _database = database ?? throw new ArgumentNullException(nameof(database));
+            _fs = fs ?? throw new ArgumentNullException(nameof(fs));
 
             _database.Exec("CREATE TABLE IF NOT EXISTS `MusicLibrary2` (`GuildId` TEXT NOT NULL, `OwnerId` TEXT NOT NULL, `Title` TEXT NOT NULL, `FileName` TEXT NOT NULL, `Url` TEXT NOT NULL, `ThumbnailUrl` TEXT NOT NULL, `Duration` TEXT NOT NULL)");
         }
@@ -41,7 +40,7 @@ namespace Mute.Moe.Services.Music
         /// <param name="url">URL related to this track</param>
         /// <param name="thumbnailUrl"></param>
         /// <returns></returns>
-        public async Task<ITrack> Add(ulong guild, ulong owner, Stream audio, string title, TimeSpan duration, string url = null, string thumbnailUrl = null)
+        public async Task<ITrack> Add(ulong guild, ulong owner, Stream audio, string title, TimeSpan duration, string? url = null, string? thumbnailUrl = null)
         {
             // Make sure the guild music folder exists
             var guildDir = _fs.Path.Combine(_config.MusicFolder, guild.ToString());
@@ -61,35 +60,33 @@ namespace Mute.Moe.Services.Music
                 await audio.CopyToAsync(fs);
 
             // Insert into the database
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertTrackSql;
-                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@Title", System.Data.DbType.String) { Value = title.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@FileName", System.Data.DbType.String) { Value = fileName });
-                cmd.Parameters.Add(new SQLiteParameter("@Url", System.Data.DbType.String) { Value = url ?? "" });
-                cmd.Parameters.Add(new SQLiteParameter("@ThumbnailUrl", System.Data.DbType.String) { Value = thumbnailUrl ?? "" });
-                cmd.Parameters.Add(new SQLiteParameter("@Duration", System.Data.DbType.String) { Value = ((uint)duration.TotalSeconds).ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@Owner", System.Data.DbType.String) { Value = owner.ToString() });
+            using var cmd = _database.CreateCommand();
+            cmd.CommandText = InsertTrackSql;
+            cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@Title", System.Data.DbType.String) { Value = title.ToLowerInvariant() });
+            cmd.Parameters.Add(new SQLiteParameter("@FileName", System.Data.DbType.String) { Value = fileName });
+            cmd.Parameters.Add(new SQLiteParameter("@Url", System.Data.DbType.String) { Value = url ?? "" });
+            cmd.Parameters.Add(new SQLiteParameter("@ThumbnailUrl", System.Data.DbType.String) { Value = thumbnailUrl ?? "" });
+            cmd.Parameters.Add(new SQLiteParameter("@Duration", System.Data.DbType.String) { Value = ((uint)duration.TotalSeconds).ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@Owner", System.Data.DbType.String) { Value = owner.ToString() });
 
-                var id = (ulong)(long)await cmd.ExecuteScalarAsync();
+            var id = (ulong)(long)await cmd.ExecuteScalarAsync();
 
-                // Return track object
-                return new DatabaseMusicTrack(
-                    guild,
-                    id,
-                    _fs.Path.Combine(guildDir, fileName),
-                    title,
-                    url,
-                    thumbnailUrl,
-                    duration
-                );
-            }
+            // Return track object
+            return new DatabaseMusicTrack(
+                guild,
+                id,
+                _fs.Path.Combine(guildDir, fileName),
+                title,
+                url,
+                thumbnailUrl,
+                duration
+            );
         }
 
-        public async Task<IAsyncEnumerable<ITrack>> Get(ulong guild, ulong? id = null, string titleSearch = null, string url = null, int? limit = null, TrackOrder? order = null)
+        public async Task<IAsyncEnumerable<ITrack>> Get(ulong guild, ulong? id = null, string? titleSearch = null, string? url = null, int? limit = null, TrackOrder? order = null)
         {
-            ITrack ParseTransaction(DbDataReader reader)
+            static ITrack ParseTransaction(DbDataReader reader)
             {
                 return new DatabaseMusicTrack(
                     ulong.Parse((string)reader["GuildId"]),
@@ -133,7 +130,7 @@ namespace Mute.Moe.Services.Music
         private class DatabaseMusicTrack
             : ITrack
         {
-            public DatabaseMusicTrack(ulong guild, ulong id, [NotNull] string path, [NotNull] string title, string url, string thumbnailUrl, TimeSpan duration)
+            public DatabaseMusicTrack(ulong guild, ulong id, string path, string title, string? url, string? thumbnailUrl, TimeSpan duration)
             {
                 Guild = guild;
                 ID = id;
@@ -148,8 +145,8 @@ namespace Mute.Moe.Services.Music
             public ulong ID { get; }
             public string Path { get; }
             public string Title { get; }
-            public string Url { get; }
-            public string ThumbnailUrl { get; }
+            public string? Url { get; }
+            public string? ThumbnailUrl { get; }
             public TimeSpan Duration { get; }
         }
     }

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Discord.Services.Avatar
 {
@@ -17,7 +17,7 @@ namespace Mute.Moe.Discord.Services.Avatar
         private readonly AvatarConfig _config;
         private readonly Random _rng;
 
-        public SeasonalAvatar([NotNull] ICron cron, [NotNull] DiscordSocketClient discord, [NotNull] Configuration config)
+        public SeasonalAvatar( ICron cron,  DiscordSocketClient discord,  Configuration config)
         {
             _discord = discord;
             _config = config.Avatar;
@@ -28,7 +28,7 @@ namespace Mute.Moe.Discord.Services.Avatar
                 cron.Interval(TimeSpan.FromDays(1), PickDaily, int.MaxValue);
         }
 
-        [NotNull, ItemNotNull] public async Task<SeasonalAvatarPickResult> PickDaily()
+        public async Task<SeasonalAvatarPickResult> PickDaily()
         {
             var now = DateTime.UtcNow.Date.DayOfYear;
 
@@ -58,10 +58,10 @@ namespace Mute.Moe.Discord.Services.Avatar
 
     public class SeasonalAvatarPickResult
     {
-        [NotNull] public IReadOnlyList<string> Options { get; }
-        [CanBeNull] public string Choice { get; }
+        public IReadOnlyList<string> Options { get; }
+        public string? Choice { get; }
 
-        public SeasonalAvatarPickResult([NotNull] IReadOnlyList<string> options, string choice)
+        public SeasonalAvatarPickResult( IReadOnlyList<string> options, string? choice)
         {
             Options = options;
             Choice = choice;

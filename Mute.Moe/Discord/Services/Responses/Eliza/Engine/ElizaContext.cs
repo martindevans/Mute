@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
-using JetBrains.Annotations;
+
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 {
@@ -10,7 +10,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         public ICommandContext Base { get; }
         public string Input { get; }
 
-        public ElizaContext([NotNull] ICommandContext context, string input)
+        public ElizaContext( ICommandContext context, string input)
         {
             Base = context;
             Input = input;
