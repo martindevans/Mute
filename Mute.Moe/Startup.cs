@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -57,10 +56,13 @@ using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Words;
 using System.Net.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Services.Imitation;
+using Mute.Moe.Services.Speech.STT;
 
 namespace Mute.Moe
 {
@@ -115,6 +117,7 @@ namespace Mute.Moe
             services.AddSingleton<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
             services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
             services.AddSingleton<ITextToSpeech, MicrosoftCognitiveTextToSpeech>();
+            services.AddSingleton<ISpeechToText, MicrosoftCognitiveSpeechToText>();
             services.AddSingleton<IYoutubeDownloader, YoutubeDlDownloader>();
             services.AddSingleton<IWordTraining, DatabaseWordTraining>();
             services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();
@@ -157,9 +160,9 @@ namespace Mute.Moe
             services.AddResponseCaching();
             services.AddRouteAnalyzer();
 
-            services.AddMvc()
-                    .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                    .AddXmlSerializerFormatters();
+            services.AddMvc(o => {
+                o.EnableEndpointRouting = false;
+            });
 
             services.AddAspAuth();
             
@@ -170,6 +173,9 @@ namespace Mute.Moe
 
             var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(Configuration["BotConfigPath"]));
             services.AddSingleton(config);
+
+            if (config.Auth == null)
+                throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie("Cookies").AddDiscord(d => {
                 d.AppId = config.Auth.ClientId;
@@ -195,7 +201,7 @@ namespace Mute.Moe
             });
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
                 app.UseDeveloperExceptionPage();
@@ -220,7 +226,6 @@ namespace Mute.Moe
             app.UseMvc(routes =>
             {
                 routes.MapRoute(name: "default", template: "{controller=Home}/{action=Index}/{id?}");
-
                 routes.MapRouteAnalyzer("/routes");
             });
         }

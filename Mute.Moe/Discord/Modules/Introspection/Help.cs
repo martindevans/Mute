@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
-
-
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;

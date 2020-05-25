@@ -48,8 +48,8 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             {
                 var mention = reader["MentionGroup"];
                 return new SpacexSubscription(
-                    ulong.Parse(reader["ChannelId"].ToString()),
-                    mention == null ? (ulong?)null : ulong.Parse(mention.ToString())
+                    ulong.Parse(reader["ChannelId"].ToString()!),
+                    mention == null ? (ulong?)null : ulong.Parse(mention.ToString()!)
                 );
             }
 

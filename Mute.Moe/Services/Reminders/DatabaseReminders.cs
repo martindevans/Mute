@@ -98,10 +98,10 @@ namespace Mute.Moe.Services.Reminders
             static IReminder ParseReminder(DbDataReader reader)
             {
                 return new Reminder(
-                    uint.Parse(reader["rowid"].ToString()),
+                    uint.Parse(reader["rowid"].ToString()!),
                     ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
                     reader["Prelude"]?.ToString(),
-                    reader["Message"].ToString(),
+                    reader["Message"].ToString()!,
                     ulong.Parse((string)reader["ChannelId"]),
                     ulong.Parse((string)reader["UserId"])
                 );
@@ -167,7 +167,7 @@ namespace Mute.Moe.Services.Reminders
                 return ID == other.ID;
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 if (obj is null)
                     return false;

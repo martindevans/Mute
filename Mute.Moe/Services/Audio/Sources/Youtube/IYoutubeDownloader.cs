@@ -8,11 +8,11 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
 {
     public interface IYoutubeDownloader
     {
-         Task<bool> IsValidUrl( string url);
+        Task<bool> IsValidUrl(string url);
 
-        Task<IYoutubeDownloadResult> DownloadAudio( string url);
+        Task<IYoutubeDownloadResult> DownloadAudio(string url);
 
-         Task<int> PerformMaintenance();
+        Task<int> PerformMaintenance();
     }
 
     public interface IYoutubeDownloadResult

@@ -12,11 +12,15 @@ namespace Mute.Moe.Services.Information.Stocks
         : IStockSearch
     {
         private readonly HttpClient _http;
-        private readonly AlphaAdvantageConfig _config;
 
-        public AlphaVantageStockSearch( Configuration config, IHttpClientFactory http)
+        private readonly string _key;
+
+        public AlphaVantageStockSearch(Configuration config, IHttpClientFactory http)
         {
-            _config = config.AlphaAdvantage;
+            if (config.AlphaAdvantage == null)
+                throw new ArgumentNullException(nameof(config.AlphaAdvantage));
+
+            _key = config.AlphaAdvantage.Key ?? throw new ArgumentNullException(nameof(config.AlphaAdvantage.Key));
             _http = http.CreateClient();
         }
 
@@ -24,7 +28,7 @@ namespace Mute.Moe.Services.Information.Stocks
         {
             //https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=g&apikey=demo
 
-            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords={Uri.EscapeUriString(search)}&apikey={_config.Key}");
+            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords={Uri.EscapeUriString(search)}&apikey={_key}");
             if (!result.IsSuccessStatusCode)
                 yield break;
 

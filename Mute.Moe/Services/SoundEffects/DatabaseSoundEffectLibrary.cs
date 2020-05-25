@@ -23,15 +23,17 @@ namespace Mute.Moe.Services.SoundEffects
         private const string FindSfxSql = "Select * from Sfx2 where GuildId = @GuildId AND Name like '%' || @Search || '%'";
         private const string FindAllSfxSql = "Select * from Sfx2 where GuildId = @GuildId";
 
-         private readonly SoundEffectConfig _config;
+        private readonly string _sfxFolder;
+
          private readonly IDatabaseService _database;
          private readonly IFileSystem _fs;
 
          public DatabaseSoundEffectLibrary(Configuration config, IDatabaseService database, IFileSystem fs)
          {
-             _config = config.SoundEffects;
              _database = database;
              _fs = fs;
+
+             _sfxFolder = config.SoundEffects?.SfxFolder ?? throw new ArgumentNullException(nameof(config.SoundEffects.SfxFolder));
 
              _database.Exec("CREATE TABLE IF NOT EXISTS `Sfx2` (`GuildId` TEXT NOT NULL, `Name` TEXT NOT NULL, `FileName` TEXT NOT NULL)");
          }
@@ -45,7 +47,7 @@ namespace Mute.Moe.Services.SoundEffects
             var hashData = normalized.SHA256();
             var hash = $"{hashName}{hashData}{guild}".SHA256();
             var fileName = hash + ".wav";
-            var pathDir = Path.Combine(_config.SfxFolder, guild.ToString());
+            var pathDir = Path.Combine(_sfxFolder, guild.ToString());
             var path = Path.Combine(pathDir, fileName);
 
             //Check that there isn't a file collision
@@ -70,7 +72,7 @@ namespace Mute.Moe.Services.SoundEffects
                 await cmd.ExecuteNonQueryAsync();
             }
 
-            return new DatabaseSoundEffect(_config.SfxFolder, guild, fileName, name);
+            return new DatabaseSoundEffect(_sfxFolder, guild, fileName, name);
         }
 
          public async Task<ISoundEffect> Alias(string alias, ISoundEffect sfx)
@@ -91,7 +93,7 @@ namespace Mute.Moe.Services.SoundEffects
                  await cmd.ExecuteNonQueryAsync();
              }
 
-             return new DatabaseSoundEffect(_config.SfxFolder, sfx.Guild, sfx.Path, alias);
+             return new DatabaseSoundEffect(_sfxFolder, sfx.Guild, sfx.Path, alias);
          }
 
          public async Task<ISoundEffect?> Get(ulong guild, string name)
@@ -99,7 +101,7 @@ namespace Mute.Moe.Services.SoundEffects
             ISoundEffect Parse(DbDataReader reader)
             {
                 return new DatabaseSoundEffect(
-                    _config.SfxFolder,
+                    _sfxFolder,
                     ulong.Parse((string)reader["GuildId"]),
                     (string)reader["FileName"],
                     (string)reader["Name"]
@@ -123,7 +125,7 @@ namespace Mute.Moe.Services.SoundEffects
             ISoundEffect Parse(DbDataReader reader)
             {
                 return new DatabaseSoundEffect(
-                    _config.SfxFolder, 
+                    _sfxFolder, 
                     ulong.Parse((string)reader["GuildId"]),
                     (string)reader["FileName"],
                     (string)reader["Name"]

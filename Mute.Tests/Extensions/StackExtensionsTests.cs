@@ -10,7 +10,7 @@ namespace Mute.Tests.Extensions
         [TestMethod]
         public void PopOrDefaultPops()
         {
-            var s = new Stack<int>();
+            var s = new Stack<object>();
             s.Push(1);
             Assert.AreEqual(1, s.PopOrDefault());
         }
@@ -18,8 +18,8 @@ namespace Mute.Tests.Extensions
         [TestMethod]
         public void PopOrDefaultDefault()
         {
-            var s = new Stack<int>();
-            Assert.AreEqual(0, s.PopOrDefault());
+            var s = new Stack<object>();
+            Assert.AreEqual(null, s.PopOrDefault());
         }
     }
 }

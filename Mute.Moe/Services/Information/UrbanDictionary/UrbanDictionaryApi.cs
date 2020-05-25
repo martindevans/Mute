@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using FluidCaching;
-
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.UrbanDictionary
@@ -85,7 +85,7 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
 
             public bool Equals(CacheEntry? other)
             {
-                if (ReferenceEquals(null, other))
+                if (other is null)
                     return false;
                 if (ReferenceEquals(this, other))
                     return true;
@@ -94,7 +94,7 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
 
             public override bool Equals(object? obj)
             {
-                if (ReferenceEquals(null, obj))
+                if (obj is null)
                     return false;
                 if (ReferenceEquals(this, obj))
                     return true;
@@ -105,7 +105,7 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
 
             public override int GetHashCode()
             {
-                return Word.GetHashCode();
+                return HashCode.Combine(Word);
             }
 
             public static bool operator ==(CacheEntry? left, CacheEntry? right)
@@ -121,35 +121,34 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
 
         private class Response
         {
-            [JsonProperty("list")] public List<Entry> Items;
+            [JsonProperty("list"), UsedImplicitly] public List<Entry>? Items;
         }
 
         private class Entry
             : IUrbanDefinition
         {
-            [JsonProperty("definition")] private string _definition;
-            public string Definition => _definition;
+#pragma warning disable IDE0044 // Add readonly modifier
+            [JsonProperty("definition"), UsedImplicitly] private string? _definition;
+            public string Definition => _definition ?? throw new InvalidOperationException("API response did not contain required field `permalink`");
 
-            [JsonProperty("permalink")] private Uri _permalink;
-            public Uri Permalink => _permalink;
+            [JsonProperty("permalink"), UsedImplicitly] private Uri? _permalink;
+            public Uri Permalink => _permalink ?? throw new InvalidOperationException("API response did not contain required field `permalink`");
 
-            [JsonProperty("thumbs_up")] private int _thumbsUp;
+            [JsonProperty("thumbs_up"), UsedImplicitly] private int _thumbsUp;
             public int ThumbsUp => _thumbsUp;
 
-            [JsonProperty("thumbs_down")] private int _thumbsDown;
+            [JsonProperty("thumbs_down"), UsedImplicitly] private int _thumbsDown;
             public int ThumbsDown => _thumbsDown;
 
-            [JsonProperty("sound_urls")] private Uri[] _sounds;
-            public IReadOnlyList<Uri> Sounds => _sounds;
+            [JsonProperty("word"), UsedImplicitly] private string? _word;
+            public string Word => _word ?? throw new InvalidOperationException("API response did not contain required field `word`");
 
-            [JsonProperty("word")] private string _word;
-            public string Word => _word;
-
-            [JsonProperty("written_on")] private DateTime _writtenOn;
+            [JsonProperty("written_on"), UsedImplicitly] private DateTime _writtenOn;
             public DateTime WrittenOn => _writtenOn;
 
-            [JsonProperty("example")] private string _example;
-            public string Example => _example;
+            [JsonProperty("example"), UsedImplicitly] private string? _example;
+            public string Example => _example ?? throw new InvalidOperationException("API response did not contain required field `example`");
+#pragma warning restore IDE0044 // Add readonly modifier
         }
     }
 }

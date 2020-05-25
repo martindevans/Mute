@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data.Common;
 using System.Data.SQLite;
 
 
@@ -9,9 +10,9 @@ namespace Mute.Moe.Services.Database
     {
         private readonly SQLiteConnection _dbConnection;
 
-        public SqliteDatabase( Configuration config)
+        public SqliteDatabase(Configuration config)
         {
-            _dbConnection = new SQLiteConnection(config.Database.ConnectionString);
+            _dbConnection = new SQLiteConnection(config.Database?.ConnectionString ?? throw new ArgumentNullException(nameof(config.Database.ConnectionString)));
             _dbConnection.Open();
         }
 

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 {
     /// <summary>
@@ -31,7 +30,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	        if (!match.Success)
 	            return null;
 
-	        return match.Groups.Skip(1).Select(m => m.Value).ToArray();
+            return match.Groups.Skip<Group>(1).Select(m => m.Value).ToArray();
 		}
 
 	     private static string BuildRegex(string pattern, IReadOnlyList<IReadOnlyCollection<string>> synonyms)

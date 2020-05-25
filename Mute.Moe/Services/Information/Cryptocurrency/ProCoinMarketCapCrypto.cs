@@ -33,9 +33,12 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
 
         public ProCoinMarketCapCrypto( Configuration config,  IHttpClientFactory http)
         {
-            _http = http.CreateClient();
-            _key = config.CoinMarketCap.Key;
+            if (config.CoinMarketCap == null)
+                throw new ArgumentNullException(nameof(config.CoinMarketCap));
 
+            _key = config.CoinMarketCap?.Key ?? throw new ArgumentNullException(nameof(config.CoinMarketCap.Key));
+            _http = http.CreateClient();
+            
             _currencyCache = new FluidCache<ICurrency>(config.CoinMarketCap.CacheSize, TimeSpan.FromSeconds(config.CoinMarketCap.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.CoinMarketCap.CacheMaxAgeSeconds), () => DateTime.UtcNow);
             _currencyById = _currencyCache.AddIndex("IndexByUniqueId", a => a.Id);
             _currencyByName = _currencyCache.AddIndex("IndexByName", a => a.Name);
@@ -243,14 +246,14 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
 
             [JsonProperty("quote")] public Dictionary<string, CmcQuote> CmcQuotes { get; private set; }
 
-            private IReadOnlyDictionary<string, IQuote> _quotes;
+            private IReadOnlyDictionary<string, IQuote>? _quotesCache;
             public IReadOnlyDictionary<string, IQuote> Quotes
             {
                 get
                 {
-                    if (_quotes == null)
-                        _quotes = new Dictionary<string, IQuote>(CmcQuotes.Select(a => new KeyValuePair<string, IQuote>(a.Key, a.Value)));
-                    return _quotes;
+                    if (_quotesCache == null)
+                        _quotesCache = new Dictionary<string, IQuote>(CmcQuotes.Select(a => new KeyValuePair<string, IQuote>(a.Key, a.Value)));
+                    return _quotesCache;
                 }
             }
         }

@@ -21,6 +21,7 @@ namespace Mute.Moe
         [UsedImplicitly] public WordVectorsConfig? WordVectors;
         [UsedImplicitly] public UrbanDictionaryConfig? UrbanDictionary;
         [UsedImplicitly] public TTSConfig? TTS;
+        [UsedImplicitly] public STTConfig? STT;
         [UsedImplicitly] public MusicLibraryConfig? MusicLibrary;
         [UsedImplicitly] public SolariumConfig? Solarium;
 
@@ -130,7 +131,7 @@ namespace Mute.Moe
 
     public class TTSConfig
     {
-        public class MsCongnitiveConfig
+        public class MsCognitiveConfig
         {
             [UsedImplicitly] public string? Region;
             [UsedImplicitly] public string? Key;
@@ -138,7 +139,18 @@ namespace Mute.Moe
             [UsedImplicitly] public string? Voice;
         }
 
-        public MsCongnitiveConfig? MsCognitive; 
+        public MsCognitiveConfig? MsCognitive; 
+    }
+
+    public class STTConfig
+    {
+        public class MsCognitiveConfig
+        {
+            [UsedImplicitly] public string? Region;
+            [UsedImplicitly] public string? Key;
+        }
+
+        public MsCognitiveConfig? MsCognitive; 
     }
 
     public class MusicLibraryConfig

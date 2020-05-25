@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
-
 using Mute.Moe.Utilities;
 using Newtonsoft.Json.Linq;
 
@@ -13,17 +12,32 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
     public class YoutubeDlDownloader
         : IYoutubeDownloader
     {
-         private readonly YoutubeDlConfig _config;
+        private readonly string _rateLimit;
+        private readonly string _inProgressDownloadFolder;
+        private readonly string _ffmpegBinaryPath;
+        private readonly string _youtubeDlBinaryPath;
 
         private readonly AsyncLock _mutex = new AsyncLock();
 
         public YoutubeDlDownloader(Configuration config)
         {
-            _config = config.YoutubeDl;
+            if (config.YoutubeDl == null)
+                throw new ArgumentNullException(nameof(config.YoutubeDl));
+
+            _rateLimit = config.YoutubeDl.RateLimit ?? "1.5M";
+            _inProgressDownloadFolder = config.YoutubeDl.InProgressDownloadFolder ?? throw new ArgumentNullException(nameof(config.YoutubeDl.InProgressDownloadFolder));
+            _ffmpegBinaryPath = config.YoutubeDl.FfmpegBinaryPath ?? throw new ArgumentNullException(nameof(config.YoutubeDl.FfmpegBinaryPath));
+            _youtubeDlBinaryPath = config.YoutubeDl.YoutubeDlBinaryPath ?? throw new ArgumentNullException(nameof(config.YoutubeDl.YoutubeDlBinaryPath));
         }
 
-        private static bool IsValidUrl(string urlString, out Uri url)
+        private static bool IsValidUrl(string? urlString, out Uri? url)
         {
+            if (urlString == null)
+            {
+                url = null;
+                return false;
+            }
+
             //Sanity check that URL is a well formed URL
             if (!Uri.TryCreate(urlString, UriKind.Absolute, out url))
                 return false;
@@ -47,21 +61,21 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
             return true;
         }
 
-        public async Task<bool> IsValidUrl(string urlString)
+        public Task<bool> IsValidUrl(string urlString)
         {
-            return IsValidUrl(urlString, out _);
+            return Task.FromResult(IsValidUrl(urlString, out _));
         }
 
         public async Task<IYoutubeDownloadResult> DownloadAudio(string urlString)
         {
-            if (!IsValidUrl(urlString, out var url))
+            if (!IsValidUrl(urlString, out var url) || url == null)
                 return new FailedDownloadResult(YoutubeDownloadStatus.FailedInvalidUrl);
 
             //Choose a name for temp data, wrap in a try/finally block to ensure temp data is deleted no matter what happens
             var tempDownFile = Guid.NewGuid().ToString();
             try
             {
-                var downloadingLocation = Path.GetFullPath(Path.Combine(_config.InProgressDownloadFolder, tempDownFile));
+                var downloadingLocation = Path.GetFullPath(Path.Combine(_inProgressDownloadFolder, tempDownFile));
                 var args = $"\"{url}\"" +
                            $" --no-check-certificate" +
                            $" --output \"{downloadingLocation}.%(ext)s\"" +
@@ -69,10 +83,10 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                            $" --no-warnings" +
                            $" --no-playlist" +
                            $" --write-info-json" +
-                           $" --limit-rate {_config.RateLimit ?? "1.5M"}" +
+                           $" --limit-rate {_rateLimit}" +
                            $" --extract-audio" +
                            $" --audio-format wav" +
-                           $" --ffmpeg-location \"{_config.FfmpegBinaryPath}\"" +
+                           $" --ffmpeg-location \"{_ffmpegBinaryPath}\"" +
                            $" --geo-bypass" +
                            $" --no-call-home";
 
@@ -83,9 +97,9 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                     using (await _mutex.LockAsync())
                     {
                         await AsyncProcess.StartProcess(
-                            Path.GetFullPath(_config.YoutubeDlBinaryPath),
+                            Path.GetFullPath(_youtubeDlBinaryPath),
                             args,
-                            Path.GetFullPath(_config.InProgressDownloadFolder)
+                            Path.GetFullPath(_inProgressDownloadFolder)
                         );
                     }
                 }
@@ -97,7 +111,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                 //Find the completed download. It should be two files
                 // <guid>.wav contains the audio
                 // <guid>.json contains the metadata (including the video ID)
-                var maybeCompleteFiles = Directory.GetFiles(Path.GetFullPath(_config.InProgressDownloadFolder), tempDownFile + ".*").Select(f => new FileInfo(f)).ToArray();
+                var maybeCompleteFiles = Directory.GetFiles(Path.GetFullPath(_inProgressDownloadFolder), tempDownFile + ".*").Select(f => new FileInfo(f)).ToArray();
 
                 //Find the two files we want
                 var audioFile = maybeCompleteFiles.SingleOrDefault(f => f.Extension == ".wav");
@@ -112,9 +126,9 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
 
                 //Pick a title from of the possible fields
                 var title = metadata["track"]?.Value<string>()
-                        ?? metadata["alt_title"]?.Value<string>()
-                        ?? metadata["full_title"]?.Value<string>()
-                        ?? metadata["title"]?.Value<string>();
+                            ?? metadata["alt_title"]?.Value<string>()
+                            ?? metadata["full_title"]?.Value<string>()
+                            ?? metadata["title"]?.Value<string>();
 
                 if (title == null)
                     return new FailedDownloadResult(YoutubeDownloadStatus.FailedInvalidDownloadResult);
@@ -128,8 +142,12 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                 //Find artist
                 var artist = metadata["artist"]?.Value<string>();
 
+                var durationStr = metadata["duration"]?.Value<string>();
+                if (durationStr == null)
+                    return new FailedDownloadResult(YoutubeDownloadStatus.FailedInvalidDownloadResult);
+
                 //Find length
-                var duration = TimeSpan.FromSeconds(int.Parse(metadata["duration"]?.Value<string>()));
+                var duration = TimeSpan.FromSeconds(int.Parse(durationStr));
 
                 //Delete temp files
                 metadataFile.Delete();
@@ -140,7 +158,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                         title,
                         url.ToString(),
                         thumbnail,
-                        string.IsNullOrWhiteSpace(artist) ? Array.Empty<string>() : new[] { artist! },
+                        string.IsNullOrWhiteSpace(artist) ? Array.Empty<string>() : new[] {artist!},
                         duration
                     )
                 );
@@ -148,7 +166,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
             }
             catch (Exception)
             {
-                foreach (var item in new DirectoryInfo(_config.InProgressDownloadFolder).EnumerateFiles($"{tempDownFile}.*"))
+                foreach (var item in new DirectoryInfo(_inProgressDownloadFolder).EnumerateFiles($"{tempDownFile}.*"))
                 {
                     try
                     {
@@ -166,15 +184,15 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
 
         public async Task<int> PerformMaintenance()
         {
-            var args = "--update";
+            const string args = "--update";
 
             //Lock on the mutex to ensure no downloads are in flight
             using (await _mutex.LockAsync())
             {
                 return await AsyncProcess.StartProcess(
-                    Path.GetFullPath(_config.YoutubeDlBinaryPath),
+                    Path.GetFullPath(_youtubeDlBinaryPath),
                     args,
-                    Path.GetFullPath(_config.InProgressDownloadFolder)
+                    Path.GetFullPath(_inProgressDownloadFolder)
                 );
             }
         }
@@ -208,7 +226,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
         private class YoutubeFile
             : IYoutubeFile
         {
-            public YoutubeFile( FileInfo file, string title, string url, string? thumbnail, IReadOnlyList<string> artists, TimeSpan duration)
+            public YoutubeFile(FileInfo file, string title, string url, string? thumbnail, IReadOnlyList<string> artists, TimeSpan duration)
             {
                 File = file;
                 Title = title;

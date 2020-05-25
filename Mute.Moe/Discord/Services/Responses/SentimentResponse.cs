@@ -41,9 +41,9 @@ namespace Mute.Moe.Discord.Services.Responses
 
         private readonly SentimentReactionConfig _config;
 
-        public SentimentResponse( Configuration config,  Random random)
+        public SentimentResponse(Configuration config, Random random)
         {
-            _config = config.SentimentReactions;
+            _config = config.SentimentReactions ?? throw new ArgumentNullException(nameof(config.SentimentReactions));
             _random = random;
         }
 

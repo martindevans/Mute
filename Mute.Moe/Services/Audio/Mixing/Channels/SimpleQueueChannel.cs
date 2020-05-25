@@ -115,7 +115,7 @@ namespace Mute.Moe.Services.Audio.Mixing.Channels
             Skip();
         }
 
-        private struct QueueClip
+        private readonly struct QueueClip
             : IDisposable
         {
             public readonly T Metadata;

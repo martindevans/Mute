@@ -120,9 +120,9 @@ namespace Mute.Moe.Discord.Modules
                     => string.Join("\n", await DescribeUpcomingFlights(count));
 
                 yield return new Key("spacex", 10,
-                    new Decomposition("*next*launch*", d => NextLaunch(1)),
-                    new Decomposition("#*launches*", d => NextLaunch(int.Parse(d[0]))),
-                    new Decomposition("*launches*#", d => NextLaunch(int.Parse(d[0])))
+                    new Decomposition("*next*launch*", d => NextLaunch(1)!),
+                    new Decomposition("#*launches*", d => NextLaunch(int.Parse(d[0]))!),
+                    new Decomposition("*launches*#", d => NextLaunch(int.Parse(d[0]))!)
                 );
             }
         }

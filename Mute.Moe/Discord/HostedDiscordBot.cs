@@ -27,14 +27,24 @@ namespace Mute.Moe.Discord
 
         public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services)
         {
-            _client = client;
-            _config = config;
-            _commands = commands;
-            _services = services;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+            _commands = commands ?? throw new ArgumentNullException(nameof(commands));
+            _services = services ?? throw new ArgumentNullException(nameof(services));
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            // Sanity check config
+            if (_config.Auth == null)
+                throw new InvalidOperationException("Cannot start bot: `Auth` section of config is null");
+            if (_config.Auth.Token == null)
+                throw new InvalidOperationException("Cannot start bot: `Auth.Token` in config is null");
+            if (_config.Auth.ClientId == null)
+                throw new InvalidOperationException("Cannot start bot: `Auth.ClientId` in config is null");
+            if (_config.Auth.ClientSecret == null)
+                throw new InvalidOperationException("Cannot start bot: `Auth.ClientSecret` in config is null");
+
             // Discover all of the commands in this assembly and load them.
             await _commands.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
 

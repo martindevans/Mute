@@ -14,17 +14,20 @@ namespace Mute.Moe.Discord.Services.Avatar
     public class SeasonalAvatar
     {
         private readonly DiscordSocketClient _discord;
-        private readonly AvatarConfig _config;
+        private readonly IReadOnlyList<AvatarConfig.AvatarSet>? _config;
         private readonly Random _rng;
 
-        public SeasonalAvatar( ICron cron,  DiscordSocketClient discord,  Configuration config)
+        public SeasonalAvatar(ICron cron,  DiscordSocketClient discord, Configuration config)
         {
             _discord = discord;
-            _config = config.Avatar;
             _rng = new Random();
 
+            if (config.Avatar?.Avatars == null)
+                return;
+            _config = config.Avatar.Avatars;
+
             // Do not start avatar update job if no avatar sets are configured
-            if ((_config?.Avatars?.Length ?? 0) != 0)
+            if ((_config?.Count ?? 0) != 0)
                 cron.Interval(TimeSpan.FromDays(1), PickDaily, int.MaxValue);
         }
 
@@ -33,7 +36,7 @@ namespace Mute.Moe.Discord.Services.Avatar
             var now = DateTime.UtcNow.Date.DayOfYear;
 
             var exts = new string[] { "*.bmp", "*.png", "*.jpg", "*.jpeg" };
-            var avatars = _config.Avatars
+            var avatars = _config
                 .Where(a => a.StartDay <= now && a.EndDay >= now)
                 .Where(a => Directory.Exists(a.Path))
                 .SelectMany(a => exts.SelectMany(e => Directory.GetFiles(a.Path, e)))
@@ -46,7 +49,7 @@ namespace Mute.Moe.Discord.Services.Avatar
                 return new SeasonalAvatarPickResult(avatars, null);
 
             Console.WriteLine($"Setting avatar to `{avatar}`");
-            using (var stream = File.OpenRead(avatar))
+            await using (var stream = File.OpenRead(avatar))
             {
                 var image = new Image(stream);
                 await _discord.CurrentUser.ModifyAsync(self => self.Avatar = image);

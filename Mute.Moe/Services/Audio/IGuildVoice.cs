@@ -10,7 +10,7 @@ namespace Mute.Moe.Services.Audio
     /// </summary>
     public interface IGuildVoice
     {
-         IGuild Guild { get; }
+        IGuild Guild { get; }
 
         IVoiceChannel? Channel { get; }
 

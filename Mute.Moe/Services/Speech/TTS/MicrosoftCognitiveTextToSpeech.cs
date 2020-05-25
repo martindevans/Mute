@@ -13,11 +13,14 @@ namespace Mute.Moe.Services.Speech.TTS
     {
         private readonly SpeechConfig _config;
 
-        public MicrosoftCognitiveTextToSpeech( Configuration config)
+        public MicrosoftCognitiveTextToSpeech(Configuration config)
         {
-            _config = SpeechConfig.FromSubscription(config.TTS.MsCognitive.Key, config.TTS.MsCognitive.Region);
-            _config.SpeechSynthesisLanguage = config.TTS.MsCognitive.Language;
-            _config.SpeechSynthesisVoiceName = config.TTS.MsCognitive.Voice;
+            _config = SpeechConfig.FromSubscription(
+                config.TTS?.MsCognitive?.Key ?? throw new ArgumentNullException(nameof(config.TTS.MsCognitive.Key)),
+                config.TTS?.MsCognitive?.Region ?? throw new ArgumentNullException(nameof(config.TTS.MsCognitive.Region))
+            );
+            _config.SpeechSynthesisLanguage = config.TTS?.MsCognitive?.Language ?? throw new ArgumentNullException(nameof(config.TTS.MsCognitive.Language));
+            _config.SpeechSynthesisVoiceName = config.TTS?.MsCognitive?.Voice ?? throw new ArgumentNullException(nameof(config.TTS.MsCognitive.Voice));
         }
 
         public async Task<IAudioClip> Synthesize(string text)
@@ -28,13 +31,11 @@ namespace Mute.Moe.Services.Speech.TTS
             using (var streamConfig = AudioConfig.FromStreamOutput(stream))
             using (var synthesizer = new SpeechSynthesizer(_config, streamConfig))
             {
-                using (var result = await synthesizer.SpeakTextAsync(text))
+                using var result = await synthesizer.SpeakTextAsync(text);
+                if (result.Reason == ResultReason.Canceled)
                 {
-                    if (result.Reason == ResultReason.Canceled)
-                    {
-                        var cancellation = SpeechSynthesisCancellationDetails.FromResult(result);
-                        throw new TaskCanceledException($"{cancellation.Reason}: {cancellation.ErrorDetails}");
-                    }
+                    var cancellation = SpeechSynthesisCancellationDetails.FromResult(result);
+                    throw new TaskCanceledException($"{cancellation.Reason}: {cancellation.ErrorDetails}");
                 }
             }
 

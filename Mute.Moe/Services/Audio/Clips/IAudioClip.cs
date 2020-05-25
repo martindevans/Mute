@@ -11,7 +11,7 @@ namespace Mute.Moe.Services.Audio.Clips
         /// <summary>
         /// Get the name of this clip
         /// </summary>
-         string Name { get; }
+        string Name { get; }
 
         /// <summary>
         /// Open a stream to begin reading this clip

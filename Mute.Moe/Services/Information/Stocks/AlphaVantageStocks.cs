@@ -12,17 +12,19 @@ namespace Mute.Moe.Services.Information.Stocks
         : IStockQuotes
     {
         private readonly HttpClient _http;
-        private readonly AlphaAdvantageConfig _config;
 
         private readonly FluidCache<IStockQuote> _cache;
         private readonly IIndex<string, IStockQuote> _bySymbol;
+        private readonly string _key;
 
-        public AlphaVantageStocks( Configuration config, IHttpClientFactory http)
+        public AlphaVantageStocks(Configuration config, IHttpClientFactory http)
         {
-            _config = config.AlphaAdvantage;
-            _http = http.CreateClient();
+            if (config.AlphaAdvantage == null)
+                throw new ArgumentNullException(nameof(config.AlphaAdvantage));
 
-            _cache = new FluidCache<IStockQuote>(_config.CacheSize, TimeSpan.FromSeconds(_config.CacheMinAgeSeconds), TimeSpan.FromSeconds(_config.CacheMaxAgeSeconds), () => DateTime.UtcNow);
+            _key = config.AlphaAdvantage.Key ?? throw new ArgumentNullException(nameof(config.AlphaAdvantage));
+            _http = http.CreateClient();
+            _cache = new FluidCache<IStockQuote>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMaxAgeSeconds), () => DateTime.UtcNow);
             _bySymbol = _cache.AddIndex("BySymbol", a => a.Symbol);
         }
 
@@ -34,23 +36,21 @@ namespace Mute.Moe.Services.Information.Stocks
             if (cached != null)
                 return cached;
 
-            using (var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={Uri.EscapeUriString(stock)}&apikey={_config.Key}"))
-            {
-                if (!result.IsSuccessStatusCode)
-                    return null;
+            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={Uri.EscapeUriString(stock)}&apikey={_key}");
+            if (!result.IsSuccessStatusCode)
+                return null;
 
-                StockQuoteResponseContainer? response;
-                var serializer = new JsonSerializer();
-                using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
-                using (var jsonTextReader = new JsonTextReader(sr))
-                    response = serializer.Deserialize<StockQuoteResponseContainer>(jsonTextReader);
+            StockQuoteResponseContainer? response;
+            var serializer = new JsonSerializer();
+            using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
+            using (var jsonTextReader = new JsonTextReader(sr))
+                response = serializer.Deserialize<StockQuoteResponseContainer>(jsonTextReader);
 
-                if (response?.Response?.Symbol == null)
-                    return null;
+            if (response?.Response?.Symbol == null)
+                return null;
 
-                _cache.Add(response.Response);
-                return response.Response;
-            }
+            _cache.Add(response.Response);
+            return response.Response;
         }
 
         private class StockQuoteResponseContainer
@@ -62,7 +62,7 @@ namespace Mute.Moe.Services.Information.Stocks
         public class StockQuoteResponse
             : IStockQuote
         {
-            [JsonProperty("01. symbol"), UsedImplicitly] public string? Symbol { get; private set; }
+            [JsonProperty("01. symbol"), UsedImplicitly] public string Symbol { get; private set; }
 
             [JsonProperty("02. open"), UsedImplicitly] public decimal Open { get; private set; }
             [JsonProperty("03. high"), UsedImplicitly] public decimal High { get; private set; }

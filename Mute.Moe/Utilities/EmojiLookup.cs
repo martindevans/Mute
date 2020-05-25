@@ -39,6 +39,7 @@
         public const string SpeakerMedVolume = "🔉";
         public const string SpeakerHighVolume = "🔊";
         public const string SpeakerMuted = "🔇";
+        public const string StudioMicrophone = "🎙️";
 
         public const string Loading = "🔄";
 

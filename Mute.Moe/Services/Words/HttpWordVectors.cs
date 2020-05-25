@@ -31,7 +31,7 @@ namespace Mute.Moe.Services.Words
             _client = client.CreateClient();
             _client.Timeout = TimeSpan.FromMilliseconds(25);
 
-            _config = config.WordVectors;
+            _config = config.WordVectors ?? throw new ArgumentNullException(nameof(config.WordVectors));
 
             _vectorCache = new FluidCache<WordVector>((int)_config.CacheSize, TimeSpan.FromSeconds(_config.CacheMinTimeSeconds), TimeSpan.FromMinutes(_config.CacheMaxTimeSeconds), () => DateTime.UtcNow);
             _indexByWord = _vectorCache.AddIndex("byWord", a => a.Word);

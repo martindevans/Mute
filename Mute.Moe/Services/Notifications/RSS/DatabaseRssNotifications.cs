@@ -32,7 +32,7 @@ namespace Mute.Moe.Services.Notifications.RSS
 
         public async Task Subscribe(string feedUrl, ulong channel, ulong? mentionGroup)
         {
-            using var cmd = _database.CreateCommand();
+            await using var cmd = _database.CreateCommand();
             cmd.CommandText = InsertSubscriptionSql;
             cmd.Parameters.Add(new SQLiteParameter("@Url", System.Data.DbType.String) { Value = feedUrl });
             cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = channel.ToString() });
@@ -47,9 +47,9 @@ namespace Mute.Moe.Services.Notifications.RSS
             {
                 var mention = reader["MentionGroup"];
                 return new RssSubscription(
-                    reader["Url"].ToString(),
-                    ulong.Parse(reader["ChannelId"].ToString()),
-                    mention is DBNull ? (ulong?)null : ulong.Parse(mention.ToString())
+                    reader["Url"].ToString()!,
+                    ulong.Parse(reader["ChannelId"].ToString()!),
+                    mention is DBNull ? (ulong?)null : ulong.Parse(mention.ToString()!)
                 );
             }
 
@@ -60,7 +60,7 @@ namespace Mute.Moe.Services.Notifications.RSS
                 return cmd;
             }
 
-            return (IAsyncEnumerable<IRssSubscription>)new SqlAsyncResult<IRssSubscription>(_database, PrepareQuery, ParseSubscription);
+            return new SqlAsyncResult<IRssSubscription>(_database, PrepareQuery, ParseSubscription);
         }
 
         private class RssSubscription

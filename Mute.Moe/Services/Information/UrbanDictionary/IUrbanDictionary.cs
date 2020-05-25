@@ -19,8 +19,6 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
 
         int ThumbsDown { get; }
 
-        IReadOnlyList<Uri> Sounds { get; }
-
         string Word { get; }
 
         DateTime WrittenOn { get; }

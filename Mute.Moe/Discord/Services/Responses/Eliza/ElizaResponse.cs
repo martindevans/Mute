@@ -5,12 +5,11 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Discord.Services.Responses.Eliza.Scripts;
-using IEnumerableExtensions = Mute.Moe.Extensions.IEnumerableExtensions;
+using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza
 {
@@ -82,7 +81,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
                 {
                     var seed = context.Message.Id.GetHashCode();
                     var rand = new Random(seed);
-                    return new ElizaConversation(IEnumerableExtensions.Random(_scripts, rand), seed);
+                    return new ElizaConversation(_scripts.RandomNotNull(rand), seed);
                 }
                 else
                     return null;

@@ -38,7 +38,7 @@ namespace Mute.Moe.Services.Payment
             if (fromId == toId)
                 throw new InvalidOperationException("Cannot transact from self to self");
 
-            using var cmd = _database.CreateCommand();
+            await using var cmd = _database.CreateCommand();
             cmd.CommandText = InsertTransactionSql;
             cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId.ToString() });
             cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId.ToString() });
@@ -58,7 +58,7 @@ namespace Mute.Moe.Services.Payment
                 return new Transaction(
                     ulong.Parse((string)reader["FromId"]),
                     ulong.Parse((string)reader["ToId"]),
-                    decimal.Parse(reader["Amount"].ToString()),
+                    decimal.Parse(reader["Amount"].ToString()!),
                     (string)reader["Unit"],
                     (string)reader["Note"],
                     ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp()

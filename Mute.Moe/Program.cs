@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
@@ -8,7 +9,7 @@ namespace Mute.Moe
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             DependencyHelper.TestDependencies();
 
@@ -20,10 +21,12 @@ namespace Mute.Moe
             var cts = new CancellationTokenSource();
             var webhost = host.RunAsync(cts.Token);
 
+            await Task.Delay(1000, cts.Token);
+
             WaitForExitSignal();
 
             cts.Cancel();
-            webhost.GetAwaiter().GetResult();
+            await webhost;
         }
 
         /// <summary>

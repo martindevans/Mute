@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Linq;
-
 using Mute.Moe.Services.Audio.Mixing.Extensions;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
@@ -25,16 +24,10 @@ namespace Mute.Moe.Services.Audio.Mixing
         public MultiChannelMixer()
         {
             // Mix all inputs together
-            _inputs = new MixingSampleProvider(MixingFormat) { ReadFully = true };
+            _inputs = new MixingSampleProvider(MixingFormat) {ReadFully = true};
 
             // Apply pipeline and eventually convert to the required output format
-            _output = _inputs
-                .ToMono()
-                .AutoGainControl()
-                .Resample(OutputFormat.SampleRate)
-                .SoftClip()
-                .ToStereo()
-                .ToWaveProvider16();
+            _output = _inputs.ToMono().AutoGainControl().Resample(OutputFormat.SampleRate).SoftClip().ToStereo().ToWaveProvider16();
         }
 
         int IWaveProvider.Read(byte[] buffer, int offset, int count)
@@ -42,13 +35,13 @@ namespace Mute.Moe.Services.Audio.Mixing
             return _output.Read(buffer, offset, count);
         }
 
-        public void Add( IMixerInput input)
+        public void Add(IMixerInput input)
         {
             var samples = _inputMap.GetOrAdd(input, a => input.ToMono().Resample(MixingFormat.SampleRate));
             _inputs.AddMixerInput(samples);
         }
 
-        public void Remove( IMixerInput input)
+        public void Remove(IMixerInput input)
         {
             if (_inputMap.TryRemove(input, out var value))
                 _inputs.RemoveMixerInput(value);

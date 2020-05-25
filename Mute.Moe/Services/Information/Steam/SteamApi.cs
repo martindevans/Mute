@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Steam.Models.SteamCommunity;
@@ -15,9 +16,9 @@ namespace Mute.Moe.Services.Information.Steam
         private readonly SteamUserStats _stats;
         private readonly PlayerService _players;
 
-        public SteamApi( Configuration config,  HttpClient http)
+        public SteamApi(Configuration config, HttpClient http)
         {
-            var factory = new SteamWebInterfaceFactory(config.Steam.WebApiKey);
+            var factory = new SteamWebInterfaceFactory(config.Steam?.WebApiKey ?? throw new ArgumentNullException(nameof(config.Steam.WebApiKey)));
 
             _user = factory.CreateSteamWebInterface<SteamUser>(http);
             _stats = factory.CreateSteamWebInterface<SteamUserStats>(http);

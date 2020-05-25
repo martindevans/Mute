@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
-
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
@@ -20,8 +19,8 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
 
         public Script( IEnumerable<string> lines,  IEnumerable<IKeyProvider> keyProviders)
         {
-            List<Decomposition> lastDecomp = null;
-            List<IReassembly> lastReasemb = null;
+            List<Decomposition>? lastDecomp = null;
+            List<IReassembly>? lastReasemb = null;
             var keysList = new List<Key>();
             var pre = new List<Transform>();
             var post = new List<Transform>();
@@ -88,7 +87,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             }
         }
 
-        private static bool DecompositionRule( string s, ref List<Decomposition> lastDecomp, ref List<IReassembly> lastReasemb)
+        private static bool DecompositionRule(string s, ref List<Decomposition>? lastDecomp, ref List<IReassembly>? lastReasemb)
         {
             var m = Regex.Match(s, "^.*?decomp:(?<modifiers>[~\\$ ]*)(?<value>.*)$");
             if (!m.Success)
@@ -107,7 +106,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool ReassemblyRule( string s, ICollection<IReassembly> lr)
+        private static bool ReassemblyRule( string s, ICollection<IReassembly>? lr)
         {
             var m = Regex.Match(s, "^.*?reasmb:( )+(?<value>.*)$");
             if (m.Success)
@@ -119,7 +118,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return false;
         }
 
-        private static bool KeysRule( string s, ICollection<Key> keys,  ref List<Decomposition> lastDecomp, ref List<IReassembly> lastReasemb)
+        private static bool KeysRule(string s, ICollection<Key> keys, ref List<Decomposition>? lastDecomp, ref List<IReassembly>? lastReasemb)
         {
             var m = Regex.Match(s, "^.*?key:( )+(?<value>.*?)( )*(?<rank>\\d*)$");
             if (!m.Success)
@@ -190,7 +189,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
 
         /// <summary>Process a line of script input.</summary>
 		/// <remarks>Process a line of script input.</remarks>
-		private static bool ParseLine(string? line, ref List<IReassembly> lastReasemb, ref List<Decomposition> lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, ICollection<HashSet<string>> syns, ICollection<string> final)
+		private static bool ParseLine(string? line, ref List<IReassembly>? lastReasemb, ref List<Decomposition>? lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, ICollection<HashSet<string>> syns, ICollection<string> final)
         {
             if (line == null || string.IsNullOrWhiteSpace(line))
                 return false;

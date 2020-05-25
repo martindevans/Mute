@@ -31,7 +31,7 @@ namespace Mute.Moe.Services.Imitation
             }
         }
 
-        private async Task<bool> HasModel( IUser user)
+        private async Task<bool> HasModel(IUser user)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Mute.Moe.Services.Imitation
             return new DatabaseMarkovModel(_db, user, new Random());
         }
 
-        public async Task<IImitationModel> BeginTraining( IUser user,  IMessageChannel channel, Func<string, Task>? statusCallback = null)
+        public async Task<IImitationModel> BeginTraining(IUser user, IMessageChannel channel, Func<string, Task>? statusCallback = null)
         {
             // Return existing model if one is already trained
             var m = await GetModel(user);
@@ -88,7 +88,7 @@ namespace Mute.Moe.Services.Imitation
             return m;
         }
 
-        private async IAsyncEnumerable<IMessage> Scrape( IMessageChannel channel)
+        private async IAsyncEnumerable<IMessage> Scrape(IMessageChannel channel)
         {
             //If start message is not set then get the latest message in the channel now
             var start = (await channel.GetMessagesAsync(1).FlattenAsync()).SingleOrDefault();
@@ -140,13 +140,13 @@ namespace Mute.Moe.Services.Imitation
             _random = random;
         }
 
-        private async Task<string?> NextWord( string input, float exhaustion)
+        private async Task<string?> NextWord(string input, float exhaustion)
         {
             static (string?, int) ParseWord(DbDataReader reader)
             {
                 return (
                     reader["NextWord"]?.ToString(),
-                    int.Parse(reader["Count"].ToString())
+                    int.Parse(reader["Count"].ToString()!)
                 );
             }
 
@@ -154,7 +154,7 @@ namespace Mute.Moe.Services.Imitation
             {
                 var cmd = db.CreateCommand();
                 cmd.CommandText = SelectWords;
-                cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value =_user.Id.ToString() });
+                cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = _user.Id.ToString()});
                 cmd.Parameters.Add(new SQLiteParameter("@PreviousWord", System.Data.DbType.String) {Value = input});
                 return cmd;
             }

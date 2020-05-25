@@ -95,12 +95,12 @@ namespace Mute.Moe.Services.Payment
                 return new PendingTransaction(
                     ulong.Parse((string)reader["FromId"]),
                     ulong.Parse((string)reader["ToId"]),
-                    decimal.Parse(reader["Amount"].ToString()),
+                    decimal.Parse(reader["Amount"].ToString()!),
                     (string)reader["Unit"],
                     (string)reader["Note"],
                     ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
-                    Enum.Parse<PendingState>(reader["Pending"].ToString()),
-                    uint.Parse(reader["rowid"].ToString())
+                    Enum.Parse<PendingState>(reader["Pending"].ToString()!),
+                    uint.Parse(reader["rowid"].ToString()!)
                 );
             }
 
@@ -123,9 +123,9 @@ namespace Mute.Moe.Services.Payment
 
         private async Task<PendingState?> UpdatePending(uint id, string sql)
         {
-            PendingState ParseResult(DbDataReader reader)
+            static PendingState ParseResult(DbDataReader reader)
             {
-                return Enum.Parse<PendingState>(reader["Pending"].ToString());
+                return Enum.Parse<PendingState>(reader["Pending"].ToString()!);
             }
 
             DbCommand PrepareQuery(IDatabaseService db)

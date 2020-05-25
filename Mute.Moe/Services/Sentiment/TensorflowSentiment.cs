@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Mute.Moe.Extensions;
 using Mute.Moe.Services.Words;
 using TensorFlow;
 
@@ -17,10 +17,10 @@ namespace Mute.Moe.Services.Sentiment
 
         private readonly Task<TFGraph> _graph;
 
-        public TensorflowSentiment( Configuration config, IWords wordVectors)
+        public TensorflowSentiment(Configuration config, IWords wordVectors)
         {
-            _wordVectors = wordVectors;
-            _config = config.Sentiment;
+            _wordVectors = wordVectors ?? throw new ArgumentNullException(nameof(wordVectors));
+            _config = config.Sentiment ?? throw new ArgumentNullException(nameof(config.Sentiment));
             _graph = Task.Run(async () => await LoadGraph());
         }
 
@@ -32,7 +32,7 @@ namespace Mute.Moe.Services.Sentiment
                 w.Start();
 
                 //todo: clean message more!
-                var words = message.Split(' ');
+                var words = message.SplitSpan(' ').Select(a => a.ToString()).ToArray();
 
                 var graph = await _graph;
 

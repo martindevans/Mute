@@ -42,7 +42,7 @@ namespace Mute.Moe.Utilities
 
             var taskCompletionSource = new TaskCompletionSource<object?>();
 
-            void Handler(object sender, EventArgs args)
+            void Handler(object? sender, EventArgs args)
             {
                 process.Exited -= Handler;
                 taskCompletionSource.TrySetResult(null);

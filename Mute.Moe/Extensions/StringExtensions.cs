@@ -71,7 +71,7 @@ namespace Mute.Moe.Extensions
         {
             if (a == null && b == null)
                 return 0;
-            
+
             if (a == null)
                 return (uint)b!.Length;
             else if (b == null)
@@ -105,24 +105,41 @@ namespace Mute.Moe.Extensions
             return (uint)matrix[aLength, bLength];
         }
 
-         public static IEnumerable<ulong> FindUserMentions( this string str)
+        public static IEnumerable<ulong> FindUserMentions(this string str)
         {
             return FindMentions(str, '@');
         }
 
-         public static IEnumerable<ulong> FindChannelMentions( this string str)
+        public static IEnumerable<ulong> FindChannelMentions(this string str)
         {
             return FindMentions(str, '#');
         }
 
-        
-        private static IEnumerable<ulong> FindMentions( this string str, char prefix)
+        private static IEnumerable<ulong> FindMentions(this string str, char prefix)
         {
             var r = new Regex($"\\<{prefix}(!?)(?<id>[0-9]+)\\>");
 
             var matches = r.Matches(str);
 
             return matches.SelectMany(m => m.Groups["id"].Captures.Select(c => c.Value)).Select(ulong.Parse);
+        }
+
+        public static IEnumerable<ReadOnlyMemory<char>> SplitSpan(this string str, char separator, StringSplitOptions options = StringSplitOptions.None)
+        {
+            var start = 0;
+            for (var i = 0; i < str.Length; i++)
+            {
+                if (str[i] == separator)
+                {
+                    var length = i - start;
+                    if (!options.HasFlag(StringSplitOptions.RemoveEmptyEntries) || length > 0)
+                        yield return str.AsMemory(start, i - start);
+                    start = i + 1;
+                }
+            }
+
+            if (start != str.Length)
+                yield return str.AsMemory(start, str.Length - start);
         }
     }
 }

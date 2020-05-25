@@ -33,7 +33,7 @@ namespace Mute.Moe.Services.Information.Steam
         {
             static ulong? ParseId(DbDataReader reader)
             {
-                var data = reader["SteamId"].ToString();
+                var data = reader["SteamId"].ToString()!;
                 return ulong.Parse(data);
             }
 

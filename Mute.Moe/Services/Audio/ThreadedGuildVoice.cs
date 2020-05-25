@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,11 +24,11 @@ namespace Mute.Moe.Services.Audio
         private readonly MultiChannelMixer _mixer = new MultiChannelMixer();
         private readonly DiscordSocketClient _client;
 
-        public ThreadedGuildVoice( IGuild guild,  DiscordSocketClient client)
+        public ThreadedGuildVoice(IGuild guild, DiscordSocketClient client)
         {
-            Guild = guild ?? throw new ArgumentNullException(nameof(guild));
-
+            Guild = guild;
             _client = client;
+
             client.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
         }
 
@@ -74,7 +76,7 @@ namespace Mute.Moe.Services.Audio
                 _pump = new AudioPump(channel, _mixer);
         }
 
-        public void Open( IMixerChannel channel)
+        public void Open(IMixerChannel channel)
         {
             _mixer.Add(channel);
         }
@@ -105,7 +107,7 @@ namespace Mute.Moe.Services.Audio
 
             private async Task ThreadEntry()
             {
-                async Task WriteOutput(IWaveProvider waveSource, AudioOutStream waveSink, int sampleCount, byte[] buffer)
+                static async Task WriteOutput(IWaveProvider waveSource, Stream waveSink, int sampleCount, byte[] buffer)
                 {
                     while (sampleCount > 0)
                     {
@@ -118,7 +120,10 @@ namespace Mute.Moe.Services.Audio
                 
                         //If no audio was mixed early exit, this probably indicates the end of the stream
                         if (mixed == 0)
+                        {
+                            await waveSink.FlushAsync();
                             return;
+                        }
                     }
                 }
 
@@ -126,41 +131,44 @@ namespace Mute.Moe.Services.Audio
 
                 try
                 {
-                    using (var c = await Channel.ConnectAsync())
-                    using (var s = c.CreatePCMStream(AudioApplication.Mixed, Channel.Bitrate))
+                    using var c = await Channel.ConnectAsync();
+
+                    await using var s = c.CreatePCMStream(AudioApplication.Mixed, Channel.Bitrate);
+
+                    var speakingState = false;
+                    while (!_cancellation.IsCancellationRequested)
                     {
-                        var speakingState = false;
-                        while (!_cancellation.IsCancellationRequested)
+                        //Wait for an event to happen to wake up the thread
+                        if (!speakingState)
                         {
-                            //Wait for an event to happen to wake up the thread
-                            if (!speakingState)
-                                _cancellation.Token.WaitHandle.WaitOne(250);
-
-                            //Break out if stop flag has been set
-                            if (_cancellation.IsCancellationRequested)
-                                return;
-
-                            //Count up how many channels are playing.
-                            var playing = _mixer.IsPlaying;
-
-                            //Set playback state if it has changed
-                            if (playing != speakingState)
-                            {
-                                await c.SetSpeakingAsync(speakingState);
-                                speakingState = playing;
-                            }
-
-                            //Early exit if nothing is playing
-                            if (!speakingState)
-                                continue;
-
-                            //Copy mixed audio to the output
-                            await WriteOutput(_mixer, s, audioCopyBuffer.Length, audioCopyBuffer);
+                            _cancellation.Token.WaitHandle.WaitOne(250);
+                            await c.SetSpeakingAsync(speakingState);
                         }
 
-                        await c.SetSpeakingAsync(false);
-                        await c.StopAsync();
+                        //Break out if stop flag has been set
+                        if (_cancellation.IsCancellationRequested)
+                            return;
+
+                        //Count up how many channels are playing.
+                        var playing = _mixer.IsPlaying;
+
+                        //Set playback state if it has changed
+                        if (playing != speakingState)
+                        {
+                            speakingState = playing;
+                            await c.SetSpeakingAsync(speakingState);
+                        }
+
+                        //Early exit if nothing is playing
+                        if (!speakingState)
+                            continue;
+
+                        //Copy mixed audio to the output
+                        await WriteOutput(_mixer, s, audioCopyBuffer.Length, audioCopyBuffer);
                     }
+
+                    await c.SetSpeakingAsync(false);
+                    await c.StopAsync();
                 }
                 catch (Exception e)
                 {

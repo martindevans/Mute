@@ -52,7 +52,7 @@ namespace Mute.Moe.Services.Information.SpaceX
             return new OddityRoadsterInfo(await o.Roadster.Get().ExecuteAsync());
         }
 
-        private static void OddityOnOnDeserializationError(object _,  ErrorEventArgs e)
+        private static void OddityOnOnDeserializationError(object? _,  ErrorEventArgs e)
         {
             Console.WriteLine("Oddity Serialization Error: " + e.ErrorContext.Path);
             e.ErrorContext.Handled = true;
