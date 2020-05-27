@@ -86,7 +86,7 @@ namespace Mute.Moe.Discord.Modules.Games
                             where cell == CellState.None
                             select ((byte)x, (byte)y);
 
-                return moves.Random(rng);
+                return moves.RandomNotNull(rng);
         }
 
         private async Task<(byte, byte)?> GetPlay()

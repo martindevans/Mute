@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
-
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Cryptocurrency
@@ -23,7 +23,6 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
         private readonly IIndex<string, ICurrency> _currencyBySymbol;
 
         private readonly FluidCache<ITicker> _tickerCache;
-        private readonly IIndex<uint, ITicker> _tickerById;
         private readonly IIndex<string, ITicker> _tickerBySymbol;
 
         private readonly ConcurrentDictionary<string, string> _nameToSymbolMap = new ConcurrentDictionary<string, string>();
@@ -45,7 +44,6 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
             _currencyBySymbol = _currencyCache.AddIndex("IndexBySymbol", a => a.Symbol);
 
             _tickerCache = new FluidCache<ITicker>(config.CoinMarketCap.CacheSize, TimeSpan.FromSeconds(config.CoinMarketCap.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.CoinMarketCap.CacheMaxAgeSeconds), () => DateTime.UtcNow);
-            _tickerById = _tickerCache.AddIndex("IndexById", a => a.Currency.Id);
             _tickerBySymbol = _tickerCache.AddIndex("IndexBySymbol", a => a.Currency.Symbol);
         }
 
@@ -189,62 +187,102 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
         #region model
         private class Status
         {
-            [JsonProperty("error_message")] public string? Error { get; private set; }
+            [JsonProperty("error_message"), UsedImplicitly] public string? Error { get; private set; }
         }
 
         private class CmcCurrency
             : ICurrency
         {
-            [JsonProperty("logo")] public string Logo { get; private set; }
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("id")] private uint? _id;
+            [JsonProperty("symbol")] private string? _symbol;
+            [JsonProperty("name")] private string? _name;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
 
-            [JsonProperty("id")] public uint Id { get; private set; }
-            [JsonProperty("symbol")] public string Symbol { get; private set; }
-            [JsonProperty("name")] public string Name { get; private set; }
+            public uint Id => _id ?? throw new InvalidOperationException("API returned null value for `id` field");
+            public string Symbol => _symbol ?? throw new InvalidOperationException("API returned null value for `symbol` field");
+            public string Name => _name ?? throw new InvalidOperationException("API returned null value for `name` field");
         }
 
         private class CmcCurrencyResponse
         {
-            [JsonProperty("status")] public Status Status { get; private set; }
-            [JsonProperty("data")] public Dictionary<string, CmcCurrency> Data { get; private set; }
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("status")] private Status? _status;
+            [JsonProperty("data")] private Dictionary<string, CmcCurrency>? _data;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
+
+            public Status Status => _status ?? throw new InvalidOperationException("API returned null value for `status` field");
+            public Dictionary<string, CmcCurrency> Data => _data ?? throw new InvalidOperationException("API returned null value for `data` field");
         }
 
         private class CmcMap
         {
-            [JsonProperty("id")] public uint Id { get; private set; }
-            [JsonProperty("symbol")] public string Symbol { get; private set; }
-            [JsonProperty("name")] public string Name { get; private set; }
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("id")] private uint? _id;
+            [JsonProperty("symbol")] private string? _symbol;
+            [JsonProperty("name")] private string? _name;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
+
+            public uint Id => _id ?? throw new InvalidOperationException("API returned null value for `id` field");
+            public string Symbol => _symbol ?? throw new InvalidOperationException("API returned null value for `symbol` field");
+            public string Name => _name ?? throw new InvalidOperationException("API returned null value for `name` field");
         }
 
         private class CmcMapResponse
         {
-            [JsonProperty("status")] public Status Status { get; private set; }
-            [JsonProperty("data")] public CmcMap[] Data { get; private set; }
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("status"), UsedImplicitly] private Status? _status;
+            [JsonProperty("data"), UsedImplicitly] private CmcMap[]? _data;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
+
+            public Status Status => _status ?? throw new InvalidOperationException("API returned null value for `status` field");
+            public CmcMap[] Data => _data ?? throw new InvalidOperationException("API returned null value for `data` field");
         }
 
         private class CmcQuote
             : IQuote
         {
-            [JsonProperty("price")] public decimal Price { get; private set; }
-            [JsonProperty("volume_24h")] public decimal? Volume24H { get; private set; }
-            [JsonProperty("percent_change_1h")] public decimal? PctChange1H { get; private set; }
-            [JsonProperty("percent_change_24h")] public decimal? PctChange24H { get; private set; }
-            [JsonProperty("percent_change_7d")] public decimal? PctChange7D { get; private set; }
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("price"), UsedImplicitly] private decimal? _price;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
+
+            public decimal Price => _price ?? throw new InvalidOperationException("API returned null value for `price` field");
+
+            [JsonProperty("volume_24h"), UsedImplicitly] public decimal? Volume24H { get; private set; }
+            [JsonProperty("percent_change_1h"), UsedImplicitly] public decimal? PctChange1H { get; private set; }
+            [JsonProperty("percent_change_24h"), UsedImplicitly] public decimal? PctChange24H { get; private set; }
+            [JsonProperty("percent_change_7d"), UsedImplicitly] public decimal? PctChange7D { get; private set; }
         }
 
         private class CmcTicker
             : ITicker, ICurrency
         {
-            public ICurrency Currency => this;
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("id"), UsedImplicitly] private uint? _id;
+            [JsonProperty("name"), UsedImplicitly] private string? _name;
+            [JsonProperty("symbol"), UsedImplicitly] private string? _symbol;
+            [JsonProperty("quote"), UsedImplicitly] private Dictionary<string, CmcQuote>? _cmcQuotes;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
 
-            [JsonProperty("id")] public uint Id { get; private set; }
-            [JsonProperty("name")] public string Name { get; private set; }
-            [JsonProperty("symbol")] public string Symbol { get; private set; }
+            public uint Id => _id ?? throw new InvalidOperationException("API returned null value for `id` field");
+            public string Name => _name ?? throw new InvalidOperationException("API returned null value for `name` field");
+            public string Symbol => _symbol ?? throw new InvalidOperationException("API returned null value for `symbol` field");
 
-            [JsonProperty("circulating_supply")] public decimal? CirculatingSupply { get; private set; }
-            [JsonProperty("total_supply")] public decimal? TotalSupply { get; private set; }
-            [JsonProperty("max_supply")] public decimal? MaxSupply { get; private set; }
-
-            [JsonProperty("quote")] public Dictionary<string, CmcQuote> CmcQuotes { get; private set; }
+            [JsonProperty("circulating_supply"), UsedImplicitly] public decimal? CirculatingSupply { get; private set; }
+            [JsonProperty("total_supply"), UsedImplicitly] public decimal? TotalSupply { get; private set; }
+            [JsonProperty("max_supply"), UsedImplicitly] public decimal? MaxSupply { get; private set; }
 
             private IReadOnlyDictionary<string, IQuote>? _quotesCache;
             public IReadOnlyDictionary<string, IQuote> Quotes
@@ -252,16 +290,29 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
                 get
                 {
                     if (_quotesCache == null)
-                        _quotesCache = new Dictionary<string, IQuote>(CmcQuotes.Select(a => new KeyValuePair<string, IQuote>(a.Key, a.Value)));
+                    {
+                        var cmcQuotes = _cmcQuotes ?? throw new InvalidOperationException("API returned null value for `quote` field");
+                        _quotesCache = new Dictionary<string, IQuote>(cmcQuotes.Select(a => new KeyValuePair<string, IQuote>(a.Key, a.Value)));
+                    }
+
                     return _quotesCache;
                 }
             }
+
+            ICurrency ITicker.Currency => this;
         }
 
         private class CmcTickerResponse
         {
-            [JsonProperty("status")] public Status Status { get; private set; }
-            [JsonProperty("data")] public Dictionary<string, CmcTicker> Data { get; private set; }
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("status"), UsedImplicitly] private Status? _status;
+            [JsonProperty("data"), UsedImplicitly] private Dictionary<string, CmcTicker>? _data;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
+
+            public Status Status => _status ?? throw new InvalidOperationException("API returned null value for `status` field");
+            public Dictionary<string, CmcTicker> Data => _data ?? throw new InvalidOperationException("API returned null value for `data` field");
         }
         #endregion
     }

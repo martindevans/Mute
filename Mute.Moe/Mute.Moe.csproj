@@ -8,6 +8,7 @@
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
 
     <Nullable>enable</Nullable>
+    <WarningsAsErrors>CS8600;CS8602;CS8603</WarningsAsErrors>
 
   </PropertyGroup>
 

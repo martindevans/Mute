@@ -14,7 +14,8 @@ namespace Mute.Moe.Services.Words
         : IWords
     {
         private readonly HttpClient _client;
-        private readonly WordVectorsConfig _config;
+
+        private readonly string _baseUrl;
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly FluidCache<WordVector> _vectorCache;
@@ -31,12 +32,12 @@ namespace Mute.Moe.Services.Words
             _client = client.CreateClient();
             _client.Timeout = TimeSpan.FromMilliseconds(25);
 
-            _config = config.WordVectors ?? throw new ArgumentNullException(nameof(config.WordVectors));
+            _baseUrl = config.WordVectors?.WordVectorsBaseUrl ?? throw new ArgumentNullException(nameof(config.WordVectors.WordVectorsBaseUrl));
 
-            _vectorCache = new FluidCache<WordVector>((int)_config.CacheSize, TimeSpan.FromSeconds(_config.CacheMinTimeSeconds), TimeSpan.FromMinutes(_config.CacheMaxTimeSeconds), () => DateTime.UtcNow);
+            _vectorCache = new FluidCache<WordVector>((int)config.WordVectors.CacheSize, TimeSpan.FromSeconds(config.WordVectors.CacheMinTimeSeconds), TimeSpan.FromMinutes(config.WordVectors.CacheMaxTimeSeconds), () => DateTime.UtcNow);
             _indexByWord = _vectorCache.AddIndex("byWord", a => a.Word);
 
-            _similarCache = new FluidCache<SimilarResult>((int)_config.CacheSize, TimeSpan.FromSeconds(_config.CacheMinTimeSeconds), TimeSpan.FromMinutes(_config.CacheMaxTimeSeconds), () => DateTime.UtcNow);
+            _similarCache = new FluidCache<SimilarResult>((int)config.WordVectors.CacheSize, TimeSpan.FromSeconds(config.WordVectors.CacheMinTimeSeconds), TimeSpan.FromMinutes(config.WordVectors.CacheMaxTimeSeconds), () => DateTime.UtcNow);
             _indexSimilarByWord = _similarCache.AddIndex("byWord", a => a.Root);
         }
 
@@ -60,7 +61,7 @@ namespace Mute.Moe.Services.Words
 
             try
             {
-                var url = new UriBuilder(_config.WordVectorsBaseUrl) {Path = $"get_vector/{Uri.EscapeUriString(word)}"};
+                var url = new UriBuilder(_baseUrl) {Path = $"get_vector/{Uri.EscapeUriString(word)}"};
 
                 using var resp = await _client.GetAsync(url.ToString());
                 if (!resp.IsSuccessStatusCode)
@@ -105,7 +106,7 @@ namespace Mute.Moe.Services.Words
 
             try
             {
-                var url = new UriBuilder(_config.WordVectorsBaseUrl) {Path = $"get_similar/{Uri.EscapeUriString(word)}"};
+                var url = new UriBuilder(_baseUrl) {Path = $"get_similar/{Uri.EscapeUriString(word)}"};
 
                 using var resp = await _client.GetAsync(url.ToString());
                 if (!resp.IsSuccessStatusCode)

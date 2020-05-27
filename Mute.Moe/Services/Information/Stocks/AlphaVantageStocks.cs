@@ -55,21 +55,34 @@ namespace Mute.Moe.Services.Information.Stocks
 
         private class StockQuoteResponseContainer
         {
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
             [JsonProperty("Global Quote"), UsedImplicitly]
             public StockQuoteResponse? Response;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
         }
 
         public class StockQuoteResponse
             : IStockQuote
         {
-            [JsonProperty("01. symbol"), UsedImplicitly] public string Symbol { get; private set; }
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("01. symbol"), UsedImplicitly] private string? _symbol;
+            [JsonProperty("02. open"), UsedImplicitly] private decimal? _open;
+            [JsonProperty("03. high"), UsedImplicitly] private decimal? _high;
+            [JsonProperty("04. low"), UsedImplicitly] private decimal? _low;
+            [JsonProperty("05. price"), UsedImplicitly] private decimal? _price;
+            [JsonProperty("06. volume"), UsedImplicitly] private long? _volume;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
 
-            [JsonProperty("02. open"), UsedImplicitly] public decimal Open { get; private set; }
-            [JsonProperty("03. high"), UsedImplicitly] public decimal High { get; private set; }
-            [JsonProperty("04. low"), UsedImplicitly] public decimal Low { get; private set; }
-            [JsonProperty("05. price"), UsedImplicitly] public decimal Price { get; private set; }
-
-            [JsonProperty("06. volume"), UsedImplicitly] public long Volume { get; private set; }
+            public string Symbol => _symbol ?? throw new InvalidOperationException("API returned null value for `01. symbol` field");
+            public decimal Open => _open ?? throw new InvalidOperationException("API returned null value for `02. open` field");
+            public decimal High => _high ?? throw new InvalidOperationException("API returned null value for `03. high` field");
+            public decimal Low => _low ?? throw new InvalidOperationException("API returned null value for `04. low` field");
+            public decimal Price => _price ?? throw new InvalidOperationException("API returned null value for `05. price` field");
+            public long Volume => _volume ?? throw new InvalidOperationException("API returned null value for `06. volume` field");
 
             [JsonProperty("09. change"), UsedImplicitly] public decimal? PctChange24H { get; private set; }
         }

@@ -56,11 +56,11 @@ namespace Mute.Moe.Services.Music
             } while (_fs.File.Exists(_fs.Path.Combine(guildDir, fileName)));
 
             // Write to disk
-            using (var fs = _fs.File.Create(_fs.Path.Combine(guildDir, fileName)))
+            await using (var fs = _fs.File.Create(_fs.Path.Combine(guildDir, fileName)))
                 await audio.CopyToAsync(fs);
 
             // Insert into the database
-            using var cmd = _database.CreateCommand();
+            await using var cmd = _database.CreateCommand();
             cmd.CommandText = InsertTrackSql;
             cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
             cmd.Parameters.Add(new SQLiteParameter("@Title", System.Data.DbType.String) { Value = title.ToLowerInvariant() });

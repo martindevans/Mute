@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Mute.Moe.Services.Information.Stocks
 {
@@ -47,17 +48,31 @@ namespace Mute.Moe.Services.Information.Stocks
 
         private class StockSearchResponseContainer
         {
-            [JsonProperty("bestMatches"), UsedImplicitly]
-            public StockSearchResponse[]? BestMatches;
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("bestMatches"), UsedImplicitly] private StockSearchResponse[]? _bestMatches;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
+
+            public StockSearchResponse[] BestMatches => _bestMatches ?? throw new InvalidOperationException("API returned null value for `bestMatches` field");
         }
 
         public class StockSearchResponse
             : IStockSearchResult
         {
-            [JsonProperty("1. symbol"), UsedImplicitly] public string? Symbol { get; private set; }
-            [JsonProperty("2. name"), UsedImplicitly] public string? Name { get; private set; }
-            [JsonProperty("8. currency"), UsedImplicitly] public string? Currency { get; private set; }
-            [JsonProperty("9. matchScore"), UsedImplicitly] public string? MatchScore { get; private set; }
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("1. symbol"), UsedImplicitly] private string? _symbol;
+            [JsonProperty("2. name"), UsedImplicitly] private string? _name;
+            [JsonProperty("8. currency"), UsedImplicitly] private string? _currency;
+            [JsonProperty("9. matchScore"), UsedImplicitly] private string? _matchScore;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
+
+            public string Symbol => _symbol ?? throw new InvalidOperationException("API returned null value for `1. symbol` field");
+            public string Name => _name ?? throw new InvalidOperationException("API returned null value for `2. name` field");
+            public string Currency => _currency ?? throw new InvalidOperationException("API returned null value for `8. currency` field");
+            public string MatchScore => _matchScore ?? throw new InvalidOperationException("API returned null value for `9. matchScore` field");
         }
     }
 }

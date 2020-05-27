@@ -13,17 +13,17 @@ namespace Mute.Moe.Services.Information.Forex
         : IForexInfo
     {
         private readonly HttpClient _http;
-        private readonly AlphaAdvantageConfig _config;
+        private readonly string _key;
 
         private readonly FluidCache<IForexQuote> _cache;
         private readonly IIndex<KeyValuePair<string, string>, IForexQuote> _bySymbolPair;
-
-        public AlphaVantageForex( Configuration config, IHttpClientFactory http)
+        
+        public AlphaVantageForex(Configuration config, IHttpClientFactory http)
         {
-            _config = config.AlphaAdvantage;
+            _key = config.AlphaAdvantage?.Key ?? throw new ArgumentNullException(nameof(config.AlphaAdvantage.Key));
             _http = http.CreateClient();
 
-            _cache = new FluidCache<IForexQuote>(_config.CacheSize, TimeSpan.FromSeconds(_config.CacheMinAgeSeconds), TimeSpan.FromSeconds(_config.CacheMaxAgeSeconds), () => DateTime.UtcNow);
+            _cache = new FluidCache<IForexQuote>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMaxAgeSeconds), () => DateTime.UtcNow);
             _bySymbolPair = _cache.AddIndex("BySymbolPair", a => new KeyValuePair<string, string>(a.FromCode, a.ToCode));
         }
 
@@ -36,7 +36,7 @@ namespace Mute.Moe.Services.Information.Forex
             var from = Uri.EscapeUriString(fromSymbol);
             var to = Uri.EscapeUriString(toSymbol);
 
-            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={@from}&to_currency={to}&apikey={_config.Key}");
+            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={from}&to_currency={to}&apikey={_key}");
             if (!result.IsSuccessStatusCode)
                 return null;
 
@@ -56,23 +56,40 @@ namespace Mute.Moe.Services.Information.Forex
         #region model
         private class ExchangeRateResponseContainer
         {
-            [JsonProperty("Realtime Currency Exchange Rate"), UsedImplicitly]
-            public ExchangeRateResponse? Response;
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("Realtime Currency Exchange Rate"), UsedImplicitly] private ExchangeRateResponse? _response;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
+
+            public ExchangeRateResponse Response => _response ?? throw new InvalidOperationException("API returned null value for `Realtime Currency Exchange Rate` field");
         }
 
         public class ExchangeRateResponse
             : IForexQuote
         {
-            [JsonProperty("1. From_Currency Code")] public string FromCode { get; private set; }
-            [JsonProperty("2. From_Currency Name")] public string FromName { get; private set; }
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+            [JsonProperty("1. From_Currency Code")] private string? _fromCode;
+            [JsonProperty("2. From_Currency Name")] private string? _fromName;
+            [JsonProperty("3. To_Currency Code")] private string? _toCode;
+            [JsonProperty("4. To_Currency Name")] private string? _toName;
+            [JsonProperty("5. Exchange Rate")] private decimal? _exchangeRate;
+            [JsonProperty("6. Last Refreshed")] private string? _lastRefreshed;
+            [JsonProperty("7. Time Zone")] private string? _timezone;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
 
-            [JsonProperty("3. To_Currency Code")] public string ToCode { get; private set; }
-            [JsonProperty("4. To_Currency Name")] public string ToName { get; private set; }
+            public string FromCode => _fromCode ?? throw new InvalidOperationException("API returned null value for `1. From_Currency Code` field");
+            public string FromName => _fromName ?? throw new InvalidOperationException("API returned null value for `2. From_Currency Name` field");
 
-            [JsonProperty("5. Exchange Rate")] public decimal ExchangeRate { get; private set; }
+            public string ToCode => _toCode ?? throw new InvalidOperationException("API returned null value for `3. To_Currency Code` field");
+            public string ToName => _toName ?? throw new InvalidOperationException("API returned null value for `4. To_Currency Name` field");
 
-            [JsonProperty("6. Last Refreshed")] public string LastRefreshed { get; private set; }
-            [JsonProperty("7. Time Zone")] public string Timezone { get; private set; }
+            public decimal ExchangeRate => _exchangeRate ?? throw new InvalidOperationException("API returned null value for `5. Exchange Rate` field");
+
+            public string LastRefreshed => _lastRefreshed ?? throw new InvalidOperationException("API returned null value for `6. Last Refreshed` field");
+            public string Timezone => _timezone ?? throw new InvalidOperationException("API returned null value for `7. Time Zone` field");
         }
         #endregion
     }

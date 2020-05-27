@@ -121,34 +121,31 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
 
         private class Response
         {
-            [JsonProperty("list"), UsedImplicitly] public List<Entry>? Items;
+            [JsonProperty("list"), UsedImplicitly] public List<Entry>? Items{ get; private set; }
         }
 
         private class Entry
             : IUrbanDefinition
         {
 #pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
             [JsonProperty("definition"), UsedImplicitly] private string? _definition;
-            public string Definition => _definition ?? throw new InvalidOperationException("API response did not contain required field `permalink`");
-
             [JsonProperty("permalink"), UsedImplicitly] private Uri? _permalink;
-            public Uri Permalink => _permalink ?? throw new InvalidOperationException("API response did not contain required field `permalink`");
-
-            [JsonProperty("thumbs_up"), UsedImplicitly] private int _thumbsUp;
-            public int ThumbsUp => _thumbsUp;
-
-            [JsonProperty("thumbs_down"), UsedImplicitly] private int _thumbsDown;
-            public int ThumbsDown => _thumbsDown;
-
+            [JsonProperty("thumbs_up"), UsedImplicitly] private int? _thumbsUp;
+            [JsonProperty("thumbs_down"), UsedImplicitly] private int? _thumbsDown;
             [JsonProperty("word"), UsedImplicitly] private string? _word;
-            public string Word => _word ?? throw new InvalidOperationException("API response did not contain required field `word`");
-
-            [JsonProperty("written_on"), UsedImplicitly] private DateTime _writtenOn;
-            public DateTime WrittenOn => _writtenOn;
-
+            [JsonProperty("written_on"), UsedImplicitly] private DateTime? _writtenOn;
             [JsonProperty("example"), UsedImplicitly] private string? _example;
-            public string Example => _example ?? throw new InvalidOperationException("API response did not contain required field `example`");
+#pragma warning restore 0649 // Field not assigned
 #pragma warning restore IDE0044 // Add readonly modifier
+
+            public string Definition => _definition ?? throw new InvalidOperationException("API returned null value for `definition` field");
+            public Uri Permalink => _permalink ?? throw new InvalidOperationException("API returned null value for `permalink` field");
+            public int ThumbsUp => _thumbsUp ?? throw new InvalidOperationException("API returned null value for `thumbs_up` field");
+            public int ThumbsDown => _thumbsDown ?? throw new InvalidOperationException("API returned null value for `thumbs_down` field");
+            public string Word => _word ?? throw new InvalidOperationException("API returned null value for `word` field");
+            public DateTime WrittenOn => _writtenOn ?? throw new InvalidOperationException("API returned null value for `written_on` field");
+            public string Example => _example ?? throw new InvalidOperationException("API returned null value for `example` field");
         }
     }
 }
