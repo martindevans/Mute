@@ -18,12 +18,12 @@ namespace Mute.Moe.Discord.Modules
             await TypingReplyAsync(GetTime(tz));
         }
 
-         private string GetTime(string? tz = null)
+         private static string GetTime(string? tz = null)
         {
             var extract = FuzzyParsing.TimeOffset(tz ?? "");
             var offset = extract.IsValid ? extract.UtcOffset : TimeSpan.Zero;
 
-            string FormatTime(DateTime dt) => (dt).ToString("HH:mm:ss tt");
+            static string FormatTime(DateTime dt) => (dt).ToString("HH:mm:ss tt");
 
             if (extract.IsValid || tz == null)
                 return $"The time is {FormatTime(DateTime.UtcNow + offset)} UTC{offset.Hours:+00;-00;+00}:{offset.Minutes:00}";

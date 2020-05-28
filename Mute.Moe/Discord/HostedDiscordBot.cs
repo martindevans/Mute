@@ -80,7 +80,7 @@ namespace Mute.Moe.Discord
             await tcs.Task;
         }
 
-        private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context,  IResult result)
+        private static async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context,  IResult result)
         {
             //Only pay attention to commands which fail due to an exception
             if (result.IsSuccess || !result.Error.HasValue || result.Error != CommandError.Exception)

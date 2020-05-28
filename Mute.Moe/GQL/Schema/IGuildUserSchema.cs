@@ -22,7 +22,7 @@ namespace Mute.Moe.GQL.Schema
             Field(typeof(StringGraphType), "avatarUrl", resolve: GetAvatarUrl);
         }
 
-        private object GetAvatarUrl( ResolveFieldContext<IGuildUser> ctx)
+        private static string GetAvatarUrl(ResolveFieldContext<IGuildUser> ctx)
         {
             return ctx.Source.GetAvatarUrl(ImageFormat.Jpeg, 512)
                 ?? ctx.Source.GetDefaultAvatarUrl();

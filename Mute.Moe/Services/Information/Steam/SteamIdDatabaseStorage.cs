@@ -50,14 +50,12 @@ namespace Mute.Moe.Services.Information.Steam
 
         public async Task Set(ulong discordId, ulong steamId)
         {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertIdSql;
-                cmd.Parameters.Add(new SQLiteParameter("@DiscordId", System.Data.DbType.String) { Value = discordId.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@SteamId", System.Data.DbType.String) { Value = steamId.ToString() });
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = InsertIdSql;
+            cmd.Parameters.Add(new SQLiteParameter("@DiscordId", System.Data.DbType.String) { Value = discordId.ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@SteamId", System.Data.DbType.String) { Value = steamId.ToString() });
 
-                await cmd.ExecuteNonQueryAsync();
-            }
+            await cmd.ExecuteNonQueryAsync();
         }
     }
 }

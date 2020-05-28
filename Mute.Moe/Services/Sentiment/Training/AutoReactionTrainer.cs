@@ -11,7 +11,7 @@ namespace Mute.Moe.Services.Sentiment.Training
     {
         private readonly ISentimentTrainer _sentiment;
 
-        public AutoReactionTrainer( DiscordSocketClient client, ISentimentTrainer sentiment)
+        public AutoReactionTrainer(DiscordSocketClient client, ISentimentTrainer sentiment)
         {
             _sentiment = sentiment;
 
@@ -28,7 +28,7 @@ namespace Mute.Moe.Services.Sentiment.Training
                 await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Neutral);
         }
 
-        private async Task TryLearn( IUserMessage message,  IReaction reaction, Sentiment sentiment)
+        private async Task TryLearn(IMessage message,  IReaction reaction, Sentiment sentiment)
         {
             //Early exit if channel is not a guild channel
             if (!(message.Channel is SocketGuildChannel gc))
@@ -46,7 +46,7 @@ namespace Mute.Moe.Services.Sentiment.Training
                 await _sentiment.Teach(message.Content, sentiment);
         }
 
-        private bool IsTeacher( IGuildUser user)
+        private static bool IsTeacher(IGuildUser user)
         {
             //Check if the user has the `*MuteTeacher` role (hardcoded ID for now)
             return user.RoleIds.Contains<ulong>(506127510740795393);

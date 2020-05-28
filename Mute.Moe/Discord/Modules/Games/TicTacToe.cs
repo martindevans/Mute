@@ -29,7 +29,7 @@ namespace Mute.Moe.Discord.Modules.Games
 
                 //Get player turn
                 var play = await GetPlay();
-                if (!play.HasValue)
+                if (play == null)
                     return;
 
                 //Apply player turn
@@ -78,7 +78,7 @@ namespace Mute.Moe.Discord.Modules.Games
             return true;
         }
 
-        private async Task<(byte, byte)> GetAiPlay( GameBoard board,  Random rng)
+        private static async Task<(byte, byte)> GetAiPlay( GameBoard board,  Random rng)
         {
                 var moves = from x in Enumerable.Range(0, 3)
                             from y in Enumerable.Range(0, 3)
@@ -172,19 +172,14 @@ namespace Mute.Moe.Discord.Modules.Games
 
             private GameState State()
             {
-                GameState Winner(CellState cell)
+                static GameState Winner(CellState cell)
                 {
-                    switch (cell)
-                    {
-                        
-                        case CellState.X:
-                            return GameState.XWins;
-                        case CellState.O:
-                            return GameState.OWins;
-                        case CellState.None:
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(cell), cell, null);
-                    }
+                    return cell switch {
+                        CellState.X => GameState.XWins,
+                        CellState.O => GameState.OWins,
+                        CellState.None => throw new ArgumentOutOfRangeException(nameof(cell), cell, null),
+                        _ => throw new ArgumentOutOfRangeException(nameof(cell), cell, null)
+                    };
                 }
 
                 //Check horizontal lines

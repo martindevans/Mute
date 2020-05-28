@@ -23,9 +23,9 @@ namespace Mute.Moe.Discord.Modules.Introspection
             var timer = new Stopwatch();
             timer.Start();
 
-            using (var mem = new MemoryStream(count * 20))
+            await using (var mem = new MemoryStream(count * 20))
             {
-                using (var writer = new StreamWriter(mem, Encoding.UTF8, 10, true))
+                await using (var writer = new StreamWriter(mem, Encoding.UTF8, 10, true))
                 {
                     //Write out all the messages to the writer
                     await foreach (var msg in ScrapeChannel(Context.Channel).Take(count))

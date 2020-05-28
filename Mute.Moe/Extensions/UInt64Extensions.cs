@@ -3,7 +3,7 @@
 
 namespace Mute.Moe.Extensions
 {
-    public struct FriendlyId64
+    public readonly struct FriendlyId64
     {
         private const ulong Offset = 0xe106c179ac47eead;
 

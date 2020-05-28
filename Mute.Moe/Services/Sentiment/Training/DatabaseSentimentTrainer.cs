@@ -30,13 +30,11 @@ namespace Mute.Moe.Services.Sentiment.Training
 
         public async Task Teach(string text, Sentiment sentiment)
         {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertTaggedSentimentData;
-                cmd.Parameters.Add(new SQLiteParameter("@Content", System.Data.DbType.String) { Value = text.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) { Value = ((int)sentiment).ToString() });
-                await cmd.ExecuteNonQueryAsync();
-            }
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = InsertTaggedSentimentData;
+            cmd.Parameters.Add(new SQLiteParameter("@Content", System.Data.DbType.String) { Value = text.ToLowerInvariant() });
+            cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) { Value = ((int)sentiment).ToString() });
+            await cmd.ExecuteNonQueryAsync();
         }
     }
 }

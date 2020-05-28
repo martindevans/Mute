@@ -35,7 +35,7 @@ namespace Mute.Moe.Services.Imitation
         {
             try
             {
-                using var cmd = _db.CreateCommand();
+                await using var cmd = _db.CreateCommand();
                 cmd.CommandText = HasModelSql;
                 cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = user.Id.ToString()});
 
@@ -88,7 +88,7 @@ namespace Mute.Moe.Services.Imitation
             return m;
         }
 
-        private async IAsyncEnumerable<IMessage> Scrape(IMessageChannel channel)
+        private static async IAsyncEnumerable<IMessage> Scrape(IMessageChannel channel)
         {
             //If start message is not set then get the latest message in the channel now
             var start = (await channel.GetMessagesAsync(1).FlattenAsync()).SingleOrDefault();
@@ -229,7 +229,7 @@ namespace Mute.Moe.Services.Imitation
 
                 try
                 {
-                    using var cmd = _db.CreateCommand();
+                    await using var cmd = _db.CreateCommand();
                     cmd.CommandText = UpdateModel;
                     cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = _user.Id.ToString()});
                     cmd.Parameters.Add(new SQLiteParameter("@PreviousWord", System.Data.DbType.String) {Value = p});

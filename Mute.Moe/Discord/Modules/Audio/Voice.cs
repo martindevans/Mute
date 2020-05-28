@@ -8,13 +8,11 @@ using Discord.Audio.Streams;
 using Discord.Commands;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Audio.Mixing.Extensions;
 using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Utilities;
-using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace Mute.Moe.Discord.Modules.Audio

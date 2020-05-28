@@ -59,11 +59,11 @@ namespace Mute.Moe.Services.SoundEffects
 
             //Write out to disk
             normalized.Position = 0;
-            using (var fs = _fs.File.Create(path))
+            await using (var fs = _fs.File.Create(path))
                 await normalized.CopyToAsync(fs);
 
             //Insert into the database
-            using (var cmd = _database.CreateCommand())
+            await using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = InsertSfxSql;
                 cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
@@ -83,7 +83,7 @@ namespace Mute.Moe.Services.SoundEffects
              if (await Get(sfx.Guild, alias) != null)
                  throw new InvalidOperationException("Sound effect `{alias}` already exists in this guild");
 
-             using (var cmd = _database.CreateCommand())
+             await using (var cmd = _database.CreateCommand())
              {
                  cmd.CommandText = InsertSfxSql;
                  cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) {Value = sfx.Guild});

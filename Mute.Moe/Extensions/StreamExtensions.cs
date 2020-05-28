@@ -10,15 +10,13 @@ namespace Mute.Moe.Extensions
         {
             var result = new StringBuilder();
 
-            using (var hash = System.Security.Cryptography.SHA256.Create())
-            {
-                stream.Position = 0;
-                var bytes = hash.ComputeHash(stream);
-                stream.Position = 0;
+            using var hash = System.Security.Cryptography.SHA256.Create();
+            stream.Position = 0;
+            var bytes = hash.ComputeHash(stream);
+            stream.Position = 0;
 
-                foreach (var b in bytes)
-                    result.Append(b.ToString("x2"));
-            }
+            foreach (var b in bytes)
+                result.Append(b.ToString("x2"));
 
             return result.ToString();
         }

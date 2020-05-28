@@ -55,7 +55,7 @@ namespace Mute.Moe.Services.Introspection
                 )).AuthorizeWith("InAnyBotGuild");
         }
 
-        private async Task<IReadOnlyCollection<IGuild>> GetGuilds( ResolveFieldContext<Status> context)
+        private static async Task<IReadOnlyCollection<IGuild>> GetGuilds(ResolveFieldContext<Status> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;

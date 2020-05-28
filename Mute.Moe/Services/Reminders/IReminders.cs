@@ -103,7 +103,7 @@ namespace Mute.Moe.Services.Reminders
     public class RemindersMutationSchema
         : InjectedSchema.IRootMutation
     {
-        private async Task<IReminder?> CreateReminder(IReminders reminders,  ResolveFieldContext<object> context)
+        private static async Task<IReminder?> CreateReminder(IReminders reminders, ResolveFieldContext<object> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;

@@ -31,7 +31,7 @@ namespace Mute.Moe.Services.Words
 
         public async Task Train( string word,  string exampleSentence)
         {
-            using (var cmd = _database.CreateCommand())
+            await using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = InsertWordExampleData;
                 cmd.Parameters.Add(new SQLiteParameter("@Word", System.Data.DbType.String) { Value = word.ToLowerInvariant() });

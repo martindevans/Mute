@@ -48,7 +48,7 @@ namespace Mute.Moe.Services.Reminders
             try
             {
                 uint id;
-                using (var cmd = _database.CreateCommand())
+                await using (var cmd = _database.CreateCommand())
                 {
                     cmd.CommandText = InsertReminder;
                     cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) {Value = triggerTime.UnixTimestamp()});
@@ -76,7 +76,7 @@ namespace Mute.Moe.Services.Reminders
         public async Task<bool> Delete(ulong userId, uint reminderId)
         {
             bool deleted;
-            using (var cmd = _database.CreateCommand())
+            await using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = DeleteReminder;
                 cmd.Parameters.Add(new SQLiteParameter("@ID", System.Data.DbType.UInt32) { Value = reminderId });

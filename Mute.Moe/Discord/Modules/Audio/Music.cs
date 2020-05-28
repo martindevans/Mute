@@ -144,7 +144,7 @@ namespace Mute.Moe.Discord.Modules.Audio
                 }
 
                 using (ytd.File)
-                using (var stream = ytd.File.File.OpenRead())
+                await using (var stream = ytd.File.File.OpenRead())
                 {
                     // Add to library
                     var track = await _library.Add(Context.Guild.Id, Context.User.Id, stream, ytd.File.Title, ytd.File.Duration, ytd.File.Url, ytd.File.ThumbnailUrl);
@@ -304,7 +304,7 @@ namespace Mute.Moe.Discord.Modules.Audio
         [RequireOwner]
         public async Task Upgrade()
         {
-            await Context.Channel.TypingReplyAsync((await _youtube.PerformMaintenance()).ToString());
+            await Context.Channel.TypingReplyAsync($"Exit Code: {await _youtube.PerformMaintenance()}");
         }
     }
 }

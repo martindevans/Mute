@@ -39,7 +39,7 @@ namespace Mute.Moe.Discord.Modules
             await ReactWithSentiment(msg);
         }
 
-        private async Task ReactWithSentiment(IUserMessage message, SentimentResult? score = null)
+        private async Task ReactWithSentiment(IMessage message, SentimentResult? score = null)
         {
             var result = score ?? await _sentiment.Predict(message.Content);
             if (result.ClassificationScore < _config.CertaintyThreshold)
@@ -84,20 +84,12 @@ namespace Mute.Moe.Discord.Modules
                 .AddField("Negative", $"{score.NegativeScore:#0.##}")
                 .AddField("Delay", score.ClassificationTime.Humanize(2));
 
-            switch (score.Classification)
-            {
-                case Moe.Services.Sentiment.Sentiment.Negative:
-                    embed = embed.WithColor(Color.Red);
-                    break;
-                case Moe.Services.Sentiment.Sentiment.Positive:
-                    embed = embed.WithColor(Color.Blue);
-                    break;
-                case Moe.Services.Sentiment.Sentiment.Neutral:
-                    embed = embed.WithColor(Color.DarkGrey);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            embed = score.Classification switch {
+                Moe.Services.Sentiment.Sentiment.Negative => embed.WithColor(Color.Red),
+                Moe.Services.Sentiment.Sentiment.Positive => embed.WithColor(Color.Blue),
+                Moe.Services.Sentiment.Sentiment.Neutral => embed.WithColor(Color.DarkGrey),
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
             await ReplyAsync(embed);
         }

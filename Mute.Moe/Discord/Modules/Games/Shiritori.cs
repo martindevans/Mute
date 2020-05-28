@@ -129,7 +129,7 @@ namespace Mute.Moe.Discord.Modules.Games
             await TypingReplyAsync($"Wow, {played.Count} turns! I surrender, you win.");
         }
 
-        private string? Pick(string? previous, ISet<string> played, Mode mode, DifficultyValues values)
+        private string? Pick(string? previous, ICollection<string> played, Mode mode, DifficultyValues values)
         {
             //Pick a random starting word
             if (previous == null)
@@ -196,57 +196,47 @@ namespace Mute.Moe.Discord.Modules.Games
                    .First();
         }
 
-        private DifficultyValues Get(Mode mode)
+        private static DifficultyValues Get(Mode mode)
         {
-            switch (mode)
-            {
-                case Mode.Easy:
-                    return new DifficultyValues {
-                        TurnLimit = 10,
-                        PerTurnNoWordChance = 0.1f,
-                        TimeLimit = TimeSpan.FromMinutes(1),
-                        RevertToNormalChance = 0.1,
-                        PerWordSkipChance = 0.1f,
-                        MinWordLength = 4,
-                        MaxWordLength = 8
-                    };
-
-                case Mode.Normal:
-                    return new DifficultyValues {
-                        TurnLimit = 30,
-                        PerTurnNoWordChance = 0.01f,
-                        TimeLimit = TimeSpan.FromSeconds(45),
-                        RevertToNormalChance = 0,
-                        PerWordSkipChance = 0.05f,
-                        MinWordLength = 4,
-                        MaxWordLength = 9
-                    };
-
-                case Mode.Hard:
-                    return new DifficultyValues {
-                        TurnLimit = 50,
-                        PerTurnNoWordChance = 0.0f,
-                        TimeLimit = TimeSpan.FromSeconds(30),
-                        RevertToNormalChance = 0.75,
-                        PerWordSkipChance = 0.05f,
-                        MinWordLength = 4,
-                        MaxWordLength = 12
-                    };
-
-                case Mode.Impossible:
-                    return new DifficultyValues {
-                        TurnLimit = int.MaxValue,
-                        PerTurnNoWordChance = 0.0f,
-                        TimeLimit = TimeSpan.FromSeconds(20),
-                        RevertToNormalChance = 0.15,
-                        PerWordSkipChance = 0.01f,
-                        MinWordLength = 4,
-                        MaxWordLength = int.MaxValue
-                    };
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
-            }
+            return mode switch {
+                Mode.Easy => new DifficultyValues {
+                    TurnLimit = 10,
+                    PerTurnNoWordChance = 0.1f,
+                    TimeLimit = TimeSpan.FromMinutes(1),
+                    RevertToNormalChance = 0.1,
+                    PerWordSkipChance = 0.1f,
+                    MinWordLength = 4,
+                    MaxWordLength = 8
+                },
+                Mode.Normal => new DifficultyValues {
+                    TurnLimit = 30,
+                    PerTurnNoWordChance = 0.01f,
+                    TimeLimit = TimeSpan.FromSeconds(45),
+                    RevertToNormalChance = 0,
+                    PerWordSkipChance = 0.05f,
+                    MinWordLength = 4,
+                    MaxWordLength = 9
+                },
+                Mode.Hard => new DifficultyValues {
+                    TurnLimit = 50,
+                    PerTurnNoWordChance = 0.0f,
+                    TimeLimit = TimeSpan.FromSeconds(30),
+                    RevertToNormalChance = 0.75,
+                    PerWordSkipChance = 0.05f,
+                    MinWordLength = 4,
+                    MaxWordLength = 12
+                },
+                Mode.Impossible => new DifficultyValues {
+                    TurnLimit = int.MaxValue,
+                    PerTurnNoWordChance = 0.0f,
+                    TimeLimit = TimeSpan.FromSeconds(20),
+                    RevertToNormalChance = 0.15,
+                    PerWordSkipChance = 0.01f,
+                    MinWordLength = 4,
+                    MaxWordLength = int.MaxValue
+                },
+                _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
+            };
         }
 
         private struct DifficultyValues

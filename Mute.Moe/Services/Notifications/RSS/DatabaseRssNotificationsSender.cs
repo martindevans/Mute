@@ -113,7 +113,7 @@ namespace Mute.Moe.Services.Notifications.RSS
         {
             await SendMessage(feed, item);
 
-            using var cmd = _database.CreateCommand();
+            await using var cmd = _database.CreateCommand();
             cmd.CommandText = InsertNotificationSql;
             cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = feed.Channel.ToString() });
             cmd.Parameters.Add(new SQLiteParameter("@FeedUrl", System.Data.DbType.String) { Value = feed.FeedUrl });

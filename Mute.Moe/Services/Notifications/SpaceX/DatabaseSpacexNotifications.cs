@@ -32,19 +32,17 @@ namespace Mute.Moe.Services.Notifications.SpaceX
 
         public async Task Subscribe(ulong channel, ulong? mentionGroup)
         {
-            using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertSubscriptionSql;
-                cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = channel.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@MentionGroup", System.Data.DbType.String) { Value = mentionGroup?.ToString() });
+            await using var cmd = _database.CreateCommand();
+            cmd.CommandText = InsertSubscriptionSql;
+            cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = channel.ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@MentionGroup", System.Data.DbType.String) { Value = mentionGroup?.ToString() });
 
-                await cmd.ExecuteNonQueryAsync();
-            }
+            await cmd.ExecuteNonQueryAsync();
         }
 
         public Task<IAsyncEnumerable<ISpacexSubscription>> GetSubscriptions()
         {
-            ISpacexSubscription ParseSubscription(DbDataReader reader)
+            static ISpacexSubscription ParseSubscription(DbDataReader reader)
             {
                 var mention = reader["MentionGroup"];
                 return new SpacexSubscription(
@@ -53,7 +51,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                 );
             }
 
-            DbCommand PrepareQuery(IDatabaseService db)
+            static DbCommand PrepareQuery(IDatabaseService db)
             {
                 var cmd = db.CreateCommand();
                 cmd.CommandText = GetSubscriptionsSql;

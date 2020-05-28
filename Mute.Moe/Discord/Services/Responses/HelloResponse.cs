@@ -39,7 +39,7 @@ namespace Mute.Moe.Discord.Services.Responses
         public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
         {
             //Determine if thie message is a greeting
-            var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(AllGreetings.Contains);
+            var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(a => AllGreetings.Contains(a));
 
             var gu = (SocketGuildUser)context.User;
             var name = gu.Nickname ?? gu.Username;

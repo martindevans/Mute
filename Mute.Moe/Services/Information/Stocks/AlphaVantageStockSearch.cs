@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net.Http;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Mute.Moe.Services.Information.Stocks
 {

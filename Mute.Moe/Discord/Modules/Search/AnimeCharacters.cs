@@ -33,16 +33,16 @@ namespace Mute.Moe.Discord.Modules.Search
                 "I can't find a character by that name",
                 async c => await ReplyAsync(EmbedCharacter(c)),
                 l => $"I have found {l.Count} potential characters:",
-                (ICharacter c, int i) => $"{i}. {StringCharacter(c)}"
+                (c, i) => $"{i}. {StringCharacter(c)}"
             );
         }
 
-        private string StringCharacter(ICharacter character)
+        private static string StringCharacter(ICharacter character)
         {
             return $"{character.FamilyName} {character.GivenName}";
         }
 
-        private EmbedBuilder EmbedCharacter(ICharacter character)
+        private static EmbedBuilder EmbedCharacter(ICharacter character)
         {
             var desc = character.Description ?? "";
             if (desc.Length > 2048)

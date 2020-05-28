@@ -96,12 +96,17 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 		    var decompositions = from decomp in key.Decompositions
 		                         let decomposed = Patterns.Match(ctx.Input, decomp.Pattern, _script.Syns)
 		                         where decomposed != null
-                                 let rule = Task.Run(async () => await ChooseReassembly(decomp).Rule(ctx, decomposed)).Result
-                                 where !string.IsNullOrWhiteSpace(rule)
-		                         select (decomp, rule, decomposed);
+                                 let rule = Task.Run(async () => await ChooseReassembly(decomp).Rule(ctx, decomposed))
+                                 select (decomp, rule, decomposed);
 
-            foreach (var (decomposition, rule, decomposed) in decompositions)
+            foreach (var (decomposition, ruleTask, decomposed) in decompositions)
             {
+                var rule = ruleTask.Result;
+				if (rule == null || string.IsNullOrWhiteSpace(rule))
+					continue;
+				if (decomposed == null)
+					continue;
+
                 //If it's a goto rule follow it
                 if (rule.StartsWith("goto "))
                 {
@@ -191,7 +196,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         /// <returns></returns>
 	    private string CleanInput( string input)
 	    {
-	        StringBuilder Compress(StringBuilder str)
+            static StringBuilder Compress(StringBuilder str)
 	        {
 	            if (str.Length == 0)
 	                return str;
@@ -256,7 +261,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	                  select (word, tx);
 
 	        var result = from tx in txs
-	                     select tx.Item2?.Destination ?? tx.Item1;
+	                     select tx.tx?.Destination ?? tx.word;
 
 	        return string.Join(" ", result);
 	    }

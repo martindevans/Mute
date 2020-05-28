@@ -35,7 +35,7 @@ namespace Mute.Moe.GQL.Schema
                 )).AuthorizeWith("InAnyBotGuild");
         }
 
-        private async Task<IReadOnlyCollection<IRole>> GetRoles( ResolveFieldContext<IGuild> context)
+        private static async Task<IReadOnlyCollection<IRole>> GetRoles(ResolveFieldContext<IGuild> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;
@@ -64,7 +64,7 @@ namespace Mute.Moe.GQL.Schema
             return roles.ToArray();
         }
 
-        private async Task<IReadOnlyCollection<IGuildUser>> GetMembers( ResolveFieldContext<IGuild> context)
+        private static async Task<IReadOnlyCollection<IGuildUser>> GetMembers(ResolveFieldContext<IGuild> context)
         {
             var userCtx = (GraphQLUserContext)context.UserContext;
             var user = userCtx.ClaimsPrincipal;

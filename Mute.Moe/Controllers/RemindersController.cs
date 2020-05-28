@@ -1,5 +1,4 @@
 ﻿using Discord.WebSocket;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Reminders;

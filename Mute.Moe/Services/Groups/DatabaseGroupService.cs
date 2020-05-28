@@ -40,12 +40,12 @@ namespace Mute.Moe.Services.Groups
 
         public async Task<bool> IsUnlocked( IRole grp)
         {
-            using var cmd = _database.CreateCommand();
+            await using var cmd = _database.CreateCommand();
             cmd.CommandText = FindUnlockedRoleByCompositeId;
             cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
             cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
 
-            using var results = await cmd.ExecuteReaderAsync();
+            await using var results = await cmd.ExecuteReaderAsync();
             return results.HasRows;
         }
 
@@ -69,7 +69,7 @@ namespace Mute.Moe.Services.Groups
 
         public async Task Unlock(IRole grp)
         {
-            using var cmd = _database.CreateCommand();
+            await using var cmd = _database.CreateCommand();
             cmd.CommandText = InsertUnlockSql;
             cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
             cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
@@ -78,7 +78,7 @@ namespace Mute.Moe.Services.Groups
 
         public async Task Lock(IRole grp)
         {
-            using var cmd = _database.CreateCommand();
+            await using var cmd = _database.CreateCommand();
             cmd.CommandText = DeleteUnlockSql;
             cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
             cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });

@@ -15,7 +15,7 @@ namespace Mute.Moe.Services.Sentiment
         Neutral = 2
     }
 
-    public struct SentimentResult
+    public readonly struct SentimentResult
     {
         public string Text { get; }
 

@@ -75,7 +75,7 @@ namespace Mute.Moe.Services.Payment
             if (fromId == toId)
                 throw new InvalidOperationException("Cannot transact from self to self");
 
-            using var cmd = _database.CreateCommand();
+            await using var cmd = _database.CreateCommand();
             cmd.CommandText = InsertPendingSql;
             cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId.ToString() });
             cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId.ToString() });
@@ -152,18 +152,12 @@ namespace Mute.Moe.Services.Payment
             if (!result.HasValue)
                 return ConfirmResult.IdNotFound;
 
-            switch (result)
-            {
-                case PendingState.Confirmed:
-                    return ConfirmResult.AlreadyConfirmed;
-                case PendingState.Denied:
-                    return ConfirmResult.AlreadyDenied;
-                case PendingState.Pending:
-                    return ConfirmResult.Confirmed;
-
-                default:
-                    throw new InvalidOperationException($"Unknown debt state! ID: {debtId} State:{result}");
-            }
+            return result switch {
+                PendingState.Confirmed => ConfirmResult.AlreadyConfirmed,
+                PendingState.Denied => ConfirmResult.AlreadyDenied,
+                PendingState.Pending => ConfirmResult.Confirmed,
+                _ => throw new InvalidOperationException($"Unknown debt state! ID: {debtId} State:{result}")
+            };
         }
 
         public async Task<DenyResult> DenyPending(uint debtId)
@@ -172,18 +166,12 @@ namespace Mute.Moe.Services.Payment
             if (!result.HasValue)
                 return DenyResult.IdNotFound;
 
-            switch (result)
-            {
-                case PendingState.Confirmed:
-                    return DenyResult.AlreadyConfirmed;
-                case PendingState.Denied:
-                    return DenyResult.AlreadyDenied;
-                case PendingState.Pending:
-                    return DenyResult.Denied;
-
-                default:
-                    throw new InvalidOperationException($"Unknown debt state! ID: {debtId} State:{result}");
-            }
+            return result switch {
+                PendingState.Confirmed => DenyResult.AlreadyConfirmed,
+                PendingState.Denied => DenyResult.AlreadyDenied,
+                PendingState.Pending => DenyResult.Denied,
+                _ => throw new InvalidOperationException($"Unknown debt state! ID: {debtId} State:{result}")
+            };
         }
     }
 }

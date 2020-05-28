@@ -3,7 +3,7 @@
 
 namespace Mute.Moe.Extensions
 {
-    public struct FriendlyId32
+    public readonly struct FriendlyId32
     {
         private static readonly string[] Prefixes = {
             "doz", "mar", "bin", "wan", "sam", "lit", "sig", "hid",

@@ -92,7 +92,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                     //If the expected launch time has changed, notify about that
                     if (newNext.LaunchDateUtc != _state.LaunchTimeUtc)
                     {
-                        if (newNext.LaunchDateUtc.HasValue && _state.LaunchTimeUtc.HasValue)
+                        if (newNext.LaunchDateUtc != null && _state.LaunchTimeUtc != null)
                         {
                             var msg = ExpectedLaunchTimeChangedMessage(_state.Launch, _state.LaunchTimeUtc.Value, newNext.LaunchDateUtc.Value);
                             _state = await SendNotification(newNext, msg);
@@ -101,7 +101,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                     }
 
                     //Check if we need to send one of the time reminders for this launch
-                    if (newNext.LaunchDateUtc.HasValue)
+                    if (newNext.LaunchDateUtc != null)
                     {
                         var timeToLaunch = newNext.LaunchDateUtc.Value - DateTime.UtcNow;
                         var notificationNow = NotificationTimes.Where(nt => nt > timeToLaunch && nt < _state.TimeToLaunch).Cast<TimeSpan?>().SingleOrDefault();
