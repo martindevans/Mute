@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using BalderHash;
 using Discord;
 using GraphQL.Types;
 using Humanizer;
@@ -175,7 +176,7 @@ namespace Mute.Moe.Services.Reminders
             Field(typeof(UIntGraphType), "channel_id", resolve: x => x.Source.ID);
             Field(typeof(DateTimeGraphType), "trigger_time", resolve: x => x.Source.TriggerTime);
 
-            Field("id", x => new FriendlyId32(x.ID).ToString());
+            Field("id", x => new BalderHash32(x.ID).ToString());
             Field("userid", x => x.UserId.ToString());
 
             Field(x => x.Message);

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BalderHash;
 using Discord;
 using Discord.WebSocket;
 
@@ -200,7 +201,7 @@ namespace Mute.Moe.Services.Reminders
                         var embed = new EmbedBuilder()
                             .WithDescription(_reminder.Message)
                             .WithAuthor(name)
-                            .WithFooter(new FriendlyId32(_reminder.ID).ToString());
+                            .WithFooter(new BalderHash32(_reminder.ID).ToString());
 
                         await channel.SendMessageAsync(embed: embed.Build());
                     }

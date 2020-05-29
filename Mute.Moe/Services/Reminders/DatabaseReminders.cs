@@ -29,7 +29,7 @@ namespace Mute.Moe.Services.Reminders
         public event Action<IReminder>? ReminderCreated;
         public event Action<uint>? ReminderDeleted;
 
-        public DatabaseReminders( IDatabaseService database)
+        public DatabaseReminders(IDatabaseService database)
         {
             _database = database;
 

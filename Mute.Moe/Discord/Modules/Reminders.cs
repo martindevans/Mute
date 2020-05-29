@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using BalderHash;
 using Discord;
 using Discord.Commands;
 using Humanizer;
@@ -68,7 +69,7 @@ namespace Mute.Moe.Discord.Modules
                  .WithColor(Color)
                  .WithDescription(reminder.Message.Replace("`", "'"))
                  .WithTimestamp(new DateTimeOffset(reminder.TriggerTime))
-                 .WithFooter(new FriendlyId32(reminder.ID).ToString())
+                 .WithFooter(new BalderHash32(reminder.ID).ToString())
                  .Build();
 
             await ReplyAsync(embed: embed);
@@ -77,7 +78,7 @@ namespace Mute.Moe.Discord.Modules
         [Command("cancel-reminder"), Alias("reminder-cancel", "remind-cancel", "cancel-remind", "unremind"), Summary("I will delete a reminder with the given ID")]
         public async Task CancelReminder( string id)
         {
-            var parsed = FriendlyId32.Parse(id);
+            var parsed = BalderHash32.Parse(id);
             if (!parsed.HasValue)
             {
                 await TypingReplyAsync("Invalid ID");
@@ -123,7 +124,7 @@ namespace Mute.Moe.Discord.Modules
             // Save to database
             var n = await _reminders.Create(triggerMoment, prelude, msg, context.Message.Channel.Id, context.User.Id);
 
-            var friendlyId = new FriendlyId32(n.ID);
+            var friendlyId = new BalderHash32(n.ID);
             return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{friendlyId}`)";
         }
 

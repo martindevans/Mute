@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BalderHash;
 using Discord;
 using Discord.Commands;
 
@@ -283,7 +284,7 @@ namespace Mute.Moe.Discord.Modules.Audio
                 results.Add(await _library.Get(Context.Guild.Id, id: ulongParse, order: TrackOrder.Id));
             else
             {
-                var p = FriendlyId64.Parse(search);
+                var p = BalderHash64.Parse(search);
                 if (p.HasValue)
                     results.Add(await _library.Get(Context.Guild.Id, id: p.Value.Value, order: TrackOrder.Id));
             }

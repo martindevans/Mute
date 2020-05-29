@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BalderHash;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
@@ -32,7 +33,7 @@ namespace Mute.Moe.Discord.Modules.Payment
                 await TypingReplyAsync("You cannot owe a negative amount!");
 
             var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
-            var fid = new FriendlyId32(id).ToString();
+            var fid = new BalderHash32(id).ToString();
 
             await TypingReplyAsync($"{user.Mention} type `!confirm {fid}` to confirm that you owe this");
             await TypingReplyAsync($"{user.Mention} type `!deny {fid}` to deny that you owe this. Please talk to the other user about why!");
@@ -45,7 +46,7 @@ namespace Mute.Moe.Discord.Modules.Payment
                 await TypingReplyAsync("You cannot pay a negative amount!");
 
             var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
-            var fid = new FriendlyId32(id).ToString();
+            var fid = new BalderHash32(id).ToString();
 
             await TypingReplyAsync($"{user.Mention} type `!confirm {fid}` to confirm that you have been paid this");
             await TypingReplyAsync($"{user.Mention} type `!deny {fid}` to deny that you received this payment. Please talk to the other user about why!");
@@ -54,7 +55,7 @@ namespace Mute.Moe.Discord.Modules.Payment
         [Command("confirm"), Summary("I will confirm a pending transaction")]
         public async Task Confirm( string input)
         {
-            var fid = FriendlyId32.Parse(input);
+            var fid = BalderHash32.Parse(input);
             if (!fid.HasValue)
             {
                 await TypingReplyAsync("Invalid ID `{id}`");
@@ -184,7 +185,7 @@ namespace Mute.Moe.Discord.Modules.Payment
                 var note = string.IsNullOrEmpty(p.Note) ? "" : $"'{p.Note}'";
                 var amount = TransactionFormatting.FormatCurrency(p.Amount, p.Unit);
 
-                var fid = new FriendlyId32(p.Id).ToString();
+                var fid = new BalderHash32(p.Id).ToString();
                 if (longForm)
                     return $"{receiver} Type `!confirm {fid}` or `!deny {fid}` to confirm/deny transaction of {amount} from {payer} {note}";
                 else

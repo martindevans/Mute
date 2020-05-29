@@ -30,7 +30,7 @@ namespace Mute.Moe.Discord.Modules
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<Task> nothing, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
+        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
         {
             await DisplayItemList(
                 items,
@@ -49,7 +49,7 @@ namespace Mute.Moe.Discord.Modules
         /// <param name="nothing">Generate a string for no items</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<Task> nothing, Func<T, int, Task> displayItem)
+        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<T, int, Task> displayItem)
         {
             await DisplayItemList(
                 items,
@@ -70,7 +70,7 @@ namespace Mute.Moe.Discord.Modules
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<Task> nothing, Func<T, Task>? singleResult, Func<IReadOnlyList<T>, Task>? manyPrelude, Func<T, int, Task> displayItem)
+        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<T, Task>? singleResult, Func<IReadOnlyList<T>, Task>? manyPrelude, Func<T, int, Task> displayItem)
         {
             if (items.Count == 0)
             {
@@ -96,7 +96,7 @@ namespace Mute.Moe.Discord.Modules
             }
         }
 
-        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
+        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
         {
             await DisplayItemList(
                 items,
@@ -117,7 +117,7 @@ namespace Mute.Moe.Discord.Modules
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="itemToString">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>( IReadOnlyList<T> items, Func<string> nothing, Func<T, Task>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
+        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<string> nothing, Func<T, Task>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
         {
             if (items.Count == 0)
             {
