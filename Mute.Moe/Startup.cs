@@ -118,8 +118,6 @@ namespace Mute.Moe
             services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
             services.AddSingleton<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
             services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
-            services.AddSingleton<ITextToSpeech, MicrosoftCognitiveTextToSpeech>();
-            services.AddSingleton<ISpeechToText, MicrosoftCognitiveSpeechToText>();
             services.AddSingleton<IYoutubeDownloader, YoutubeDlDownloader>();
             services.AddSingleton<IWordTraining, DatabaseWordTraining>();
             services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();

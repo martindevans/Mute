@@ -64,7 +64,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             if (launch.Cores.Any(a => a.Landpad.Value != null))
                 builder.AddField("Landing Pad", string.Join(",", launch.Cores.Select(a => a.Landpad.Value.Name)), true);
 
-            builder.AddField("Vehicle", string.Join(",", launch.Cores.Select(a => $"B{a.Core.Value.Serial}")), true);
+            builder.AddField("Vehicle", string.Join(",", launch.Cores.Select(a => $"{a.Core.Value.Serial}")), true);
 
             builder.AddField("Previous Flights", string.Join(",", launch.Cores.Select(a => a.Core.Value.ReuseCount).Where(a => a.HasValue)));
 

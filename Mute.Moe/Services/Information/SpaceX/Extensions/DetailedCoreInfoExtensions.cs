@@ -22,6 +22,9 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 
         public static async Task<EmbedBuilder> DiscordEmbed(this CoreInfo info)
         {
+            if (info == null)
+                throw new ArgumentNullException(nameof(info));
+
             //Choose color based on status
             Color color;
             switch (info.Status)
@@ -45,7 +48,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 
             //Create text description
             var description = "";
-            if (info.Launches.Count > 0)
+            if (info.Launches != null && info.Launches.Count > 0)
             {
                 var ms = string.Join(", ", info.Launches.Select(m => $"{m.Value.Name} (Flight {m.Value.FlightNumber})").ToArray());
                 description = $"This core has flown {info.Launches.Count} missions; {ms}. ";
@@ -66,10 +69,10 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             if (info.RtlsLandings.HasValue && info.RtlsLandings.Value > 0)
                 builder = builder.AddField("RTLS Landings", info.RtlsLandings.Value.ToString(), true);
 
-            if (info.Launches.Any())
+            if (info.Launches != null && info.Launches.Any())
                 builder = builder.AddField("First Launch Date", info.Launches.First().Value.DateUtc!.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
 
-            if (info.Launches.Count > 1)
+            if (info.Launches != null && info.Launches.Count > 1)
                 builder = builder.WithDescription(string.Join("\n", info.Launches.Select(a => a.Value).Select(CoreMissionLine)));
 
             return builder;
