@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;

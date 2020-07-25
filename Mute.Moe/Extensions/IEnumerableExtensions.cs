@@ -80,8 +80,13 @@ namespace Mute.Moe.Extensions
                 _keySelector = keySelector;
             }
 
-            public bool Equals(TV x, TV y)
+            public bool Equals([AllowNull] TV x, [AllowNull] TV y)
             {
+                if (x is null && y is null)
+                    return true;
+                if (x is null || y is null)
+                    return false;
+
                 return _keySelector(x).Equals(_keySelector(y));
             }
 

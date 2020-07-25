@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using FluidCaching;
 using Miki.Anilist;
@@ -36,7 +37,14 @@ namespace Mute.Moe.Services.Information.Anime
             if (mediaItem == null)
                 return null;
 
-            return WrapItem(mediaItem);
+            var sb = new StringBuilder(mediaItem.Description);
+            sb.Replace("<b>", "**");
+            sb.Replace("</b>", "**");
+            sb.Replace("<i>", "_");
+            sb.Replace("</i>", "_");
+            sb.Replace("\n\n", "\n");
+
+            return WrapItem(new MediaDescriptionReplacement(mediaItem, sb.ToString()));
         }
 
         protected override uint Distance(IMediaSearchResult item, string searchTerm)
@@ -50,7 +58,51 @@ namespace Mute.Moe.Services.Information.Anime
             return itemTitle.Levenshtein(searchTerm);
         }
 
-         protected abstract TItem WrapItem( IMedia media);
+        protected abstract TItem WrapItem(IMedia media);
+
+        private class MediaDescriptionReplacement
+            : IMedia
+        {
+            private readonly IMedia _media;
+
+            public int Id => _media.Id;
+
+            public MediaType Type => _media.Type;
+
+            public string DefaultTitle => _media.DefaultTitle;
+
+            public string EnglishTitle => _media.EnglishTitle;
+
+            public string NativeTitle => _media.NativeTitle;
+
+            public string RomajiTitle => _media.RomajiTitle;
+
+            public int? Chapters => _media.Chapters;
+
+            public string CoverImage => _media.CoverImage;
+
+            public string Description { get; }
+
+            public int? Duration => _media.Duration;
+
+            public int? Episodes => _media.Episodes;
+
+            public IReadOnlyList<string> Genres => _media.Genres;
+
+            public int? Score => _media.Score;
+
+            public string Status => _media.Status;
+
+            public string Url => _media.Url;
+
+            public int? Volumes => _media.Volumes;
+
+            public MediaDescriptionReplacement(IMedia media, string desc)
+            {
+                _media = media;
+                Description = desc;
+            }
+        }
     }
 
     public abstract class BaseMikibotSearchService<TSearchItem, TItem>
@@ -84,15 +136,11 @@ namespace Mute.Moe.Services.Information.Anime
             throw new NotImplementedException();
         }
 
-         protected IAsyncEnumerable<TItem> GetItemsInfoAsync(string search)
+        protected IAsyncEnumerable<TItem> GetItemsInfoAsync(string search)
         {
             var client = new AnilistClient();
 
-            return GetSearchItemsAsync(client, search)
-                .OrderBy(i => Distance(i, search))
-                .SelectAwait(async i => await GetItemAsyncCached(client, i))
-                .Where(a => a != null)
-                .Select(a => a!);
+            return GetSearchItemsAsync(client, search).OrderBy(i => Distance(i, search)).SelectAwait(async i => await GetItemAsyncCached(client, i)).Where(a => a != null).Select(a => a!);
         }
 
         private async IAsyncEnumerable<TSearchItem> GetSearchItemsAsync(AnilistClient client, string search)
@@ -128,11 +176,11 @@ namespace Mute.Moe.Services.Information.Anime
 
         protected abstract Task<TItem?> GetItemAsync(AnilistClient client, TSearchItem searchItem);
 
-        protected abstract uint Distance( TSearchItem item, string search);
+        protected abstract uint Distance(TSearchItem item, string search);
 
-        protected abstract string ExtractId( TSearchItem item);
+        protected abstract string ExtractId(TSearchItem item);
 
-        protected abstract string ExtractId( TItem item);
+        protected abstract string ExtractId(TItem item);
 
         protected abstract Task<ISearchResult<TSearchItem>> SearchPage(AnilistClient client, string search, int index);
     }

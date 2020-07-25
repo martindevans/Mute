@@ -19,11 +19,13 @@ namespace Mute.Moe.Discord.Modules
     {
         private readonly ISpacexInfo _spacex;
         private readonly ISpacexNotifications _notifications;
+        private readonly Random _rng;
 
-        public SpaceX(ISpacexInfo spacex, ISpacexNotifications notifications)
+        public SpaceX(ISpacexInfo spacex, ISpacexNotifications notifications, Random rng)
         {
             _spacex = spacex;
             _notifications = notifications;
+            _rng = rng;
         }
 
         [Command("core"), Alias("booster"), Summary("I will tell you about a specific SpaceX vehicle")]
@@ -39,7 +41,7 @@ namespace Mute.Moe.Discord.Modules
             var embed = await details.DiscordEmbed();
             var msg = await ReplyAsync(embed);
 
-            if (details.Missions.Count > 1)
+            if (details.Launches.Count > 1)
             {
                 var embed2 = await details.AugmentDiscordEmbed(embed, _spacex);
                 await msg.ModifyAsync(p => p.Embed = embed2.Build());
@@ -74,7 +76,7 @@ namespace Mute.Moe.Discord.Modules
             }
             else
             {
-                var launches = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a.FlightNumber).Take(count).ToArray();
+                var launches = (await _spacex.Upcoming()).Where(a => a.DateUtc.HasValue).OrderBy(a => a.FlightNumber).Take(count).ToArray();
                 await DisplayItemList(
                     launches,
                     () => "There are no upcoming SpaceX launches!",
@@ -87,7 +89,7 @@ namespace Mute.Moe.Discord.Modules
         [Command("roadster"), Summary("I will tell you about the spacex roadster")]
         public async Task Roadster()
         {
-            await ReplyAsync(await _spacex.Roadster().DiscordEmbed());
+            await ReplyAsync(await _spacex.Roadster().DiscordEmbed(_rng));
         }
 
         [Command("subscribe"), RequireOwner]
@@ -100,7 +102,7 @@ namespace Mute.Moe.Discord.Modules
         #region helpers
         private async Task<IReadOnlyList<string>> DescribeUpcomingFlights(int count)
         {
-            var next = (await _spacex.Upcoming()).Where(a => a.LaunchDateUtc.HasValue).OrderBy(a => a?.LaunchDateUtc ?? DateTime.MaxValue).Take(count).ToArray();
+            var next = (await _spacex.Upcoming()).Where(a => a.DateUtc.HasValue).OrderBy(a => a?.DateUtc ?? DateTime.MaxValue).Take(count).ToArray();
 
             var responses = new List<string>();
             foreach (var item in next)

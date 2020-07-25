@@ -11,7 +11,7 @@ namespace Mute.Moe.Services.Sentiment.Training
     {
         private readonly ISentimentTrainer _sentiment;
 
-        public AutoReactionTrainer(DiscordSocketClient client, ISentimentTrainer sentiment)
+        public AutoReactionTrainer(BaseSocketClient client, ISentimentTrainer sentiment)
         {
             _sentiment = sentiment;
 
@@ -28,7 +28,7 @@ namespace Mute.Moe.Services.Sentiment.Training
                 await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Neutral);
         }
 
-        private async Task TryLearn(IMessage message,  IReaction reaction, Sentiment sentiment)
+        private async Task TryLearn(IMessage message, IReaction reaction, Sentiment sentiment)
         {
             //Early exit if channel is not a guild channel
             if (!(message.Channel is SocketGuildChannel gc))
@@ -36,11 +36,7 @@ namespace Mute.Moe.Services.Sentiment.Training
             var g = gc.Guild;
 
             //Get guild users who reacted to the message
-            var users = await message.GetReactionUsersAsync(reaction.Emote, 128).Flatten()
-                .Select(u => u as IGuildUser ?? g.GetUser(u.Id))
-                .Where(u => u != null)
-                .Distinct()
-                .ToArrayAsync();
+            var users = await message.GetReactionUsersAsync(reaction.Emote, 128).Flatten().Select(u => u as IGuildUser ?? g.GetUser(u.Id)).Where(u => u != null).Distinct().ToArrayAsync();
 
             if (users.Length >= 3 || users.Any(IsTeacher))
                 await _sentiment.Teach(message.Content, sentiment);

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -46,7 +47,15 @@ namespace Mute.Moe.Discord
                 throw new InvalidOperationException("Cannot start bot: `Auth.ClientSecret` in config is null");
 
             // Discover all of the commands in this assembly and load them.
-            await _commands.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
+            try
+            {
+                await _commands.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
 
             // Hook the MessageReceived Event into our Command Handler
             _client.MessageReceived += HandleMessage;
@@ -177,7 +186,9 @@ namespace Mute.Moe.Discord
                 AlwaysDownloadUsers = true
             });
 
-            services.AddSingleton(client);
+            services.AddSingleton<DiscordSocketClient>(client);
+            services.AddSingleton<BaseSocketClient>(client);
+            services.AddSingleton<BaseDiscordClient>(client);
             services.AddSingleton<IDiscordClient>(client);
 
             services.AddTransient<IUnsuccessfulCommandPostprocessor, EnhanceYourChill>();

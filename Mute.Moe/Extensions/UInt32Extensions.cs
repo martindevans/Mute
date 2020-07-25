@@ -1,5 +1,4 @@
-﻿using System;
-using BalderHash.Extensions;
+﻿using BalderHash.Extensions;
 
 namespace Mute.Moe.Extensions
 {

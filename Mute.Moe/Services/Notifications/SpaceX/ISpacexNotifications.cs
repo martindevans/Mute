@@ -7,7 +7,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
     {
         Task Subscribe(ulong channel, ulong? mentionGroup);
 
-        Task<IAsyncEnumerable<ISpacexSubscription>> GetSubscriptions();
+        IAsyncEnumerable<ISpacexSubscription> GetSubscriptions();
     }
 
     public interface ISpacexSubscription

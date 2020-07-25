@@ -5,11 +5,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Humanizer;
-
-
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.SpaceX;
-using Oddity.API.Models.Launch;
+using Oddity.Models.Launches;
 
 namespace Mute.Moe.Services.Notifications.SpaceX
 {
@@ -26,7 +24,6 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             TimeSpan.FromHours(6),
             TimeSpan.FromMinutes(30),
             TimeSpan.FromMinutes(5),
-            TimeSpan.FromMinutes(1)
         };
 
         public bool Status => !_thread.IsFaulted;
@@ -54,12 +51,13 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                     if (state == null)
                     {
                         await Task.Delay(TimeSpan.FromSeconds(30));
-                        continue;
                     }
-
-                    //Set up the initial state as if we just notified about this flight
-                    _state = new NotificationState(state, DateTime.UtcNow);
-                    break;
+                    else
+                    {
+                        //Set up the initial state as if we just notified about this flight
+                        _state = new NotificationState(state, DateTime.UtcNow);
+                        break;
+                    }
                 }
 
                 while (true)
@@ -90,20 +88,20 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                     }
 
                     //If the expected launch time has changed, notify about that
-                    if (newNext.LaunchDateUtc != _state.LaunchTimeUtc)
+                    if (newNext.DateUtc != _state.LaunchTimeUtc)
                     {
-                        if (newNext.LaunchDateUtc != null && _state.LaunchTimeUtc != null)
+                        if (newNext.DateUtc != null && _state.LaunchTimeUtc != null)
                         {
-                            var msg = ExpectedLaunchTimeChangedMessage(_state.Launch, _state.LaunchTimeUtc.Value, newNext.LaunchDateUtc.Value);
+                            var msg = ExpectedLaunchTimeChangedMessage(_state.Launch, _state.LaunchTimeUtc.Value, newNext.DateUtc.Value);
                             _state = await SendNotification(newNext, msg);
                             continue;
                         }
                     }
 
                     //Check if we need to send one of the time reminders for this launch
-                    if (newNext.LaunchDateUtc != null)
+                    if (newNext.DateUtc != null)
                     {
-                        var timeToLaunch = newNext.LaunchDateUtc.Value - DateTime.UtcNow;
+                        var timeToLaunch = newNext.DateUtc.Value - DateTime.UtcNow;
                         var notificationNow = NotificationTimes.Where(nt => nt > timeToLaunch && nt < _state.TimeToLaunch).Cast<TimeSpan?>().SingleOrDefault();
                         var nextNotification = NotificationTimes.Where(nt => nt < timeToLaunch).Cast<TimeSpan?>().FirstOrDefault() ?? TimeSpan.FromSeconds(30);
 
@@ -144,28 +142,28 @@ namespace Mute.Moe.Services.Notifications.SpaceX
 
          private static string NextLaunchChangedMessage( LaunchInfo previous,  LaunchInfo next)
         {
-            return $"The next SpaceX Launch has changed from {previous.MissionName} to {next.MissionName}";
+            return $"The next SpaceX Launch has changed from {previous.Name} to {next.Name}";
         }
 
          private static string ExpectedLaunchTimeChangedMessage( LaunchInfo launch, DateTime previousT, DateTime newT)
         {
             var delay = newT - previousT;
-            return $"SpaceX launch {launch.MissionName} has been delayed by {delay.Humanize()} to {newT:HH\\:mm UTC dd-MMM-yyyy}";
+            return $"SpaceX launch {launch.Name} has been delayed by {delay.Humanize()} to {newT:HH\\:mm UTC dd-MMM-yyyy}";
         }
 
          private static string PeriodicReminderMessage( LaunchInfo launch)
         {
             //Append video link if there is one.
             var video = "";
-            if (launch.Links.VideoLink != null)
-                video = $". Watch it here: {launch.Links.VideoLink}.";
+            if (launch.Links.Webcast != null)
+                video = $". Watch it here: {launch.Links.Webcast}.";
 
-            return $"SpaceX launch {launch.MissionName} will launch in {launch.LaunchDateUtc.Humanize()} {video}";
+            return $"SpaceX launch {launch.Name} will launch in {launch.DateUtc.Humanize()} {video}";
         }
 
         private async Task<NotificationState> SendNotification( LaunchInfo launch, string message)
         {
-            var subs = await _notifications.GetSubscriptions();
+            var subs = _notifications.GetSubscriptions();
 
             await foreach (var s in subs)
             {
@@ -192,12 +190,12 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             public TimeSpan? TimeToLaunch { get; }
             public DateTime? LaunchTimeUtc { get; }
 
-            public NotificationState( LaunchInfo launch, DateTime utcNow)
+            public NotificationState(LaunchInfo launch, DateTime utcNow)
             {
                 Launch = launch;
 
-                TimeToLaunch = launch.LaunchDateUtc - utcNow;
-                LaunchTimeUtc = launch.LaunchDateUtc;
+                TimeToLaunch = launch.DateUtc - utcNow;
+                LaunchTimeUtc = launch.DateUtc;
             }
         }
     }

@@ -8,11 +8,8 @@ using Discord;
 using Discord.Commands;
 using Humanizer;
 using Humanizer.Localisation;
-
-
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Utilities;
 

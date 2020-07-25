@@ -136,7 +136,10 @@ namespace Mute.Moe.Discord.Modules
                 await _training.Train(word, content);
                 timer.Restart();
                 if (message is IUserMessage um)
+                {
                     await um.AddReactionAsync(new Emoji(EmojiLookup.OpenBook));
+                    await um.AddReactionAsync(new Emoji(EmojiLookup.Tick));
+                }
             }
         }
     }

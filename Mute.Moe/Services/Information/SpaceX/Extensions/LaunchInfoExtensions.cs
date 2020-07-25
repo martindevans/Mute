@@ -4,8 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Humanizer;
-using Oddity.API.Models.Launch;
-using Oddity.API.Models.Launch.Rocket.FirstStage;
+using Oddity.Models.Launches;
 
 namespace Mute.Moe.Services.Information.SpaceX.Extensions
 {
@@ -16,7 +15,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             return (await launch).DiscordEmbed();
         }
 
-         public static EmbedBuilder DiscordEmbed(this LaunchInfo? launch)
+        public static EmbedBuilder DiscordEmbed(this LaunchInfo? launch)
         {
             var builder = new EmbedBuilder()
                 .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
@@ -27,77 +26,62 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
                 return builder;
             }
 
-            var icon = launch.Links.MissionPatch ?? launch.Links.MissionPatchSmall;
-            var url = launch.Links.Wikipedia ?? launch.Links.RedditCampaign ?? launch.Links.RedditLaunch ?? launch.Links.Presskit;
+            var icon = launch.Links.Patch.Large ?? launch.Links.Patch.Small;
+            var url = launch.Links.Wikipedia ?? launch.Links.Reddit.Campaign ?? launch.Links.Reddit.Launch ?? launch.Links.Presskit;
             var upcoming = launch.Upcoming.HasValue && launch.Upcoming.Value;
-            var success = launch.LaunchSuccess.HasValue && launch.LaunchSuccess.Value;
+            var success = launch.Success.HasValue && launch.Success.Value;
 
             builder = builder
-                .WithTitle(launch.MissionName)
+                .WithTitle(launch.Name)
                 .WithDescription(launch.Details)
                 .WithUrl(url)
                 .WithAuthor($"Flight {launch.FlightNumber}", icon, icon)
                 .WithColor(upcoming ? Color.Blue : success ? Color.Green : Color.Red);
 
-            var site = launch.LaunchSite.SiteLongName ?? launch.LaunchSite.SiteName;
+            var site = launch.Launchpad.Value.FullName ?? launch.Launchpad.Value.Name;
             if (!string.IsNullOrWhiteSpace(site))
                 builder = builder.AddField("Launch Site", site);
 
-            if (launch.LaunchDateUtc.HasValue)
+            if (launch.DateUtc.HasValue)
             {
-                var date = launch.LaunchDateUtc.Value.ToString("HH\\:mm UTC dd-MMM-yyyy");
-                if (launch.IsTentative || launch.LaunchDateUtc.Value < DateTime.UtcNow)
+                var date = launch.DateUtc.Value.ToString("HH\\:mm UTC dd-MMM-yyyy");
+
+                if (launch.NotEarlierThan ?? false)
                 {
-                    builder.AddField("Launch Date", $"Uncertain  - scheduled for {date} ± 1 {launch.TentativeMaxPrecision}");
+                    builder.AddField("Launch Date", $"NET {date}");
+                }
+                else if (launch.DatePrecision.HasValue)
+                {
+                    builder.AddField("Launch Date", $"Uncertain  - scheduled for {date} ± 1 {launch.DatePrecision}");
                 }
                 else
                 {
                     builder = builder.AddField("Launch Date", date, true);
-                    builder = builder.AddField("T-", (launch.LaunchDateUtc.Value - DateTime.UtcNow).Humanize());
+                    builder = builder.AddField("T-", (launch.DateUtc.Value - DateTime.UtcNow).Humanize());
                 }
             }
 
-            var landing = string.Join(", ", launch.Rocket.FirstStage.Cores.Select(c => c.LandingVehicle?.ToString()).Where(a => a != null).ToArray());
-            if (!string.IsNullOrWhiteSpace(landing))
-                builder = builder.AddField("Landing", landing, true);
+            if (launch.Cores.Any(a => a.Landpad.Value != null))
+                builder.AddField("Landing Pad", string.Join(",", launch.Cores.Select(a => a.Landpad.Value.Name)), true);
 
-            var serials = string.Join(",", launch.Rocket.FirstStage.Cores.Select(c => c.CoreSerial ?? "B????").ToArray());
-            builder = builder.AddField("Vehicle", $"{launch.Rocket.RocketName} ({serials})", true);
+            builder.AddField("Vehicle", string.Join(",", launch.Cores.Select(a => $"B{a.Core.Value.Serial}")), true);
 
-            string PreviousFlights(CoreInfo core)
-            {
-                //If we know it's not re-used, return zero
-                var reused = core.Reused ?? true;
-                if (!reused)
-                    return "0";
-
-                //Return the flight number
-                //There seems to be some inconsistency between if the very first flight is zero or one, sub one and make sure it doesn't underflow
-                var flight = core.Flight;
-                if (flight.HasValue)
-                    return Math.Max(flight.Value - 1, 0).ToString();
-
-                return "??";
-            }
-
-            var flights = string.Join(",", launch.Rocket.FirstStage.Cores.Select(PreviousFlights).ToArray());
-            builder = builder.AddField("Previous Flights", flights);
+            builder.AddField("Previous Flights", string.Join(",", launch.Cores.Select(a => a.Core.Value.ReuseCount).Where(a => a.HasValue)));
 
             return builder;
         }
 
-         public static string Summary( this LaunchInfo launch)
+        public static string Summary(this LaunchInfo launch)
         {
-            var date = DateString(launch.LaunchDateUtc, launch.TentativeMaxPrecision);
+            var date = DateString(launch.DateUtc, launch.DatePrecision);
             var num = launch.FlightNumber;
-            var site = launch.LaunchSite;
-            var name = launch.MissionName;
-            var reuse = launch.Reuse;
-            var type = launch.Rocket.RocketName;
-            return $"Flight {num}: `{name}` from `{site.SiteName}` on a{(reuse.Core ?? false ? " reused" : "")} {type} rocket {date}";
+            var site = launch.Launchpad.Value.FullName;
+            var name = launch.Name;
+            var type = launch.Rocket.Value.Name;
+            return $"Flight {num}: `{name}` from `{site}` on a {type} rocket {date}";
         }
 
-        private static string DateString(DateTime? date, TentativeMaxPrecision? precision)
+        private static string DateString(DateTime? date, DatePrecision? precision)
         {
             if (!date.HasValue)
                 return "";
@@ -107,28 +91,30 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 
             switch (precision.Value)
             {
-                case TentativeMaxPrecision.Hour:
+                case DatePrecision.Hour:
                     if ((date.Value - DateTime.UtcNow) > TimeSpan.FromDays(1))
                         return date.Value.Humanize();
                     else
                         return $"about {date.Value.Humanize()}";
 
-                case TentativeMaxPrecision.Day:
+                case DatePrecision.Day:
                     return $"on {date.Value:m}";
 
-                case TentativeMaxPrecision.Month:
+                case DatePrecision.Month:
                     return $"in {CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(date.Value.Month)} {date.Value.Year}";
 
-                case TentativeMaxPrecision.Quarter:
+                case DatePrecision.Quarter:
                     return $"in Q{date.Value.Month / 4 + 1} {date.Value.Year}";
 
-                case TentativeMaxPrecision.Half:
+                case DatePrecision.Half:
                     return $"in H{date.Value.Month / 6 + 1} {date.Value.Year}";
 
-                case TentativeMaxPrecision.Year:
-                    return $"in {date.Value.Year.ToString()}";
+                case DatePrecision.Year:
+                    return $"in {date.Value.Year}";
 
-                default: throw new NotSupportedException($"Unknown tenatative date time `{precision.Value}`");
+                case DatePrecision.Unknown:
+                default:
+                    throw new NotSupportedException($"Unknown tenatative date time `{precision.Value}`");
             }
         }
     }

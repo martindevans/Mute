@@ -6,9 +6,6 @@ using BalderHash;
 using Discord;
 using Discord.WebSocket;
 
-
-using Mute.Moe.Extensions;
-
 namespace Mute.Moe.Services.Reminders
 {
     public class AsyncReminderSender

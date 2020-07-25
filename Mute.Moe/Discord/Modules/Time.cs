@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord.Commands;
-
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Utilities;

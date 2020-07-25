@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses;

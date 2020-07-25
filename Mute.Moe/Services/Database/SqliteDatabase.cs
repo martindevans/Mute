@@ -16,7 +16,7 @@ namespace Mute.Moe.Services.Database
             _dbConnection.Open();
         }
 
-         public DbCommand CreateCommand()
+        public DbCommand CreateCommand()
         {
             return new SQLiteCommand(_dbConnection);
         }
@@ -25,7 +25,7 @@ namespace Mute.Moe.Services.Database
     // ReSharper disable once InconsistentNaming
     public static class IDatabaseServiceExtensions
     {
-        public static int Exec( this IDatabaseService db, string sql)
+        public static int Exec(this IDatabaseService db, string sql)
         {
             using var cmd = db.CreateCommand();
             cmd.CommandText = sql;

@@ -40,7 +40,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public Task<IAsyncEnumerable<ISpacexSubscription>> GetSubscriptions()
+        public IAsyncEnumerable<ISpacexSubscription> GetSubscriptions()
         {
             static ISpacexSubscription ParseSubscription(DbDataReader reader)
             {
@@ -58,8 +58,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                 return cmd;
             }
 
-            var result = (IAsyncEnumerable<ISpacexSubscription>)new SqlAsyncResult<ISpacexSubscription>(_database, PrepareQuery, ParseSubscription);
-            return Task.FromResult(result);
+            return new SqlAsyncResult<ISpacexSubscription>(_database, PrepareQuery, ParseSubscription);
         }
 
         private class SpacexSubscription

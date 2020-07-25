@@ -15,12 +15,17 @@ namespace Mute.Moe.Services.Information.Anime
         Task<IAnime?> GetAnimeInfoAsync(string search);
 
         /// <summary>
-        /// Get all animes by the given search term
+        /// Get anime by the given search term
         /// </summary>
         /// <param name="search"></param>
         /// <returns></returns>
         IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search);
 
+        /// <summary>
+        /// Get all the anime featuring the given character
+        /// </summary>
+        /// <param name="character"></param>
+        /// <returns></returns>
         IAsyncEnumerable<IAnime> GetAnimesInfoAsync(ICharacter character);
     }
 

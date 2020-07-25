@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Steam.Models.SteamCommunity;
 using Steam.Models.SteamPlayer;
+using Steam.Models.SteamStore;
 
 namespace Mute.Moe.Services.Information.Steam
 {
@@ -18,5 +19,7 @@ namespace Mute.Moe.Services.Information.Steam
         Task<IReadOnlyCollection<OwnedGameModel>?> GetOwnedGames(ulong userSteamId);
 
         Task<IReadOnlyCollection<RecentlyPlayedGameModel>?> GetRecentlyPlayedGames(ulong userSteamId);
+
+        Task<StoreAppDetailsDataModel?> GetStoreInfo(uint appId);
     }
 }

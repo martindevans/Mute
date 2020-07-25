@@ -47,20 +47,13 @@ namespace Mute.Moe.Services.Reminders
         {
             try
             {
-                uint id;
+                var reminder = new Reminder(0, triggerTime, prelude, msg, channelId, userId);
                 await using (var cmd = _database.CreateCommand())
                 {
                     cmd.CommandText = InsertReminder;
-                    cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) {Value = triggerTime.UnixTimestamp()});
-                    cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) {Value = channelId.ToString()});
-                    cmd.Parameters.Add(new SQLiteParameter("@Prelude", System.Data.DbType.String) {Value = prelude});
-                    cmd.Parameters.Add(new SQLiteParameter("@Message", System.Data.DbType.String) {Value = msg});
-                    cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = userId.ToString()});
-
-                    id = (uint)(long)await cmd.ExecuteScalarAsync();
+                    reminder.Write(cmd);
+                    reminder = reminder.WithId((uint)(long)await cmd.ExecuteScalarAsync());
                 }
-
-                var reminder = new Reminder(id, triggerTime, prelude, msg, channelId, userId);
 
                 ReminderCreated?.Invoke(reminder);
 
@@ -91,22 +84,8 @@ namespace Mute.Moe.Services.Reminders
             return deleted;
         }
 
-
-
         public IOrderedAsyncEnumerable<IReminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
         {
-            static IReminder ParseReminder(DbDataReader reader)
-            {
-                return new Reminder(
-                    uint.Parse(reader["rowid"].ToString()!),
-                    ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
-                    reader["Prelude"]?.ToString(),
-                    reader["Message"].ToString()!,
-                    ulong.Parse((string)reader["ChannelId"]),
-                    ulong.Parse((string)reader["UserId"])
-                );
-            }
-
             DbCommand PrepareQuery(IDatabaseService db)
             {
                 var cmd = db.CreateCommand();
@@ -119,7 +98,7 @@ namespace Mute.Moe.Services.Reminders
                 return cmd;
             }
 
-            return new SqlAsyncResult<IReminder>(_database, PrepareQuery, ParseReminder).OrderBy(a => a.TriggerTime);
+            return new SqlAsyncResult<IReminder>(_database, PrepareQuery, Reminder.Parse).OrderBy(a => a.TriggerTime);
         }
 
         public class Reminder
@@ -146,7 +125,29 @@ namespace Mute.Moe.Services.Reminders
                 Prelude = prelude;
             }
 
-            public int CompareTo(IReminder other)
+            public static Reminder Parse(DbDataReader reader)
+            {
+                return new Reminder(
+                    uint.Parse(reader["rowid"].ToString()!),
+                    ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
+                    reader["Prelude"]?.ToString(),
+                    reader["Message"].ToString()!,
+                    ulong.Parse((string)reader["ChannelId"]),
+                    ulong.Parse((string)reader["UserId"])
+                );
+            }
+
+            public void Write(DbCommand cmd)
+            {
+                cmd.CommandText = InsertReminder;
+                cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) {Value = TriggerTime.UnixTimestamp()});
+                cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) {Value = ChannelId.ToString()});
+                cmd.Parameters.Add(new SQLiteParameter("@Prelude", System.Data.DbType.String) {Value = Prelude});
+                cmd.Parameters.Add(new SQLiteParameter("@Message", System.Data.DbType.String) {Value = Message});
+                cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = UserId.ToString()});
+            }
+
+            public int CompareTo(IReminder? other)
             {
                 if (ReferenceEquals(this, other))
                     return 0;
@@ -158,7 +159,7 @@ namespace Mute.Moe.Services.Reminders
             }
 
             #region equality
-            public bool Equals(IReminder other)
+            public bool Equals(IReminder? other)
             {
                 if (other is null)
                     return false;
@@ -203,6 +204,18 @@ namespace Mute.Moe.Services.Reminders
                 return !Equals(left, right);
             }
             #endregion
+
+            public Reminder WithId(uint id)
+            {
+                return new Reminder(
+                    id,
+                    TriggerTime,
+                    Prelude,
+                    Message,
+                    ChannelId,
+                    UserId
+                );
+            }
         }
     }
 }

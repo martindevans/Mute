@@ -20,6 +20,9 @@
         public const string SlightlyFrowning = "🙁";
         public const string Crying = "😢";
 
+        public const string Tick = "✔";
+        public const string Cross = "❌";
+
         public const string SkullAndCrossbones = "☠️";
         public const string Skull = "💀";
         public const string Coffin = "⚰️";

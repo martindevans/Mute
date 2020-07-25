@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Groups;
 using IRole = Discord.IRole;

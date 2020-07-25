@@ -42,7 +42,7 @@ namespace Mute.Moe.Services.Information.Anime
         private class MikibotAnime
             : IAnime
         {
-            public MikibotAnime( IMedia media)
+            public MikibotAnime(IMedia media)
             {
                 Id = media.Id.ToString();
 

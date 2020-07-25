@@ -3,42 +3,41 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Humanizer;
-
-using Oddity.API.Models.DetailedCore;
-using Oddity.API.Models.Launch;
+using Oddity.Models.Cores;
+using Oddity.Models.Launches;
 
 namespace Mute.Moe.Services.Information.SpaceX.Extensions
 {
     public static class DetailedCoreInfoExtensions
     {
-        public static async Task<EmbedBuilder> AugmentDiscordEmbed( this DetailedCoreInfo info, EmbedBuilder builder, ISpacexInfo spacex)
+        public static async Task<EmbedBuilder> AugmentDiscordEmbed(this CoreInfo info, EmbedBuilder builder, ISpacexInfo spacex)
         {
-            var missions = await info.Missions.ToAsyncEnumerable().Select(async a => (await spacex.Launch(a.Flight)).FirstOrDefault()).Where(a => a != null).ToArrayAsync();
-            await Task.WhenAll(missions);
+            var missions = info.Launches.Select(a => a.Value).Where(a => a != null).ToArray();
 
             if (missions.Length > 0)
-                builder = builder.WithDescription(string.Join("\n", missions.Select(a => MissionLine(a.Result))));
+                builder = builder.WithDescription(string.Join("\n", missions.Select(MissionLine)));
 
             return builder;
         }
 
-        public static async Task<EmbedBuilder> DiscordEmbed( this DetailedCoreInfo info)
+        public static async Task<EmbedBuilder> DiscordEmbed(this CoreInfo info)
         {
             //Choose color based on status
             Color color;
             switch (info.Status)
             {
-                case DetailedCoreStatus.Active:
+                case CoreStatus.Active:
                     color = Color.Green;
                     break;
-                case DetailedCoreStatus.Lost:
+                case CoreStatus.Expended:
+                case CoreStatus.Lost:
                     color = Color.Red;
                     break;
-                case DetailedCoreStatus.Inactive:
+                case CoreStatus.Retired:
+                case CoreStatus.Inactive:
                     color = Color.DarkGrey;
                     break;
-                case DetailedCoreStatus.Unknown:
-                case null:
+                case CoreStatus.Unknown:
                 default:
                     color = Color.Purple;
                     break;
@@ -46,15 +45,14 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 
             //Create text description
             var description = "";
-            if (info.Missions.Count > 0)
+            if (info.Launches.Count > 0)
             {
-                var ms = string.Join(", ", info.Missions.Select(m => $"{m.Name} (Flight {m.Flight})").ToArray());
-                description = $"This core has flown {info.Missions.Count} missions; {ms}. ";
+                var ms = string.Join(", ", info.Launches.Select(m => $"{m.Value.Name} (Flight {m.Value.FlightNumber})").ToArray());
+                description = $"This core has flown {info.Launches.Count} missions; {ms}. ";
             }
-            description += info.Details ?? "";
 
             var builder = new EmbedBuilder()
-                          .WithTitle(info.CoreSerial)
+                          .WithTitle(info.Serial)
                           .WithDescription(description)
                           .WithColor(color)
                           .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
@@ -68,40 +66,41 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             if (info.RtlsLandings.HasValue && info.RtlsLandings.Value > 0)
                 builder = builder.AddField("RTLS Landings", info.RtlsLandings.Value.ToString(), true);
 
-            if (info.OriginalLaunch.HasValue)
-                builder = builder.AddField("First Launch Date", info.OriginalLaunch.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
+            if (info.Launches.Any())
+                builder = builder.AddField("First Launch Date", info.Launches.First().Value.DateUtc!.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
 
-            if (info.Missions.Count > 1)
-                builder = builder.WithDescription(string.Join("\n", info.Missions.Select(MissionLine)));
+            if (info.Launches.Count > 1)
+                builder = builder.WithDescription(string.Join("\n", info.Launches.Select(a => a.Value).Select(CoreMissionLine)));
 
             return builder;
         }
 
         private static string MissionLine(LaunchInfo mission)
         {
-            var fname = $"{mission.MissionName}";
+            var fname = $"{mission.Name}";
 
-            var url = mission.Links.Wikipedia ?? mission.Links.RedditCampaign ?? mission.Links.RedditLaunch ?? mission.Links.Presskit;
+            var url = mission.Links.Wikipedia ?? mission.Links.Reddit.Campaign ?? mission.Links.Reddit.Launch ?? mission.Links.Presskit;
             if (url != null)
                 fname = $"[{fname}]({url})";
 
             var txt = $" • ({mission.FlightNumber}) {fname}";
 
-            if (mission.LaunchDateUtc.HasValue)
+            if (mission.DateUtc.HasValue)
             {
-                var ago = (DateTime.UtcNow - mission.LaunchDateUtc.Value).Humanize(2, maxUnit: Humanizer.Localisation.TimeUnit.Year, minUnit: Humanizer.Localisation.TimeUnit.Hour);
+                var ago = (DateTime.UtcNow - mission.DateUtc.Value).Humanize(2, maxUnit: Humanizer.Localisation.TimeUnit.Year, minUnit: Humanizer.Localisation.TimeUnit.Hour);
                 txt += $" {ago} ago";
             }
 
-            if (mission.LaunchSuccess.HasValue && !mission.LaunchSuccess.Value)
-                txt += " ❌";
+            if (mission.Success.HasValue)
+                if (!mission.Success.Value)
+                    txt += " ❌";
 
             return txt;
         }
 
-        private static string MissionLine(CoreMissionInfo mission)
+        private static string CoreMissionLine(LaunchInfo mission)
         {
-            return $" • ({mission.Flight}) {mission.Name}";
+            return $" • ({mission.FlightNumber}) {mission.Name}";
         }
     }
 }

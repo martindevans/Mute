@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Discord.Services.Games

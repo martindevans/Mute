@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Reminders;
 using System.Threading.Tasks;
+using BalderHash;
 
 namespace Mute.Moe.Controllers
 {
@@ -34,7 +35,7 @@ namespace Mute.Moe.Controllers
             if (discorduser == null)
                 return Unauthorized();
 
-            var id = FriendlyId32.Parse(strId);
+            var id = BalderHash32.Parse(strId);
             if (id == null)
                 return BadRequest();
 

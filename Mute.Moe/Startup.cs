@@ -56,12 +56,14 @@ using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Words;
 using System.Net.Http;
+using Discord.WebSocket;
 using Microsoft.Extensions.Hosting;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Services.Imitation;
 using Mute.Moe.Services.Speech.STT;
+using Oddity;
 
 namespace Mute.Moe
 {
@@ -79,11 +81,13 @@ namespace Mute.Moe
             services.AddHttpClient();
 
             services.AddSingleton(services);
-            services.AddSingleton<InteractiveService>();
+            services.AddSingleton(s => new InteractiveService(s.GetRequiredService<BaseSocketClient>()));
 
             services.AddTransient<Random>();
             services.AddTransient<IDiceRoller, CryptoDiceRoller>();
+            services.AddTransient<ISpacexInfo, OdditySpaceX>();
 
+            services.AddSingleton(new OddityCore());
             services.AddSingleton<IFileSystem, FileSystem>();
             services.AddSingleton<HttpClient, HttpClient>();
             services.AddSingleton<IDatabaseService, SqliteDatabase>();
@@ -97,7 +101,6 @@ namespace Mute.Moe
             services.AddSingleton<ICharacterInfo, MikibotAnilistCharacterSearch>();
             services.AddSingleton<ITransactions, DatabaseTransactions>();
             services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
-            services.AddSingleton<ISpacexInfo, OdditySpaceX>();
             services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
             services.AddSingleton<ISteamInfo, SteamApi>();
             services.AddSingleton<ISteamIdStorage, SteamIdDatabaseStorage>();
