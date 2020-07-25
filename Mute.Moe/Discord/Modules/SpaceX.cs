@@ -41,9 +41,9 @@ namespace Mute.Moe.Discord.Modules
             var embed = await details.DiscordEmbed();
             var msg = await ReplyAsync(embed);
 
-            if (details.Launches.Count > 1)
+            if (details.Launches != null && details.Launches.Count > 1)
             {
-                var embed2 = await details.AugmentDiscordEmbed(embed, _spacex);
+                var embed2 = await details.AugmentDiscordEmbed(embed);
                 await msg.ModifyAsync(p => p.Embed = embed2.Build());
             }
         }

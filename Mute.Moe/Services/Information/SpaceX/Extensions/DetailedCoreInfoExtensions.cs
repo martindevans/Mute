@@ -10,8 +10,11 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 {
     public static class DetailedCoreInfoExtensions
     {
-        public static async Task<EmbedBuilder> AugmentDiscordEmbed(this CoreInfo info, EmbedBuilder builder, ISpacexInfo spacex)
+        public static async Task<EmbedBuilder> AugmentDiscordEmbed(this CoreInfo info, EmbedBuilder builder)
         {
+            if (info.Launches == null)
+                return builder;
+
             var missions = info.Launches.Select(a => a.Value).Where(a => a != null).ToArray();
 
             if (missions.Length > 0)
