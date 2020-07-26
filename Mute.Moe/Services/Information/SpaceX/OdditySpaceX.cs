@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Oddity;
 using Oddity.Models.Cores;
@@ -31,14 +32,30 @@ namespace Mute.Moe.Services.Information.SpaceX
             }
         }
 
-        public async Task<IReadOnlyList<LaunchInfo>?> Launch(int id)
+        public async Task<LaunchInfo?> Launch(uint id)
         {
-            return await _oddity.LaunchesEndpoint.GetAll().ExecuteAsync();
+            var result = await _oddity.LaunchesEndpoint.Query()
+                                      .WithFieldEqual(a => a.FlightNumber, id)
+                                      .ExecuteAsync();
+
+            if (result.Data.Count != 1)
+                return null;
+            else
+                return result.Data.Single();
         }
 
         public async Task<CoreInfo?> Core(string id)
         {
-            return await _oddity.CoresEndpoint.Get(id).ExecuteAsync();
+            var result = await _oddity.CoresEndpoint.Query()
+                                      .WithFieldEqual(a => a.Serial, id)
+                                      .WithLimit(1)
+                                      .ExecuteAsync();
+
+            await result.GoToFirstPage();
+            if (result.Data.Count != 1)
+                return null;
+            else
+                return result.Data.Single();
         }
 
         public async Task<IReadOnlyList<LaunchInfo>> Upcoming()

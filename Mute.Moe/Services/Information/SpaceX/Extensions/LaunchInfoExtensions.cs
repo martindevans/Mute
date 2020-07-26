@@ -4,18 +4,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Humanizer;
+using Mute.Moe.Extensions;
 using Oddity.Models.Launches;
 
 namespace Mute.Moe.Services.Information.SpaceX.Extensions
 {
     public static class LaunchInfoExtensions
     {
-        public static async Task<EmbedBuilder> DiscordEmbed(this Task<LaunchInfo?> launch)
+        public static async Task<EmbedBuilder> DiscordEmbed(this Task<LaunchInfo?> launch, Random rng)
         {
-            return (await launch).DiscordEmbed();
+            return (await launch).DiscordEmbed(rng);
         }
 
-        public static EmbedBuilder DiscordEmbed(this LaunchInfo? launch)
+        public static EmbedBuilder DiscordEmbed(this LaunchInfo? launch, Random rng)
         {
             var builder = new EmbedBuilder()
                 .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
@@ -38,6 +39,14 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
                 .WithAuthor($"Flight {launch.FlightNumber}", icon, icon)
                 .WithColor(upcoming ? Color.Blue : success ? Color.Green : Color.Red);
 
+            var img = launch.Links.Flickr.Original.Append(launch.Links.Patch.Large).Where(a => a != null).Random(rng);
+            if (img != null)
+                builder.WithImageUrl(img);
+
+            var crew = launch.Crew;
+            if (crew != null && crew.Count > 0)
+                builder.AddField("Crew", string.Join(", ", crew.Select(a => a.Value.Name)), true);
+
             var site = launch.Launchpad.Value.FullName ?? launch.Launchpad.Value.Name;
             if (!string.IsNullOrWhiteSpace(site))
                 builder = builder.AddField("Launch Site", site);
@@ -46,11 +55,15 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             {
                 var date = launch.DateUtc.Value.ToString("HH\\:mm UTC dd-MMM-yyyy");
 
-                if (launch.NotEarlierThan ?? false)
+                if (!(launch.Upcoming ?? true))
+                {
+                    builder.AddField("Launch Date", date);
+                }
+                else if (launch.NotEarlierThan ?? false)
                 {
                     builder.AddField("Launch Date", $"NET {date}");
                 }
-                else if (launch.DatePrecision.HasValue)
+                else if (launch.DatePrecision.HasValue && launch.DatePrecision > DatePrecision.Hour)
                 {
                     builder.AddField("Launch Date", $"Uncertain  - scheduled for {date} ± 1 {launch.DatePrecision}");
                 }
@@ -66,7 +79,19 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 
             builder.AddField("Vehicle", string.Join(",", launch.Cores.Select(a => $"{a.Core.Value.Serial}")), true);
 
-            builder.AddField("Previous Flights", string.Join(",", launch.Cores.Select(a => a.Core.Value.ReuseCount).Where(a => a.HasValue)));
+            // Definition of "re-use" depends upon if the launch has happened yet. If it's a past launch count how many missions the core had done before this one.
+            if (launch.Upcoming.HasValue)
+            {
+                if (launch.Upcoming.Value)
+                {
+                    builder.AddField("Previous Flights", string.Join(",", launch.Cores.Select(a => a.Core.Value.ReuseCount).Where(a => a.HasValue)));
+                }
+                else if (launch.DateUnix.HasValue)
+                {
+                    var previous = launch.Cores.Select(a => a.Core.Value.Launches.Where(l => l.Value.DateUnix.HasValue).Count(l => l.Value.DateUnix < launch.DateUnix));
+                    builder.AddField("Previous Flights", string.Join(",", previous));
+                }
+            }
 
             return builder;
         }

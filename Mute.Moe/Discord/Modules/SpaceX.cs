@@ -48,23 +48,17 @@ namespace Mute.Moe.Discord.Modules
             }
         }
 
-        [Command("details"), Alias("flight-no", "flight-num"), Summary("I will tell you about a specific spacex launch")]
-        public async Task LaunchDetails(int id)
+        [Command("details"), Alias("flight-no", "flight-num", "mission", "flight"), Summary("I will tell you about a specific spacex launch")]
+        public async Task LaunchDetails(uint id)
         {
-            var launches = await _spacex.Launch(id);
-            if (launches == null || launches.Count == 0)
+            var launch = await _spacex.Launch(id);
+            if (launch == null)
             {
                 await TypingReplyAsync("There doesn't seem to be a flight by that ID");
                 return;
             }
 
-            if (launches.Count > 1)
-            {
-                await TypingReplyAsync("There are multiple launches with that ID!?");
-                return;
-            }
-
-            await ReplyAsync(launches.Single().DiscordEmbed());
+            await ReplyAsync(launch.DiscordEmbed(_rng));
         }
 
         [Command("next"), Alias("upcoming"), Summary("I will tell you about the next spacex launch(es)")]
@@ -72,7 +66,7 @@ namespace Mute.Moe.Discord.Modules
         {
             if (count == 1)
             {
-                await ReplyAsync(await _spacex.NextLaunch().DiscordEmbed());
+                await ReplyAsync(await _spacex.NextLaunch().DiscordEmbed(_rng));
             }
             else
             {
