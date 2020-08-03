@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 
@@ -18,7 +19,8 @@ namespace Mute.Tests.Services.Responses.Eliza.Eliza
         {
             const string str = "abc123";
 
-            var matches = Patterns.Match(str, "*", _synonyms);
+            var d = new Decomposition("*", Array.Empty<string>());
+            var matches = d.Match(str, _synonyms);
 
             Assert.IsNotNull(matches);
             Assert.AreEqual(str, matches[0]);
@@ -29,7 +31,8 @@ namespace Mute.Tests.Services.Responses.Eliza.Eliza
         {
             const string str = "abc @123";
 
-            var matches = Patterns.Match(str, "*", _synonyms);
+            var d = new Decomposition("*", Array.Empty<string>());
+            var matches = d.Match(str, _synonyms);
 
             Assert.IsNotNull(matches);
             Assert.AreEqual(str, matches[0]);
@@ -40,7 +43,8 @@ namespace Mute.Tests.Services.Responses.Eliza.Eliza
         {
             const string str = "abc ~123";
 
-            var matches = Patterns.Match(str, "*", _synonyms);
+            var d = new Decomposition("*", Array.Empty<string>());
+            var matches = d.Match(str, _synonyms);
 
             Assert.IsNotNull(matches);
             Assert.AreEqual(str, matches[0]);
@@ -51,7 +55,8 @@ namespace Mute.Tests.Services.Responses.Eliza.Eliza
         {
             const string str = "abc ~123";
 
-            var matches = Patterns.Match(str, "* ~*", _synonyms);
+            var d = new Decomposition("* ~*", Array.Empty<string>());
+            var matches = d.Match(str, _synonyms);
 
             Assert.IsNotNull(matches);
             Assert.AreEqual("abc", matches[0]);
@@ -63,7 +68,8 @@ namespace Mute.Tests.Services.Responses.Eliza.Eliza
         {
             const string str = "abc 123";
 
-            var matches = Patterns.Match(str, "* *", _synonyms);
+            var d = new Decomposition("* *", Array.Empty<string>());
+            var matches = d.Match(str, _synonyms);
 
             Assert.IsNotNull(matches);
             Assert.AreEqual("abc", matches[0]);
@@ -75,7 +81,8 @@ namespace Mute.Tests.Services.Responses.Eliza.Eliza
         {
             const string str = "123";
 
-            var matches = Patterns.Match(str, "#", _synonyms);
+            var d = new Decomposition("#", Array.Empty<string>());
+            var matches = d.Match(str, _synonyms);
 
             Assert.IsNotNull(matches);
             Assert.AreEqual("123", matches[0]);
@@ -86,7 +93,8 @@ namespace Mute.Tests.Services.Responses.Eliza.Eliza
         {
             const string str = "123 456";
 
-            var matches = Patterns.Match(str, "# #", _synonyms);
+            var d = new Decomposition("# #", Array.Empty<string>());
+            var matches = d.Match(str, _synonyms);
 
             Assert.IsNotNull(matches);
             Assert.AreEqual("123", matches[0]);
@@ -98,7 +106,8 @@ namespace Mute.Tests.Services.Responses.Eliza.Eliza
         {
             const string str = "my brother is philip";
 
-            var matches = Patterns.Match(str, "*my* brother *", _synonyms);
+            var d = new Decomposition("*my* brother *", Array.Empty<string>());
+            var matches = d.Match(str, _synonyms);
 
             Assert.IsNotNull(matches);
             Assert.AreEqual("", matches[0]);
@@ -111,7 +120,8 @@ namespace Mute.Tests.Services.Responses.Eliza.Eliza
         {
             const string str = "hello aa bb ccc world";
 
-            var matches = Patterns.Match(str, "* @a @b @c *", _synonyms);
+            var d = new Decomposition("* @a @b @c *", Array.Empty<string>());
+            var matches = d.Match(str, _synonyms);
 
             Assert.IsNotNull(matches);
             Assert.AreEqual("hello", matches[0]);

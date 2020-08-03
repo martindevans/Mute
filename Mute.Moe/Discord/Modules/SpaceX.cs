@@ -115,7 +115,7 @@ namespace Mute.Moe.Discord.Modules
                 async Task<string> NextLaunch(int count)
                     => string.Join("\n", await DescribeUpcomingFlights(count));
 
-                yield return new Key("spacex", 10,
+                yield return new Key("spacex",
                     new Decomposition("*next*launch*", d => NextLaunch(1)!),
                     new Decomposition("#*launches*", d => NextLaunch(int.Parse(d[0]))!),
                     new Decomposition("*launches*#", d => NextLaunch(int.Parse(d[0]))!)

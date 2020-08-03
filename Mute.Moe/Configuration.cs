@@ -89,7 +89,7 @@ namespace Mute.Moe
 
     public class ElizaConfig
     {
-        [UsedImplicitly] public List<string>? Scripts;
+        [UsedImplicitly] public string? Script;
     }
 
     public class SteamConfig

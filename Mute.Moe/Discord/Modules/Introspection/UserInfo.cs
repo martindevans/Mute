@@ -108,7 +108,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
         {
             get
             {
-                yield return new Key("who", 10,
+                yield return new Key("who",
                     new Decomposition("who is *", d => GetUserInfo(d[0])),
                     new Decomposition("who * is *", d => GetUserInfo(d[1]))
                 );

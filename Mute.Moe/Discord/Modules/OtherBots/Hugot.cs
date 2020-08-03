@@ -51,7 +51,7 @@ namespace Mute.Moe.Discord.Modules.OtherBots
         {
             get
             {
-                yield return new Key("hugot", 10,
+                yield return new Key("hugot",
                     new Decomposition("*", "I don't want to talk about him"),
                     new Decomposition("*", "I haven't seen him around for a while...")
                 );

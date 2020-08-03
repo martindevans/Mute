@@ -1,24 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
 {
     public class Script
     {
+        public string Name { get; }
+
         private readonly IReadOnlyDictionary<string, IReadOnlyList<Key>> _keys;
 
-        public IReadOnlyList<IReadOnlyCollection<string>> Syns { get; }
-        public IReadOnlyDictionary<string, Transform> Pre { get; }
-        public IReadOnlyDictionary<string, Transform> Post { get; }
+        public IReadOnlyList<IReadOnlyCollection<string>> Synonyms { get; }
+        public IReadOnlyDictionary<string, Transform> InputTransforms { get; }
+        public IReadOnlyDictionary<string, Transform> OutputTransforms { get; }
         public IReadOnlyList<string> Final { get; }
         public IReadOnlyList<string> Quit { get; }
 
-        public Script( IEnumerable<string> lines,  IEnumerable<IKeyProvider> keyProviders)
+        public Script(string name, IEnumerable<string> lines, IEnumerable<IKeyProvider> keyProviders)
         {
+            Name = name;
+
             List<Decomposition>? lastDecomp = null;
             List<IReassembly>? lastReasemb = null;
             var keysList = new List<Key>();
@@ -32,16 +39,16 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             foreach (var line in lines)    
                 ParseLine(line, ref lastReasemb, ref lastDecomp, keysList, pre, post, quit, syns, final);
 
-            Syns = syns;
-            Pre = new ReadOnlyDictionary<string, Transform>(pre.ToDictionary(a => a.Source, a => a));
-            Post = new ReadOnlyDictionary<string, Transform>(post.ToDictionary(a => a.Source, a => a));
+            Synonyms = syns;
+            InputTransforms = new ReadOnlyDictionary<string, Transform>(pre.ToDictionary(a => a.Source, a => a));
+            OutputTransforms = new ReadOnlyDictionary<string, Transform>(post.ToDictionary(a => a.Source, a => a));
             Quit = quit;
             Final = final;
 
-            //Get keys from all external providers
+            // Get keys from all external providers
             keysList.AddRange(keyProviders.SelectMany(kp => kp.Keys));
 
-            // Expand `@foo` in the keyword position into N rules, one for each synonym of `foo`
+            // Expand `@foo` in the keyword position into multiple rules, one for each synonym of `foo`
             ExpandSynonymKeys(keysList, syns);
 
             _keys = new ReadOnlyDictionary<string, IReadOnlyList<Key>>((
@@ -52,27 +59,31 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             ));
         }
 
-         public IEnumerable<Key> GetKeys(string keyword)
+        public IReadOnlyDictionary<string, IReadOnlyList<Key>> GetKeys()
+        {
+            return _keys;
+        }
+
+        public IEnumerable<Key> GetKeys(string keyword)
         {
             //Get keys from script
             if (!_keys.TryGetValue(keyword, out var results))
                 return Array.Empty<Key>();
             else
                 return results;
-
         }
 
         #region parsing
-        private static void ExpandSynonymKeys( IList<Key> keysList, IReadOnlyList<IReadOnlyCollection<string>> syns)
+        private static void ExpandSynonymKeys(IList<Key> keysList, IReadOnlyList<IReadOnlyCollection<string>> syns)
         {
             for (var i = keysList.Count - 1; i >= 0; i--)
             {
-                //Find out if this key uses a synonym as it's keyword
+                //Find out if this key uses a synonym as it's keyword...
                 var k = keysList[i];
                 if (!keysList[i].Keyword.StartsWith('@'))
                     continue;
 
-                //It does, so remove it
+                //...It does, so remove it
                 keysList.RemoveAt(i);
 
                 //Find synonyms of keyword
@@ -106,7 +117,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool ReassemblyRule( string s, ICollection<IReassembly>? lr)
+        private static bool ReassemblyRule(string s, ICollection<IReassembly>? lr)
         {
             var m = Regex.Match(s, "^.*?reasmb:( )+(?<value>.*)$");
             if (m.Success)
@@ -137,7 +148,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool SynonymRule( string s, ICollection<HashSet<string>> synonyms)
+        private static bool SynonymRule(string s, ICollection<HashSet<string>> synonyms)
         {
             var m = Regex.Match(s, "^.*?synon:( )+(?<value>.*)$");
             if (!m.Success)
@@ -147,7 +158,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool PreRule( string s, ICollection<Transform> pre)
+        private static bool PreRule(string s, ICollection<Transform> pre)
         {
             var m = Regex.Match(s, "^.*?pre:( )+(?<a>.*?)( )+(?<b>.*?)$");
             if (!m.Success)
@@ -157,7 +168,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool PostRule( string s, ICollection<Transform> post)
+        private static bool PostRule(string s, ICollection<Transform> post)
         {
             var m = Regex.Match(s, "^.*?post:( )+(?<a>.*?)( )+(?<b>.*?)$");
             if (!m.Success)
@@ -167,7 +178,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool FinalRule( string s, ICollection<string> final)
+        private static bool FinalRule(string s, ICollection<string> final)
         {
             var m = Regex.Match(s, "^.*?final:( )+(?<value>.*)$");
             if (!m.Success)
@@ -177,7 +188,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             return true;
         }
 
-        private static bool QuitRule( string s, ICollection<string> quit)
+        private static bool QuitRule(string s, ICollection<string> quit)
         {
             var m = Regex.Match(s, "^.*?quit:( )+(?<value>.*)$");
             if (!m.Success)
@@ -204,5 +215,69 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
                    || QuitRule(line, quit);
 		}
         #endregion
+
+        public string TransformOutput(string sentence)
+        {
+            return Transform(OutputTransforms, sentence);
+        }
+
+        public string TransformInput(string sentence)
+        {
+            return Transform(InputTransforms, sentence);
+        }
+
+        /// <summary>
+        /// Apply a set of transformation rules to all the words in a sentence
+        /// </summary>
+        /// <param name="transformations"></param>
+        /// <param name="sentence"></param>
+        /// <returns></returns>
+        private static string Transform(IReadOnlyDictionary<string, Transform> transformations, string sentence)
+        {
+            var txs = from word in sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                      let tx = transformations.GetValueOrDefault(word)
+                      select (word, tx);
+
+            var result = from tx in txs
+                         select tx.tx?.Destination ?? tx.word;
+
+            return string.Join(" ", result);
+        }
+
+        public static Script Load(IServiceProvider services)
+        {
+            var config = (Configuration)services.GetService(typeof(Configuration));
+
+            //Get basic key providers
+            var keys = (from t in Assembly.GetExecutingAssembly().GetTypes()
+                        where t.IsClass
+                        where typeof(IKeyProvider).IsAssignableFrom(t)
+                        let kp = ActivatorUtilities.CreateInstance(services, t) as IKeyProvider
+                        where kp != null
+                        select kp).ToArray();
+
+            var nullScript = new Script("null", Array.Empty<string>(), Array.Empty<IKeyProvider>());
+
+            // Early exit if script path is missing
+            var path = config.ElizaConfig?.Script;
+            if (path == null || !File.Exists(path))
+                return nullScript;
+
+            // Early exit if script is blank
+            var txt = File.ReadAllLines(path);
+            if (txt == null || txt.Length == 0)
+                return nullScript;
+
+            // Parse the script
+            try
+            {
+                return new Script(Path.GetFileName(path), txt, keys);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Encountered exception {e} trying to read Eliza script {path}");
+                return nullScript;
+            }
+        }
     }
 }

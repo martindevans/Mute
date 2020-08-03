@@ -32,26 +32,26 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 		    _xnone = _script.GetKeys("xnone").ToArray();
 		}
 
-	     public string ProcessInput( ICommandContext input)
+	     public string ProcessInput(ICommandContext input)
 	    {
 	        var ctx = new ElizaContext(input, CleanInput(input.Message.Content));
 
-            return ProcessSentences(ctx)                    //Try to create a reply to one of the sentences of the input
-                ?? _mem.PopOrDefault()                      //Fall back to a reply we saved earlier
-                ?? TryKey(_xnone.Random(_random), ctx)      //Default reply
-                ?? "I am at a loss for words";              //Return default default
+            return ProcessSentences(ctx)                    // Try to create a reply to one of the sentences of the input
+                ?? _mem.PopOrDefault()                      // Fall back to a reply we saved earlier
+                ?? TryKey(_xnone.Random(_random), ctx)      // Pick a Default reply from the script
+                ?? "I am at a loss for words";              // Default default reply if the script doesn't specify any
 	    }
 
 	    private string? ProcessSentences(ElizaContext ctx)
 	    {
 	        return (from sentence in ctx.Input.Split('.', StringSplitOptions.RemoveEmptyEntries)
-                    let transformed = new ElizaContext(ctx.Base, Transform(_script.Pre, sentence).Trim())
-	                let r = Sentence(transformed)
+                    let transformed = new ElizaContext(ctx.Base, _script.TransformInput(sentence).Trim())
+	                let r = TryRespond(transformed)
 	                where r != null
 	                select r).FirstOrDefault();
 	    }
 
-		private string? Sentence(ElizaContext ctx)
+		private string? TryRespond(ElizaContext ctx)
 		{
             //Split sentence into words
 		    var words = ctx.Input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -80,13 +80,6 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 		    return replies.FirstOrDefault();
 		}
 
-		/// <summary>Decompose a string according to the given key.</summary>
-		/// <remarks>
-		/// Decompose a string according to the given key. Try each decomposition
-		/// rule in order. If it matches, assemble a reply and return it. If assembly
-		/// fails, try another decomposition rule. If assembly is a goto rule, return
-		/// null and give the key. If assembly succeeds, return the reply;
-		/// </remarks>
 		private string? TryKey(Key? key, ElizaContext ctx)
 		{
 		    if (key == null)
@@ -94,9 +87,9 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 
             //Select reassembly rules which match the input
 		    var decompositions = from decomp in key.Decompositions
-		                         let decomposed = Patterns.Match(ctx.Input, decomp.Pattern, _script.Syns)
+		                         let decomposed = decomp.Match(ctx.Input, _script.Synonyms)
 		                         where decomposed != null
-                                 let rule = Task.Run(async () => await ChooseReassembly(decomp).Rule(ctx, decomposed))
+                                 let rule = Task.Run(async () => await ChooseReassembly(decomp).Assemble(ctx, decomposed))
                                  select (decomp, rule, decomposed);
 
             foreach (var (decomposition, ruleTask, decomposed) in decompositions)
@@ -137,7 +130,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         /// </summary>
         /// <param name="d"></param>
         /// <returns></returns>
-	    private IReassembly ChooseReassembly( Decomposition d)
+	    private IReassembly ChooseReassembly(Decomposition d)
 	    {
 	        //Initialize index for this rule if it's not already set
 	        if (!_decompositionCount.ContainsKey(d))
@@ -154,12 +147,6 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	        return rule;
 	    }
 
-	    /// <summary>Assembly a reply from a decomp rule and the input.</summary>
-		/// <remarks>
-		/// Assembly a reply from a decomp rule and the input. If the reassembly rule
-		/// is goto, return null and give the gotoKey to use. Otherwise return the
-		/// response.
-		/// </remarks>
 		private string? Assemble(string reassembly, IReadOnlyList<string> decomposed)
 	    {
 	        var response = new StringBuilder(reassembly);
@@ -179,7 +166,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	                if (replacement == null)
 	                    return null;
 
-	                var transformed = Transform(_script.Post, replacement);
+	                var transformed = _script.TransformOutput(replacement);
 
 	                response.Replace(m.Value, transformed, m.Index, m.Length);
 	            }
@@ -247,36 +234,18 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 
 	        return Compress(builder).ToString();
 	    }
-
-        /// <summary>
-        /// Apply a set of transformation rules to all the words in a sentence
-        /// </summary>
-        /// <param name="transformations"></param>
-        /// <param name="sentence"></param>
-        /// <returns></returns>
-	     private static string Transform( IReadOnlyDictionary<string, Transform> transformations,  string sentence)
-	    {
-	        var txs = from word in sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-	                  let tx = transformations.GetValueOrDefault(word)
-	                  select (word, tx);
-
-	        var result = from tx in txs
-	                     select tx.tx?.Destination ?? tx.word;
-
-	        return string.Join(" ", result);
-	    }
         #endregion
 
 	    public override string ToString()
 	    {
 	        var b = new StringBuilder();
 
-	        b.AppendLine($"Script:{_script}");
+	        b.AppendLine($"Script:{_script.Name}");
 	        b.AppendLine($"Memory ({_mem.Count} items):");
 	        foreach (var item in _mem)
 	            b.AppendLine($" - {item}");
 
-	        return b.ToString();
+            return b.ToString();
 	    }
 	}
 }

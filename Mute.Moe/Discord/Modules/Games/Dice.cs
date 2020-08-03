@@ -124,17 +124,17 @@ namespace Mute.Moe.Discord.Modules.Games
         {
             get
             {
-                yield return new Key("flip", 10,
+                yield return new Key("flip",
                     new Decomposition("*", d => Flip())
                 );
 
-                yield return new Key("roll", 10,
+                yield return new Key("roll",
                     new Decomposition("*roll #d#", d => Roll(d[1], d[2])),
                     new Decomposition("*roll #d# *", d => Roll(d[1], d[2])),
                     new Decomposition("*roll *#*", d => Roll("1", d[2]))
                 );
 
-                yield return new Key("8ball", 10,
+                yield return new Key("8ball",
                     new Decomposition("*8ball *", d => Magic8Ball())
                 );
             }

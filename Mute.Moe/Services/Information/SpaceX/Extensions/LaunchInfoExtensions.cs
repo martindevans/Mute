@@ -75,16 +75,18 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             }
 
             if (launch.Cores.Any(a => a.Landpad.Value != null))
-                builder.AddField("Landing Pad", string.Join(",", launch.Cores.Select(a => a.Landpad.Value.Name)), true);
+                builder.AddField("Landing Pad", string.Join(",", launch.Cores.Where(a => a.Landpad.Value != null).Select(a => a.Landpad.Value.Name)), true);
 
-            builder.AddField("Vehicle", string.Join(",", launch.Cores.Select(a => $"{a.Core.Value.Serial}")), true);
+            if (launch.Cores.Any(a => a.Core.Value != null))
+                builder.AddField("Vehicle", string.Join(",", launch.Cores.Where(a => a.Core.Value != null).Select(a => $"{a.Core.Value.Serial}")), true);
 
             // Definition of "re-use" depends upon if the launch has happened yet. If it's a past launch count how many missions the core had done before this one.
             if (launch.Upcoming.HasValue)
             {
                 if (launch.Upcoming.Value)
                 {
-                    builder.AddField("Previous Flights", string.Join(",", launch.Cores.Select(a => a.Core.Value.ReuseCount).Where(a => a.HasValue)));
+                    if (launch.Cores.Any(a => a.Core.Value != null))
+                        builder.AddField("Previous Flights", string.Join(",", launch.Cores.Where(a => a.Core.Value != null).Select(a => a.Core.Value.ReuseCount).Where(a => a.HasValue)));
                 }
                 else if (launch.DateUnix.HasValue)
                 {

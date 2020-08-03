@@ -53,7 +53,6 @@ using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
 using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Services.Speech;
-using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Words;
 using System.Net.Http;
 using Discord.WebSocket;
@@ -61,8 +60,8 @@ using Microsoft.Extensions.Hosting;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
+using Mute.Moe.Discord.Services.Responses.Eliza.Scripts;
 using Mute.Moe.Services.Imitation;
-using Mute.Moe.Services.Speech.STT;
 using Oddity;
 
 namespace Mute.Moe
@@ -139,7 +138,8 @@ namespace Mute.Moe
                 .AddSingleton<GameService>()
                 .AddSingleton<ConversationalResponseService>()
                 .AddSingleton<WordsService>()
-                .AddSingleton<SeasonalAvatar>();
+                .AddSingleton<SeasonalAvatar>()
+                .AddSingleton(Script.Load);
         }
 
         public void ConfigureServices(IServiceCollection services)

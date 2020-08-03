@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord.Commands;
-
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 {
@@ -32,6 +33,8 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         /// </summary>
 	    public IReadOnlyList<IReassembly> Reassemblies { get; }
 
+        private string? _regexCache;
+
         #region constructors
         public Decomposition(string pattern, bool memorise, bool randomise, IReadOnlyList<IReassembly> reassemblies)
 	    {
@@ -39,7 +42,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	        Memorise = memorise;
 	        Randomise = randomise;
 	        Reassemblies = reassemblies;
-	    }
+        }
 
 	    private Decomposition(string pattern, bool memorise, bool randomise, params IReassembly[] reassemblies)
             : this(pattern, memorise, randomise, (IReadOnlyList<IReassembly>)reassemblies)
@@ -98,6 +101,85 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	        : this(pattern, reassemblies.Select(r => new ConstantReassembly(r)).ToArray<IReassembly>())
 	    {
 	    }
+        #endregion
+
+        #region decompose
+        /// <summary>
+        /// Try to match an input string. If successful, return the parts of the input string which can be used for recomposition.
+        /// </summary>
+        /// <param name="str"></param>
+        /// <param name="synonyms"></param>
+        /// <returns></returns>
+        public IReadOnlyList<string>? Match(string str, IReadOnlyList<IReadOnlyCollection<string>> synonyms)
+        {
+            if (_regexCache == null)
+                _regexCache = BuildRegex(Pattern, synonyms);
+
+            var match = Regex.Match(str, _regexCache, RegexOptions.IgnoreCase);
+            if (!match.Success)
+                return null;
+
+            return match.Groups.Skip<Group>(1).Select(m => m.Value).ToArray();
+        }
+
+        private static string BuildRegex(string pattern, IReadOnlyList<IReadOnlyCollection<string>> synonyms)
+        {
+            //Transform pattern into a regex
+            var regexPattern = new StringBuilder(pattern.Length);
+            regexPattern.Append('^');
+
+            for (var i = 0; i < pattern.Length; i++)
+            {
+                var character = pattern[i];
+                switch (character)
+                {
+                    case '*':
+                        regexPattern.Append("(.*?)");
+                        break;
+
+                    case '#':
+                        regexPattern.Append("(\\d+)");
+                        break;
+
+                    case '@':
+                        i += BuildSynonym(i, pattern, regexPattern, synonyms);
+                        break;
+
+                    default:
+                        regexPattern.Append(Regex.Escape(character.ToString()));
+                        break;
+                }
+            }
+
+            regexPattern.Append('$');
+            return regexPattern.ToString();
+        }
+
+        private static int BuildSynonym(int index, string pat, StringBuilder regex, IEnumerable<IReadOnlyCollection<string>> synonyms)
+        {
+            int FindEndOfWord()
+            {
+                for (var i = index + 1; i < pat.Length; i++)
+                {
+                    var c = pat[i];
+                    if (!char.IsLetter(c))
+                        return i;
+                }
+
+                return pat.Length;
+            }
+
+            var end = FindEndOfWord();
+
+            var word = pat.Substring(index + 1, end - index - 1);
+            var syns = synonyms.FirstOrDefault(a => a.Contains(word)) ?? new [] { word };
+
+            regex.Append("(");
+            regex.Append(string.Join('|', syns));
+            regex.Append(")");
+
+            return word.Length;
+        }
         #endregion
 	}
 }

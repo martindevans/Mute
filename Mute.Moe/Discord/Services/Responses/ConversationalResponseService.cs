@@ -77,13 +77,20 @@ namespace Mute.Moe.Discord.Services.Responses
             var candidates = new List<IConversation>();
             foreach (var generator in _responses.AsParallel())
             {
-                var conversation = await generator.TryRespond(context, mentionsBot);
-                if (conversation == null)
-                    continue;
+                try
+                {
+                    var conversation = await generator.TryRespond(context, mentionsBot);
+                    if (conversation == null)
+                        continue;
 
-                var rand = random.NextDouble();
-                if ((mentionsBot && rand < generator.MentionedChance) || (!mentionsBot && rand < generator.BaseChance))
-                    candidates.Add(conversation);
+                    var rand = random.NextDouble();
+                    if ((mentionsBot && rand < generator.MentionedChance) || (!mentionsBot && rand < generator.BaseChance))
+                        candidates.Add(conversation);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Response `{generator.GetType().Name}` failed with exception: " + e);
+                }
             }
 
             if (candidates.Count == 0)

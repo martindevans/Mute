@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
+using Mute.Moe.Discord.Services.Responses.Ellen.Topics;
 using Mute.Moe.Services.Words;
 using Mute.Moe.Utilities;
 
@@ -60,10 +62,10 @@ namespace Mute.Moe.Discord.Modules
             {
                 var av = await _wordVectors.Vector(a);
                 if (av == null)
-                    await TypingReplyAsync("I don't know the word `{a}`");
+                    await TypingReplyAsync($"I don't know the word `{a}`");
                 var bv = await _wordVectors.Vector(b);
                 if (bv == null)
-                    await TypingReplyAsync("I don't know the word `{b}`");
+                    await TypingReplyAsync($"I don't know the word `{b}`");
             }
             else if (result < 0.2)
             {

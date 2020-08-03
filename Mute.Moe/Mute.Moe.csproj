@@ -58,7 +58,7 @@
     <PackageReference Include="Miki.Anilist" Version="0.6.3" />
     <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="NAudio" Version="1.10.0" />
-    <PackageReference Include="Oddity" Version="2.0.2" />
+    <PackageReference Include="Oddity" Version="2.0.3" />
     <PackageReference Include="Solarium" Version="3.1.0" />
     <PackageReference Include="SteamWebAPI2" Version="4.2.5" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.113.1" />

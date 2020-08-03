@@ -23,5 +23,11 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 			Rank = rank;
 		    Decompositions = decompositions;
 		}
+
+        public Key(string keyword, params Decomposition[] decompositions)
+		    : this(keyword, 10, decompositions)
+        {
+            
+        }
 	}
 }

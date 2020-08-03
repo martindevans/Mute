@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Discord.Services.Responses.Eliza.Scripts;
-using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Services.Responses.Eliza
 {
@@ -17,71 +12,31 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
         : IResponse
     {
         public double BaseChance => 0.0;
-        public double MentionedChance => 0.9;
+        public double MentionedChance => 0.99;
 
         private readonly List<string> _greetings = new List<string> {
             "hello", "hi", "hiya", "heya", "howdy"
         };
 
-        private readonly IReadOnlyList<Script> _scripts;
+        private readonly Script _script;
 
-        //private readonly IReadOnlyList<ITopic> _topics;
-
-        public ElizaResponse(Configuration config, IServiceProvider services)
+        public ElizaResponse(Script script)
         {
-            ////Get topics
-            //_topics = (from t in Assembly.GetExecutingAssembly().GetTypes()
-            //           where t.IsClass
-            //           where typeof(ITopic).IsAssignableFrom(t)
-            //           let i = ActivatorUtilities.CreateInstance(services, t) as ITopic
-            //           where i != null
-            //           select i).ToArray();
-
-            //Get basic key providers
-            var keys = (from t in Assembly.GetExecutingAssembly().GetTypes()
-                        where t.IsClass
-                        where typeof(IKeyProvider).IsAssignableFrom(t)
-                        let kp = ActivatorUtilities.CreateInstance(services, t) as IKeyProvider
-                        where kp != null
-                       select kp).ToArray();
-
-            var scripts = new List<Script>();
-            _scripts = scripts;
-            foreach (var path in config.ElizaConfig?.Scripts ?? new List<string>())
-            {
-                if (!File.Exists(path))
-                    continue;
-
-                var txt = File.ReadAllLines(path);
-                if (txt == null || txt.Length == 0)
-                    continue;
-
-                try
-                {
-                    scripts.Add(new Script(txt, keys));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Encountered exception {e} trying to read Eliza script {path}");
-                }
-            }
+            _script = script;
         }
 
         public Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
         {
-            return Task.Run<IConversation?>(() => {
+            return Task.Run<IConversation?>(() =>
+            {
 
-                if (_scripts.Count == 0)
-                    return null;
-
-                //Determine if thie message is a greeting
+                //Determine if this message is a greeting
                 var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(_greetings.Contains);
 
                 if (isGreeting)
                 {
                     var seed = context.Message.Id.GetHashCode();
-                    var rand = new Random(seed);
-                    return new ElizaConversation(_scripts.RandomNotNull(rand), seed);
+                    return new ElizaConversation(_script, seed);
                 }
                 else
                     return null;
@@ -89,7 +44,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
             });
         }
 
-         private static string CleanWord( string word)
+        private static string CleanWord(string word)
         {
             return new string(word
                 .ToLowerInvariant()
@@ -112,7 +67,8 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
 
             public Task<string?> Respond(MuteCommandContext context, bool containsMention, CancellationToken ct)
             {
-                return Task.Run<string?>(() => {
+                return Task.Run<string?>(() =>
+                {
                     lock (_eliza)
                     {
                         var response = _eliza.ProcessInput(context);

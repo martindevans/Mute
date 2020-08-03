@@ -129,7 +129,7 @@ namespace Mute.Moe.Discord.Modules
         {
             get
             {
-                yield return new Key("remind", 10,
+                yield return new Key("remind",
                     new Decomposition("remind me *", (c, d) => CreateReminder(c, d[0] ?? "")!)
                 );
             }

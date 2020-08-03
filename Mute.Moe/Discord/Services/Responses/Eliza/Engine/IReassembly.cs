@@ -9,12 +9,12 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
     public interface IReassembly
     {
         /// <summary>
-        /// Generate a response
+        /// Generate a response assembly string. Parts of the input will be substituted into the output by using `(n)` where `n` is the index of the input part.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="decomposition">The values pulled out from the input string by the decomposition pattern</param>
         /// <returns></returns>
-        Task<string?> Rule(ICommandContext context, IReadOnlyList<string> decomposition);
+        Task<string?> Assemble(ICommandContext context, IReadOnlyList<string> decomposition);
     }
 
     public class ConstantReassembly
@@ -28,7 +28,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         }
 
         
-        public Task<string?> Rule(ICommandContext _, IReadOnlyList<string> __) => Task.FromResult<string?>(_value);
+        public Task<string?> Assemble(ICommandContext _, IReadOnlyList<string> __) => Task.FromResult<string?>(_value);
     }
 
     public class FuncReassembly
@@ -41,6 +41,6 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
             _func = func;
         }
 
-        public Task<string?> Rule(ICommandContext context, IReadOnlyList<string> decomposition) => _func(context, decomposition);
+        public Task<string?> Assemble(ICommandContext context, IReadOnlyList<string> decomposition) => _func(context, decomposition);
     }
 }

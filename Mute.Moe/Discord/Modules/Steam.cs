@@ -34,11 +34,18 @@ namespace Mute.Moe.Discord.Modules
         }
 
         [Command("getid"), Summary("I will print you Steam ID (if I know it)")]
-        public async Task GetSteamId()
+        public async Task GetSteamId(IUser? user = null)
         {
-            var id = await _ids.Get(Context.User.Id);
+            user ??= Context.User;
+
+            var id = await _ids.Get(user.Id);
             if (id == null)
-                await TypingReplyAsync("I don't know your steam ID. Please check https://steamid.io/ and then use `!steam setid id` to save your ID for the future.");
+            {
+                if (user.Id == Context.User.Id)
+                    await TypingReplyAsync("I don't know your steam ID. Please check https://steamid.io/ and then use `!steam setid id` to save your ID for the future.");
+                else
+                    await TypingReplyAsync($"I don't know the steam ID of {Name(user)}");
+            }
             else
                 await TypingReplyAsync($"Your steam ID is `{id}`");
         }
@@ -135,7 +142,7 @@ namespace Mute.Moe.Discord.Modules
                     return $"Your steam ID is `{id}`";
                 }
 
-                yield return new Key("steam", 10,
+                yield return new Key("steam",
                     new Decomposition("*what*my*steam*id*", (c, s) => GetSteamId(c)!),
                     new Decomposition("*what*my*steamid*", (c, s) => GetSteamId(c)!),
                     new Decomposition("*tell*my*steam*id*", (c, s) => GetSteamId(c)!),

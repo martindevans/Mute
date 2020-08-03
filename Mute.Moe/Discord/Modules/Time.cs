@@ -34,7 +34,7 @@ namespace Mute.Moe.Discord.Modules
         {
             get
             {
-                yield return new Key("time", 10,
+                yield return new Key("time",
                     new Decomposition("what * time in *", d => GetTime(d[1])),
                     new Decomposition("what * time * in *", d => GetTime(d[2])),
                     new Decomposition("what is * time", _ => GetTime()),
