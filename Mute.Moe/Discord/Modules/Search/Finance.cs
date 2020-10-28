@@ -111,7 +111,10 @@ namespace Mute.Moe.Discord.Modules.Search
             if (result != null)
             {
                 //Try to find the name of the stock
-                var symbol = await _search.Search(result.Symbol).Where(a => a.Symbol.Equals(result.Symbol, StringComparison.OrdinalIgnoreCase)).FirstOrDefaultAsync();
+                var symbol = await _search.Search(result.Symbol)
+                                          .Where(a => a.Symbol.Equals(result.Symbol, StringComparison.OrdinalIgnoreCase))
+                                          .Cast<IStockSearchResult?>()
+                                          .FirstOrDefaultAsync();
 
                 var change = "";
                 var delta = result.Price - result.Open;

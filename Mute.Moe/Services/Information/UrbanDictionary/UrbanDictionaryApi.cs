@@ -61,7 +61,7 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
                 return null;
 
             //Parse JSON of response
-            var response = JsonConvert.DeserializeObject<Response>(await httpResponse.Content.ReadAsStringAsync());
+            var response = JsonConvert.DeserializeObject<Response?>(await httpResponse.Content.ReadAsStringAsync());
 
             //If the response contains no useful data return nothing
             var items = response?.Items;

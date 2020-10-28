@@ -40,11 +40,11 @@ namespace Mute.Moe.Services.Information.Forex
             if (!result.IsSuccessStatusCode)
                 return null;
 
-            ExchangeRateResponseContainer response;
+            ExchangeRateResponseContainer? response;
             var serializer = new JsonSerializer();
             using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
             using (var jsonTextReader = new JsonTextReader(sr))
-                response = serializer.Deserialize<ExchangeRateResponseContainer>(jsonTextReader)!;
+                response = serializer.Deserialize<ExchangeRateResponseContainer?>(jsonTextReader);
 
             if (response?.Response == null)
                 return null;

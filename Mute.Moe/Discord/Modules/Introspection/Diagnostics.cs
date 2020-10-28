@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Humanizer;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Introspection;
 
 namespace Mute.Moe.Discord.Modules.Introspection
@@ -43,6 +44,12 @@ namespace Mute.Moe.Discord.Modules.Introspection
         public async Task Ping()
         {
             await ReplyAsync("pong");
+        }
+
+        [Command("pong"), Summary("I will respond with 'ping'"), Hidden]
+        public async Task Pong()
+        {
+            await ReplyAsync("ping");
         }
 
         [Command("latency"), Summary("I will respond with the server latency")]

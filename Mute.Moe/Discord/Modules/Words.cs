@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -7,7 +6,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Discord.Services.Responses.Ellen.Topics;
 using Mute.Moe.Services.Words;
 using Mute.Moe.Utilities;
 

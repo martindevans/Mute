@@ -22,11 +22,11 @@ namespace Mute.Moe.Discord.Services.Responses
         };
 
         private static readonly IReadOnlyList<string> MorningGreetings = new List<string> {
-            "Good morning {0}", "Morning"
+            "Good morning {0}"
         };
 
         private static readonly IReadOnlyList<string> EveningGreetings = new List<string> {
-            "Good evening {0}", "Evening"
+            "Good evening {0}"
         };
 
         private static readonly IReadOnlyList<string> AllGreetings = GeneralGreetings.Concat(MorningGreetings).Concat(EveningGreetings).Select(a => string.Format(a, "").Trim().ToLowerInvariant()).ToArray();

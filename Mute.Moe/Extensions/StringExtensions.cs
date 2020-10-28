@@ -77,9 +77,6 @@ namespace Mute.Moe.Extensions
             else if (b == null)
                 return (uint)a!.Length;
 
-            if (a == null || b == null)
-                return 0;
-
             var aLength = (uint)a.Length;
             var bLength = (uint)b.Length;
             var matrix = new int[aLength + 1, bLength + 1];
@@ -140,6 +137,17 @@ namespace Mute.Moe.Extensions
 
             if (start != str.Length)
                 yield return str.AsMemory(start, str.Length - start);
+        }
+
+        public static string LimitLength(this string str, int maxLength)
+        {
+            if (str.Length < maxLength)
+                return str;
+
+            if (maxLength < 2)
+                return str.Substring(0, maxLength);
+
+            return str.Substring(0, maxLength - 1) + '…';
         }
     }
 }

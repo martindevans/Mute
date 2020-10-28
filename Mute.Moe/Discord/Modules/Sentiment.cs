@@ -20,7 +20,7 @@ namespace Mute.Moe.Discord.Modules
         public Sentiment(Configuration config, ISentimentEvaluator sentiment)
         {
             _sentiment = sentiment;
-            _config = config?.SentimentReactions ?? throw new ArgumentNullException(nameof(config.SentimentReactions));
+            _config = config.SentimentReactions ?? throw new ArgumentNullException(nameof(config.SentimentReactions));
         }
 
         [Command("sentiment"), Summary("I will show my opinion of a message")]

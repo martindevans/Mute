@@ -104,7 +104,7 @@ namespace Mute.Moe.Discord.Modules.Audio
         public async Task PlayRandom()
         {
             // Pick a track
-            var track = await (await _library.Get(Context.Guild.Id, order: TrackOrder.Random, limit: 1)).SingleOrDefaultAsync();
+            var track = await (await _library.Get(Context.Guild.Id, order: TrackOrder.Random, limit: 1)).Cast<ITrack?>().SingleOrDefaultAsync();
             if (track == null)
             {
                 await ReplyAsync("Failed to find a single random track in the library!");
@@ -127,7 +127,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             }
 
             // Try to find this item in the library
-            var match = await (await _library.Get(Context.Guild.Id, url: url.ToLowerInvariant())).SingleOrDefaultAsync();
+            var match = await (await _library.Get(Context.Guild.Id, url: url.ToLowerInvariant())).Cast<ITrack?>().SingleOrDefaultAsync();
             if (match != null)
             {
                 await Enqueue(match);

@@ -33,8 +33,7 @@ namespace Mute.Moe.Discord.Modules
         public async Task CreateReminderCmd([Remainder] string message)
         {
             var msg = await CreateReminder(Context, message);
-            if (msg != null)
-                await TypingReplyAsync(msg);
+            await TypingReplyAsync(msg);
         }
 
         [Command("reminders"), Summary("I will give you a list of all your pending reminders")]

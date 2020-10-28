@@ -20,6 +20,6 @@ namespace Mute.Moe.Services.Information.Steam
 
         Task<IReadOnlyCollection<RecentlyPlayedGameModel>?> GetRecentlyPlayedGames(ulong userSteamId);
 
-        Task<StoreAppDetailsDataModel?> GetStoreInfo(uint appId);
+        Task<StoreAppDetailsDataModel?> GetStoreInfoSlow(uint appId);
     }
 }

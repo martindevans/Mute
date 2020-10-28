@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-using Discord;
-using Discord.Audio.Streams;
-using Discord.Commands;
-using Discord.WebSocket;
-using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Services.Audio.Mixing.Extensions;
+﻿//using System;
+//using System.Collections.Generic;
+//using System.Diagnostics;
+//using System.Threading;
+//using System.Threading.Tasks;
+//using Discord;
+//using Discord.Audio.Streams;
+//using Discord.Commands;
+//using Discord.WebSocket;
+//using Mute.Moe.Discord.Attributes;
+//using Mute.Moe.Services.Audio.Mixing.Extensions;
+//using Mute.Moe.Utilities;
+//using NAudio.Wave;
 using Mute.Moe.Services.Speech;
-using Mute.Moe.Utilities;
-using NAudio.Wave;
 
 namespace Mute.Moe.Discord.Modules.Audio
 {

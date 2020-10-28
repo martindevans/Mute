@@ -114,7 +114,7 @@ namespace Mute.Moe.Services.Information.Anime
 
         protected BaseMikibotSearchService()
         {
-            _cache = new FluidCache<TItem>(128, TimeSpan.FromHours(1), TimeSpan.FromDays(7), () => DateTime.UtcNow);
+            _cache = new FluidCache<TItem>(1024, TimeSpan.FromHours(1), TimeSpan.FromDays(7), () => DateTime.UtcNow);
             _itemById = _cache.AddIndex("id", ExtractId);
         }
 
@@ -124,7 +124,7 @@ namespace Mute.Moe.Services.Information.Anime
 
             var client = new AnilistClient();
 
-            var result = await GetSearchItemsAsync(client, search).FirstOrDefaultAsync();
+            var result = await GetSearchItemsAsync(client, search).OrderBy(i => Distance(i, search)).Cast<TSearchItem?>().FirstOrDefaultAsync();
             if (result == null)
                 return null;
 
@@ -140,14 +140,17 @@ namespace Mute.Moe.Services.Information.Anime
         {
             var client = new AnilistClient();
 
-            return GetSearchItemsAsync(client, search).OrderBy(i => Distance(i, search)).SelectAwait(async i => await GetItemAsyncCached(client, i)).Where(a => a != null).Select(a => a!);
+            return GetSearchItemsAsync(client, search)
+                   .SelectAwait(async i => await GetItemAsyncCached(client, i))
+                   .Where(a => a != null)
+                   .Select(a => a!);
         }
 
         private async IAsyncEnumerable<TSearchItem> GetSearchItemsAsync(AnilistClient client, string search)
         {
             search = search.ToLowerInvariant();
 
-            for (var i = 0; i < 2; i++)
+            for (var i = 0; true; i++)
             {
                 var page = await SearchPage(client, search, i);
 

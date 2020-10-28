@@ -1,7 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
+using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.Anime;
 
 namespace Mute.Moe.Discord.Modules.Search
@@ -23,55 +25,39 @@ namespace Mute.Moe.Discord.Modules.Search
             var anime = await _animeSearch.GetAnimeInfoAsync(term);
 
             if (anime == null)
-                await TypingReplyAsync("I can't find an anime by that name");
-            else
             {
-                var nsfwOk = (!(Context.Channel is ITextChannel tc)) || tc.IsNsfw;
-                if (anime.Adult && !nsfwOk)
-                {
-                    await TypingReplyAsync($"I found a NSFW anime called `{anime.TitleEnglish}` but NSFW content is not allowed in this channel");
-                    return;
-                }
-
-                var desc = anime.Description ?? "";
-                if (desc.Length > 2048)
-                {
-                    var addon = "...";
-                    if (!string.IsNullOrWhiteSpace(anime.Url))
-                        addon += $"... <[Read More]({anime.Url})>";
-
-                    desc = desc.Substring(0, 2047 - addon.Length);
-                    desc += addon;
-                }
-
-                var builder = new EmbedBuilder()
-                      .WithDescription(desc)
-                      .WithColor(anime.Adult ? Color.DarkPurple : Color.Blue)
-                      .WithImageUrl(anime.ImageUrl ?? "")
-                      .WithFooter("🦑 https://anilist.co")
-                      .WithUrl(anime.Url ?? "");
-
-                if (anime.TitleJapanese != null && anime.TitleEnglish != null)
-                    builder = builder.WithAuthor(anime.TitleJapanese).WithTitle(anime.TitleEnglish);
-                else if (anime.TitleEnglish != null ^ anime.TitleJapanese != null)
-                    builder = builder.WithTitle(anime.TitleEnglish ?? anime.TitleJapanese);
-
-                //Extract a string describing dates
-                string? dateString = null;
-                if (anime.StartDate.HasValue && anime.EndDate.HasValue)
-                    dateString = $"{anime.StartDate.Value.UtcDateTime:dd-MMM-yyyy} -> {anime.EndDate.Value.UtcDateTime:dd-MMM-yyyy}";
-                else if (anime.StartDate.HasValue)
-                    dateString = $"Started airing {anime.StartDate.Value.UtcDateTime:dd-MMM-yyyy}";
-
-                if (anime.TotalEpisodes.HasValue && dateString != null)
-                    builder = builder.WithFields(new EmbedFieldBuilder().WithName($"{anime.TotalEpisodes} episode{(anime.TotalEpisodes > 1 ? "s" : "")}").WithValue(dateString));
-                else if (anime.TotalEpisodes.HasValue)
-                    builder = builder.WithFields(new EmbedFieldBuilder().WithName("Episodes").WithValue(anime.TotalEpisodes.ToString()));
-                else if (dateString != null)
-                    builder = builder.WithFields(new EmbedFieldBuilder().WithName("Airing Dates").WithValue(dateString));
-
-                await ReplyAsync(builder);
+                await TypingReplyAsync("I can't find an anime by that name");
+                return;
             }
+            
+            var nsfwOk = (!(Context.Channel is ITextChannel tc)) || tc.IsNsfw;
+            if (anime.Adult && !nsfwOk)
+            {
+                await TypingReplyAsync($"I found a NSFW anime called `{anime.TitleEnglish}` but NSFW content is not allowed in this channel");
+                return;
+            }
+
+            await ReplyAsync(anime.ToEmbed());
+            
+        }
+
+        [Command("animes"), Alias("animus"), Summary("I will search for anime and display all matches")]
+        [TypingReply]
+        public async Task FindAnimes([Remainder] string term)
+        {
+            var nsfwOk = (!(Context.Channel is ITextChannel tc)) || tc.IsNsfw;
+
+            var animes = _animeSearch
+                .GetAnimesInfoAsync(term)
+                .Where(a => !a.Adult || nsfwOk)
+                .Select(a => {
+                    var title = $"{(a.Adult ? "⚠" : "")} {a.TitleEnglish ?? a.TitleJapanese ?? a.Id}".LimitLength(60);
+                    return $"[{title}]({a.Url})";
+                })
+                .Buffer(12)
+                .Select(a => string.Join("\n", a));
+
+            await DisplayLazyPaginatedReply($"Anime Search `{term}`", animes);
         }
     }
 }

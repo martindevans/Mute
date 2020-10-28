@@ -32,8 +32,8 @@ namespace Mute.Moe.Services.Information.Anime
     public interface IAnime
     {
         string Id { get; }
-        string TitleEnglish { get; }
-        string TitleJapanese { get; }
+        string? TitleEnglish { get; }
+        string? TitleJapanese { get; }
         string Description { get; }
         string Url { get; }
 

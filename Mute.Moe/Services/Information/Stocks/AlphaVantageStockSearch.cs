@@ -32,11 +32,11 @@ namespace Mute.Moe.Services.Information.Stocks
             if (!result.IsSuccessStatusCode)
                 yield break;
 
-            StockSearchResponseContainer response;
+            StockSearchResponseContainer? response;
             var serializer = new JsonSerializer();
             using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
             using (var jsonTextReader = new JsonTextReader(sr))
-                response = serializer.Deserialize<StockSearchResponseContainer>(jsonTextReader)!;
+                response = serializer.Deserialize<StockSearchResponseContainer?>(jsonTextReader);
 
             if (response?.BestMatches == null)
                 yield break;

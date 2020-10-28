@@ -8,7 +8,7 @@ using Humanizer;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
-using Mute.Moe.Extensions;
+using MoreLinq;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -18,12 +18,14 @@ namespace Mute.Moe.Discord.Modules
     {
         private readonly ISteamInfo _steamApi;
         private readonly ISteamIdStorage _ids;
+        private readonly ISteamLightweightAppInfoStorage _steamApiLight;
         private readonly Configuration _config;
 
-        public Steam(ISteamInfo steamApi, ISteamIdStorage ids, Configuration config)
+        public Steam(ISteamInfo steamApi, ISteamIdStorage ids, ISteamLightweightAppInfoStorage steamApiLight, Configuration config)
         {
             _steamApi = steamApi;
             _ids = ids;
+            _steamApiLight = steamApiLight;
             _config = config;
         }
 
@@ -62,7 +64,14 @@ namespace Mute.Moe.Discord.Modules
                 return;
             }
 
-            var games = (await _steamApi.GetRecentlyPlayedGames(steamId.Value)).ToArray();
+            var played = await _steamApi.GetRecentlyPlayedGames(steamId.Value);
+            if (played == null)
+            {
+                await TypingReplyAsync("I'm sorry, I can't find your recently played games right now");
+                return;
+            }
+
+            var games = played.ToArray();
 
             await DisplayItemList(games, () => "No games played recently", ls => $"{ls.Count} games played recently:", (a, i) => $"{i}. {a.Name}");
         }
@@ -95,7 +104,7 @@ namespace Mute.Moe.Discord.Modules
             var first = true;
             foreach (var (_, gs) in games)
             {
-                if (games == null)
+                if (gs == null)
                     continue;
 
                 if (first)
@@ -112,27 +121,27 @@ namespace Mute.Moe.Discord.Modules
                 return;
             }
 
+            await TypingReplyAsync($"Found {common.Count} common games");
+
             // Get store info about each game
-            var storeInfos = await common.ToAsyncEnumerable()
-                 .Delay(50)
-                 .SelectAwait(async a => await _steamApi.GetStoreInfo(a))
+            var storeInfos = common
+                 .Shuffle()
+                 .ToAsyncEnumerable()
+                 .SelectAwait(async a => await _steamApiLight.Get(a))
                  .Where(a => a != null)
                  .Select(a => a!)
-                 .ToArrayAsync();
+                 .ToEnumerable()
+                 .Batch(10)
+                 .Select(b => string.Join("\n", b.Select(a => a.Name)));
 
-            // Display items
-            await DisplayItemList(
-                storeInfos,
-                () => "You don't have any common games in your steam libraries",
-                (items) => $"{items.Count} games:",
-                (item, index) => $"{index + 1}. {item.Name}"
-            );
+            await DisplayLazyPaginatedReply("Steam Games", storeInfos);
         }
 
         public IEnumerable<Key> Keys
         {
             get
             {
+                // ReSharper disable once LocalFunctionHidesMethod
                 async Task<string> GetSteamId(ICommandContext c)
                 {
                     var id = await _ids.Get(c.User.Id);

@@ -22,7 +22,7 @@ namespace Mute.Moe.Services.Images.Dogs
         {
             //Ask API for a dog image
             var httpResp = await _client.GetAsync(_url);
-            var jsonResp = JsonConvert.DeserializeObject<Response>(await httpResp.Content.ReadAsStringAsync());
+            var jsonResp = JsonConvert.DeserializeObject<Response?>(await httpResp.Content.ReadAsStringAsync());
 
             // Fetch dog image, If there is no message, 
             // return a default image. (From their api)

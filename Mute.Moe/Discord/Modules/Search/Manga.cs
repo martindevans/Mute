@@ -26,7 +26,7 @@ namespace Mute.Moe.Discord.Modules.Search
                 await TypingReplyAsync("I can't find an manga by that name");
             else
             {
-                var desc = manga.Description ?? "";
+                var desc = manga.Description;
                 if (desc.Length > 2048)
                 {
                     var addon = "...";
@@ -37,7 +37,7 @@ namespace Mute.Moe.Discord.Modules.Search
                     desc += addon;
                 }
 
-                var builder = new EmbedBuilder().WithDescription(desc).WithColor(Color.DarkGreen).WithImageUrl(manga.ImageUrl ?? "").WithFooter("🦑 https://anilist.co").WithUrl(manga.Url ?? "");
+                var builder = new EmbedBuilder().WithDescription(desc).WithColor(Color.DarkGreen).WithImageUrl(manga.ImageUrl).WithFooter("🦑 https://anilist.co").WithUrl(manga.Url);
 
                 if (manga.TitleJapanese != null && manga.TitleEnglish != null)
                     builder = builder.WithAuthor(manga.TitleJapanese).WithTitle(manga.TitleEnglish);

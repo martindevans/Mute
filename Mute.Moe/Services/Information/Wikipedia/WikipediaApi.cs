@@ -56,7 +56,7 @@ namespace Mute.Moe.Services.Information.Wikipedia
                         return Array.Empty<IDefinition>();
 
                     //Parse JSON of response
-                    var response = JsonConvert.DeserializeObject<PropResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
+                    var response = JsonConvert.DeserializeObject<PropResponseContainer?>(await httpResponse.Content.ReadAsStringAsync());
 
                     // Find all links
                     var links = response?.Query?.Pages?.Select(p => p.Value).SelectMany(a => a.Links);
@@ -78,7 +78,7 @@ namespace Mute.Moe.Services.Information.Wikipedia
                         return Array.Empty<IDefinition>();
 
                     //Parse JSON of response
-                    var response = JsonConvert.DeserializeObject<DefinitionResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
+                    var response = JsonConvert.DeserializeObject<DefinitionResponseContainer?>(await httpResponse.Content.ReadAsStringAsync());
 
                     //If the response contains no useful data return nothing
                     var pages = response?.Query?.Pages;
@@ -108,7 +108,7 @@ namespace Mute.Moe.Services.Information.Wikipedia
                     return Array.Empty<IDefinition>();
 
                 //Parse JSON of response
-                var response = JsonConvert.DeserializeObject<PropResponseContainer>(await httpResponse.Content.ReadAsStringAsync());
+                var response = JsonConvert.DeserializeObject<PropResponseContainer?>(await httpResponse.Content.ReadAsStringAsync());
 
                 // Early exit if no pages were found
                 var pages = response?.Query?.Pages;

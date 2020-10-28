@@ -37,6 +37,7 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen.Topics
         /// </summary>
         /// <param name="message"></param>
         /// <param name="knowledge"></param>
+        /// <param name="ct"></param>
         /// <returns></returns>
         Task<ITopicDiscussion> TryBegin(MuteCommandContext message, IKnowledge knowledge, CancellationToken ct);
     }

@@ -44,7 +44,7 @@ namespace Mute.Moe.Discord.Modules.Search
 
         private static EmbedBuilder EmbedCharacter(ICharacter character)
         {
-            var desc = character.Description ?? "";
+            var desc = character.Description;
             if (desc.Length > 2048)
             {
                 var addon = "...";
@@ -58,10 +58,10 @@ namespace Mute.Moe.Discord.Modules.Search
             var builder = new EmbedBuilder()
                               .WithDescription(desc)
                               .WithColor(Color.Gold)
-                              .WithImageUrl(character.ImageUrl ?? "")
+                              .WithImageUrl(character.ImageUrl)
                               .WithAuthor(character.FamilyName + " " + character.GivenName)
                               .WithFooter("🦑 https://anilist.co")
-                              .WithUrl(character.Url ?? "");
+                              .WithUrl(character.Url);
 
             return builder;
         }

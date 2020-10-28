@@ -102,6 +102,7 @@ namespace Mute.Moe
             services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
             services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
             services.AddSingleton<ISteamInfo, SteamApi>();
+            services.AddSingleton<ISteamLightweightAppInfoStorage, SteamLightweightAppInfoDbCache>();
             services.AddSingleton<ISteamIdStorage, SteamIdDatabaseStorage>();
             services.AddSingleton<IUptime, UtcDifferenceUptime>();
             services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
