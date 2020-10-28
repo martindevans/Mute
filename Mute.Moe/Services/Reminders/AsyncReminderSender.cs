@@ -183,17 +183,7 @@ namespace Mute.Moe.Services.Reminders
                         if (!string.IsNullOrWhiteSpace(_reminder.Prelude))
                             await channel.SendMessageAsync(_reminder.Prelude);
 
-                        string name;
-                        if (channel.Guild != null)
-                        {
-                            var user = (await channel.Guild.GetUserAsync(_reminder.UserId));
-                            name = user.Nickname ?? user.Username;
-                        }
-                        else
-                        {
-                            var user = _client.GetUser(_reminder.UserId);
-                            name = user.Username;
-                        }
+                        string name = await Name(_reminder.UserId, channel.Guild);
 
                         var embed = new EmbedBuilder()
                             .WithDescription(_reminder.Message)
@@ -209,6 +199,23 @@ namespace Mute.Moe.Services.Reminders
 
                     await _reminders.Delete(_reminder.UserId, _reminder.ID);
                 });
+            }
+
+            private async Task<string> Name(ulong id, IGuild? guild)
+            {
+                if (guild != null)
+                {
+                    var guildUser = (IGuildUser?)await guild.GetUserAsync(_reminder.UserId);
+                    var n = guildUser?.Nickname ?? guildUser?.Username;
+                    if (n != null)
+                        return n;
+                }
+                
+                var user = await _client.Rest.GetUserAsync(_reminder.UserId);
+                if (user != null)
+                    return user.Username;
+
+                return $"User{id}";
             }
         }
     }
