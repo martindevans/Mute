@@ -11,7 +11,7 @@ namespace Mute.Moe.Discord.Context
     {
         public IServiceProvider Services { get; }
 
-        private readonly ConcurrentDictionary<Type, object> _resources = new ConcurrentDictionary<Type, object>();
+        private readonly ConcurrentDictionary<Type, object> _resources = new();
 
         public MuteCommandContext(DiscordSocketClient client, SocketUserMessage msg, IServiceProvider services)
             : base(client, msg)

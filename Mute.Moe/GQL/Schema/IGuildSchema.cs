@@ -93,9 +93,9 @@ namespace Mute.Moe.GQL.Schema
             return list.Where(a => filter.Contains(a.Id)).ToArray();
         }
 
-         private static HashSet<ulong> GetUlongHashset( object arg)
+        private static HashSet<ulong> GetUlongHashset(object arg)
         {
-            return new HashSet<ulong>(((List<object>)arg)
+            return new(((List<object>)arg)
                 .OfType<string>()
                 .Select(a => ulong.TryParse(a, out var r) ? (ulong?)r : null)
                 .Where(a => a.HasValue)

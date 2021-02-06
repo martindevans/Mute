@@ -34,7 +34,7 @@ namespace Mute.Moe.Utilities
                 if (dt == null)
                     return null;
 
-                var resolutionValues = ((IList<Dictionary<string, string>>)dt.Resolution["values"])?.FirstOrDefault();
+                var resolutionValues = ((IList<Dictionary<string, string>>?)dt.Resolution["values"])?.FirstOrDefault();
                 if (resolutionValues == null)
                     return null;
 
@@ -124,7 +124,7 @@ namespace Mute.Moe.Utilities
                 if (dt == null)
                     return null;
 
-                var values = (IList<Dictionary<string, string>>)dt.Resolution["values"];
+                var values = (IList<Dictionary<string, string>>?)dt.Resolution["values"];
                 if (values == null || values.Count == 0)
                     return null;
 
@@ -132,14 +132,15 @@ namespace Mute.Moe.Utilities
                 Dictionary<string, string> resolutionValues;
                 if (biasNext)
                 {
-                    resolutionValues = (from v in values
-                                        let date = DateTime.Parse(v["value"])
-                                        where date > DateTime.UtcNow
-                                        orderby date
-                                        select v).FirstOrDefault();
+                    var r = (from v in values
+                             let date = DateTime.Parse(v["value"])
+                             where date > DateTime.UtcNow
+                             orderby date
+                             select v).FirstOrDefault();
 
-                    if (resolutionValues == null)
+                    if (r == null)
                         return null;
+                    resolutionValues = r;
                 }
                 else
                 {

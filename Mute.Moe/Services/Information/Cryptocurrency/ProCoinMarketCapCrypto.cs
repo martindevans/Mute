@@ -25,7 +25,7 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
         private readonly FluidCache<ITicker> _tickerCache;
         private readonly IIndex<string, ITicker> _tickerBySymbol;
 
-        private readonly ConcurrentDictionary<string, string> _nameToSymbolMap = new ConcurrentDictionary<string, string>();
+        private readonly ConcurrentDictionary<string, string> _nameToSymbolMap = new();
 
         private readonly HttpClient _http;
         private readonly string _key;
@@ -60,7 +60,7 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
             return await GetOrDownload<uint, ICurrency, CmcCurrencyResponse>(id, _currencyCache, _currencyById, _ => _http.GetAsync(url), a => a.Data.Values);
         }
 
-        private static async Task<TItem?> GetOrDownload<TKey, TItem, TResponse>(TKey key, FluidCache<TItem> cache, IIndex<TKey, TItem> index, Func<TKey, Task<HttpResponseMessage>> download, Func<TResponse, IEnumerable<TItem>> extract)
+        private static async Task<TItem?> GetOrDownload<TKey, TItem, TResponse>(TKey key, FluidCache<TItem> cache, IIndex<TKey, TItem> index, Func<TKey, Task<HttpResponseMessage>> download, Func<TResponse, IEnumerable<TItem>?> extract)
             where TItem : class
             where TResponse : class
         {

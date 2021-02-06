@@ -19,10 +19,8 @@ namespace Mute.Moe.Services.Notifications.SpaceX
         private readonly ISpacexInfo _spacex;
 
         private static readonly IReadOnlyList<TimeSpan> NotificationTimes = new[] {
-            TimeSpan.FromDays(7),
-            TimeSpan.FromDays(1),
-            TimeSpan.FromHours(6),
-            TimeSpan.FromMinutes(30),
+            TimeSpan.FromDays(3),
+            TimeSpan.FromHours(2),
             TimeSpan.FromMinutes(5),
         };
 
@@ -79,7 +77,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                     // 3. AOK, same flight number as last time is on track to launch
                     // 4. AOK, same flight number as last time is on track to launch, a notification needs to be sent
 
-                    //If the actual launch ID has changed notify about that
+                    // If the actual launch ID has changed notify about that
                     if (newNext.FlightNumber != _state.Launch.FlightNumber)
                     {
                         var msg = NextLaunchChangedMessage(_state.Launch, newNext);
@@ -87,7 +85,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                         continue;
                     }
 
-                    //If the expected launch time has changed, notify about that
+                    // If the expected launch time has changed, notify about that
                     if (newNext.DateUtc != _state.LaunchTimeUtc)
                     {
                         if (newNext.DateUtc != null && _state.LaunchTimeUtc != null)
@@ -140,18 +138,18 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             }
         }
 
-         private static string NextLaunchChangedMessage( LaunchInfo previous,  LaunchInfo next)
+         private static string NextLaunchChangedMessage(LaunchInfo previous, LaunchInfo next)
         {
-            return $"The next SpaceX Launch has changed from {previous.Name} to {next.Name}";
+            return $"The next SpaceX Launch has changed from {previous.FlightNumber}.{previous.Name} to {next.FlightNumber}.{next.Name}";
         }
 
-         private static string ExpectedLaunchTimeChangedMessage( LaunchInfo launch, DateTime previousT, DateTime newT)
+         private static string ExpectedLaunchTimeChangedMessage(LaunchInfo launch, DateTime previousT, DateTime newT)
         {
             var delay = newT - previousT;
             return $"SpaceX launch {launch.Name} has been delayed by {delay.Humanize()} to {newT:HH\\:mm UTC dd-MMM-yyyy}";
         }
 
-         private static string PeriodicReminderMessage( LaunchInfo launch)
+         private static string PeriodicReminderMessage(LaunchInfo launch)
         {
             //Append video link if there is one.
             var video = "";
@@ -161,13 +159,13 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             return $"SpaceX launch {launch.Name} will launch in {launch.DateUtc.Humanize()} {video}";
         }
 
-        private async Task<NotificationState> SendNotification( LaunchInfo launch, string message)
+        private async Task<NotificationState> SendNotification(LaunchInfo launch, string message)
         {
             var subs = _notifications.GetSubscriptions();
 
             await foreach (var s in subs)
             {
-                if (!(_client.GetChannel(s.Channel) is ITextChannel channel))
+                if (_client.GetChannel(s.Channel) is not ITextChannel channel)
                     continue;
 
                 var m = message;

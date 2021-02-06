@@ -17,7 +17,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
         private readonly string _ffmpegBinaryPath;
         private readonly string _youtubeDlBinaryPath;
 
-        private readonly AsyncLock _mutex = new AsyncLock();
+        private readonly AsyncLock _mutex = new();
 
         public YoutubeDlDownloader(Configuration config)
         {

@@ -26,7 +26,7 @@ namespace Mute.Moe.Services.Music
 
          protected override InMemoryGuildMusicQueue Create(IGuildVoice voice)
         {
-            return new InMemoryGuildMusicQueue(voice);
+            return new(voice);
         }
     }
 

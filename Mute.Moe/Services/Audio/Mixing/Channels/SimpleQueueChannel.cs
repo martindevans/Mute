@@ -14,7 +14,7 @@ namespace Mute.Moe.Services.Audio.Mixing.Channels
     {
         void Skip();
 
-        (TMetadata Metadata, Task Completion) Playing { get; }
+        (TMetadata Metadata, Task Completion)? Playing { get; }
 
         IEnumerable<TMetadata> Queue { get; }
 
@@ -29,13 +29,13 @@ namespace Mute.Moe.Services.Audio.Mixing.Channels
     {
         public WaveFormat WaveFormat { get; }
 
-        private readonly ConcurrentQueue<QueueClip> _queue = new ConcurrentQueue<QueueClip>();
-        private QueueClip _playing;
+        private readonly ConcurrentQueue<QueueClip> _queue = new();
+        private QueueClip? _playing;
         private volatile bool _skip;
 
-        public bool IsPlaying => _queue.Count > 0 || _playing.Samples != null;
+        public bool IsPlaying => _queue.Count > 0 || _playing.HasValue;
 
-        public (T Metadata, Task Completion) Playing => (_playing.Metadata, _playing.Completion);
+        public (T Metadata, Task Completion)? Playing => _playing.HasValue ? (_playing.Value.Metadata, _playing.Value.Completion) : default;
 
          public IEnumerable<T> Queue => _queue.Select(a => a.Metadata).ToArray();
 
@@ -44,7 +44,7 @@ namespace Mute.Moe.Services.Audio.Mixing.Channels
             WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
         }
 
-         public Task<Task> Enqueue<TAudio>(T metadata, TAudio audio)
+        public Task<Task> Enqueue<TAudio>(T metadata, TAudio audio)
             where TAudio : ISampleProvider, IDisposable
         {
             var q = new QueueClip(metadata, new WdlResamplingSampleProvider(audio, WaveFormat.SampleRate).ToMono());
@@ -55,7 +55,7 @@ namespace Mute.Moe.Services.Audio.Mixing.Channels
             return Task.FromResult(q.Completion);
         }
 
-         public Task<Task> Enqueue(T metadata, ISampleProvider audio)
+        public Task<Task> Enqueue(T metadata, ISampleProvider audio)
         {
             var q = new QueueClip(metadata, new WdlResamplingSampleProvider(audio, WaveFormat.SampleRate).ToMono());
 
@@ -72,28 +72,27 @@ namespace Mute.Moe.Services.Audio.Mixing.Channels
             //Skip track if requested
             if (_skip)
             {
-                if (_playing.Samples != null)
-                    _playing.Dispose();
+                _playing?.Dispose();
                 _playing = default;
 
                 _skip = false;
             }
 
             //Try to fetch the next queue item
-            if (_playing.Samples == null)
-                _queue.TryDequeue(out _playing);
+            if (!_playing.HasValue && _queue.TryDequeue(out var p))
+                _playing = p;
 
             //If we're not playing anything, just return a buffer of zeroes
-            if (_playing.Samples == null)
+            if (!_playing.HasValue)
                 return count;
             
             //Read audio from source
-            var read = _playing.Samples.Read(buffer, offset, count);
+            var read = _playing.Value.Samples.Read(buffer, offset, count);
 
             //If the entire buffer was not filled this this item is complete, remove it from _playing. Next time we'll start the next item in the queue
             if (read < count)
             {
-                _playing.Dispose();
+                _playing.Value.Dispose();
                 _playing = default;
             }
 

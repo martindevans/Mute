@@ -131,10 +131,9 @@ namespace Mute.Moe.Discord.Modules.Games
         {
             private readonly CellState[,] _state = new CellState[3, 3];
 
-            
             public override string ToString()
             {
-                string State(int x, int y)
+                string C(int x, int y)
                 {
                     var state = _state[x, y];
                     if (state != CellState.None)
@@ -143,11 +142,11 @@ namespace Mute.Moe.Discord.Modules.Games
                     return "abcdefghi"[x + y * 3].ToString();
                 }
 
-                return $"{State(0, 0)}|{State(1, 0)}|{State(2, 0)}\n"
+                return $"{C(0, 0)}|{C(1, 0)}|{C(2, 0)}\n"
                      +  "-----\n"
-                     + $"{State(0, 1)}|{State(1, 1)}|{State(2, 1)}\n"
+                     + $"{C(0, 1)}|{C(1, 1)}|{C(2, 1)}\n"
                      +  "-----\n"
-                     + $"{State(0, 2)}|{State(1, 2)}|{State(2, 2)}\n";
+                     + $"{C(0, 2)}|{C(1, 2)}|{C(2, 2)}\n";
             }
 
             public CellState Cell(byte x, byte y)

@@ -13,14 +13,14 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 {
 	public sealed class ElizaMain
 	{
-        private readonly HashSet<char> _replaceWithSpace = new HashSet<char>("<>#$%^&*()_-+=~`{[}]|:;\\\"");
-	    private readonly HashSet<char> _replaceWithDot = new HashSet<char>(".?!-");
+        private readonly HashSet<char> _replaceWithSpace = new("<>#$%^&*()_-+=~`{[}]|:;\\\"");
+	    private readonly HashSet<char> _replaceWithDot = new(".?!-");
 
 	    private readonly Script _script;
 	    private readonly IReadOnlyList<Key> _xnone;
 	    private readonly Random _random;
-	    private readonly Stack<string> _mem = new Stack<string>();
-	    private readonly Dictionary<Decomposition, int> _decompositionCount = new Dictionary<Decomposition, int>();
+	    private readonly Stack<string> _mem = new();
+	    private readonly Dictionary<Decomposition, int> _decompositionCount = new();
 
 	    public bool Finished { get; private set; }
 
@@ -103,7 +103,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
                 //If it's a goto rule follow it
                 if (rule.StartsWith("goto "))
                 {
-                    var gotos = _script.GetKeys(rule.Substring(5));
+                    var gotos = _script.GetKeys(rule[5..]);
                     return (from g in gotos
                             orderby g.Rank descending
                             let r = TryKey(g, ctx)

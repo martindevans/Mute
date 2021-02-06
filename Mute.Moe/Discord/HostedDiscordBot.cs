@@ -73,6 +73,9 @@ namespace Mute.Moe.Discord
             await _client.LoginAsync(TokenType.Bot, _config.Auth.Token);
             await _client.StartAsync();
 
+            // Precache all users in all guilds
+            await _client.DownloadUsersAsync(_client.Guilds);
+
             // Set presence
             if (Debugger.IsAttached)
             {
@@ -107,10 +110,10 @@ namespace Mute.Moe.Discord
             await _client.StopAsync();
         }
 
-         private async Task HandleMessage( SocketMessage socketMessage)
+         private async Task HandleMessage(SocketMessage socketMessage)
         {
             // Don't process the command if it was a System Message
-            if (!(socketMessage is SocketUserMessage message))
+            if (socketMessage is not SocketUserMessage message)
                 return;
 
             //Ignore messages from self

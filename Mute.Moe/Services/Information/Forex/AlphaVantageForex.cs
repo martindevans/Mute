@@ -46,7 +46,9 @@ namespace Mute.Moe.Services.Information.Forex
             using (var jsonTextReader = new JsonTextReader(sr))
                 response = serializer.Deserialize<ExchangeRateResponseContainer?>(jsonTextReader);
 
-            if (response?.Response == null)
+            if (response == null)
+                return null;
+            if (response.ErrorMessage != null)
                 return null;
 
             _cache.Add(response.Response);
@@ -59,10 +61,14 @@ namespace Mute.Moe.Services.Information.Forex
 #pragma warning disable IDE0044 // Add readonly modifier
 #pragma warning disable 0649 // Field not assigned
             [JsonProperty("Realtime Currency Exchange Rate"), UsedImplicitly] private ExchangeRateResponse? _response;
+            [JsonProperty("Error Message"), UsedImplicitly] private string? _error;
 #pragma warning restore 0649 // Field not assigned
 #pragma warning restore IDE0044 // Add readonly modifier
 
             public ExchangeRateResponse Response => _response ?? throw new InvalidOperationException("API returned null value for `Realtime Currency Exchange Rate` field");
+
+            // ReSharper disable once ConvertToAutoProperty
+            public string? ErrorMessage => _error;
         }
 
         public class ExchangeRateResponse

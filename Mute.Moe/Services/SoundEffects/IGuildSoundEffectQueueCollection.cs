@@ -26,7 +26,7 @@ namespace Mute.Moe.Services.SoundEffects
 
          protected override InMemoryGuildSoundEffectQueue Create(IGuildVoice voice)
         {
-            return new InMemoryGuildSoundEffectQueue(voice);
+            return new(voice);
         }
     }
 

@@ -7,10 +7,10 @@ namespace Mute.Moe.Utilities
 {
     public class AsyncLock
     {
-        private readonly object _mutex = new object();
+        private readonly object _mutex = new();
 
         private bool _taken;
-        private readonly Queue<TaskCompletionSource<IDisposable>> _waiting = new Queue<TaskCompletionSource<IDisposable>>();
+        private readonly Queue<TaskCompletionSource<IDisposable>> _waiting = new();
 
         public Task<IDisposable> LockAsync(CancellationToken cancellationToken = default)
         {

@@ -127,7 +127,7 @@ namespace Mute.Moe.Services.Reminders
 
             public static Reminder Parse(DbDataReader reader)
             {
-                return new Reminder(
+                return new(
                     uint.Parse(reader["rowid"].ToString()!),
                     ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
                     reader["Prelude"]?.ToString(),
@@ -207,7 +207,7 @@ namespace Mute.Moe.Services.Reminders
 
             public Reminder WithId(uint id)
             {
-                return new Reminder(
+                return new(
                     id,
                     TriggerTime,
                     Prelude,

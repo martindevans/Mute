@@ -39,7 +39,7 @@
     <PackageReference Include="Discord.Addons.Interactive" Version="2.0.0" />
     <PackageReference Include="Discord.Net" Version="2.2.0" />
     <PackageReference Include="Discord.OAuth2" Version="2.0.0" />
-    <PackageReference Include="FluidCaching.Sources" Version="1.3.2" />
+    <PackageReference Include="FluidCaching" Version="1.3.2" />
     <PackageReference Include="GraphiQL" Version="2.0.0" />
     <PackageReference Include="GraphQL" Version="2.4.0" />
     <PackageReference Include="GraphQL.Authorization" Version="2.1.29" />

@@ -14,7 +14,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
         public double BaseChance => 0.0;
         public double MentionedChance => 0.99;
 
-        private readonly List<string> _greetings = new List<string> {
+        private readonly List<string> _greetings = new() {
             "hello", "hi", "hiya", "heya", "howdy"
         };
 
@@ -46,10 +46,10 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza
 
         private static string CleanWord(string word)
         {
-            return new string(word
-                .ToLowerInvariant()
-                .Where(c => !char.IsPunctuation(c))
-                .ToArray()
+            return new(word
+                       .ToLowerInvariant()
+                       .Where(c => !char.IsPunctuation(c))
+                       .ToArray()
             );
         }
 

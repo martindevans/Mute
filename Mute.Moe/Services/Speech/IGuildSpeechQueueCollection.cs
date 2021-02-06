@@ -25,7 +25,7 @@ namespace Mute.Moe.Services.Speech
 
          protected override InMemoryGuildSpeechQueue Create(IGuildVoice voice)
         {
-            return new InMemoryGuildSpeechQueue(voice);
+            return new(voice);
         }
     }
 

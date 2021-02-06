@@ -36,7 +36,7 @@ namespace Mute.Moe.Discord.Services.Avatar
             var now = DateTime.UtcNow.Date.DayOfYear;
 
             var exts = new string[] { "*.bmp", "*.png", "*.jpg", "*.jpeg" };
-            var avatars = _config
+            var avatars = _config!
                 .Where(a => a.StartDay <= now && a.EndDay >= now)
                 .Where(a => Directory.Exists(a.Path))
                 .SelectMany(a => exts.SelectMany(e => Directory.GetFiles(a.Path, e)))

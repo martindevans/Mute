@@ -10,9 +10,9 @@ namespace Mute.Moe.Services.Audio.Mixing
         : IWaveProvider
     {
         private static readonly WaveFormat MixingFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
-        private static readonly WaveFormat OutputFormat = new WaveFormat(48000, 16, 2);
+        private static readonly WaveFormat OutputFormat = new(48000, 16, 2);
 
-        private readonly ConcurrentDictionary<IMixerInput, ISampleProvider> _inputMap = new ConcurrentDictionary<IMixerInput, ISampleProvider>();
+        private readonly ConcurrentDictionary<IMixerInput, ISampleProvider> _inputMap = new();
 
         private readonly MixingSampleProvider _inputs;
         private readonly IWaveProvider _output;

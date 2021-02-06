@@ -18,9 +18,9 @@ namespace Mute.Moe.Discord.Services.Responses
     {
         private readonly DiscordSocketClient _client;
         private readonly Random _random;
-        private readonly List<IResponse> _responses = new List<IResponse>();
+        private readonly List<IResponse> _responses = new();
 
-        private readonly ConcurrentDictionary<IUser, IConversation?> _conversations = new ConcurrentDictionary<IUser, IConversation?>();
+        private readonly ConcurrentDictionary<IUser, IConversation?> _conversations = new();
 
         public ConversationalResponseService(DiscordSocketClient client, IServiceProvider services, Random random)
         {

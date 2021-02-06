@@ -38,14 +38,15 @@ namespace Mute.Moe.Discord.Modules.Audio
         public async Task NowPlaying()
         {
             var q = await _queueCollection.Get(Context.Guild.Id);
+            var p = q.Playing;
 
-            if (!q.IsPlaying)
+            if (!q.IsPlaying || !p.HasValue)
             {
                 await ReplyAsync("Nothing is currently playing");
                 return;
             }
 
-            var (metadata, completion) = q.Playing;
+            var (metadata, completion) = p.Value;
             var embed = (await metadata.DiscordEmbed());
 
             //Show embed with green border (indicates it is playing)
@@ -246,7 +247,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             var channel = await _queueCollection.Get(Context.Guild.Id);
 
             // Move into channel with user
-            if (!(Context.User is IVoiceState vs) || vs.VoiceChannel == null)
+            if (Context.User is not IVoiceState vs || vs.VoiceChannel == null)
             {
                 await ReplyAsync("You must be in a voice channel!");
                 return;

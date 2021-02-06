@@ -20,7 +20,7 @@ namespace Mute.Moe.Services.Audio
         private AudioPump? _pump;
         public IVoiceChannel? Channel => _pump?.Channel;
 
-        private readonly MultiChannelMixer _mixer = new MultiChannelMixer();
+        private readonly MultiChannelMixer _mixer = new();
         private readonly DiscordSocketClient _client;
 
         public ThreadedGuildVoice(IGuild guild, DiscordSocketClient client)
@@ -84,7 +84,7 @@ namespace Mute.Moe.Services.Audio
         {
             private readonly MultiChannelMixer _mixer;
 
-            private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
+            private readonly CancellationTokenSource _cancellation = new();
             private readonly Task _thread;
 
             public IVoiceChannel Channel { get; }

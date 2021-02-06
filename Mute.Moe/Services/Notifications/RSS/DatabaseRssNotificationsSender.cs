@@ -109,7 +109,7 @@ namespace Mute.Moe.Services.Notifications.RSS
             return await new SqlAsyncResult<Unit>(_database, PrepareQuery, ParseSubscription).AnyAsync();
         }
 
-        private async Task Publish( IRssSubscription feed,  SyndicationItem item)
+        private async Task Publish(IRssSubscription feed, SyndicationItem item)
         {
             await SendMessage(feed, item);
 
@@ -122,10 +122,11 @@ namespace Mute.Moe.Services.Notifications.RSS
             await cmd.ExecuteNonQueryAsync();
         }
 
-        private static EmbedBuilder FormatMessage( SyndicationItem item)
+        private static EmbedBuilder FormatMessage(SyndicationItem item)
         {
             var desc = item.Summary?.Text ?? "";
             desc = desc.Substring(0, Math.Min(desc.Length, 1000));
+            desc = System.Net.WebUtility.HtmlDecode(desc);
 
             var embed = new EmbedBuilder()
                         .WithTitle(item.Title.Text)
@@ -146,9 +147,9 @@ namespace Mute.Moe.Services.Notifications.RSS
             return embed;
         }
 
-        private async Task SendMessage( IRssSubscription feed,  SyndicationItem item)
+        private async Task SendMessage(IRssSubscription feed, SyndicationItem item)
         {
-            if (!(_client.GetChannel(feed.Channel) is ITextChannel channel))
+            if (_client.GetChannel(feed.Channel) is not ITextChannel channel)
                 return;
 
             var mention = "";

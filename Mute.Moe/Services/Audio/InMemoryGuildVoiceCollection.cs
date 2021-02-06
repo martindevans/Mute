@@ -7,7 +7,7 @@ namespace Mute.Moe.Services.Audio
     public class InMemoryGuildVoiceCollection
         : IGuildVoiceCollection
     {
-        private readonly ConcurrentDictionary<ulong, IGuildVoice> _lookup = new ConcurrentDictionary<ulong, IGuildVoice>();
+        private readonly ConcurrentDictionary<ulong, IGuildVoice> _lookup = new();
         private readonly DiscordSocketClient _client;
 
         public InMemoryGuildVoiceCollection(DiscordSocketClient client)

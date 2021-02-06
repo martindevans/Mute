@@ -10,8 +10,8 @@ namespace Mute.Moe.Services.Audio
     {
         private readonly IGuildVoiceCollection _voice;
 
-        private readonly AsyncLock _lookupLock = new AsyncLock();
-        private readonly Dictionary<ulong, TValue> _lookup = new Dictionary<ulong, TValue>();
+        private readonly AsyncLock _lookupLock = new();
+        private readonly Dictionary<ulong, TValue> _lookup = new();
 
         protected BaseInMemoryAudioPlayerQueueCollection(IGuildVoiceCollection voice)
         {

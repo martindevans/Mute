@@ -41,7 +41,7 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen.Topics
             _script = script;
         }
 
-        public async Task<ITopicDiscussion> TryBegin(MuteCommandContext message, IKnowledge knowledge, CancellationToken ct)
+        public async Task<ITopicDiscussion?> TryBegin(MuteCommandContext message, IKnowledge knowledge, CancellationToken ct)
         {
             return new ElizaKeyDiscussionAdapter(_script);
         }

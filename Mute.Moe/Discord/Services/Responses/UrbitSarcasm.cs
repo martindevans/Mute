@@ -16,7 +16,7 @@ namespace Mute.Moe.Discord.Services.Responses
 
         private readonly Random _random;
 
-        private readonly HashSet<string> _triggerWords = new HashSet<string> {
+        private readonly HashSet<string> _triggerWords = new() {
             "urbit", "hoon", "arvo", "nock"
         };
 

@@ -55,12 +55,10 @@ namespace Mute.Moe.Services.Information.Stocks
 
         private class StockQuoteResponseContainer
         {
-#pragma warning disable IDE0044 // Add readonly modifier
 #pragma warning disable 0649 // Field not assigned
             [JsonProperty("Global Quote"), UsedImplicitly]
             public StockQuoteResponse? Response;
 #pragma warning restore 0649 // Field not assigned
-#pragma warning restore IDE0044 // Add readonly modifier
         }
 
         public class StockQuoteResponse

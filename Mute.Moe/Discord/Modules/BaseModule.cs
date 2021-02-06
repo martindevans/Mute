@@ -25,7 +25,7 @@ namespace Mute.Moe.Discord.Modules
         private class LazyList<T>
         {
             private readonly IAsyncEnumerator<T> _itemsSource;
-            private readonly List<T> _cache = new List<T>();
+            private readonly List<T> _cache = new();
 
             public int CurrentCount => _cache.Count;
             public bool Finished { get; private set; }

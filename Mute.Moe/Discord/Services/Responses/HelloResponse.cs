@@ -62,9 +62,9 @@ namespace Mute.Moe.Discord.Services.Responses
             return GeneralGreetings.Random(_random);
         }
 
-         private static string CleanWord( string word)
+         private static string CleanWord(string word)
         {
-            return new string(word
+            return new(word
                 .ToLowerInvariant()
                 .Trim()
                 .Where(c => !char.IsPunctuation(c))

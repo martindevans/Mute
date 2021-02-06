@@ -19,33 +19,24 @@ namespace Mute.Moe.Sigil
         {
             var tag = (string)obj["tag"]!;
 
-            XElement svg;
-            switch (tag)
-            {
-                case "g":
-                    svg = ToSvgGroup(obj, bg, fg);
-                    break;
-                case "path":
-                    svg = ToSvgPath(obj);
-                    break;
-                default:
-                    //ncrunch: no coverage start
-                    throw new NotSupportedException($"Unknown tag `{tag}`");
-                //ncrunch: no coverage end
-            }
+            XElement svg = tag switch {
+                "g" => ToSvgGroup(obj, bg, fg),
+                "path" => ToSvgPath(),
+                _ => throw new NotSupportedException($"Unknown tag `{tag}`")
+            };
 
             //Attach attributes
-            var attrs = (JObject)obj.GetValue("attr")!;
+            var attrs = (JObject?)obj.GetValue("attr");
             if (attrs != null)
             {
                 foreach (var (key, value) in attrs)
                     svg.SetAttributeValue(key, (string)value!);
             }
 
-            var meta = (JObject)obj.GetValue("meta")!;
+            var meta = (JObject?)obj.GetValue("meta");
 
             //Apply style
-            var style = (JObject)meta?.GetValue("style")!;
+            var style = (JObject?)meta?.GetValue("style");
             if (style != null)
             {
                 var fill = (string)style.GetValue("fill")!;
@@ -64,9 +55,9 @@ namespace Mute.Moe.Sigil
             return svg;
         }
 
-        private static XElement ToSvgPath(JObject jObject)
+        private static XElement ToSvgPath()
         {
-            return new XElement(Sigil.SvgNamespace + "path");
+            return new(Sigil.SvgNamespace + "path");
         }
 
         private static XElement ToSvgGroup(JObject jObject, string bg, string fg)

@@ -25,9 +25,9 @@ namespace Mute.Moe.Services.Words
         private readonly FluidCache<SimilarResult> _similarCache;
         private readonly IIndex<string, SimilarResult> _indexSimilarByWord;
 
-        private readonly Backoff _backoff = new Backoff();
+        private readonly Backoff _backoff = new();
 
-        public HttpWordVectors( Configuration config, IHttpClientFactory client)
+        public HttpWordVectors(Configuration config, IHttpClientFactory client)
         {
             _client = client.CreateClient();
             _client.Timeout = TimeSpan.FromMilliseconds(25);
@@ -191,11 +191,14 @@ namespace Mute.Moe.Services.Words
         private class SimilarWord
             : ISimilarWord
         {
+#pragma warning disable IDE0044 // Add readonly modifier
             [UsedImplicitly, JsonProperty("word")] private string _word;
             // ReSharper disable once ConvertToAutoProperty
             public string Word => _word;
 
             [UsedImplicitly, JsonProperty("distance")] private float _distance;
+#pragma warning restore IDE0044 // Add readonly modifier
+
             public float Similarity => 1 - Math.Max(0f, _distance);
 
             public SimilarWord(string word, float difference)
@@ -207,7 +210,7 @@ namespace Mute.Moe.Services.Words
 
         private class Backoff
         {
-            private readonly object _lock = new object();
+            private readonly object _lock = new();
 
             private int _failures = 0;
             private DateTime _previousFailure;
