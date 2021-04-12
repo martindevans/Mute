@@ -4,15 +4,16 @@ using Discord.WebSocket;
 using GraphQL.Server.Transports.AspNetCore;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Mute.Moe.GQL
 {
     public class GraphQLUserContextBuilder
         : IUserContextBuilder
     {
-        public async Task<object> BuildUserContext( HttpContext httpContext)
+        public async Task<object> BuildUserContext(HttpContext httpContext)
         {
-            var discord = (DiscordSocketClient)httpContext.RequestServices.GetService(typeof(DiscordSocketClient));
+            var discord = (DiscordSocketClient)httpContext.RequestServices.GetRequiredService(typeof(DiscordSocketClient));
 
             return new GraphQLUserContext(httpContext.User, discord);
         }

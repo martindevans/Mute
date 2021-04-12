@@ -88,7 +88,7 @@ namespace Mute.Moe.Services.Reminders
 
         public void Add(IServiceProvider services, ObjectGraphType ogt)
         {
-            var reminders = services.GetService<IReminders>();
+            var reminders = services.GetRequiredService<IReminders>();
 
             ogt.Field<ListGraphType<IReminderSchema>>(
                 "reminders",
@@ -154,7 +154,7 @@ namespace Mute.Moe.Services.Reminders
 
         public void Add(IServiceProvider services, ObjectGraphType ogt)
         {
-            var reminders = services.GetService<IReminders>();
+            var reminders = services.GetRequiredService<IReminders>();
 
             ogt.Field<IReminderSchema>("create_reminder",
                 arguments: new QueryArguments(

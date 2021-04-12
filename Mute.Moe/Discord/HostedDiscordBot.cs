@@ -142,7 +142,7 @@ namespace Mute.Moe.Discord
             {
                 foreach (var pre in _services.GetServices<IConversationPreprocessor>())
                     await pre.Process(context);
-                await _services.GetService<ConversationalResponseService>().Respond(context);
+                await _services.GetRequiredService<ConversationalResponseService>().Respond(context);
             }
         }
 

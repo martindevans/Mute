@@ -57,11 +57,9 @@ using Mute.Moe.Services.Words;
 using System.Net.Http;
 using Discord.WebSocket;
 using Microsoft.Extensions.Hosting;
-using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses.Eliza.Scripts;
-using Mute.Moe.Services.Imitation;
 using Oddity;
 
 namespace Mute.Moe
@@ -129,8 +127,6 @@ namespace Mute.Moe
             services.AddSingleton<IRssNotifications, DatabaseRssNotifications>();
             services.AddSingleton<IRssNotificationsSender, DatabaseRssNotificationsSender>();
             services.AddSingleton<ICron, InMemoryCron>();
-            services.AddSingleton<IImitationModelProvider, MarkovModelImitation>();
-            services.AddSingleton<IMessagePreprocessor>(a => a.GetService<IImitationModelProvider>());
 
             //Eventually these should all become interface -> concrete type bindings
             services.AddSingleton<AutoReactionTrainer>();

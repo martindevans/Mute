@@ -38,8 +38,8 @@ namespace Mute.Moe.Discord.Services.Avatar
             var exts = new string[] { "*.bmp", "*.png", "*.jpg", "*.jpeg" };
             var avatars = _config!
                 .Where(a => a.StartDay <= now && a.EndDay >= now)
-                .Where(a => Directory.Exists(a.Path))
-                .SelectMany(a => exts.SelectMany(e => Directory.GetFiles(a.Path, e)))
+                .Where(a => a.Path != null && Directory.Exists(a.Path))
+                .SelectMany(a => exts.SelectMany(e => Directory.GetFiles(a.Path!, e)))
                 .Distinct()
                 .ToArray();
             Console.WriteLine($"Found {avatars.Length} options: " + string.Join("\n", avatars));

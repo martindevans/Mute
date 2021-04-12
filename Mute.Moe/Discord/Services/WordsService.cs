@@ -14,6 +14,8 @@ namespace Mute.Moe.Discord.Services
         {
             if (config.Dictionary == null)
                 throw new ArgumentNullException(nameof(config.Dictionary));
+            if (config.Dictionary.WordListPath == null)
+                throw new ArgumentNullException(nameof(config.Dictionary.WordListPath));
 
             _words = new HashSet<string>(File.ReadAllLines(config.Dictionary.WordListPath));
         }

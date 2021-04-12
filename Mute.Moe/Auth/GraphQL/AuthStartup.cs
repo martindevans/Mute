@@ -19,7 +19,7 @@ namespace Mute.Moe.Auth.GraphQL
             services.TryAddSingleton(s =>
             {
                 var authSettings = new AuthorizationSettings();
-                var discord = s.GetService<DiscordSocketClient>();
+                var discord = s.GetRequiredService<DiscordSocketClient>();
 
                 authSettings.AddPolicy(AuthPolicies.DiscordUser, a => a.AddRequirement(new DiscordUser(discord)));
                 authSettings.AddPolicy(AuthPolicies.InAnyBotGuild, a => a.AddRequirement(new InBotGuild(discord)));

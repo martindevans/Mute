@@ -246,7 +246,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
 
         public static Script Load(IServiceProvider services)
         {
-            var config = (Configuration)services.GetService(typeof(Configuration));
+            var config = (Configuration)services.GetRequiredService(typeof(Configuration));
 
             //Get basic key providers
             var keys = (from t in Assembly.GetExecutingAssembly().GetTypes()

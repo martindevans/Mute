@@ -85,7 +85,7 @@ namespace Mute.Moe.Services.Payment
             cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = instant.UnixTimestamp() });
             cmd.Parameters.Add(new SQLiteParameter("@Pending", System.Data.DbType.String) { Value = PendingState.Pending.ToString() });
 
-            return (uint)(long)await cmd.ExecuteScalarAsync();
+            return (uint)(long)(await cmd.ExecuteScalarAsync())!;
         }
 
         public IAsyncEnumerable<IPendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)

@@ -52,7 +52,7 @@ namespace Mute.Moe.Services.Reminders
                 {
                     cmd.CommandText = InsertReminder;
                     reminder.Write(cmd);
-                    reminder = reminder.WithId((uint)(long)await cmd.ExecuteScalarAsync());
+                    reminder = reminder.WithId((uint)(long)(await cmd.ExecuteScalarAsync())!);
                 }
 
                 ReminderCreated?.Invoke(reminder);
@@ -127,10 +127,10 @@ namespace Mute.Moe.Services.Reminders
 
             public static Reminder Parse(DbDataReader reader)
             {
-                return new(
+                return new Reminder(
                     uint.Parse(reader["rowid"].ToString()!),
                     ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
-                    reader["Prelude"]?.ToString(),
+                    reader["Prelude"].ToString(),
                     reader["Message"].ToString()!,
                     ulong.Parse((string)reader["ChannelId"]),
                     ulong.Parse((string)reader["UserId"])
@@ -207,7 +207,7 @@ namespace Mute.Moe.Services.Reminders
 
             public Reminder WithId(uint id)
             {
-                return new(
+                return new Reminder(
                     id,
                     TriggerTime,
                     Prelude,

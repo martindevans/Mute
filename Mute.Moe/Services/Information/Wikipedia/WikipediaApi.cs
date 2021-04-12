@@ -59,7 +59,7 @@ namespace Mute.Moe.Services.Information.Wikipedia
                     var response = JsonConvert.DeserializeObject<PropResponseContainer?>(await httpResponse.Content.ReadAsStringAsync());
 
                     // Find all links
-                    var links = response?.Query?.Pages?.Select(p => p.Value).SelectMany(a => a.Links);
+                    var links = response?.Query?.Pages?.Select(p => p.Value).SelectMany(a => a.Links ?? Array.Empty<Property>());
                     if (links == null)
                         return Array.Empty<IDefinition>();
 

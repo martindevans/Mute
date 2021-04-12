@@ -70,7 +70,7 @@ namespace Mute.Moe.Services.Music
             cmd.Parameters.Add(new SQLiteParameter("@Duration", System.Data.DbType.String) { Value = ((uint)duration.TotalSeconds).ToString() });
             cmd.Parameters.Add(new SQLiteParameter("@Owner", System.Data.DbType.String) { Value = owner.ToString() });
 
-            var id = (ulong)(long)await cmd.ExecuteScalarAsync();
+            var id = (ulong)(long)(await cmd.ExecuteScalarAsync() ?? 0);
 
             // Return track object
             return new DatabaseMusicTrack(
