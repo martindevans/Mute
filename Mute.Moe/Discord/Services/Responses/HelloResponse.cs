@@ -53,10 +53,10 @@ namespace Mute.Moe.Discord.Services.Responses
         {
             var hour = DateTime.UtcNow.Hour;
 
-            if (hour > 5 && hour <= 12 && _random.NextDouble() < 0.25f)
+            if (hour is > 5 and <= 12 && _random.NextDouble() < 0.25f)
                 return MorningGreetings.Random(_random);
 
-            if (hour > 18 && hour <= 24 && _random.NextDouble() < 0.25f)
+            if (hour is > 18 and <= 24 && _random.NextDouble() < 0.25f)
                 return EveningGreetings.Random(_random);
 
             return GeneralGreetings.Random(_random);

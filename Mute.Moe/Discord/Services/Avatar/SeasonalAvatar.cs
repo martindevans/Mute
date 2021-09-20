@@ -45,8 +45,6 @@ namespace Mute.Moe.Discord.Services.Avatar
             Console.WriteLine($"Found {avatars.Length} options: " + string.Join("\n", avatars));
 
             var avatar = avatars.Random(_rng);
-            if (avatar == null)
-                return new SeasonalAvatarPickResult(avatars, null);
 
             Console.WriteLine($"Setting avatar to `{avatar}`");
             await using (var stream = File.OpenRead(avatar))

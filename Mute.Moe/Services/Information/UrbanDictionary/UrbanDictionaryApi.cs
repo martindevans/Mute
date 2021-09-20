@@ -32,10 +32,7 @@ namespace Mute.Moe.Services.Information.UrbanDictionary
 
         public async Task<IReadOnlyList<IUrbanDefinition>> SearchTermAsync(string term)
         {
-            //Sanity check term encodes into URL form
             var urlTerm = HttpUtility.UrlEncode(term);
-            if (urlTerm == null)
-                return Array.Empty<IUrbanDefinition>();
 
             //Try to get from the cache
             var item = await _definitionsByWord.GetItem(urlTerm);

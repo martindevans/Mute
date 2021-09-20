@@ -46,9 +46,7 @@ namespace Mute.Moe.Services.Information.Forex
             using (var jsonTextReader = new JsonTextReader(sr))
                 response = serializer.Deserialize<ExchangeRateResponseContainer?>(jsonTextReader);
 
-            if (response == null)
-                return null;
-            if (response.ErrorMessage != null)
+            if (response == null || response.ErrorMessage != null)
                 return null;
 
             _cache.Add(response.Response);

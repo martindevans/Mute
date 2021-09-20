@@ -13,7 +13,7 @@ namespace Mute.Moe.Extensions
             if (idClaim == null)
                 return null;
 
-            if (!ulong.TryParse(idClaim.Value ?? "", out var id))
+            if (!ulong.TryParse(idClaim.Value, out var id))
                 return null;
 
             return client.GetUser(id);

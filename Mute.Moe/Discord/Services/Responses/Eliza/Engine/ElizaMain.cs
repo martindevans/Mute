@@ -163,10 +163,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
 	                    return null;
 
 	                var replacement = decomposed[n - 1];
-	                if (replacement == null)
-	                    return null;
-
-	                var transformed = _script.TransformOutput(replacement);
+                    var transformed = _script.TransformOutput(replacement);
 
 	                response.Replace(m.Value, transformed, m.Index, m.Length);
 	            }

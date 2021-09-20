@@ -59,7 +59,7 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen
                 async Task<string?> ContinueActiveDiscussion()
                 {
                     // if there is an active discussion, try to continue it
-                    if (_active != null && !_active.IsComplete)
+                    if (_active is {IsComplete: false})
                     {
                         string? reply;
                         (reply, _knowledge) = await _active.Reply(_knowledge, message);
@@ -94,7 +94,7 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen
                 foreach (var task in starters)
                 {
                     var discussion = await task;
-                    if (discussion != null && !discussion.IsComplete)
+                    if (discussion is {IsComplete: false})
                     {
                         // Try to use this discussion
                         _active = discussion;

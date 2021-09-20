@@ -19,9 +19,11 @@ namespace Mute.Moe.Services.Information.Steam
         private readonly PlayerService _players;
         private readonly SteamStore _store;
 
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly FluidCache<StoreAppDetailsDataModel> _steamStoreCache;
         private readonly IIndex<uint, StoreAppDetailsDataModel> _steamStoreCacheById;
 
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly FluidCache<RecentlyPlayedGamesCacheItem> _recentlyPlayedGames;
         private readonly IIndex<ulong, RecentlyPlayedGamesCacheItem> _recentlyPlayedGamesById;
         

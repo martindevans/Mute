@@ -87,7 +87,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
                 keysList.RemoveAt(i);
 
                 //Find synonyms of keyword
-                var kw = k.Keyword.Substring(1);
+                var kw = k.Keyword[1..];
                 var synonyms = syns.FirstOrDefault(a => a.Contains(kw));
                 if (synonyms == null)
                     continue;
@@ -138,7 +138,8 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
             var val = m.Groups["value"].Value;
             var rank = m.Groups["rank"].Value;
 
-            int.TryParse(rank, out var rankValue);
+            if (!int.TryParse(rank, out var rankValue))
+                return false;
 
             lastDecomp = new List<Decomposition>();
             lastReasemb = null;
@@ -265,7 +266,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
 
             // Early exit if script is blank
             var txt = File.ReadAllLines(path);
-            if (txt == null || txt.Length == 0)
+            if (txt.Length == 0)
                 return nullScript;
 
             // Parse the script

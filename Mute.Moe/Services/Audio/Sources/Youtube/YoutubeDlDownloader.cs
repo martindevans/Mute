@@ -136,7 +136,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                 //Find a thumbnail
                 var thumbnail = (string?)null;
                 var thumbnails = (JArray?)metadata["thumbnails"];
-                if (thumbnails != null && thumbnails.Count > 0)
+                if (thumbnails is {Count: > 0})
                     thumbnail = thumbnails[0]["url"]?.Value<string>();
 
                 //Find artist

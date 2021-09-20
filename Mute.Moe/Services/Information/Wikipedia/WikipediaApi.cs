@@ -48,7 +48,7 @@ namespace Mute.Moe.Services.Information.Wikipedia
         {
             async Task<IReadOnlyList<IDefinition>> GetPageDefinitions(PropPage page)
             {
-                if (page.Categories != null && page.Categories.Any(a => (a?.Title?.Equals("Category:All disambiguation pages") ?? false) || (a?.Title?.Equals("Category:Disambiguation pages") ?? false)))
+                if (page.Categories != null && page.Categories.Any(a => (a.Title?.Equals("Category:All disambiguation pages") ?? false) || (a.Title?.Equals("Category:Disambiguation pages") ?? false)))
                 {
                     // This is a disambiguation page, get all links on the page and fetch those definitions instead
                     using var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&titles={escapedTopic}&prop=links");

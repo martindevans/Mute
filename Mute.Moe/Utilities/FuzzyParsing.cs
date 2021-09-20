@@ -11,7 +11,7 @@ namespace Mute.Moe.Utilities
 {
     public static class FuzzyParsing
     {
-         public static MomentRangeExtraction MomentRange(string userInput, string culture = Culture.EnglishOthers)
+        public static MomentRangeExtraction MomentRange(string userInput, string culture = Culture.EnglishOthers)
         {
             static TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
             {
@@ -105,6 +105,21 @@ namespace Mute.Moe.Utilities
         {
             static TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
             {
+                // If there is set then there's a timezone, but it's ambiguous
+                if (values.TryGetValue("timezone", out var tz) && tz == "UTC+XX:XX")
+                {
+                    // Try to fix up some special cases
+                    if (values.TryGetValue("timezoneText", out var tztext))
+                    {
+                        return tztext switch {
+                            "bst" => TimeSpan.FromHours(-1),
+                            _ => TimeSpan.Zero,
+                        };
+                    }
+                    else
+                        return TimeSpan.Zero;
+                }
+
                 if (values.TryGetValue("utcOffsetMins", out var utcOff))
                 {
                     var offset = int.Parse(utcOff);

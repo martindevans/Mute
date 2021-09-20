@@ -44,7 +44,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
                 builder.WithImageUrl(img);
 
             var crew = launch.Crew;
-            if (crew != null && crew.Count > 0)
+            if (crew is {Count: > 0})
                 builder.AddField("Crew", string.Join(", ", crew.Select(a => a.Value.Name)), true);
 
             var site = launch.Launchpad.Value.FullName ?? launch.Launchpad.Value.Name;
@@ -63,7 +63,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
                 {
                     builder.AddField("Launch Date", $"NET {date}");
                 }
-                else if (launch.DatePrecision.HasValue && launch.DatePrecision > DatePrecision.Hour)
+                else if (launch.DatePrecision is > DatePrecision.Hour)
                 {
                     builder.AddField("Launch Date", $"Uncertain  - scheduled for {date} ± 1 {launch.DatePrecision}");
                 }

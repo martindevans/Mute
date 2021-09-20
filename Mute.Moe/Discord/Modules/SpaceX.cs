@@ -41,7 +41,7 @@ namespace Mute.Moe.Discord.Modules
             var embed = await details.DiscordEmbed();
             var msg = await ReplyAsync(embed);
 
-            if (details.Launches != null && details.Launches.Count > 1)
+            if (details.Launches is {Count: > 1})
             {
                 var embed2 = await details.AugmentDiscordEmbed(embed);
                 await msg.ModifyAsync(p => p.Embed = embed2.Build());
@@ -96,7 +96,7 @@ namespace Mute.Moe.Discord.Modules
         #region helpers
         private async Task<IReadOnlyList<string>> DescribeUpcomingFlights(int count)
         {
-            var next = (await _spacex.Upcoming()).Where(a => a.DateUtc.HasValue).OrderBy(a => a?.DateUtc ?? DateTime.MaxValue).Take(count).ToArray();
+            var next = (await _spacex.Upcoming()).Where(a => a.DateUtc.HasValue).OrderBy(a => a.DateUtc ?? DateTime.MaxValue).Take(count).ToArray();
 
             var responses = new List<string>();
             foreach (var item in next)

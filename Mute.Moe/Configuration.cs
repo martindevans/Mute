@@ -22,7 +22,6 @@ namespace Mute.Moe
         [UsedImplicitly] public TTSConfig? TTS;
         [UsedImplicitly] public STTConfig? STT;
         [UsedImplicitly] public MusicLibraryConfig? MusicLibrary;
-        [UsedImplicitly] public SolariumConfig? Solarium;
 
         [UsedImplicitly] public bool ProcessMessagesFromSelf = false;
         [UsedImplicitly] public char PrefixCharacter = '!';

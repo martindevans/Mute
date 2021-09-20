@@ -147,7 +147,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
             return output;
         }
 
-         private static EmbedBuilder CreateEmbed( ICommandContext context, char prefix, string title, string description)
+        private static EmbedBuilder CreateEmbed(ICommandContext context, char prefix, string title, string description)
         {
             return new EmbedBuilder()
                 .WithAuthor(context.Client.CurrentUser)
@@ -156,14 +156,14 @@ namespace Mute.Moe.Discord.Modules.Introspection
                 .WithDescription(description);
         }
 
-         private static string FormatCommandName( CommandInfo cmd, char prefix)
+        private static string FormatCommandName(CommandInfo cmd, char prefix)
         {
             return cmd.Aliases.Count == 1
                  ? $"`{prefix}{cmd.Aliases[0].ToLowerInvariant()}`"
-                 : $"`!({string.Join('/', cmd.Aliases.Select(a => a.ToLowerInvariant()))})`";
+                 : $"`{prefix}({string.Join('/', cmd.Aliases.Select(a => a.ToLowerInvariant()))})`";
         }
 
-         public static EmbedBuilder FormatCommandDetails( ICommandContext context, char prefix,  IEnumerable<CommandInfo> cmds)
+        public static EmbedBuilder FormatCommandDetails(ICommandContext context, char prefix, IEnumerable<CommandInfo> cmds)
         {
             EmbedBuilder SingleCommandDetails(CommandInfo cmd)
             {
@@ -225,7 +225,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
                  : MultiCommandDetails(cmdArr);
         }
 
-         private static EmbedBuilder FormatModuleDetails( ICommandContext context, char prefix,  ModuleInfo module)
+        private static EmbedBuilder FormatModuleDetails(ICommandContext context, char prefix, ModuleInfo module)
         {
             return CreateEmbed(context, prefix, module.Name, module.Summary ?? module.Remarks)
                 .AddField("Commands:", string.Join(", ", module.Commands.Select(a => FormatCommandName(a, prefix))));

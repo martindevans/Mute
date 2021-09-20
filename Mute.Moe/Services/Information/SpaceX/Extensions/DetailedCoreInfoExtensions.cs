@@ -51,7 +51,7 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
 
             //Create text description
             var description = "";
-            if (info.Launches != null && info.Launches.Count > 0)
+            if (info.Launches is {Count: > 0})
             {
                 var ms = string.Join(", ", info.Launches.Select(m => $"{m.Value.Name} (Flight {m.Value.FlightNumber})").ToArray());
                 description = $"This core has flown {info.Launches.Count} missions; {ms}. ";
@@ -66,16 +66,16 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
             if (info.Block.HasValue)
                 builder = builder.AddField("Block", info.Block.Value.ToString(), true);
 
-            if (info.AsdsLandings.HasValue && info.AsdsLandings.Value > 0)
+            if (info.AsdsLandings is > 0)
                 builder = builder.AddField("ASDS Landings", info.AsdsLandings.Value.ToString(), true);
 
-            if (info.RtlsLandings.HasValue && info.RtlsLandings.Value > 0)
+            if (info.RtlsLandings is > 0)
                 builder = builder.AddField("RTLS Landings", info.RtlsLandings.Value.ToString(), true);
 
-            if (info.Launches != null && info.Launches.Any())
+            if (info.Launches is {Count: > 0})
                 builder = builder.AddField("First Launch Date", info.Launches.First().Value.DateUtc!.Value.ToString("HH\\:mm UTC dd-MMM-yyyy"), true);
 
-            if (info.Launches != null && info.Launches.Count > 1)
+            if (info.Launches is {Count: > 1})
                 builder = builder.WithDescription(string.Join("\n", info.Launches.Select(a => a.Value).Select(CoreMissionLine)));
 
             return builder;

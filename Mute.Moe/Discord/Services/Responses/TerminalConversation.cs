@@ -24,7 +24,7 @@ namespace Mute.Moe.Discord.Services.Responses
         {
             IsComplete = true;
 
-            if (_reactions != null && _reactions.Length > 0)
+            if (_reactions is {Length: > 0})
             {
                 foreach (var reaction in _reactions)
                 {

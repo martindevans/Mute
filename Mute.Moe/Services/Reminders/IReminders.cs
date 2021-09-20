@@ -116,11 +116,11 @@ namespace Mute.Moe.Services.Reminders
                 return null;
 
             //Get message or early exit
-            if (!context.Arguments.TryGetValue("message", out var messageObj) || !(messageObj is string message))
+            if (!context.Arguments.TryGetValue("message", out var messageObj) || messageObj is not string message)
                 return null;
 
             //Get trigger time or exit if none specified
-            if (!context.Arguments.TryGetValue("trigger_time", out var triggerTime) || !(triggerTime is DateTime trigger))
+            if (!context.Arguments.TryGetValue("trigger_time", out var triggerTime) || triggerTime is not DateTime trigger)
                 return null;
 
             //Check if we're trying to schedule an event in the past
@@ -131,7 +131,7 @@ namespace Mute.Moe.Services.Reminders
             if (context.Arguments.TryGetValue("channel_id", out var channelIdStr) && ulong.TryParse(channelIdStr as string ?? "", out var channelId))
             {
                 //Get the channel or exit if it doesn't exist
-                if (!(client.GetChannel(channelId) is ITextChannel channel))
+                if (client.GetChannel(channelId) is not ITextChannel channel)
                     return null;
 
                 //Check if user is in channel

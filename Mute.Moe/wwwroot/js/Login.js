@@ -1,4 +1,6 @@
-﻿var c = document.getElementById("canvas");
+﻿// ReSharper disable DuplicatingLocalDeclaration
+
+var c = document.getElementById("canvas");
 var ctx = c.getContext("2d");
 
 function resize() {
@@ -93,7 +95,8 @@ function Box() {
         var points = [];
 
         for (var dot in dots) {
-            var angle = Math.atan2(light.y - dots[dot].y, light.x - dots[dot].x);
+            var d = dots[dot];
+            var angle = Math.atan2(light.y - d.y, light.x - d.x);
             var endX = dots[dot].x + this.shadow_length * Math.sin(-angle - Math.PI / 2);
             var endY = dots[dot].y + this.shadow_length * Math.cos(-angle - Math.PI / 2);
             angles.push(angle);

@@ -68,7 +68,7 @@ namespace Mute.Moe.Controllers
         {
             var du = User.TryGetDiscordUser(_client);
             if (du == null)
-                return new GuildInfo[0];
+                return Array.Empty<GuildInfo>();
 
             return du.MutualGuilds.Select(g => new GuildInfo(g)).ToArray();
         }
