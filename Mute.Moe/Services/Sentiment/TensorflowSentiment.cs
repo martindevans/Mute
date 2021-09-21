@@ -30,11 +30,9 @@ namespace Mute.Moe.Services.Sentiment
             _sentimentModelOutput = cfg.SentimentModelOutputLayer ?? throw new ArgumentNullException(nameof(config.Sentiment.SentimentModelOutputLayer));
 
             _graph = Task.Run(async () => await LoadGraph());
-
-            
         }
 
-        public async Task<SentimentResult> Predict( string message)
+        public async Task<SentimentResult> Predict(string message)
         {
             try
             {

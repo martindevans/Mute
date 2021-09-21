@@ -22,7 +22,7 @@ namespace Mute.Moe.Discord.Modules
             var extract = FuzzyParsing.TimeOffset(tz ?? "");
             var offset = extract.IsValid ? extract.UtcOffset : TimeSpan.Zero;
 
-            static string FormatTime(DateTime dt) => (dt).ToString("HH:mm:ss tt");
+            static string FormatTime(DateTime dt) => dt.ToString("HH:mm:ss tt");
 
             if (extract.IsValid || tz == null)
                 return $"The time is {FormatTime(DateTime.UtcNow + offset)} UTC{offset.Hours:+00;-00;+00}:{offset.Minutes:00}";

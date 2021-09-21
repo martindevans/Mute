@@ -200,7 +200,6 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Scripts
         }
 
         /// <summary>Process a line of script input.</summary>
-		/// <remarks>Process a line of script input.</remarks>
 		private static bool ParseLine(string? line, ref List<IReassembly>? lastReasemb, ref List<Decomposition>? lastDecomp, ICollection<Key> keys, ICollection<Transform> pre, ICollection<Transform> post, ICollection<string> quit, ICollection<HashSet<string>> syns, ICollection<string> final)
         {
             if (line == null || string.IsNullOrWhiteSpace(line))

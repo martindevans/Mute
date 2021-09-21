@@ -47,7 +47,7 @@ namespace Mute.Moe.Discord.Modules.Audio
             }
 
             var (metadata, completion) = p.Value;
-            var embed = (await metadata.DiscordEmbed());
+            var embed = await metadata.DiscordEmbed();
 
             //Show embed with green border (indicates it is playing)
             var message = await ReplyAsync(embed.WithColor(Color.Green));
@@ -281,13 +281,13 @@ namespace Mute.Moe.Discord.Modules.Audio
             var results = new List<IAsyncEnumerable<ITrack>>();
 
             // Try to treat search as a direct ID
-            if (ulong.TryParse(search, out var ulongParse))
-                results.Add(await _library.Get(Context.Guild.Id, id: ulongParse, order: TrackOrder.Id));
+            if (ulong.TryParse(search, out var id))
+                results.Add(await _library.Get(Context.Guild.Id, id, order: TrackOrder.Id));
             else
             {
                 var p = BalderHash64.Parse(search);
                 if (p.HasValue)
-                    results.Add(await _library.Get(Context.Guild.Id, id: p.Value.Value, order: TrackOrder.Id));
+                    results.Add(await _library.Get(Context.Guild.Id, p.Value.Value, order: TrackOrder.Id));
             }
 
             // Treat search as a search on song title

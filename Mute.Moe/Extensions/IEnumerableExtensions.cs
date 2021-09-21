@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Mute.Moe.Extensions
 {
     public static class IEnumerableExtensions
     {
-        [return: MaybeNull]
-        public static T Random<T>(this IEnumerable<T> items,  Random random)
+        public static T? Random<T>(this IEnumerable<T> items,  Random random)
         {
             // Pick first element (probability 1)
             // Later, for kth element pick it with probability 1/k (i.e. replace the existing selection with kth element)
@@ -80,7 +78,7 @@ namespace Mute.Moe.Extensions
                 _keySelector = keySelector;
             }
 
-            public bool Equals([AllowNull] TV x, [AllowNull] TV y)
+            public bool Equals(TV? x, TV? y)
             {
                 if (x is null && y is null)
                     return true;

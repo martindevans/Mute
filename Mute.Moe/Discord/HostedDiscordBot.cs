@@ -95,7 +95,7 @@ namespace Mute.Moe.Discord
         private static async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context,  IResult result)
         {
             //Only pay attention to commands which fail due to an exception
-            if (result.IsSuccess || !result.Error.HasValue || result.Error != CommandError.Exception)
+            if (result.IsSuccess || result.Error is not CommandError.Exception)
                 return;
 
             if (result is ExecuteResult er)

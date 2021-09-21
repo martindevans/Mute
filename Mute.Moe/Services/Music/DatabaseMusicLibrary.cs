@@ -101,18 +101,12 @@ namespace Mute.Moe.Services.Music
 
             DbCommand PrepareQuery(IDatabaseService db)
             {
-                var sql = FindTrackSql;
-                switch (order)
-                {
-                    case TrackOrder.Random:
-                        sql = sql.Replace("{{order}}", "random()");
-                        break;
-                    default:
-                    case null:
-                    case TrackOrder.Id:
-                        sql = sql.Replace("{{order}}", "rowid");
-                        break;
-                }
+                var sql = order switch {
+                    TrackOrder.Random => FindTrackSql.Replace("{{order}}", "random()"),
+                    null => FindTrackSql.Replace("{{order}}", "rowid"),
+                    TrackOrder.Id => FindTrackSql.Replace("{{order}}", "rowid"),
+                    _ => FindTrackSql.Replace("{{order}}", "rowid")
+                };
 
                 var cmd = db.CreateCommand();
                 cmd.CommandText = sql;

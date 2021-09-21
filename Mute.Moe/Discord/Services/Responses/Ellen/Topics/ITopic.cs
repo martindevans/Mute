@@ -7,20 +7,20 @@ using Mute.Moe.Discord.Services.Responses.Ellen.Knowledge;
 namespace Mute.Moe.Discord.Services.Responses.Ellen.Topics
 {
     /// <summary>
-    /// A provider of new topic keys for the chat script
+    /// A provider of new topics for the chat script
     /// </summary>
-    public interface ITopicKeyProvider
+    public interface ITopicProvider
     {
         /// <summary>
         /// A set of topic keys provided by this
         /// </summary>
-        IEnumerable<ITopicKey> Keys { get; }
+        IEnumerable<ITopic> Keys { get; }
     }
 
     /// <summary>
     /// A potential topic the bot can talk about
     /// </summary>
-    public interface ITopicKey
+    public interface ITopic
     {
         /// <summary>
         /// Get the keywords which will trigger an attempt to use this key
@@ -28,7 +28,7 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen.Topics
         IReadOnlyList<string> Keywords { get; }
 
         /// <summary>
-        /// Get the rank of this key, higher ranks will be matched first
+        /// Get the rank of this topic, higher ranks will be matched first
         /// </summary>
         int Rank { get; }
 

@@ -10,24 +10,24 @@ using Mute.Moe.Discord.Services.Responses.Ellen.Knowledge;
 namespace Mute.Moe.Discord.Services.Responses.Ellen.Topics
 {
     public class ElizaTopicProviderAdapter
-        : ITopicKeyProvider
+        : ITopicProvider
     {
-        private readonly List<ITopicKey> _keys;
+        private readonly List<ITopic> _keys;
 
         public ElizaTopicProviderAdapter(Script script)
         {
-            _keys = new List<ITopicKey>();
+            _keys = new List<ITopic>();
             foreach (var (_, values) in script.GetKeys())
                 foreach (var value in values)
                     _keys.Add(new ElizaTopicAdapter(value, script));
 
         }
 
-        public IEnumerable<ITopicKey> Keys => _keys;
+        public IEnumerable<ITopic> Keys => _keys;
     }
 
     public class ElizaTopicAdapter
-        : ITopicKey
+        : ITopic
     {
         private readonly Script _script;
 

@@ -312,10 +312,10 @@ namespace Mute.Moe.Utilities
 
                 var values = cur.Resolution;
 
-                if (!values.TryGetValue("unit", out var unitObj) || !(unitObj is string unit))
+                if (!values.TryGetValue("unit", out var unitObj) || unitObj is not string unit)
                     return new Extraction("unit");
 
-                if (!values.TryGetValue("value", out var valueObj) || !(valueObj is string value))
+                if (!values.TryGetValue("value", out var valueObj) || valueObj is not string value)
                     return new Extraction("value");
 
                 if (!decimal.TryParse(value, out var deci))

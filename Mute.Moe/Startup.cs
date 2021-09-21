@@ -3,9 +3,6 @@ using System.IO;
 using System.IO.Abstractions;
 using AspNetCore.RouteAnalyzer;
 using Discord.Addons.Interactive;
-using GraphQL.Types;
-using GraphQL.Utilities;
-using GraphQL.Validation.Complexity;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -34,13 +31,7 @@ using Mute.Moe.Services.Payment;
 using Mute.Moe.Services.Randomness;
 using Mute.Moe.Services.Sentiment;
 using Newtonsoft.Json;
-using GraphQL.Server;
-using GraphQL.Server.Transports.AspNetCore;
-using GraphQL.Server.Ui.GraphiQL;
 using Mute.Moe.Auth.Asp;
-using Mute.Moe.Auth.GraphQL;
-using Mute.Moe.GQL;
-using Mute.Moe.GQL.Schema;
 using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Audio.Sources.Youtube;
 using Mute.Moe.Services.Information.RSS;
@@ -180,22 +171,6 @@ namespace Mute.Moe
                 d.Scope.Add("identify");
                 d.SaveTokens = true;
             });
-
-            services.AddSingleton<IUserContextBuilder, GraphQLUserContextBuilder>();
-
-            //GraphQL setup
-            GraphTypeTypeRegistry.Register<TimeSpan, TimeSpanMillisecondsGraphType>();
-            services.AddSingleton<InjectedSchema>();
-            services.AddSingleton<InjectedSchema.IRootQuery, StatusSchema>();
-            services.AddSingleton<InjectedSchema.IRootQuery, RemindersQuerySchema>();
-            services.AddSingleton<InjectedSchema.IRootMutation, RemindersMutationSchema>();
-
-            services.AddGraphQLAuth();
-            services.AddGraphQL(options => {
-                options.EnableMetrics = true;
-                options.ExposeExceptions = true;
-                options.ComplexityConfiguration = new ComplexityConfiguration { MaxDepth = 15 };
-            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -212,13 +187,6 @@ namespace Mute.Moe
             app.UseCookiePolicy();
             app.UseAuthentication();
             app.UseResponseCaching();
-
-            app.UseGraphQL<InjectedSchema>();
-            app.UseGraphiQLServer(new GraphiQLOptions
-            {
-                GraphiQLPath = "/graphiql",
-                GraphQLEndPoint = "/graphql"
-            });
 
             app.UseMvc(routes =>
             {

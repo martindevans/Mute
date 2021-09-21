@@ -49,7 +49,7 @@ namespace Mute.Moe.Services.Notifications.RSS
                 return new RssSubscription(
                     reader["Url"].ToString()!,
                     ulong.Parse(reader["ChannelId"].ToString()!),
-                    mention is DBNull ? (ulong?)null : ulong.Parse(mention.ToString()!)
+                    mention is DBNull ? null : ulong.Parse(mention.ToString()!)
                 );
             }
 

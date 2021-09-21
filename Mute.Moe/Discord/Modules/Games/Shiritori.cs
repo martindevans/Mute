@@ -115,7 +115,7 @@ namespace Mute.Moe.Discord.Modules.Games
                 }
 
                 //Check that this word is in the dictionary or if it's not, check if it's got a valid word vector
-                if (!_words.Contains(theirWord) && (await _wordVectors.Vector(theirWord)) == null)
+                if (!_words.Contains(theirWord) && await _wordVectors.Vector(theirWord) == null)
                 {
                     await TypingReplyAsync("That's not a real word! I win :D");
                     return;

@@ -23,7 +23,7 @@ namespace Mute.Moe
         [UsedImplicitly] public STTConfig? STT;
         [UsedImplicitly] public MusicLibraryConfig? MusicLibrary;
 
-        [UsedImplicitly] public bool ProcessMessagesFromSelf = false;
+        [UsedImplicitly] public bool ProcessMessagesFromSelf;
         [UsedImplicitly] public char PrefixCharacter = '!';
     }
 

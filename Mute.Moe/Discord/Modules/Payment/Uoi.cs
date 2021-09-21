@@ -108,7 +108,7 @@ namespace Mute.Moe.Discord.Modules.Payment
             var fid = BalderHash32.Parse(input);
             if (!fid.HasValue)
             {
-                await TypingReplyAsync("Invalid ID `{id}`");
+                await TypingReplyAsync($"Invalid ID `{fid}`");
                 return;
             }
 

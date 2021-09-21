@@ -31,7 +31,7 @@ namespace Mute.Moe.Services.Sentiment.Training
         private async Task TryLearn(IMessage message, IReaction reaction, Sentiment sentiment)
         {
             //Early exit if channel is not a guild channel
-            if (!(message.Channel is SocketGuildChannel gc))
+            if (message.Channel is not SocketGuildChannel gc)
                 return;
             var g = gc.Guild;
 

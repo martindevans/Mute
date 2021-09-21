@@ -43,11 +43,5 @@ namespace Mute.Moe.Discord.Context
         {
             return (T)_resources.GetOrAdd(typeof(T), _ => create());
         }
-
-        public TR GetOrAdd<TR, TV>(TV value, Func<TV, TR> create)
-            where TR : class
-        {
-            return (TR)_resources.GetOrAdd(typeof(TR), (_, v) => create(v), value);
-        }
     }
 }

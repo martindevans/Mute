@@ -66,7 +66,7 @@ namespace Mute.Moe.Discord.Services.Responses
             return _conversations.AddOrUpdate(
                 context.User,
                 _ => newConv,
-                (_, c) => (c?.IsComplete ?? true) ? newConv : c
+                (_, c) => c?.IsComplete ?? true ? newConv : c
             );
         }
 

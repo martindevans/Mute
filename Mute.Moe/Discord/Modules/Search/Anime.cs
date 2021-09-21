@@ -30,7 +30,7 @@ namespace Mute.Moe.Discord.Modules.Search
                 return;
             }
             
-            var nsfwOk = (!(Context.Channel is ITextChannel tc)) || tc.IsNsfw;
+            var nsfwOk = Context.Channel is not ITextChannel tc || tc.IsNsfw;
             if (anime.Adult && !nsfwOk)
             {
                 await TypingReplyAsync($"I found a NSFW anime called `{anime.TitleEnglish}` but NSFW content is not allowed in this channel");
@@ -45,7 +45,7 @@ namespace Mute.Moe.Discord.Modules.Search
         [TypingReply]
         public async Task FindAnimes([Remainder] string term)
         {
-            var nsfwOk = (!(Context.Channel is ITextChannel tc)) || tc.IsNsfw;
+            var nsfwOk = Context.Channel is not ITextChannel tc || tc.IsNsfw;
 
             var animes = _animeSearch
                 .GetAnimesInfoAsync(term)

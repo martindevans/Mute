@@ -49,7 +49,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
             await status.ModifyAsync(m => m.Content = "Done!");
         }
 
-        private static async IAsyncEnumerable<IMessage> ScrapeChannel( IMessageChannel channel, IMessage? start = null)
+        private static async IAsyncEnumerable<IMessage> ScrapeChannel(IMessageChannel channel, IMessage? start = null)
         {
             //If start message is not set then get the latest message in the channel now
             start ??= (await channel.GetMessagesAsync(1).FlattenAsync()).SingleOrDefault();

@@ -15,7 +15,7 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen
     public class EllenResponse
         : IResponse
     {
-        private readonly IReadOnlyList<ITopicKey> _topics;
+        private readonly IReadOnlyList<ITopic> _topics;
 
         public double BaseChance => 0;
         public double MentionedChance => 0;
@@ -25,12 +25,12 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen
             //Get topics
             _topics = (from t in Assembly.GetExecutingAssembly().GetTypes()
                        where t.IsClass
-                       where typeof(ITopicKeyProvider).IsAssignableFrom(t)
-                       let i = ActivatorUtilities.CreateInstance(services, t) as ITopicKeyProvider
+                       where typeof(ITopicProvider).IsAssignableFrom(t)
+                       let i = ActivatorUtilities.CreateInstance(services, t) as ITopicProvider
                        where i != null
                        from k in i.Keys
                        orderby k.Rank
-                       select k).ToArray();
+                       select k).ToList();
         }
 
         public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
@@ -41,14 +41,14 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen
         private class EllenConversation
             : IConversation
         {
-            private readonly IReadOnlyList<ITopicKey> _topics;
+            private readonly IReadOnlyList<ITopic> _topics;
 
             private ITopicDiscussion? _active;
             private IKnowledge _knowledge;
 
             public bool IsComplete { get; private set; }
 
-            public EllenConversation(IReadOnlyList<ITopicKey> topics, IKnowledge root)
+            public EllenConversation(IReadOnlyList<ITopic> topics, IKnowledge root)
             {
                 _topics = topics;
                 _knowledge = root;
@@ -113,7 +113,7 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen
                 return null;
             }
 
-            private static bool IsRelevant(ITopicKey key, MuteCommandContext context)
+            private static bool IsRelevant(ITopic key, MuteCommandContext context)
             {
                 foreach (var keyword in key.Keywords)
                     if (context.Message.Content.Contains(keyword, StringComparison.InvariantCultureIgnoreCase))

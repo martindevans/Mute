@@ -45,18 +45,15 @@ namespace Mute.Moe.Discord.Modules
             if (result.ClassificationScore < _config.CertaintyThreshold)
                 await message.AddReactionAsync(new Emoji(EmojiLookup.Confused));
 
-            switch (result.Classification)
-            {
-                case Moe.Services.Sentiment.Sentiment.Positive:
-                    await message.AddReactionAsync(new Emoji(EmojiLookup.ThumbsUp));
-                    break;
-                case Moe.Services.Sentiment.Sentiment.Neutral:
-                    await message.AddReactionAsync(new Emoji(EmojiLookup.Expressionless));
-                    break;
-                case Moe.Services.Sentiment.Sentiment.Negative:
-                    await message.AddReactionAsync(new Emoji(EmojiLookup.ThumbsDown));
-                    break;
-            }
+            var emoji = result.Classification switch {
+                Moe.Services.Sentiment.Sentiment.Positive => EmojiLookup.ThumbsUp,
+                Moe.Services.Sentiment.Sentiment.Neutral => EmojiLookup.Expressionless,
+                Moe.Services.Sentiment.Sentiment.Negative => EmojiLookup.ThumbsDown,
+                _ => null
+            };
+
+            if (emoji != null)
+                await message.AddReactionAsync(new Emoji(emoji));
         }
 
         [Command("sentiment-score"), Summary("I will show my opinion of a message numerically")]

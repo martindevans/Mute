@@ -94,6 +94,7 @@ function Box() {
         var angles = [];
         var points = [];
 
+        // ReSharper disable once MissingHasOwnPropertyInForeach
         for (var dot in dots) {
             var d = dots[dot];
             var angle = Math.atan2(light.y - d.y, light.x - d.x);

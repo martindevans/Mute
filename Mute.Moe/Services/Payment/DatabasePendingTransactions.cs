@@ -56,9 +56,10 @@ namespace Mute.Moe.Services.Payment
 
         private readonly IDatabaseService _database;
 
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
         public DatabasePendingTransactions( IDatabaseService database,  ITransactions dbTransactions)
         {
-            if (!(dbTransactions is DatabaseTransactions))
+            if (dbTransactions is not DatabaseTransactions)
                 throw new ArgumentException("Transactions service paired with `DatabasePendingTransactions` must be `DatabaseTransactions`");
 
             _database = database;
@@ -138,12 +139,11 @@ namespace Mute.Moe.Services.Payment
 
             var results = await new SqlAsyncResult<PendingState>(_database, PrepareQuery, ParseResult).ToArrayAsync();
 
-            if (results.Length > 1)
-                throw new InvalidOperationException($"Modified more than 1 payment at once! ID:{id}");
-            if (results.Length == 0)
-                return null;
-
-            return results[0];
+            return results.Length switch {
+                > 1 => throw new InvalidOperationException($"Modified more than 1 payment at once! ID:{id}"),
+                0 => null,
+                _ => results[0]
+            };
         }
 
         public async Task<ConfirmResult> ConfirmPending(uint debtId)

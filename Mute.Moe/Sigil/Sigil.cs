@@ -654,8 +654,8 @@ namespace Mute.Moe.Sigil
                         break;
 
                     var el = elements[index];
-                    var x = (128f / width) * i;
-                    var y = (128f / height) * j + yoffset;
+                    var x = 128f / width * i;
+                    var y = 128f / height * j + yoffset;
                     el.SetAttributeValue("transform", $"translate({x},{y}) scale({scalex},{scaley})");
                     root.Add(el);
                 }

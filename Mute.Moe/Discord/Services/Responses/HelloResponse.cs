@@ -53,13 +53,11 @@ namespace Mute.Moe.Discord.Services.Responses
         {
             var hour = DateTime.UtcNow.Hour;
 
-            if (hour is > 5 and <= 12 && _random.NextDouble() < 0.25f)
-                return MorningGreetings.Random(_random);
-
-            if (hour is > 18 and <= 24 && _random.NextDouble() < 0.25f)
-                return EveningGreetings.Random(_random);
-
-            return GeneralGreetings.Random(_random);
+            return hour switch {
+                > 5 and <= 12 when _random.NextDouble() < 0.25f => MorningGreetings.Random(_random),
+                > 18 and <= 24 when _random.NextDouble() < 0.25f => EveningGreetings.Random(_random),
+                _ => GeneralGreetings.Random(_random)
+            };
         }
 
          private static string CleanWord(string word)

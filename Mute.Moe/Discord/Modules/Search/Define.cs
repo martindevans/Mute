@@ -76,10 +76,7 @@ namespace Mute.Moe.Discord.Modules.Search
 
             //Build an embed card for it
             var embed = new EmbedBuilder().WithFooter("👌 urbandictionary.com").WithDescription(definition).WithTimestamp(best.WrittenOn);
-            var url = best.Permalink != null;
-            embed = url
-                ? embed.WithAuthor(new EmbedAuthorBuilder().WithName(best.Word).WithUrl(best.Permalink!.ToString()))
-                : embed.WithTitle(best.Word);
+            embed = embed.WithAuthor(new EmbedAuthorBuilder().WithName(best.Word).WithUrl(best.Permalink.ToString()));
 
             await ReplyAsync(embed: embed.Build());
         }

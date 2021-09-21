@@ -34,7 +34,7 @@ namespace Mute.Moe.Discord.Context.Postprocessing
                 var spaceIndex = input.IndexOf(' ');
                 var inputCmd = input;
                 if (spaceIndex != -1)
-                    inputCmd = input.Substring(0, spaceIndex);
+                    inputCmd = input[..spaceIndex];
 
                 inputCmd = inputCmd.TrimStart(_config.PrefixCharacter);
 

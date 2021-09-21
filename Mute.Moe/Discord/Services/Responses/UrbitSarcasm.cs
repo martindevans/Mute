@@ -49,7 +49,7 @@ namespace Mute.Moe.Discord.Services.Responses
         #region response generator
          private static string Plural( string noun)
         {
-            var suffix = (noun.EndsWith('s') || noun.EndsWith("sh")) ? "es" : "s";
+            var suffix = noun.EndsWith('s') || noun.EndsWith("sh") ? "es" : "s";
             return noun + suffix;
         }
 
@@ -69,12 +69,12 @@ namespace Mute.Moe.Discord.Services.Responses
             var adjective1 = _adjectives.Random(_random);
             var adjective2 = _adjectives.Random(_random);
             var produce = thirdPerson ? "produces" : "produce";
-            var rune1 = _runes.Random(_random);
-            var rune2 = _runes.Random(_random);
+            var (r1Left, r1Right) = _runes.Random(_random);
+            var (r2Left, r2Right) = _runes.Random(_random);
 
             var result = $"Urbit is easy! {intro} {verb} {Article(noun1)} "
                        + $"{noun1} with {Article(adjective1)} {adjective1} {noun2} "
-                       + $"using the {rune1.Item1}{rune2.Item1} ({rune1.Item2}{rune2.Item2}) twig and {produce} "
+                       + $"using the {r1Left}{r2Left} ({r1Right}{r2Right}) twig and {produce} "
                        + $"{adjective2} {Plural(noun3)}";
 
             if (_random.NextDouble() > 0.25)

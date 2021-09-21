@@ -18,7 +18,7 @@
             if (user != null)
             {
                 var service = (IReminders)ViewData["_reminders"];
-                var reminders = await (service.Get(user.Id)).ToArrayAsync();
+                var reminders = await service.Get(user.Id).ToArrayAsync();
 
 
                 foreach (var remind in reminders)

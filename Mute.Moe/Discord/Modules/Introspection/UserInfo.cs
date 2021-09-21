@@ -78,7 +78,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
             if (gu?.Nickname != null)
                 str.Append($" AKA {gu.Nickname}");
 
-            int clause = 0;
+            var clause = 0;
             if (user.IsBot && !user.Username.StartsWith('*'))
             {
                 str.Append(" is a bot");

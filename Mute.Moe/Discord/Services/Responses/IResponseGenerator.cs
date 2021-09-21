@@ -5,6 +5,9 @@ using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Services.Responses
 {
+    /// <summary>
+    /// A possible response to a message which may start a conversation
+    /// </summary>
     public interface IResponse
     {
         /// <summary>
@@ -26,6 +29,9 @@ namespace Mute.Moe.Discord.Services.Responses
         Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention);
     }
 
+    /// <summary>
+    /// A self contained discussion about something
+    /// </summary>
     public interface IConversation
     {
         /// <summary>

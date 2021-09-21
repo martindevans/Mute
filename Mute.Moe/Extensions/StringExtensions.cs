@@ -69,13 +69,15 @@ namespace Mute.Moe.Extensions
 
         public static uint Levenshtein(this string? a, string? b)
         {
-            if (a == null && b == null)
-                return 0;
-
             if (a == null)
-                return (uint)b!.Length;
-            else if (b == null)
-                return (uint)a!.Length;
+            {
+                if (b == null)
+                    return 0;
+                return (uint)b.Length;
+            }
+
+            if (b == null)
+                return (uint)a.Length;
 
             var aLength = (uint)a.Length;
             var bLength = (uint)b.Length;
@@ -145,9 +147,9 @@ namespace Mute.Moe.Extensions
                 return str;
 
             if (maxLength < 2)
-                return str.Substring(0, maxLength);
+                return str[..maxLength];
 
-            return str.Substring(0, maxLength - 1) + '…';
+            return str[..(maxLength - 1)] + '…';
         }
     }
 }

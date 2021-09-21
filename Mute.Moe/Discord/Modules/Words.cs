@@ -114,7 +114,7 @@ namespace Mute.Moe.Discord.Modules
             var vector = await _wordVectors.Vector(word);
             if (vector != null)
             {
-                await TypingReplyAsync("I already know what {word} means!");
+                await TypingReplyAsync($"I already know what {word} means!");
                 return;
             }
 

@@ -27,27 +27,13 @@ namespace Mute.Moe.Services.Information.SpaceX.Extensions
         {
             if (info == null)
                 throw new ArgumentNullException(nameof(info));
-
-            //Choose color based on status
-            Color color;
-            switch (info.Status)
+            var color = info.Status switch
             {
-                case CoreStatus.Active:
-                    color = Color.Green;
-                    break;
-                case CoreStatus.Expended:
-                case CoreStatus.Lost:
-                    color = Color.Red;
-                    break;
-                case CoreStatus.Retired:
-                case CoreStatus.Inactive:
-                    color = Color.DarkGrey;
-                    break;
-                case CoreStatus.Unknown:
-                default:
-                    color = Color.Purple;
-                    break;
-            }
+                CoreStatus.Active => Color.Green,
+                CoreStatus.Expended or CoreStatus.Lost => Color.Red,
+                CoreStatus.Retired or CoreStatus.Inactive => Color.DarkGrey,
+                _ => Color.Purple,
+            };
 
             //Create text description
             var description = "";

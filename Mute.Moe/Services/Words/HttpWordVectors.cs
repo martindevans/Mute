@@ -212,7 +212,7 @@ namespace Mute.Moe.Services.Words
         {
             private readonly object _lock = new();
 
-            private int _failures = 0;
+            private int _failures;
             private DateTime _previousFailure;
 
             public void Fail()
@@ -245,7 +245,7 @@ namespace Mute.Moe.Services.Words
 
                     // How long between attempts should we wait?
                     var time = Math.Min(5000, _failures * 3);
-                    return (DateTime.UtcNow - TimeSpan.FromMilliseconds(time) > _previousFailure);
+                    return DateTime.UtcNow - TimeSpan.FromMilliseconds(time) > _previousFailure;
                 }
             }
         }

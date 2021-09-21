@@ -54,7 +54,7 @@ namespace Mute.Moe.Discord.Modules
                 return;
             }
 
-            if (!(Context.User is IGuildUser gu))
+            if (Context.User is not IGuildUser gu)
             {
                 await TypingReplyAsync("You need to do this within a guild channel");
                 return;
@@ -73,7 +73,7 @@ namespace Mute.Moe.Discord.Modules
                 return;
             }
 
-            if (!(Context.User is IGuildUser gu))
+            if (Context.User is not IGuildUser gu)
             {
                 await TypingReplyAsync("You need to do this within a guild channel");
                 return;

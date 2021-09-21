@@ -109,7 +109,7 @@ namespace Mute.Moe.Discord.Modules
             private readonly Action<T, EmbedBuilder> _build;
 
             public RunMode RunMode => RunMode.Async;
-            public ICriterion<SocketReaction> Criterion => (ICriterion<SocketReaction>)this;
+            public ICriterion<SocketReaction> Criterion => this;
             public TimeSpan? Timeout { get; }
             public SocketCommandContext Context { get; }
 

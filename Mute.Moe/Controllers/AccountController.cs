@@ -35,7 +35,7 @@ namespace Mute.Moe.Controllers
         }
 
         [Route("SignOut")]
-        public async Task<IActionResult> SignOut()
+        public new async Task<IActionResult> SignOut()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");

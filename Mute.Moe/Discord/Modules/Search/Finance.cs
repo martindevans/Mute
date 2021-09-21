@@ -4,8 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-
-
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.Cryptocurrency;
@@ -38,22 +36,18 @@ namespace Mute.Moe.Discord.Modules.Search
         }
 
         [Command("ticker"), Summary("I will find out information about a stock or currency")]
-        public async Task Ticker( string symbolOrName, string quote = "USD")
+        public async Task Ticker(string symbolOrName, string quote = "USD")
         {
-            if (await TickerAsCrypto(symbolOrName, quote))
-                return;
+            var crypto = TickerAsCrypto(symbolOrName, quote);
+            var forex = TickerAsForex(symbolOrName, quote);
+            var stock = TickerAsStock(symbolOrName);
 
-            if (await TickerAsForex(symbolOrName, quote))
-                return;
-
-            if (await TickerAsStock(symbolOrName))
-                return;
-
-            await Suggestions(symbolOrName, "crypto, currency or stock");
+            if (!(await Task.WhenAll(crypto, forex, stock)).Any())
+                await Suggestions(symbolOrName, "crypto, currency or stock");
         }
 
         [Command("crypto")]
-        public async Task TickerCrypto( string symbolOrName, string quote = "USD")
+        public async Task TickerCrypto(string symbolOrName, string quote = "USD")
         {
             if (!await TickerAsCrypto(symbolOrName, quote))
             {
@@ -66,7 +60,7 @@ namespace Mute.Moe.Discord.Modules.Search
         }
 
         [Command("forex")]
-        public async Task TickerForex( string symbolOrName, string quote = "USD")
+        public async Task TickerForex(string symbolOrName, string quote = "USD")
         {
             if (!await TickerAsForex(symbolOrName, quote))
             {
@@ -79,7 +73,7 @@ namespace Mute.Moe.Discord.Modules.Search
         }
 
         [Command("stock")]
-        public async Task TickerStock( string symbolOrName)
+        public async Task TickerStock(string symbolOrName)
         {
             if (!await TickerAsStock(symbolOrName))
             {
@@ -124,7 +118,7 @@ namespace Mute.Moe.Discord.Modules.Search
                         change += "up";
                     else if (delta < 0)
                         change += "down";
-                    change += $" {(delta / result.Price):P}";
+                    change += $" {delta / result.Price:P}";
                 }
                 else
                     change += "no change";
@@ -151,7 +145,7 @@ namespace Mute.Moe.Discord.Modules.Search
             return false;
         }
 
-        private async Task<bool> TickerAsCrypto( string symbolOrName, string quote)
+        private async Task<bool> TickerAsCrypto(string symbolOrName, string quote)
         {
             //Try to parse the sym/name as a cryptocurrency
             var currency = await _crypto.FindBySymbolOrName(symbolOrName);

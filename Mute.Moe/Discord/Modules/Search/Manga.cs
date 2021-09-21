@@ -33,7 +33,7 @@ namespace Mute.Moe.Discord.Modules.Search
                     if (!string.IsNullOrWhiteSpace(manga.Url))
                         addon += $"... <[Read More]({manga.Url})>";
 
-                    desc = desc.Substring(0, 2047 - addon.Length);
+                    desc = desc[..(2047 - addon.Length)];
                     desc += addon;
                 }
 

@@ -18,7 +18,7 @@ namespace Mute.Moe.Extensions
                 if (!string.IsNullOrWhiteSpace(anime.Url))
                     addon += $"... <[Read More]({anime.Url})>";
 
-                desc = desc.Substring(0, 2047 - addon.Length);
+                desc = desc[..(2047 - addon.Length)];
                 desc += addon;
             }
 

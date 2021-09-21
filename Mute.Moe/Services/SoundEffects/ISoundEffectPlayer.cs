@@ -35,7 +35,7 @@ namespace Mute.Moe.Services.SoundEffects
             if (!_fs.File.Exists(sfx.Path))
                 return (PlayResult.FileNotFound, Task.CompletedTask);
 
-            if (!(user is IVoiceState vs))
+            if (user is not IVoiceState vs)
                 return (PlayResult.UserNotInVoice, Task.CompletedTask);
 
             var q = await _queueCollection.Get(vs.VoiceChannel.Guild.Id);

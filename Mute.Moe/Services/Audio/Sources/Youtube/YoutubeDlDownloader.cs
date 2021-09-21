@@ -158,7 +158,7 @@ namespace Mute.Moe.Services.Audio.Sources.Youtube
                         title,
                         url.ToString(),
                         thumbnail,
-                        string.IsNullOrWhiteSpace(artist) ? Array.Empty<string>() : new[] {artist!},
+                        string.IsNullOrWhiteSpace(artist) ? Array.Empty<string>() : new[] { artist },
                         duration
                     )
                 );

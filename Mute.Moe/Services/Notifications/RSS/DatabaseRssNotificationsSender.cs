@@ -2,7 +2,6 @@
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Linq;
-using System.Reactive;
 using System.ServiceModel.Syndication;
 using System.Threading.Tasks;
 using System.Xml;
@@ -91,9 +90,9 @@ namespace Mute.Moe.Services.Notifications.RSS
 
         private async Task<bool> HasBeenPublished(string channelId, string feedUrl, string uniqueId)
         {
-            static Unit ParseSubscription(DbDataReader reader)
+            static int ParseSubscription(DbDataReader reader)
             {
-                return Unit.Default;
+                return 0;
             }
 
             DbCommand PrepareQuery(IDatabaseService db)
@@ -106,7 +105,7 @@ namespace Mute.Moe.Services.Notifications.RSS
                 return cmd;
             }
 
-            return await new SqlAsyncResult<Unit>(_database, PrepareQuery, ParseSubscription).AnyAsync();
+            return await new SqlAsyncResult<int>(_database, PrepareQuery, ParseSubscription).AnyAsync();
         }
 
         private async Task Publish(IRssSubscription feed, SyndicationItem item)
@@ -125,7 +124,7 @@ namespace Mute.Moe.Services.Notifications.RSS
         private static EmbedBuilder FormatMessage(SyndicationItem item)
         {
             var desc = item.Summary?.Text ?? "";
-            desc = desc.Substring(0, Math.Min(desc.Length, 1000));
+            desc = desc[..Math.Min(desc.Length, 1000)];
             desc = System.Net.WebUtility.HtmlDecode(desc);
 
             var embed = new EmbedBuilder()

@@ -34,7 +34,7 @@ namespace Mute.Moe.Services.Randomness
             while (randomNumber >= sides * fullSetsOfValues);
 
             //Now that we have a fair value, return it within the specified range
-            return (randomNumber % sides) + 1;
+            return randomNumber % sides + 1;
         }
     }
 }
