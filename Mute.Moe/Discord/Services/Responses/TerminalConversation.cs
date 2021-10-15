@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-
 using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Services.Responses
@@ -14,7 +13,7 @@ namespace Mute.Moe.Discord.Services.Responses
 
         public bool IsComplete { get; private set; }
 
-        protected TerminalConversation(string? response, params IEmote[]? reactions)
+        public TerminalConversation(string? response, params IEmote[]? reactions)
         {
             _response = response;
             _reactions = reactions;

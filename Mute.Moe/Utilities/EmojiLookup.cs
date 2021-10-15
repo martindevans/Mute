@@ -26,6 +26,7 @@
         public const string SkullAndCrossbones = "☠️";
         public const string Skull = "💀";
         public const string Coffin = "⚰️";
+        public const string CrystalBall = "🔮";
         
         public const string Shuffle = "🔀";
         public const string Play = "▶";

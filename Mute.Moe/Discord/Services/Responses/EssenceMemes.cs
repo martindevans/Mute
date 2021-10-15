@@ -2,25 +2,26 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
+using Discord;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Services.Responses
 {
-    public class DarkCrystalEssence
+    public class EssenceMemes
         : IResponse
     {
-        public double BaseChance => 0.50;
+        public double BaseChance => 0.15;
         public double MentionedChance => 1;
 
         private readonly Random _random;
 
         private readonly HashSet<string> _triggerWords = new() {
-            "essence", "essences",
+            "essence", "dark crystal",
         };
 
-        public DarkCrystalEssence(Random random)
+        public EssenceMemes(Random random)
         {
             _random = random;
         }
@@ -32,22 +33,23 @@ namespace Mute.Moe.Discord.Services.Responses
 
             var words = msg.ToLowerInvariant().Split(' ');
             if (_triggerWords.Overlaps(words))
-                return new DarkCrystalConversation(Text());
+            {
+                if (_random.NextDouble() < 0.5f)
+                    return new TerminalConversation(Text());
+                else
+                    return new TerminalConversation(null, Emotes());
+            }
             else
                 return null;
         }
 
-        private class DarkCrystalConversation
-            : TerminalConversation
+        #region response generator
+        private static IEmote[] Emotes()
         {
-            public DarkCrystalConversation(string response)
-                : base(response)
-            {
-            }
+            return new IEmote[] { new Emoji(EmojiLookup.CrystalBall) };
         }
 
-        #region response generator
-         private string Text()
+        private string Text()
         {
             var gif = _gifs.Random(_random);
             return $"{gif}";

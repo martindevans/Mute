@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
 
@@ -47,18 +46,18 @@ namespace Mute.Moe.Discord.Services.Responses
         }
 
         #region response generator
-         private static string Plural( string noun)
+        private static string Plural(string noun)
         {
             var suffix = noun.EndsWith('s') || noun.EndsWith("sh") ? "es" : "s";
             return noun + suffix;
         }
 
-         private static string Article( string word)
+        private static string Article(string word)
         {
             return Regex.IsMatch(word, "^[aeiou]") ? "an" : "a";
         }
 
-         private string Sarcasm()
+        private string Sarcasm()
         {
             var intro = _intros.Random(_random);
             var thirdPerson = intro.Contains("Hoon");
@@ -96,9 +95,11 @@ namespace Mute.Moe.Discord.Services.Responses
             "~fyr",
             "~ped",
             "~doznec",
+            "~narten",
+            "~lidpes-fogtug",
             "~tasfyn-partyv",
             "~porned-fapped",
-            "~torbyt^sogwyx"
+            "~torbyt^sogwyx",
         };
 
         private readonly IReadOnlyList<string> _verbs = new[] {
