@@ -18,7 +18,7 @@ namespace Mute.Moe.Discord.Services.Responses
         private readonly Random _random;
 
         private readonly HashSet<string> _triggerWords = new() {
-            "essence", "dark crystal",
+            "essence",
         };
 
         public EssenceMemes(Random random)
