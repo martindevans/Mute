@@ -160,6 +160,8 @@ namespace Mute.Moe
             });
 
             var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(Configuration["BotConfigPath"]));
+            if (config == null)
+                throw new InvalidOperationException("Config was null");
             services.AddSingleton(config);
 
             if (config.Auth == null)

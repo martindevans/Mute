@@ -25,26 +25,29 @@ namespace Mute.Moe.Discord.Services.Games
             database.Exec("CREATE INDEX IF NOT EXISTS `GamesPlayedByGame` ON `Games_Played` (`GameId` ASC);");
         }
 
-        private async Task Updated(SocketUser _, SocketUser b)
+        private async Task Updated(Cacheable<SocketGuildUser, ulong> _, SocketGuildUser user)
         {
-            if (b.Activity?.Type != ActivityType.Playing)
-                return;
-
-            if (string.IsNullOrWhiteSpace(b.Activity.Name))
-                return;
-
-            await using var cmd = _database.CreateCommand();
-            cmd.CommandText = InsertGamePlayed;
-            cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = b.Id });
-            cmd.Parameters.Add(new SQLiteParameter("@GameId", System.Data.DbType.String) { Value = b.Activity.Name });
-
-            var count = await cmd.ExecuteNonQueryAsync();
-
-            if (count > 0)
+            foreach (var activity in user.Activities)
             {
-                //Get `unlimited-bot-works` channel
-                var c = _client.GetGuild(415655090842763265).GetChannel(445018769622958091);
-                await ((ISocketMessageChannel)c).SendMessageAsync($"{b.Username} is playing a new game: `{b.Activity.Name}`");
+                if (activity?.Type != ActivityType.Playing)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(activity.Name))
+                    continue;
+
+                await using var cmd = _database.CreateCommand();
+                cmd.CommandText = InsertGamePlayed;
+                cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = user.Id });
+                cmd.Parameters.Add(new SQLiteParameter("@GameId", System.Data.DbType.String) { Value = activity.Name });
+
+                var count = await cmd.ExecuteNonQueryAsync();
+
+                if (count > 0)
+                {
+                    //Get `unlimited-bot-works` channel
+                    var c = _client.GetGuild(415655090842763265).GetChannel(445018769622958091);
+                    await ((ISocketMessageChannel)c).SendMessageAsync($"{user.Username} is playing a new game: `{activity.Name}`");
+                }
             }
         }
     }

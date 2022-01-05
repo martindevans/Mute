@@ -69,7 +69,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
                 return GetUserInfo(_client.GetUser(id));
         }
 
-        private static string GetUserInfo( IUser user)
+        private static string GetUserInfo(IUser user)
         {
             var str = new StringBuilder($"{user.Username}");
 
@@ -85,9 +85,11 @@ namespace Mute.Moe.Discord.Modules.Introspection
                 clause++;
             }
 
-            if (gu?.Activity != null)
+            var activities = gu?.Activities;
+            if (activities?.Count >= 1)
             {
-                str.Append($" is currently {gu.Activity.Type} {gu.Activity.Name}");
+                var activity = activities.First();
+                str.Append($" is currently {activity.Type} {activity.Name}");
                 clause++;
             }
 

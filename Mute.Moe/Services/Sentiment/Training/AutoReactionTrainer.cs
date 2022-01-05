@@ -18,7 +18,7 @@ namespace Mute.Moe.Services.Sentiment.Training
             client.ReactionAdded += OnReactionAdded;
         }
 
-        private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> message,  ISocketMessageChannel channel,  SocketReaction reaction)
+        private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
             if (SentimentResponse.Happy.Contains(reaction.Emote.Name))
                 await TryLearn(await message.DownloadAsync(), reaction, Sentiment.Positive);

@@ -131,7 +131,7 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                 var info = await _client.GetApplicationInfoAsync();
                 if (info.Owner != null)
                 {
-                    var channel = await info.Owner.GetOrCreateDMChannelAsync();
+                    var channel = await info.Owner.CreateDMChannelAsync();
                     await channel.SendMessageAsync($"{nameof(AsyncSpacexNotificationsSender)} notifications thread crashed:");
                     await channel.SendLongMessageAsync(e.ToString());
                 }
