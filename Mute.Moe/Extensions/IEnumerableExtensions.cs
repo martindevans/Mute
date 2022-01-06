@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Mute.Moe.Extensions
 {
     public static class IEnumerableExtensions
     {
-        public static T? Random<T>(this IEnumerable<T> items,  Random random)
+        public static T? Random<T>(this IEnumerable<T>? items,  Random random)
         {
+            if (items == null)
+                return default;
+
             // Pick first element (probability 1)
             // Later, for kth element pick it with probability 1/k (i.e. replace the existing selection with kth element)
 
@@ -49,49 +51,6 @@ namespace Mute.Moe.Extensions
                 throw new InvalidOperationException("items must contains at least one item");
 
             return result!;
-        }
-
-        public static TV MinBy<TV, TK>( this IEnumerable<TV> items,  Func<TV, TK> keySelector)
-            where TK : IComparable<TK>
-        {
-            return items
-                .Select(a => new  { item = a, k = keySelector(a) })
-                .Aggregate((a, b) => a.k.CompareTo(b.k) < 0 ? a : b)
-                .item;
-        }
-
-        
-        public static IEnumerable<TV> DistinctBy<TV, TK>( this IEnumerable<TV> items,  Func<TV, TK> keySelector)
-            where TK : IEquatable<TK>
-        {
-            return items.Distinct(new DistinctByComparer<TV, TK>(keySelector));
-        }
-
-        private class DistinctByComparer<TV, TK>
-            : IEqualityComparer<TV>
-            where TK : IEquatable<TK>
-        {
-            private readonly Func<TV, TK> _keySelector;
-
-            public DistinctByComparer(Func<TV, TK> keySelector)
-            {
-                _keySelector = keySelector;
-            }
-
-            public bool Equals(TV? x, TV? y)
-            {
-                if (x is null && y is null)
-                    return true;
-                if (x is null || y is null)
-                    return false;
-
-                return _keySelector(x).Equals(_keySelector(y));
-            }
-
-            public int GetHashCode(TV obj)
-            {
-                return _keySelector(obj).GetHashCode();
-            }
         }
     }
 }

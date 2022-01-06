@@ -1,9 +1,10 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Mute.Moe.Services.Host;
+using Newtonsoft.Json;
 
 namespace Mute.Moe
 {
@@ -13,20 +14,20 @@ namespace Mute.Moe
         {
             DependencyHelper.TestDependencies();
 
-            var host = WebHost.CreateDefaultBuilder(args)
-                              .UseStartup<Startup>()
-                              .UseKestrel()
-                              .Build();
+            var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)));
+            if (config == null)
+                throw new InvalidOperationException("Config was null");
 
-            var cts = new CancellationTokenSource();
-            var webhost = host.RunAsync(cts.Token);
+            var collection = new ServiceCollection();
+            collection.AddSingleton<ServiceHost>();
+            var startup = new Startup(config);
+            startup.ConfigureServices(collection);
+            var provider = collection.BuildServiceProvider();
 
-            await Task.Delay(1000, cts.Token);
-
+            await provider.GetRequiredService<ServiceHost>().StartAsync(default);
+            await Task.Delay(1000);
             WaitForExitSignal();
-
-            cts.Cancel();
-            await webhost;
+            await provider.GetRequiredService<ServiceHost>().StopAsync(default);
         }
 
         /// <summary>

@@ -6,13 +6,6 @@ namespace Mute.Moe.Services.Randomness
     public class CryptoDiceRoller
         : IDiceRoller
     {
-        private readonly RNGCryptoServiceProvider _rng;
-
-        public CryptoDiceRoller()
-        {
-            _rng = new RNGCryptoServiceProvider();
-        }
-
         public ulong Roll(ulong sides)
         {
             if (sides == 0)
@@ -23,15 +16,15 @@ namespace Mute.Moe.Services.Randomness
             var fullSetsOfValues = ulong.MaxValue / sides;
 
             //Keep re-rolling until the roll is fair
+            using var rng = RandomNumberGenerator.Create();
             ulong randomNumber = 0;
             do
             {
                 unsafe
                 {
-                    _rng.GetBytes(new Span<byte>(&randomNumber, sizeof(ulong)));
+                    rng.GetBytes(new Span<byte>(&randomNumber, sizeof(ulong)));
                 }
-            }
-            while (randomNumber >= sides * fullSetsOfValues);
+            } while (randomNumber >= sides * fullSetsOfValues);
 
             //Now that we have a fair value, return it within the specified range
             return randomNumber % sides + 1;

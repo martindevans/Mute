@@ -33,8 +33,8 @@ namespace Mute.Moe.Services.Information.Forex
             if (cached != null)
                 return cached;
 
-            var from = Uri.EscapeUriString(fromSymbol);
-            var to = Uri.EscapeUriString(toSymbol);
+            var from = Uri.EscapeDataString(fromSymbol);
+            var to = Uri.EscapeDataString(toSymbol);
 
             using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={from}&to_currency={to}&apikey={_key}");
             if (!result.IsSuccessStatusCode)

@@ -2,9 +2,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-using Microsoft.Extensions.Hosting;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Games;
+using Mute.Moe.Services.Host;
 using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.Notifications.RSS;
 using Mute.Moe.Services.Notifications.SpaceX;

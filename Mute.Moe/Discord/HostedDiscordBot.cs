@@ -10,11 +10,11 @@ using Discord.Rest;
 using Discord.WebSocket;
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Context.Postprocessing;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Discord.Services.Responses;
+using Mute.Moe.Services.Host;
 
 namespace Mute.Moe.Discord
 {
@@ -110,7 +110,7 @@ namespace Mute.Moe.Discord
             await _client.StopAsync();
         }
 
-         private async Task HandleMessage(SocketMessage socketMessage)
+        private async Task HandleMessage(SocketMessage socketMessage)
         {
             // Don't process the command if it was a System Message
             if (socketMessage is not SocketUserMessage message)

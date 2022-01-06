@@ -28,7 +28,7 @@ namespace Mute.Moe.Services.Information.Stocks
         {
             //https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=g&apikey=demo
 
-            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords={Uri.EscapeUriString(search)}&apikey={_key}");
+            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords={Uri.EscapeDataString(search)}&apikey={_key}");
             if (!result.IsSuccessStatusCode)
                 yield break;
 

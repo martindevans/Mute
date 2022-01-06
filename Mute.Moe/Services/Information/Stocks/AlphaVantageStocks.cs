@@ -36,7 +36,7 @@ namespace Mute.Moe.Services.Information.Stocks
             if (cached != null)
                 return cached;
 
-            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={Uri.EscapeUriString(stock)}&apikey={_key}");
+            using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={Uri.EscapeDataString(stock)}&apikey={_key}");
             if (!result.IsSuccessStatusCode)
                 return null;
 

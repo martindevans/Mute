@@ -49,7 +49,7 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
 
         public async Task<ICurrency?> FindBySymbol(string symbol)
         {
-            symbol = Uri.EscapeUriString(symbol.ToUpperInvariant());
+            symbol = Uri.EscapeDataString(symbol.ToUpperInvariant());
             var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?CMC_PRO_API_KEY={_key}&symbol={symbol}";
             return await GetOrDownload<string, ICurrency, CmcCurrencyResponse>(symbol, _currencyCache, _currencyBySymbol, _ => _http.GetAsync(url), a => a.Data.Values);
         }
@@ -175,7 +175,7 @@ namespace Mute.Moe.Services.Information.Cryptocurrency
                     countRemaining--;
                 }
 
-                var allTokens = string.Join(",", tokens.Distinct().Select(Uri.EscapeUriString));
+                var allTokens = string.Join(",", tokens.Distinct().Select(Uri.EscapeDataString));
                 var uri = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?CMC_PRO_API_KEY={_key}&symbol={allTokens}";
 
                 return await _http.GetAsync(uri);

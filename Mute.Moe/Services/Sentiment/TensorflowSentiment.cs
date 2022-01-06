@@ -34,6 +34,9 @@ namespace Mute.Moe.Services.Sentiment
 
         public async Task<SentimentResult> Predict(string message)
         {
+            if (string.IsNullOrWhiteSpace(message))
+                return new SentimentResult(message, 0, 0, 1, TimeSpan.Zero);
+
             try
             {
                 var w = new Stopwatch();
@@ -50,19 +53,16 @@ namespace Mute.Moe.Services.Sentiment
                 //Create input tensor (1 sentence, N words, 300 word vector dimensions)
                 var input = new float[1, words.Length, 300];
 
-                var tasks = words.Select(_wordVectors.Vector).ToArray();
-                await Task.WhenAll(tasks);
+                var tasks = words.Select(_wordVectors.Vector).ToList();
 
                 //Copy in word vectors element by element
                 var wordIndex = 0;
                 foreach (var wordVector in tasks)
                 {
-                    for (var i = 0; i < 300; i++)
-                    {
-                        var wv = await wordVector;
-                        if (wv != null)
+                    var wv = await wordVector;
+                    if (wv != null)
+                        for (var i = 0; i < 300; i++)
                             input[0, wordIndex, i] = wv[i];
-                    }
 
                     wordIndex++;
                 }

@@ -61,7 +61,7 @@ namespace Mute.Moe.Services.Words
 
             try
             {
-                var url = new UriBuilder(_baseUrl) {Path = $"get_vector/{Uri.EscapeUriString(word)}"};
+                var url = new UriBuilder(_baseUrl) {Path = $"get_vector/{Uri.EscapeDataString(word)}"};
 
                 using var resp = await _client.GetAsync(url.ToString());
                 if (!resp.IsSuccessStatusCode)
@@ -106,7 +106,7 @@ namespace Mute.Moe.Services.Words
 
             try
             {
-                var url = new UriBuilder(_baseUrl) {Path = $"get_similar/{Uri.EscapeUriString(word)}"};
+                var url = new UriBuilder(_baseUrl) {Path = $"get_similar/{Uri.EscapeDataString(word)}"};
 
                 using var resp = await _client.GetAsync(url.ToString());
                 if (!resp.IsSuccessStatusCode)

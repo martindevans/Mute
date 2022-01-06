@@ -1,15 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.IO.Abstractions;
-using AspNetCore.RouteAnalyzer;
 using Discord.Addons.Interactive;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Mute.Moe.Discord;
 using Mute.Moe.Discord.Services;
 using Mute.Moe.Discord.Services.Games;
@@ -30,8 +23,6 @@ using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.Payment;
 using Mute.Moe.Services.Randomness;
 using Mute.Moe.Services.Sentiment;
-using Newtonsoft.Json;
-using Mute.Moe.Auth.Asp;
 using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Audio.Sources.Youtube;
 using Mute.Moe.Services.Information.RSS;
@@ -46,20 +37,21 @@ using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Words;
 using System.Net.Http;
+using System.Security.Cryptography;
 using Discord.WebSocket;
-using Microsoft.Extensions.Hosting;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses.Eliza.Scripts;
 using Oddity;
+using Mute.Moe.Services.Host;
 
 namespace Mute.Moe
 {
     public class Startup
     {
-        public IConfiguration Configuration { get; }
+        public Configuration Configuration { get; }
 
-        public Startup(IConfiguration configuration)
+        public Startup(Configuration configuration)
         {
             Configuration = configuration;
         }
@@ -137,64 +129,10 @@ namespace Mute.Moe
             services.AddHostedService<HostedDiscordBot>();
             services.AddHostedService<ServicePreloader>();
 
-            services.Configure<CookiePolicyOptions>(options =>
-            {
-                // This lambda determines whether user consent for non-essential cookies is needed for a given request.
-                options.CheckConsentNeeded = context => false;
-                options.MinimumSameSitePolicy = SameSiteMode.None;
-            });
+            services.AddSingleton(Configuration);
 
-            services.AddMemoryCache();
-            services.AddResponseCaching();
-            services.AddRouteAnalyzer();
-
-            services.AddMvc(o => {
-                o.EnableEndpointRouting = false;
-            });
-
-            services.AddAspAuth();
-            
-            services.AddLogging(logging => {
-                //logging.AddConsole();
-                logging.AddDebug();
-            });
-
-            var config = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText(Configuration["BotConfigPath"]));
-            if (config == null)
-                throw new InvalidOperationException("Config was null");
-            services.AddSingleton(config);
-
-            if (config.Auth == null)
+            if (Configuration.Auth == null)
                 throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
-
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie("Cookies").AddDiscord(d => {
-                d.AppId = config.Auth.ClientId;
-                d.AppSecret = config.Auth.ClientSecret;
-                d.Scope.Add("identify");
-                d.SaveTokens = true;
-            });
-        }
-
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
-                app.UseDeveloperExceptionPage();
-            else
-            {
-                app.UseStatusCodePagesWithRedirects("/error/{0}");
-                //app.UseHttpsRedirection();
-            }
-
-            app.UseStaticFiles();
-            app.UseCookiePolicy();
-            app.UseAuthentication();
-            app.UseResponseCaching();
-
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(name: "default", template: "{controller=Home}/{action=Index}/{id?}");
-                routes.MapRouteAnalyzer("/routes");
-            });
         }
     }
 }
