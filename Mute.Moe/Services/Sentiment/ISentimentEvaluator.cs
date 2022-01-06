@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Mute.Moe.Services.Host;
 
 namespace Mute.Moe.Services.Sentiment
 {
     public interface ISentimentEvaluator
+        : IHostedService
     {
         Task<SentimentResult> Predict(string message);
     }

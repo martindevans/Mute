@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -24,9 +25,8 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             TimeSpan.FromMinutes(5),
         };
 
-        public bool Status => !_thread.IsFaulted;
+        private CancellationTokenSource? _cts;
 
-        private readonly Task _thread;
         private NotificationState? _state;
 
         public AsyncSpacexNotificationsSender(DiscordSocketClient client, ISpacexNotifications notifications, ISpacexInfo spacex)
@@ -34,21 +34,30 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             _client = client;
             _notifications = notifications;
             _spacex = spacex;
-
-            _thread = Task.Run(ThreadEntry);
         }
 
-        private async Task ThreadEntry()
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _cts = new CancellationTokenSource();
+            var _ = Task.Run(() => ThreadEntry(_cts.Token), _cts.Token);
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _cts?.Cancel();
+        }
+
+        private async Task ThreadEntry(CancellationToken token)
         {
             try
             {
                 // Initial setup
-                while (true)
+                while (!token.IsCancellationRequested)
                 {
                     var state = await _spacex.NextLaunch();
                     if (state == null)
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(30));
+                        await Task.Delay(TimeSpan.FromSeconds(30), token);
                     }
                     else
                     {
@@ -61,13 +70,19 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                 while (true)
                 {
                     //Unconditionally wait 1 second so we don't hit the spacex API too often
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(1), token);
 
                     //Get the next launch according to the API
                     var newNext = await _spacex.NextLaunch();
                     if (newNext == null)
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(1));
+                        await Task.Delay(TimeSpan.FromSeconds(1), token);
+                        continue;
+                    }
+
+                    if (_state == null)
+                    {
+                        _state = new NotificationState(newNext, DateTime.UtcNow);
                         continue;
                     }
 
@@ -115,15 +130,15 @@ namespace Mute.Moe.Services.Notifications.SpaceX
                         if (nextEventTime < TimeSpan.FromHours(1))
                         {
                             if (nextEventTime > TimeSpan.FromSeconds(0.5f))
-                                await Task.Delay(nextEventTime);
+                                await Task.Delay(nextEventTime, token);
                             else
-                                await Task.Delay(TimeSpan.FromSeconds(0.5f));
+                                await Task.Delay(TimeSpan.FromSeconds(0.5f), token);
                         }
                         else
-                            await Task.Delay(TimeSpan.FromHours(1));
+                            await Task.Delay(TimeSpan.FromHours(1), token);
                     }
                     else
-                        await Task.Delay(TimeSpan.FromHours(1));
+                        await Task.Delay(TimeSpan.FromHours(1), token);
                 }
             }
             catch (Exception e)
@@ -138,18 +153,18 @@ namespace Mute.Moe.Services.Notifications.SpaceX
             }
         }
 
-         private static string NextLaunchChangedMessage(LaunchInfo previous, LaunchInfo next)
+        private static string NextLaunchChangedMessage(LaunchInfo previous, LaunchInfo next)
         {
             return $"The next SpaceX Launch has changed from {previous.FlightNumber}.{previous.Name} to {next.FlightNumber}.{next.Name}";
         }
 
-         private static string ExpectedLaunchTimeChangedMessage(LaunchInfo launch, DateTime previousT, DateTime newT)
+        private static string ExpectedLaunchTimeChangedMessage(LaunchInfo launch, DateTime previousT, DateTime newT)
         {
             var delay = newT - previousT;
             return $"SpaceX launch {launch.Name} has been delayed by {delay.Humanize()} to {newT:HH\\:mm UTC dd-MMM-yyyy}";
         }
 
-         private static string PeriodicReminderMessage(LaunchInfo launch)
+        private static string PeriodicReminderMessage(LaunchInfo launch)
         {
             //Append video link if there is one.
             var video = "";

@@ -1,21 +1,34 @@
 ﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 
 using Mute.Moe.Discord.Services.Responses;
+using Mute.Moe.Services.Host;
 
 namespace Mute.Moe.Services.Sentiment.Training
 {
     public class AutoReactionTrainer
+        : IHostedService
     {
         private readonly ISentimentTrainer _sentiment;
+        private readonly BaseSocketClient _client;
 
         public AutoReactionTrainer(BaseSocketClient client, ISentimentTrainer sentiment)
         {
             _sentiment = sentiment;
+            _client = client;
+        }
 
-            client.ReactionAdded += OnReactionAdded;
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _client.ReactionAdded += OnReactionAdded;
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _client.ReactionAdded -= OnReactionAdded;
         }
 
         private async Task OnReactionAdded(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)

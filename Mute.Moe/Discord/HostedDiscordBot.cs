@@ -8,33 +8,31 @@ using Discord;
 using Discord.Commands;
 using Discord.Rest;
 using Discord.WebSocket;
-
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Context.Postprocessing;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Discord.Services.Responses;
-using Mute.Moe.Services.Host;
 
 namespace Mute.Moe.Discord
 {
     public class HostedDiscordBot
-        : IHostedService
     {
-        private readonly DiscordSocketClient _client;
         private readonly Configuration _config;
         private readonly CommandService _commands;
         private readonly IServiceProvider _services;
 
+        public DiscordSocketClient Client { get; }
+
         public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services)
         {
-            _client = client ?? throw new ArgumentNullException(nameof(client));
+            Client = client ?? throw new ArgumentNullException(nameof(client));
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _commands = commands ?? throw new ArgumentNullException(nameof(commands));
             _services = services ?? throw new ArgumentNullException(nameof(services));
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken = default)
         {
             // Sanity check config
             if (_config.Auth == null)
@@ -58,34 +56,34 @@ namespace Mute.Moe.Discord
             }
 
             // Hook the MessageReceived Event into our Command Handler
-            _client.MessageReceived += HandleMessage;
+            Client.MessageReceived += HandleMessage;
 
             _commands.CommandExecuted += CommandExecuted;
 
             var tcs = new TaskCompletionSource<bool>();
-            _client.Ready += () => {
+            Client.Ready += () => {
                 tcs.SetResult(true);
                 return Task.CompletedTask;
             };
 
             // Log the bot in
-            await _client.LogoutAsync();
-            await _client.LoginAsync(TokenType.Bot, _config.Auth.Token);
-            await _client.StartAsync();
+            await Client.LogoutAsync();
+            await Client.LoginAsync(TokenType.Bot, _config.Auth.Token);
+            await Client.StartAsync();
 
             // Precache all users in all guilds
-            await _client.DownloadUsersAsync(_client.Guilds);
+            await Client.DownloadUsersAsync(Client.Guilds);
 
             // Set presence
             if (Debugger.IsAttached)
             {
-                await _client.SetActivityAsync(new Game("Debug Mode"));
-                await _client.SetStatusAsync(UserStatus.DoNotDisturb);
+                await Client.SetActivityAsync(new Game("Debug Mode"));
+                await Client.SetStatusAsync(UserStatus.DoNotDisturb);
             }
             else
             {
-                await _client.SetActivityAsync(null);
-                await _client.SetStatusAsync(UserStatus.Online);
+                await Client.SetActivityAsync(null);
+                await Client.SetStatusAsync(UserStatus.Online);
             }
 
             // Wait for ready
@@ -104,10 +102,10 @@ namespace Mute.Moe.Discord
             await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
         }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken = default)
         {
-            await _client.LogoutAsync();
-            await _client.StopAsync();
+            await Client.LogoutAsync();
+            await Client.StopAsync();
         }
 
         private async Task HandleMessage(SocketMessage socketMessage)
@@ -117,7 +115,7 @@ namespace Mute.Moe.Discord
                 return;
 
             //Ignore messages from self
-            if (message.Author.Id == _client.CurrentUser.Id && !_config.ProcessMessagesFromSelf)
+            if (message.Author.Id == Client.CurrentUser.Id && !_config.ProcessMessagesFromSelf)
                 return;
 
             // Check if the message starts with the command prefix character
@@ -125,7 +123,7 @@ namespace Mute.Moe.Discord
             var hasPrefix = message.HasCharPrefix(_config.PrefixCharacter, ref prefixPos);
 
             // Create a context for this message
-            var context = new MuteCommandContext(_client, message, _services);
+            var context = new MuteCommandContext(Client, message, _services);
 
             //Apply generic message preproccessor
             foreach (var pre in _services.GetServices<IMessagePreprocessor>())

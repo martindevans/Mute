@@ -14,23 +14,33 @@ namespace Mute.Moe.Services.Reminders
         private readonly IReminders _reminders;
         private readonly DiscordSocketClient _client;
 
-        private readonly Task _thread;
+        private CancellationTokenSource? _cts;
+        private Task? _thread;
 
-        public TaskStatus Status => _thread.Status;
+        public TaskStatus Status => _thread?.Status ?? TaskStatus.WaitingForActivation;
 
         public AsyncReminderSender(IReminders reminders, DiscordSocketClient client)
         {
             _reminders = reminders;
             _client = client;
-
-            _thread = Task.Run(ThreadEntry);
         }
 
-        private async Task ThreadEntry()
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _cts = new CancellationTokenSource();
+            _thread = Task.Run(() => ThreadEntry(_cts.Token), _cts.Token);
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _cts?.Cancel();
+        }
+
+        private async Task ThreadEntry(CancellationToken token)
         {
             try
             {
-                while (true)
+                while (!token.IsCancellationRequested)
                 {
                     //Get the first unsent reminder
                     // ReSharper disable once RedundantCast

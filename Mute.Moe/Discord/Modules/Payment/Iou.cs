@@ -27,12 +27,12 @@ namespace Mute.Moe.Discord.Modules.Payment
         }
 
         #region helpers
-         private string FormatTransaction( ITransaction tsx)
+        private string FormatTransaction(ITransaction tsx)
         {
             return TransactionFormatting.FormatTransaction(this, tsx);
         }
 
-         private string FormatBalance( IBalance bal)
+        private string FormatBalance(IBalance bal)
         {
             return TransactionFormatting.FormatBalance(this, bal);
         }

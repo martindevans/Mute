@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Data.SQLite;
 using System.Linq;
 using System.ServiceModel.Syndication;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Discord;
@@ -25,8 +26,8 @@ namespace Mute.Moe.Services.Notifications.RSS
         private readonly IRssNotifications _notifications;
         private readonly IRss _rss;
 
-        private readonly Task _thread;
-        
+        private CancellationTokenSource? _cts;
+
         public DatabaseRssNotificationsSender(DiscordSocketClient client, IRssNotifications notifications, IRss rss, IDatabaseService database)
         {
             _database = database;
@@ -42,15 +43,24 @@ namespace Mute.Moe.Services.Notifications.RSS
             {
                 Console.WriteLine(e);
             }
-
-            _thread = Task.Run(ThreadEntry);
         }
 
-        private async Task ThreadEntry()
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _cts = new CancellationTokenSource();
+            var _ = Task.Run(() => ThreadEntry(_cts.Token), _cts.Token);
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _cts?.Cancel();
+        }
+
+        private async Task ThreadEntry(CancellationToken token)
         {
             try
             {
-                while (true)
+                while (!token.IsCancellationRequested)
                 {
                     foreach (var feed in await _notifications.GetSubscriptions().ToArrayAsync())
                     {

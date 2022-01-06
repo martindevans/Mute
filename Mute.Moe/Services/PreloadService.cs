@@ -21,14 +21,6 @@ namespace Mute.Moe.Services
         private readonly IServiceProvider _services;
 
         private readonly Type[] _types = {
-            typeof(GameService),
-            typeof(AutoReactionTrainer),
-            typeof(IReminderSender),
-            typeof(ISentimentEvaluator),
-            typeof(IUptime),
-            typeof(ISpacexNotificationsSender),
-            typeof(IRssNotificationsSender),
-            typeof(SeasonalAvatar)
         };
 
         public ServicePreloader(DiscordSocketClient client, IServiceProvider services)

@@ -37,7 +37,6 @@ using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Words;
 using System.Net.Http;
-using System.Security.Cryptography;
 using Discord.WebSocket;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
@@ -125,9 +124,9 @@ namespace Mute.Moe
         public void ConfigureServices(IServiceCollection services)
         {
             ConfigureBaseServices(services);
+
             HostedDiscordBot.ConfigureServices(services);
-            services.AddHostedService<HostedDiscordBot>();
-            services.AddHostedService<ServicePreloader>();
+            services.AddSingleton<HostedDiscordBot>();
 
             services.AddSingleton(Configuration);
 

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Words;
@@ -93,6 +94,14 @@ namespace Mute.Moe.Services.Sentiment
             var graph = new TFGraph();
             graph.Import(await File.ReadAllBytesAsync(_sentimentModelPath));
             return graph;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
         }
     }
 }

@@ -6,36 +6,39 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Mute.Moe.Services.Host;
 
 
 namespace Mute.Moe.Discord.Services.Avatar
 {
     public class SeasonalAvatar
+        : IHostedService
     {
+        private readonly ICron _cron;
         private readonly DiscordSocketClient _discord;
         private readonly IReadOnlyList<AvatarConfig.AvatarSet>? _config;
         private readonly Random _rng;
 
-        public SeasonalAvatar(ICron cron,  DiscordSocketClient discord, Configuration config)
+        private CancellationTokenSource? _cts;
+
+        public SeasonalAvatar(ICron cron, DiscordSocketClient discord, Configuration config)
         {
+            _cron = cron;
             _discord = discord;
             _rng = new Random();
 
             if (config.Avatar?.Avatars == null)
                 return;
             _config = config.Avatar.Avatars;
-
-            // Do not start avatar update job if no avatar sets are configured
-            if ((_config?.Count ?? 0) != 0)
-                cron.Interval(TimeSpan.FromDays(1), PickDaily, int.MaxValue);
         }
 
         public async Task<SeasonalAvatarPickResult> PickDaily()
         {
             var now = DateTime.UtcNow.Date.DayOfYear;
 
-            var exts = new string[] { "*.bmp", "*.png", "*.jpg", "*.jpeg" };
+            var exts = new[] { "*.bmp", "*.png", "*.jpg", "*.jpeg" };
             var avatars = _config!
                 .Where(a => a.StartDay <= now && a.EndDay >= now)
                 .Where(a => a.Path != null && Directory.Exists(a.Path))
@@ -54,6 +57,21 @@ namespace Mute.Moe.Discord.Services.Avatar
             }
 
             return new SeasonalAvatarPickResult(avatars, avatar);
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            // Do not start avatar update job if no avatar sets are configured
+            if ((_config?.Count ?? 0) == 0)
+                return;
+
+            _cts = new CancellationTokenSource();
+            var _ = _cron.Interval(TimeSpan.FromDays(1), PickDaily, int.MaxValue, _cts.Token);
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _cts?.Cancel();
         }
     }
 

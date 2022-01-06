@@ -1,12 +1,15 @@
 ﻿using System.Data.SQLite;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Mute.Moe.Services.Database;
+using Mute.Moe.Services.Host;
 
 namespace Mute.Moe.Discord.Services.Games
 {
     public class GameService
+        : IHostedService
     {
         private const string InsertGamePlayed = "INSERT OR IGNORE INTO `Games_Played` (`UserId`,`GameId`) VALUES (@UserId,@GameId);";
 
@@ -17,9 +20,7 @@ namespace Mute.Moe.Discord.Services.Games
         {
             _client = client;
             _database = database;
-
-            client.GuildMemberUpdated += Updated;
-
+            
             database.Exec("CREATE TABLE IF NOT EXISTS `Games_Played` (`UserId` TEXT NOT NULL, `GameId` TEXT NOT NULL, PRIMARY KEY(`UserId`,`GameId`));");
             database.Exec("CREATE INDEX IF NOT EXISTS `GamesPlayedByUser` ON `Games_Played` (`UserId` ASC);");
             database.Exec("CREATE INDEX IF NOT EXISTS `GamesPlayedByGame` ON `Games_Played` (`GameId` ASC);");
@@ -49,6 +50,16 @@ namespace Mute.Moe.Discord.Services.Games
                     await ((ISocketMessageChannel)c).SendMessageAsync($"{user.Username} is playing a new game: `{activity.Name}`");
                 }
             }
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _client.GuildMemberUpdated += Updated;
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _client.GuildMemberUpdated -= Updated;
         }
     }
 }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
 using Newtonsoft.Json;
 
@@ -24,9 +25,18 @@ namespace Mute.Moe
             startup.ConfigureServices(collection);
             var provider = collection.BuildServiceProvider();
 
-            await provider.GetRequiredService<ServiceHost>().StartAsync(default);
+            // Connect to Discord
+            var bot = provider.GetRequiredService<HostedDiscordBot>();
+            await bot.StartAsync();
+
+            // Get information about a guild, when this completes it means the bot is in a sensible state to start other services
+            await bot.Client.Rest.GetGuildAsync(415655090842763265);
             await Task.Delay(1000);
+            await provider.GetRequiredService<ServiceHost>().StartAsync(default);
+
             WaitForExitSignal();
+
+            await bot.StopAsync();
             await provider.GetRequiredService<ServiceHost>().StopAsync(default);
         }
 
