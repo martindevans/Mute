@@ -41,6 +41,7 @@ using Discord.WebSocket;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses.Eliza.Scripts;
+using Mute.Moe.Discord.Services.Users;
 using Oddity;
 using Mute.Moe.Services.Host;
 
@@ -70,7 +71,7 @@ namespace Mute.Moe
             services.AddSingleton<IFileSystem, FileSystem>();
             services.AddSingleton<HttpClient, HttpClient>();
             services.AddSingleton<IDatabaseService, SqliteDatabase>();
-            services.AddSingleton<ISentimentEvaluator, TensorflowSentiment>();
+            services.AddHostedService<ISentimentEvaluator, TensorflowSentiment>();
             services.AddSingleton<ISentimentTrainer, DatabaseSentimentTrainer>();
             services.AddSingleton<ICatPictureProvider, CataasPictures>();
             services.AddSingleton<IArtificialCatPictureProvider, ThisCatDoesNotExist>();
@@ -84,19 +85,19 @@ namespace Mute.Moe
             services.AddSingleton<ISteamInfo, SteamApi>();
             services.AddSingleton<ISteamLightweightAppInfoStorage, SteamLightweightAppInfoDbCache>();
             services.AddSingleton<ISteamIdStorage, SteamIdDatabaseStorage>();
-            services.AddSingleton<IUptime, UtcDifferenceUptime>();
+            services.AddHostedService<IUptime, UtcDifferenceUptime>();
             services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
             services.AddSingleton<IForexInfo, AlphaVantageForex>();
             services.AddSingleton<IStockSearch, AlphaVantageStockSearch>();
             services.AddSingleton<IGroups, DatabaseGroupService>();
             services.AddSingleton<IReminders, DatabaseReminders>();
-            services.AddSingleton<IReminderSender, AsyncReminderSender>();
+            services.AddHostedService<IReminderSender, AsyncReminderSender>();
             services.AddSingleton<IWikipedia, WikipediaApi>();
             services.AddSingleton<ISoundEffectLibrary, DatabaseSoundEffectLibrary>();
             services.AddSingleton<ISoundEffectPlayer, SoundEffectPlayer>();
             services.AddSingleton<IWords, HttpWordVectors>();
             services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
-            services.AddSingleton<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
+            services.AddHostedService<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
             services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
             services.AddSingleton<IYoutubeDownloader, YoutubeDlDownloader>();
             services.AddSingleton<IWordTraining, DatabaseWordTraining>();
@@ -107,11 +108,12 @@ namespace Mute.Moe
             services.AddSingleton<IGuildSoundEffectQueueCollection, InMemoryGuildSoundEffectQueueCollection>();
             services.AddSingleton<IRss, HttpRss>();
             services.AddSingleton<IRssNotifications, DatabaseRssNotifications>();
-            services.AddSingleton<IRssNotificationsSender, DatabaseRssNotificationsSender>();
+            services.AddHostedService<IRssNotificationsSender, DatabaseRssNotificationsSender>();
             services.AddSingleton<ICron, InMemoryCron>();
+            services.AddSingleton<IUserService, DiscordUserService>();
 
             //Eventually these should all become interface -> concrete type bindings
-            services.AddSingleton<AutoReactionTrainer>();
+            services.AddHostedService<AutoReactionTrainer>();
             services.AddSingleton<Status>();
             services
                 .AddSingleton<GameService>()

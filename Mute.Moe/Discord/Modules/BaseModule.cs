@@ -260,9 +260,6 @@ namespace Mute.Moe.Discord.Modules
                 return;
             }
 
-            //Make sure we have a fresh user list to resolve users from IDs
-            await Context.Guild.DownloadUsersAsync();
-
             if (items.Count == 1 && singleResult != null)
             {
                 await singleResult(items.Single());
@@ -311,9 +308,6 @@ namespace Mute.Moe.Discord.Modules
             }
             else
             {
-                //Make sure we have a fresh user list to resolve users from IDs
-                await Context.Guild.DownloadUsersAsync();
-
                 var p = manyPrelude?.Invoke(items);
                 if (p != null)
                     await ReplyAsync(p);
@@ -364,13 +358,12 @@ namespace Mute.Moe.Discord.Modules
         #endregion
 
         #region user names
-        public string Name(ulong id, bool mention = false)
+        public async Task<string> Name(ulong id, bool mention = false)
         {
-            var user = Context.Client.GetUser(id);
-            if (user == null)
-                return $"UNKNOWN_USER:{id}";
-
-            return Name(user, mention);
+            var user = await Context.Client.GetUserAsync(id) ?? await Context.Client.Rest.GetUserAsync(id);
+            return user == null
+                 ? $"UNK:{id}"
+                 : Name(user, mention);
         }
 
         public static string Name(IUser user, bool mention = false)

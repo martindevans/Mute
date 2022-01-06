@@ -103,7 +103,7 @@ namespace Mute.Moe.Services.Payment
             var ab = database.GetTransactions(fromId: a, toId: b);
             var ba = database.GetTransactions(fromId: b, toId: a);
 
-            return await ab.Concat(ba).OrderBy(t => t.Instant).ToArrayAsync();
+            return await ab.Concat(ba).OrderByDescending(t => t.Instant).ToArrayAsync();
         }
     }
 

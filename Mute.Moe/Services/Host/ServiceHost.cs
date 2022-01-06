@@ -22,8 +22,10 @@ namespace Mute.Moe.Services.Host
         {
             var services = _provider.GetServices<IHostedService>().ToImmutableList();
 
+            Console.WriteLine($"Starting services:");
             foreach (var service in services)
             {
+                Console.WriteLine($" - {service.GetType().Name}");
                 await service.StartAsync(cancel);
                 _services.Add(service);
             }

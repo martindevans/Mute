@@ -177,10 +177,10 @@ namespace Mute.Moe.Discord.Modules.Payment
 
         private async Task PaginatedPending(IAsyncEnumerable<IPendingTransaction> pending, string none, string paginatedHeader, bool mentionReceiver)
         {
-            string FormatSinglePending(IPendingTransaction p, bool longForm)
+            async Task<string> FormatSinglePending(IPendingTransaction p, bool longForm)
             {
-                var receiver = Name(p.ToId, mentionReceiver);
-                var payer = Name(p.FromId);
+                var receiver = await Name(p.ToId, mentionReceiver);
+                var payer = await Name(p.FromId);
                 var note = string.IsNullOrEmpty(p.Note) ? "" : $"'{p.Note}'";
                 var amount = TransactionFormatting.FormatCurrency(p.Amount, p.Unit);
 
@@ -191,16 +191,20 @@ namespace Mute.Moe.Discord.Modules.Payment
                     return $"`{fid}`: {payer} paid {amount} to {receiver} {note}";
             }
 
-            var pendingArr = await pending.ToArrayAsync();
+            var pendingArr = await pending.ToListAsync();
+            var formatted = new List<string>();
+            var longForm = pendingArr.Count < 5;
+            foreach (var item in pendingArr)
+                formatted.Add(await FormatSinglePending(item, longForm));
 
-            if (pendingArr.Length == 0)
+            if (pendingArr.Count == 0)
                 await TypingReplyAsync(none);
-            else if (pendingArr.Length < 5)
-                await ReplyAsync(string.Join("\n", pendingArr.Select(p => FormatSinglePending(p, true))));
+            else if (longForm)
+                await ReplyAsync(string.Join("\n", formatted));
             else
             {
-                await TypingReplyAsync(string.Format(paginatedHeader, pendingArr.Length));
-                await PagedReplyAsync(new PaginatedMessage { Pages = pendingArr.Batch(7).Select(d => string.Join("\n", d.Select(p => FormatSinglePending(p, false)))) });
+                await TypingReplyAsync(string.Format(paginatedHeader, pendingArr.Count));
+                await PagedReplyAsync(new PaginatedMessage { Pages = formatted.Batch(7).Select(d => string.Join("\n", d)) });
             }
         }
     }

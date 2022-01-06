@@ -27,27 +27,31 @@ namespace Mute.Moe.Discord.Modules.Payment
         }
 
         #region helpers
-        private string FormatTransaction(ITransaction tsx)
+        private async Task<string> FormatTransaction(ITransaction tsx)
         {
-            return TransactionFormatting.FormatTransaction(this, tsx);
+            return await TransactionFormatting.FormatTransaction(this, tsx);
         }
 
-        private string FormatBalance(IBalance bal)
+        private async Task<string> FormatBalance(IBalance bal)
         {
-            return TransactionFormatting.FormatBalance(this, bal);
+            return await TransactionFormatting.FormatBalance(this, bal);
         }
 
-        private async Task DisplayTransactions( IReadOnlyCollection<ITransaction> transactions)
+        private async Task DisplayTransactions(IReadOnlyCollection<ITransaction> transactions)
         {
+            var tsx = new List<string>(transactions.Count);
+            foreach (var transaction in transactions)
+                tsx.Add(await FormatTransaction(transaction));
+
             //If the number of transactions is small, display them all.
             //Otherwise batch and show them in pages
             if (transactions.Count < 13)
-                await ReplyAsync(string.Join("\n", transactions.Select(FormatTransaction)));
+                await ReplyAsync(string.Join("\n", tsx));
             else
-                await PagedReplyAsync(new PaginatedMessage { Pages = transactions.Batch(10).Select(d => string.Join("\n", d.Select(FormatTransaction))) });
+                await PagedReplyAsync(new PaginatedMessage { Pages = tsx.Batch(10).Select(d => string.Join("\n", d)) });
         }
 
-        private async Task DisplayBalances( IReadOnlyCollection<IBalance> balances)
+        private async Task DisplayBalances(IReadOnlyCollection<IBalance> balances)
         {
             async Task DebtTotalsPerUnit()
             {
@@ -67,14 +71,16 @@ namespace Mute.Moe.Discord.Modules.Payment
                 }
             }
 
-            var balancesArr = balances.ToArray();
+            var balancesList = new List<string>(balances.Count);
+            foreach (var balance in balances)
+                balancesList.Add(await FormatBalance(balance));
 
             //If the number of transactions is small, display them all.
             //Otherwise batch and show them in pages
-            if (balancesArr.Length < 10)
-                await ReplyAsync(string.Join("\n", balancesArr.Select(FormatBalance)));
+            if (balancesList.Count < 10)
+                await ReplyAsync(string.Join("\n", balancesList));
             else
-                await PagedReplyAsync(new PaginatedMessage { Pages = balancesArr.Batch(7).Select(d => string.Join("\n", d.Select(FormatBalance))) });
+                await PagedReplyAsync(new PaginatedMessage { Pages = balancesList.Batch(7).Select(d => string.Join("\n", d)) });
 
             await DebtTotalsPerUnit();
         }
