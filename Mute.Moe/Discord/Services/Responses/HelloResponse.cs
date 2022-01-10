@@ -41,8 +41,8 @@ namespace Mute.Moe.Discord.Services.Responses
             //Determine if thie message is a greeting
             var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(a => AllGreetings.Contains(a));
 
-            var gu = (SocketGuildUser)context.User;
-            var name = gu.Nickname ?? gu.Username;
+            var gu = context.User as SocketGuildUser;
+            var name = gu?.Nickname ?? context.User.Username;
 
             return isGreeting
                 ? new HelloConversation(string.Format(ChooseGreeting(), name))

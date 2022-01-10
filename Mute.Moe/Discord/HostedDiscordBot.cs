@@ -114,7 +114,7 @@ namespace Mute.Moe.Discord
             if (socketMessage is not SocketUserMessage message)
                 return;
 
-            //Ignore messages from self
+            // Ignore messages from self
             if (message.Author.Id == Client.CurrentUser.Id && !_config.ProcessMessagesFromSelf)
                 return;
 
@@ -125,11 +125,11 @@ namespace Mute.Moe.Discord
             // Create a context for this message
             var context = new MuteCommandContext(Client, message, _services);
 
-            //Apply generic message preproccessor
+            // Apply generic message preproccessor
             foreach (var pre in _services.GetServices<IMessagePreprocessor>())
                 await pre.Process(context);
 
-            //Either process as command or try to process conversationally
+            // Either process as command or try to process conversationally
             if (hasPrefix)
             {
                 foreach (var pre in _services.GetServices<ICommandPreprocessor>())

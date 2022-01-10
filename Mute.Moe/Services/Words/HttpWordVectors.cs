@@ -141,11 +141,12 @@ namespace Mute.Moe.Services.Words
             if (av == null || bv == null)
                 return null;
 
-            var dot = 0.0;
+            var acc = 0f;
             for (var i = 0; i < av.Vector.Count; i++)
-                dot += av.Vector[i] * bv.Vector[i];
+                acc += MathF.Pow(av.Vector[i] - bv.Vector[i], 2);
+            acc = MathF.Sqrt(acc);
 
-            return dot / (av.Length * bv.Length);
+            return acc;
         }
 
         private class WordVector

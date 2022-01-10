@@ -29,7 +29,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
         }
 
         [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
-        public async Task Say( string message, IMessageChannel? channel = null)
+        public async Task Say(string message, IMessageChannel? channel = null)
         {
             channel ??= Context.Channel;
 
@@ -87,7 +87,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
 
         [Command("test-yt")]
         [ThinkingReply]
-        public async Task TestYt( string url)
+        public async Task TestYt(string url)
         {
             var result = await _yt.DownloadAudio(url);
 

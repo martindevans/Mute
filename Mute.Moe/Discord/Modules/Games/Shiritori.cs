@@ -183,7 +183,7 @@ namespace Mute.Moe.Discord.Modules.Games
             }
         }
 
-        private string PickMostSimilar(string previous,  IEnumerable<string> options)
+        private string PickMostSimilar(string previous, IEnumerable<string> options)
         {
             //Order by word vector similarity
             var sims = options.Select(a => (a, Task.Run(() => _wordVectors.Similarity(previous, a))))

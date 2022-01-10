@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Mute.Moe.Discord.Services
+namespace Mute.Moe.Services.Words
 {
     public class WordsService
     {

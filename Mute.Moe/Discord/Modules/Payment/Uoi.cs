@@ -85,7 +85,7 @@ namespace Mute.Moe.Discord.Modules.Payment
             switch (result)
             {
                 case ConfirmResult.Confirmed:
-                    await TypingReplyAsync($"Confirmed {TransactionFormatting.FormatTransaction(this, transaction)}");
+                    await TypingReplyAsync($"Confirmed {await TransactionFormatting.FormatTransaction(this, transaction)}");
                     break;
                 case ConfirmResult.AlreadyDenied:
                     await TypingReplyAsync("This transaction has already been denied and cannot be confirmed");
@@ -136,7 +136,7 @@ namespace Mute.Moe.Discord.Modules.Payment
             switch (result)
             {
                 case DenyResult.Denied:
-                    await TypingReplyAsync($"Denied {TransactionFormatting.FormatTransaction(this, transaction, true)}");
+                    await TypingReplyAsync($"Denied {await TransactionFormatting.FormatTransaction(this, transaction, true)}");
                     break;
                 case DenyResult.AlreadyDenied:
                     await TypingReplyAsync("This transaction has already been denied");

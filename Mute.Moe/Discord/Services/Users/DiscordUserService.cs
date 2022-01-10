@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -30,7 +27,11 @@ namespace Mute.Moe.Discord.Services.Users
         public async Task<IUser?> GetUser(ulong id, IGuild? guild = null)
         {
             if (guild != null)
-                return await _itemByGuildAndId.GetItem((guild.Id, id), _ => GetUncached(id, guild));
+            {
+                var gu = await _itemByGuildAndId.GetItem((guild.Id, id), _ => GetUncached(id, guild));
+                if (gu != null)
+                    return gu;
+            }
 
             return await _itemById.GetItem(id, GetUncached);
         }

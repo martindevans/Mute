@@ -7,8 +7,10 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
+using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
 
@@ -360,7 +362,9 @@ namespace Mute.Moe.Discord.Modules
         #region user names
         public async Task<string> Name(ulong id, bool mention = false)
         {
-            var user = await Context.Client.GetUserAsync(id) ?? await Context.Client.Rest.GetUserAsync(id);
+            var users = Context.Services.GetRequiredService<IUserService>();
+            var user = await users.GetUser(id, Context.Guild);
+
             return user == null
                  ? $"UNK:{id}"
                  : Name(user, mention);
