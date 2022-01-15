@@ -180,11 +180,12 @@ namespace Mute.Moe.Discord
             services.AddSingleton(new CommandService(new CommandServiceConfig {
                 CaseSensitiveCommands = false,
                 DefaultRunMode = RunMode.Async,
-                ThrowOnError = true
+                ThrowOnError = true,
             }));
 
             var client = new DiscordSocketClient(new DiscordSocketConfig {
-                AlwaysDownloadUsers = true
+                AlwaysDownloadUsers = true,
+                GatewayIntents = GatewayIntents.All,
             });
 
             services.AddSingleton<DiscordSocketClient>(client);
