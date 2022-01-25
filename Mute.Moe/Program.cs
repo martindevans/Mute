@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
@@ -25,6 +27,10 @@ namespace Mute.Moe
             startup.ConfigureServices(collection);
             var provider = collection.BuildServiceProvider();
 
+            // Find interactions
+            var interactions = provider.GetRequiredService<InteractionService>();
+            await interactions.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
+
             // Connect to Discord
             var bot = provider.GetRequiredService<HostedDiscordBot>();
             await bot.StartAsync();
@@ -33,6 +39,14 @@ namespace Mute.Moe
             await bot.Client.Rest.GetGuildAsync(415655090842763265);
             await Task.Delay(1000);
             await provider.GetRequiredService<ServiceHost>().StartAsync(default);
+
+            // Register interactions. If this is debug mode only register them to the test guild
+#if DEBUG
+            await interactions.RegisterCommandsToGuildAsync(537765528991825920); // Nadeko Test
+            await interactions.RegisterCommandsToGuildAsync(415655090842763265); // Lightbulb Appreciation Society
+#else
+            await interactions.RegisterCommandsGloballyAsync(true);
+#endif
 
             WaitForExitSignal();
 

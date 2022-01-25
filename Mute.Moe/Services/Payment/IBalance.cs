@@ -1,5 +1,10 @@
 ﻿
 
+using System;
+using System.Threading.Tasks;
+using Mute.Moe.Discord.Modules.Payment;
+using Mute.Moe.Discord.Services.Users;
+
 namespace Mute.Moe.Services.Payment
 {
     /// <summary>
@@ -26,6 +31,19 @@ namespace Mute.Moe.Services.Payment
         /// Amount of the balance
         /// </summary>
         decimal Amount { get; }
+    }
+
+    public static class IBalanceExtensions
+    {
+        public static async Task<string> Format(this IBalance balance, IUserService users)
+        {
+            var a = await users.Name(balance.UserA);
+            var b = await users.Name(balance.UserB);
+            var (borrower, lender) = balance.Amount < 0 ? (a, b) : (b, a);
+
+            var currency = TransactionFormatting.FormatCurrency(Math.Abs(balance.Amount), balance.Unit);
+            return $"{borrower} owes {currency} to {lender}";
+        }
     }
 
     internal class Balance

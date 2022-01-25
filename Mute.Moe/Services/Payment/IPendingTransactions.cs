@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Mute.Moe.Discord.Modules.Payment;
+using Mute.Moe.Discord.Services.Users;
 
 
 namespace Mute.Moe.Services.Payment
@@ -61,6 +63,23 @@ namespace Mute.Moe.Services.Payment
         string? Note { get; }
 
         PendingState State { get; }
+    }
+
+    public static class IPendingTransactionExtensions
+    {
+        public static async Task<string> Format(this IPendingTransaction transaction, IUserService users, bool mention = false)
+        {
+            return await TransactionFormatting.FormatTransaction(
+                users,
+                transaction.FromId,
+                transaction.ToId,
+                transaction.Note,
+                transaction.Instant,
+                transaction.Amount,
+                transaction.Unit,
+                mention
+            );
+        }
     }
 
     internal class PendingTransaction

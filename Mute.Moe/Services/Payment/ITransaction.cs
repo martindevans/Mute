@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
+using Mute.Moe.Discord.Modules.Payment;
+using Mute.Moe.Discord.Services.Users;
 
 
 namespace Mute.Moe.Services.Payment
@@ -15,6 +18,23 @@ namespace Mute.Moe.Services.Payment
 
         string Unit { get; }
         string? Note { get; }
+    }
+
+    public static class ITransactionExtensions
+    {
+        public static async Task<string> Format(this ITransaction transaction, IUserService users, bool mention = false)
+        {
+            return await TransactionFormatting.FormatTransaction(
+                users,
+                transaction.FromId,
+                transaction.ToId,
+                transaction.Note,
+                transaction.Instant,
+                transaction.Amount,
+                transaction.Unit,
+                mention
+            );
+        }
     }
 
     internal class Transaction

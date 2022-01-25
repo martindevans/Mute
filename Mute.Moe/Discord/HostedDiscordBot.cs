@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.Interactions;
 using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,9 @@ using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Context.Postprocessing;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Discord.Services.Responses;
+using ExecuteResult = Discord.Commands.ExecuteResult;
+using IResult = Discord.Commands.IResult;
+using RunMode = Discord.Commands.RunMode;
 
 namespace Mute.Moe.Discord
 {
@@ -21,15 +25,17 @@ namespace Mute.Moe.Discord
         private readonly Configuration _config;
         private readonly CommandService _commands;
         private readonly IServiceProvider _services;
+        private readonly InteractionService _interactions;
 
         public DiscordSocketClient Client { get; }
 
-        public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services)
+        public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services, InteractionService interactions)
         {
             Client = client ?? throw new ArgumentNullException(nameof(client));
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _commands = commands ?? throw new ArgumentNullException(nameof(commands));
             _services = services ?? throw new ArgumentNullException(nameof(services));
+            _interactions = interactions ?? throw new ArgumentNullException(nameof(services));
         }
 
         public async Task StartAsync(CancellationToken cancellationToken = default)
@@ -57,8 +63,8 @@ namespace Mute.Moe.Discord
 
             // Hook the MessageReceived Event into our Command Handler
             Client.MessageReceived += HandleMessage;
-
             _commands.CommandExecuted += CommandExecuted;
+            Client.SlashCommandExecuted += a => _interactions.ExecuteCommandAsync(new InteractionContext(Client, a, a.User, a.Channel), _services);
 
             var tcs = new TaskCompletionSource<bool>();
             Client.Ready += () => {
@@ -188,7 +194,12 @@ namespace Mute.Moe.Discord
                 GatewayIntents = GatewayIntents.All,
             });
 
-            services.AddSingleton<DiscordSocketClient>(client);
+            services.AddSingleton(new InteractionService(client.Rest, new InteractionServiceConfig
+            {
+                DefaultRunMode = global::Discord.Interactions.RunMode.Async
+            }));
+
+            services.AddSingleton(client);
             services.AddSingleton<BaseSocketClient>(client);
             services.AddSingleton<BaseDiscordClient>(client);
             services.AddSingleton<IDiscordClient>(client);

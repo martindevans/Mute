@@ -11,6 +11,7 @@ using Discord.WebSocket;
 using Humanizer;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
+using Mute.Moe.Discord.Services.Users;
 
 namespace Mute.Moe.Discord.Modules.Introspection
 {
@@ -18,11 +19,13 @@ namespace Mute.Moe.Discord.Modules.Introspection
         : BaseModule, IKeyProvider
     {
         private readonly DiscordSocketClient _client;
+        private readonly IUserService _users;
         private readonly HttpClient _http;
 
-        public UserInfo(DiscordSocketClient client, IHttpClientFactory http)
+        public UserInfo(DiscordSocketClient client, IHttpClientFactory http, IUserService users)
         {
             _client = client;
+            _users = users;
             _http = http.CreateClient();
         }
 
@@ -51,7 +54,7 @@ namespace Mute.Moe.Discord.Modules.Introspection
             await resp.Content.CopyToAsync(m);
             m.Position = 0;
 
-            await Context.Channel.SendFileAsync(m, $"{Name(u)}.png");
+            await Context.Channel.SendFileAsync(m, $"{_users.Name(u)}.png");
         }
 
         private string GetUserInfo(string userid)

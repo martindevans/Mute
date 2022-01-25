@@ -8,6 +8,7 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using MoreLinq;
 using Mute.Moe.Discord.Attributes;
+using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Payment;
 
 namespace Mute.Moe.Discord.Modules.Payment
@@ -19,36 +20,47 @@ namespace Mute.Moe.Discord.Modules.Payment
         : BaseModule
     {
         private readonly IPendingTransactions _pending;
+        private readonly IUserService _users;
 
-        public Uoi(IPendingTransactions pending)
+        public Uoi(IPendingTransactions pending, IUserService users)
         {
             _pending = pending;
+            _users = users;
         }
 
         [Command("uoi"), Summary("I will I will notify someone that they owe you something")]
         public async Task CreatePendingUoi(IUser user, decimal amount, string unit, [Remainder] string? note = null)
         {
             if (amount < 0)
+            {
                 await TypingReplyAsync("You cannot owe a negative amount!");
+            }
+            else
+            {
+                var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
+                var fid = new BalderHash32(id).ToString();
 
-            var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
-            var fid = new BalderHash32(id).ToString();
-
-            await TypingReplyAsync($"{user.Mention} type `!confirm {fid}` to confirm that you owe this");
-            await TypingReplyAsync($"{user.Mention} type `!deny {fid}` to deny that you owe this. Please talk to the other user about why!");
+                await TypingReplyAsync($"{user.Mention} type `!confirm {fid}` to confirm that you owe this");
+                await TypingReplyAsync(
+                    $"{user.Mention} type `!deny {fid}` to deny that you owe this. Please talk to the other user about why!");
+            }
         }
 
         [Command("pay"), Summary("I will record that you have paid someone something")]
         public async Task CreatePendingPayment(IUser user, decimal amount, string unit, [Remainder] string? note = null)
         {
             if (amount < 0)
+            {
                 await TypingReplyAsync("You cannot pay a negative amount!");
+            }
+            else
+            {
+                var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
+                var fid = new BalderHash32(id).ToString();
 
-            var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
-            var fid = new BalderHash32(id).ToString();
-
-            await TypingReplyAsync($"{user.Mention} type `!confirm {fid}` to confirm that you have been paid this");
-            await TypingReplyAsync($"{user.Mention} type `!deny {fid}` to deny that you received this payment. Please talk to the other user about why!");
+                await TypingReplyAsync($"{user.Mention} type `!confirm {fid}` to confirm that you have been paid this");
+                await TypingReplyAsync($"{user.Mention} type `!deny {fid}` to deny that you received this payment. Please talk to the other user about why!");
+            }
         }
 
         [Command("confirm"), Summary("I will confirm a pending transaction")]
@@ -85,7 +97,7 @@ namespace Mute.Moe.Discord.Modules.Payment
             switch (result)
             {
                 case ConfirmResult.Confirmed:
-                    await TypingReplyAsync($"Confirmed {await TransactionFormatting.FormatTransaction(this, transaction)}");
+                    await TypingReplyAsync($"Confirmed {await transaction.Format(_users)}");
                     break;
                 case ConfirmResult.AlreadyDenied:
                     await TypingReplyAsync("This transaction has already been denied and cannot be confirmed");
@@ -136,7 +148,7 @@ namespace Mute.Moe.Discord.Modules.Payment
             switch (result)
             {
                 case DenyResult.Denied:
-                    await TypingReplyAsync($"Denied {await TransactionFormatting.FormatTransaction(this, transaction, true)}");
+                    await TypingReplyAsync($"Denied {await transaction.Format(_users, true)}");
                     break;
                 case DenyResult.AlreadyDenied:
                     await TypingReplyAsync("This transaction has already been denied");
@@ -179,8 +191,8 @@ namespace Mute.Moe.Discord.Modules.Payment
         {
             async Task<string> FormatSinglePending(IPendingTransaction p, bool longForm)
             {
-                var receiver = await Name(p.ToId, mentionReceiver);
-                var payer = await Name(p.FromId);
+                var receiver = await _users.Name(p.ToId, mention: mentionReceiver);
+                var payer = await _users.Name(p.FromId);
                 var note = string.IsNullOrEmpty(p.Note) ? "" : $"'{p.Note}'";
                 var amount = TransactionFormatting.FormatCurrency(p.Amount, p.Unit);
 

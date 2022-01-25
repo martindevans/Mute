@@ -28,6 +28,8 @@ namespace Mute.Moe.Services.Notifications.RSS
 
         private CancellationTokenSource? _cts;
 
+        private static readonly TimeSpan PollDelay = TimeSpan.FromHours(1);
+
         public DatabaseRssNotificationsSender(DiscordSocketClient client, IRssNotifications notifications, IRss rss, IDatabaseService database)
         {
             _database = database;
@@ -62,7 +64,7 @@ namespace Mute.Moe.Services.Notifications.RSS
             {
                 while (!token.IsCancellationRequested)
                 {
-                    foreach (var feed in await _notifications.GetSubscriptions().ToArrayAsync())
+                    foreach (var feed in await _notifications.GetSubscriptions().ToListAsync(token))
                     {
                         try
                         {
@@ -73,7 +75,7 @@ namespace Mute.Moe.Services.Notifications.RSS
                                 if (!await HasBeenPublished(feed.Channel.ToString(), feed.FeedUrl, item.Id))
                                 {
                                     await Publish(feed, item);
-                                    await Task.Delay(100);
+                                    await Task.Delay(150, token);
                                 }
                             }
                         }
@@ -83,7 +85,7 @@ namespace Mute.Moe.Services.Notifications.RSS
                         }
                     }
 
-                    await Task.Delay(TimeSpan.FromMinutes(5));
+                    await Task.Delay(PollDelay, token);
                 }
             }
             catch (Exception e)

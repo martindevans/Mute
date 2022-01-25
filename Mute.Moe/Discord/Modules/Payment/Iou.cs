@@ -8,6 +8,7 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using MoreLinq;
 using Mute.Moe.Discord.Attributes;
+using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Payment;
 
 namespace Mute.Moe.Discord.Modules.Payment
@@ -20,28 +21,20 @@ namespace Mute.Moe.Discord.Modules.Payment
         : BaseModule
     {
         private readonly ITransactions _transactions;
+        private readonly IUserService _users;
 
-        public Iou(ITransactions transactions)
+        public Iou(ITransactions transactions, IUserService users)
         {
             _transactions = transactions;
+            _users = users;
         }
 
         #region helpers
-        private async Task<string> FormatTransaction(ITransaction tsx)
-        {
-            return await TransactionFormatting.FormatTransaction(this, tsx);
-        }
-
-        private async Task<string> FormatBalance(IBalance bal)
-        {
-            return await TransactionFormatting.FormatBalance(this, bal);
-        }
-
         private async Task DisplayTransactions(IReadOnlyCollection<ITransaction> transactions)
         {
             var tsx = new List<string>(transactions.Count);
             foreach (var transaction in transactions)
-                tsx.Add(await FormatTransaction(transaction));
+                tsx.Add(await transaction.Format(_users));
 
             //If the number of transactions is small, display them all.
             //Otherwise batch and show them in pages
@@ -73,7 +66,7 @@ namespace Mute.Moe.Discord.Modules.Payment
 
             var balancesList = new List<string>(balances.Count);
             foreach (var balance in balances)
-                balancesList.Add(await FormatBalance(balance));
+                balancesList.Add(await balance.Format(_users));
 
             //If the number of transactions is small, display them all.
             //Otherwise batch and show them in pages
@@ -91,9 +84,12 @@ namespace Mute.Moe.Discord.Modules.Payment
         {
             if (amount < 0)
                 await TypingReplyAsync("You cannot owe a negative amount!");
-
-            await _transactions.CreateTransaction(user.Id, Context.User.Id, amount, unit, note, DateTime.UtcNow);
-            await ReplyAsync($"{Context.User.Mention} owes {TransactionFormatting.FormatCurrency(amount, unit)} to {user.Mention}");
+            else
+            {
+                await _transactions.CreateTransaction(user.Id, Context.User.Id, amount, unit, note, DateTime.UtcNow);
+                await ReplyAsync(
+                    $"{Context.User.Mention} owes {TransactionFormatting.FormatCurrency(amount, unit)} to {user.Mention}");
+            }
         }
 
         [Command("transactions"), Summary("I will show all your transactions")]

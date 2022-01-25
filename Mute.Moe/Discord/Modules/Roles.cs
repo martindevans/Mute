@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Groups;
 using IRole = Discord.IRole;
@@ -13,10 +14,12 @@ namespace Mute.Moe.Discord.Modules
         : BaseModule
     {
         private readonly IGroups _groups;
+        private readonly IUserService _users;
 
-        public Roles(IGroups groups)
+        public Roles(IGroups groups, IUserService users)
         {
             _groups = groups;
+            _users = users;
         }
 
         [Command("id"), Summary("I will type out the ID of the specified role")]
@@ -88,7 +91,7 @@ namespace Mute.Moe.Discord.Modules
         {
             var users = (from user in await role.Guild.GetUsersAsync()
                          where user.RoleIds.Contains(role.Id)
-                         let name = Name(user)
+                         let name = _users.Name(user)
                          orderby name
                          select name).ToArray();
 

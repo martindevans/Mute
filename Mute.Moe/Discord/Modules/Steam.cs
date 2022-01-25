@@ -9,6 +9,7 @@ using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using MoreLinq;
+using Mute.Moe.Discord.Services.Users;
 
 namespace Mute.Moe.Discord.Modules
 {
@@ -20,13 +21,15 @@ namespace Mute.Moe.Discord.Modules
         private readonly ISteamIdStorage _ids;
         private readonly ISteamLightweightAppInfoStorage _steamApiLight;
         private readonly Configuration _config;
+        private readonly IUserService _users;
 
-        public Steam(ISteamInfo steamApi, ISteamIdStorage ids, ISteamLightweightAppInfoStorage steamApiLight, Configuration config)
+        public Steam(ISteamInfo steamApi, ISteamIdStorage ids, ISteamLightweightAppInfoStorage steamApiLight, Configuration config, IUserService users)
         {
             _steamApi = steamApi;
             _ids = ids;
             _steamApiLight = steamApiLight;
             _config = config;
+            _users = users;
         }
 
         [Command("setid"), Summary("I will remember your steam ID")]
@@ -46,7 +49,7 @@ namespace Mute.Moe.Discord.Modules
                 if (user.Id == Context.User.Id)
                     await TypingReplyAsync("I don't know your steam ID. Please check https://steamid.io/ and then use `!steam setid id` to save your ID for the future.");
                 else
-                    await TypingReplyAsync($"I don't know the steam ID of {Name(user)}");
+                    await TypingReplyAsync($"I don't know the steam ID of {_users.Name(user)}");
             }
             else
                 await TypingReplyAsync($"Your steam ID is `{id}`");
@@ -83,7 +86,7 @@ namespace Mute.Moe.Discord.Modules
             // First, get the SteamIDs of everyone involved
             var mentions = Context.Message.MentionedUsers;
             var ids = await mentions.ToAsyncEnumerable().SelectAwait(async user => (user, await _ids.Get(user.Id))).ToArrayAsync();
-            var unknown = ids.Where(a => a.Item2 == null).Select(a => Name(a.user, true)).ToArray();
+            var unknown = ids.Where(a => a.Item2 == null).Select(a => _users.Name(a.user, true)).ToArray();
             if (unknown.Length > 0)
             {
                 await TypingReplyAsync($"I don't know the SteamIDs of {unknown.Humanize()}, please get your IDs with https://steamid.io/ and then use `{_config.PrefixCharacter}steam setid id` to save it");

@@ -348,34 +348,9 @@ namespace Mute.Moe.Discord.Modules
             return await Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
         }
 
-        protected async Task<IUserMessage> TypingReplyAsync(EmbedBuilder embed, RequestOptions? options = null)
-        {
-            return await TypingReplyAsync("", false, embed.Build(), options);
-        }
-
         protected async Task<IUserMessage> ReplyAsync(EmbedBuilder embed, RequestOptions? options = null)
         {
             return await ReplyAsync("", false, embed.Build(), options);
-        }
-        #endregion
-
-        #region user names
-        public async Task<string> Name(ulong id, bool mention = false)
-        {
-            var users = Context.Services.GetRequiredService<IUserService>();
-            var user = await users.GetUser(id, Context.Guild);
-
-            return user == null
-                 ? $"UNK:{id}"
-                 : Name(user, mention);
-        }
-
-        public static string Name(IUser user, bool mention = false)
-        {
-            if (mention)
-                return user.Mention;
-
-            return (user as IGuildUser)?.Nickname ?? user.Username;
         }
         #endregion
 
