@@ -13,7 +13,6 @@ using Mute.Moe.Services.Information.Anime;
 using Mute.Moe.Services.Information.Cryptocurrency;
 using Mute.Moe.Services.Information.Forex;
 using Mute.Moe.Services.Information.SpaceX;
-using Mute.Moe.Services.Information.Steam;
 using Mute.Moe.Services.Information.Stocks;
 using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.Introspection.Uptime;
@@ -79,9 +78,6 @@ namespace Mute.Moe
             services.AddSingleton<ITransactions, DatabaseTransactions>();
             services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
             services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
-            services.AddSingleton<ISteamInfo, SteamApi>();
-            services.AddSingleton<ISteamLightweightAppInfoStorage, SteamLightweightAppInfoDbCache>();
-            services.AddSingleton<ISteamIdStorage, SteamIdDatabaseStorage>();
             services.AddHostedService<IUptime, UtcDifferenceUptime>();
             services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
             services.AddSingleton<IForexInfo, AlphaVantageForex>();

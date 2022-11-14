@@ -49,7 +49,7 @@ namespace Mute.Moe.Services.Groups
             return results.HasRows;
         }
 
-         public IAsyncEnumerable<IRole> GetUnlocked( IGuild guild)
+         public IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
         {
             IRole ParseRole(DbDataReader reader)
             {
