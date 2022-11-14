@@ -51,7 +51,7 @@ namespace Mute.Moe.Services.Groups
 
          public IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
         {
-            IRole ParseRole(DbDataReader reader)
+            IRole? ParseRole(DbDataReader reader)
             {
                 return guild.GetRole(ulong.Parse((string)reader["RoleId"]));
             }
@@ -64,7 +64,10 @@ namespace Mute.Moe.Services.Groups
                 return cmd;
             }
 
-            return new SqlAsyncResult<IRole>(_database, PrepareQuery, ParseRole).OrderBy(a => a.Name);
+            return new SqlAsyncResult<IRole?>(_database, PrepareQuery, ParseRole)
+                .Where(a => a != null)
+                .Select(a => a!)
+                .OrderBy(a => a.Name);
         }
 
         public async Task Unlock(IRole grp)
