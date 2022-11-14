@@ -194,7 +194,7 @@ namespace Mute.Moe.Discord.Services.Responses
             "pier"
         };
 
-        private readonly IReadOnlyList<ValueTuple<string, string>> _runes = new ValueTuple<string, string>[] {
+        private readonly IReadOnlyList<ValueTuple<string, string>> _runes = new[] {
             ("ace", " "),
             ("bar", "|"),
             ("bas", "\\"),

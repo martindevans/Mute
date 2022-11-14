@@ -5,7 +5,6 @@ using BalderHash;
 using Discord;
 using Discord.Commands;
 using Discord.Interactions;
-using Discord.WebSocket;
 using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Payment;
 
@@ -15,13 +14,11 @@ namespace Mute.Moe.Discord.Interactions.Payment
         : BaseInteractionModule
     {
         private readonly IPendingTransactions _pending;
-        private readonly BaseSocketClient _client;
         private readonly IUserService _users;
 
-        public UOI(IPendingTransactions pending, BaseSocketClient client, IUserService users)
+        public UOI(IPendingTransactions pending, IUserService users)
         {
             _pending = pending;
-            _client = client;
             _users = users;
         }
 

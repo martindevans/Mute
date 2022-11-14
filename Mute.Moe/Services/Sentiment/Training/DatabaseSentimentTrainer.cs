@@ -13,7 +13,7 @@ namespace Mute.Moe.Services.Sentiment.Training
 
         private readonly IDatabaseService _database;
 
-        public DatabaseSentimentTrainer( Configuration config, IDatabaseService database)
+        public DatabaseSentimentTrainer(Configuration config, IDatabaseService database)
         {
             _database = database;
 
@@ -32,8 +32,8 @@ namespace Mute.Moe.Services.Sentiment.Training
         {
             await using var cmd = _database.CreateCommand();
             cmd.CommandText = InsertTaggedSentimentData;
-            cmd.Parameters.Add(new SQLiteParameter("@Content", System.Data.DbType.String) { Value = text.ToLowerInvariant() });
-            cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) { Value = ((int)sentiment).ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@Content", System.Data.DbType.String) {Value = text.ToLowerInvariant()});
+            cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) {Value = ((int)sentiment).ToString()});
             await cmd.ExecuteNonQueryAsync();
         }
     }

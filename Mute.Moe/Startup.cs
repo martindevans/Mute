@@ -1,13 +1,10 @@
 ﻿using System;
-using System.IO;
 using System.IO.Abstractions;
 using Discord.Addons.Interactive;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
-using Mute.Moe.Discord.Services;
 using Mute.Moe.Discord.Services.Games;
 using Mute.Moe.Discord.Services.Responses;
-using Mute.Moe.Services;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Groups;
 using Mute.Moe.Services.Images.Cats;

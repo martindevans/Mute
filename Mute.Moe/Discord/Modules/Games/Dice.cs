@@ -6,7 +6,6 @@ using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Randomness;
 
 namespace Mute.Moe.Discord.Modules.Games
@@ -126,7 +125,7 @@ namespace Mute.Moe.Discord.Modules.Games
             get
             {
                 yield return new Key("flip",
-                    new Decomposition("*", d => Flip())
+                    new Decomposition("*", _ => Flip())
                 );
 
                 yield return new Key("roll",
@@ -136,7 +135,7 @@ namespace Mute.Moe.Discord.Modules.Games
                 );
 
                 yield return new Key("8ball",
-                    new Decomposition("*8ball *", d => Magic8Ball())
+                    new Decomposition("*8ball *", _ => Magic8Ball())
                 );
             }
         }

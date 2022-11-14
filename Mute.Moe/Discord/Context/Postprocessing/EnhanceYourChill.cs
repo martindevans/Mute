@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services.Speech;
 
 namespace Mute.Moe.Discord.Context.Postprocessing
 {
@@ -13,7 +12,6 @@ namespace Mute.Moe.Discord.Context.Postprocessing
     {
         private readonly Configuration _config;
         private readonly Random _random;
-        private readonly IGuildSpeechQueueCollection _ttsQueue;
 
         public uint Order => 0;
 
@@ -23,11 +21,10 @@ namespace Mute.Moe.Discord.Context.Postprocessing
             new[] { "EVERYONE STAY CALM", "NOBODY PANIC!", "IT'S NOT AS BAD AS IT LOOKS" }
         };
 
-        public EnhanceYourChill(Configuration config, Random random, IGuildSpeechQueueCollection ttsQueue)
+        public EnhanceYourChill(Configuration config, Random random)
         {
             _config = config;
             _random = random;
-            _ttsQueue = ttsQueue;
         }
 
         public async Task<bool> Process(MuteCommandContext context, IResult result)

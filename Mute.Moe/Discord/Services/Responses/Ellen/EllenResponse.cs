@@ -61,8 +61,7 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen
                     // if there is an active discussion, try to continue it
                     if (_active is {IsComplete: false})
                     {
-                        string? reply;
-                        (reply, _knowledge) = await _active.Reply(_knowledge, message);
+                        (var reply, _knowledge) = await _active.Reply(_knowledge, message);
 
                         return reply;
                     }

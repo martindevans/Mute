@@ -53,7 +53,7 @@ namespace Mute.Moe.Services.Speech.STT
                     results.Enqueue(new RecognitionWord(null));
             };
 
-            recogniser.Canceled += (s, e) =>
+            recogniser.Canceled += (_, e) =>
             {
                 Console.WriteLine($"CANCELED: Reason={e.Reason}");
 
@@ -65,13 +65,13 @@ namespace Mute.Moe.Services.Speech.STT
                 }
             };
 
-            recogniser.SessionStarted += (_, e) =>
+            recogniser.SessionStarted += (_, _) =>
             {
                 results.Enqueue(new RecognitionWord("Session_started_event."));
             };
 
             var stopped = false;
-            recogniser.SessionStopped += (_, e) =>
+            recogniser.SessionStopped += (_, _) =>
             {
                 results.Enqueue(new RecognitionWord("Session_stopped_event."));
                 stopped = true;

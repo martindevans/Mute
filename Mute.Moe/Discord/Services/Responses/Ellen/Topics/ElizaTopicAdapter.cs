@@ -65,8 +65,7 @@ namespace Mute.Moe.Discord.Services.Responses.Ellen.Topics
 
                 // Get or construct an eliza engine from the knowledge chain
                 // If the previous engine has finished a new one will be constructed
-                ElizaEngineAdapter engine;
-                (engine, knowledge) = knowledge.GetOrAdd(e => !e.Eliza.Finished, k => new ElizaEngineAdapter(k, _script));
+                (var engine, knowledge) = knowledge.GetOrAdd(e => !e.Eliza.Finished, k => new ElizaEngineAdapter(k, _script));
 
                 // Get a response from eliza and pass it back
                 var response = engine.Eliza.ProcessInput(message);

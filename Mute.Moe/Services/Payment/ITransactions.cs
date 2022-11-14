@@ -95,13 +95,13 @@ namespace Mute.Moe.Services.Payment
         /// Get all transactions involving (up to) two users
         /// </summary>
         /// <param name="database"></param>
-        /// <param name="a">One of the users in the transaction</param>
-        /// <param name="b"></param>
+        /// <param name="userA">One of the users in the transaction</param>
+        /// <param name="userB"></param>
         /// <returns>All transactions involving A (filtered to also involving B if specified), ordered by instant</returns>
-        public static async Task<IReadOnlyList<ITransaction>> GetAllTransactions( this ITransactions database, ulong a, ulong? b = null)
+        public static async Task<IReadOnlyList<ITransaction>> GetAllTransactions( this ITransactions database, ulong userA, ulong? userB = null)
         {
-            var ab = database.GetTransactions(fromId: a, toId: b);
-            var ba = database.GetTransactions(fromId: b, toId: a);
+            var ab = database.GetTransactions(fromId: userA, toId: userB);
+            var ba = database.GetTransactions(fromId: userB, toId: userA);
 
             return await ab.Concat(ba).OrderByDescending(t => t.Instant).ToArrayAsync();
         }

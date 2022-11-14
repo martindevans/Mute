@@ -112,8 +112,7 @@ namespace Mute.Moe.Discord.Services.Responses.Eliza.Engine
         /// <returns></returns>
         public IReadOnlyList<string>? Match(string str, IReadOnlyList<IReadOnlyCollection<string>> synonyms)
         {
-            if (_regexCache == null)
-                _regexCache = BuildRegex(Pattern, synonyms);
+            _regexCache ??= BuildRegex(Pattern, synonyms);
 
             var match = Regex.Match(str, _regexCache, RegexOptions.IgnoreCase);
             if (!match.Success)

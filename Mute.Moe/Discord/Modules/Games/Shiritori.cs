@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord.Commands;
 
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Discord.Services;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Words;
 
@@ -42,6 +41,7 @@ namespace Mute.Moe.Discord.Modules.Games
         }
 
         [Command, RequireOwner, Summary("Challenge me to a game of shiritori (or force me to play off against myself)")]
+        // ReSharper disable once MethodOverloadWithOptionalParameter
         public async Task StartGame(Mode mode, Mode autoMode = Mode.Hard, bool auto = true)
         {
             var values = Get(mode);

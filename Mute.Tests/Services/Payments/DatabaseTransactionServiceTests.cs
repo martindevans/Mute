@@ -30,20 +30,20 @@ namespace Mute.Tests.Services.Payments
             await svc.CreateTransaction(1, 2, 5, "TEST3", "Note 4", now + TimeSpan.FromMinutes(3));
         }
 
-        [TestMethod]
-        public async Task GetAllTransactions()
-        {
-            var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
+        //[TestMethod]
+        //public async Task GetAllTransactions()
+        //{
+        //    var svc = new DatabaseTransactions(new SqliteInMemoryDatabase());
 
-            var now = DateTime.UtcNow;
-            await CreateTestTransactions(now, svc);
+        //    var now = DateTime.UtcNow;
+        //    await CreateTestTransactions(now, svc);
 
-            var tsx = await svc.GetAllTransactions(0);
+        //    var tsx = await svc.GetAllTransactions(0);
 
-            Assert.AreEqual(3, tsx.Count);
-            Assert.AreEqual("test", tsx[0].Unit);
-            Assert.AreEqual("Note 2", tsx[1].Note);
-        }
+        //    Assert.AreEqual(3, tsx.Count);
+        //    Assert.AreEqual("test", tsx[0].Unit);
+        //    Assert.AreEqual("Note 2", tsx[1].Note);
+        //}
 
         [TestMethod]
         public async Task GetTransactionByFromId()

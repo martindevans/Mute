@@ -101,7 +101,7 @@ namespace Mute.Moe.Discord.Modules
                 result.Take(n).ToArray(),
                 () => "I can't find any similar words",
                 items => $"The {items.Count} most similar words are:",
-                (t, i) => $"`{t.Word}` ({t.Similarity})"
+                (t, _) => $"`{t.Word}` ({t.Similarity})"
             );
         }
 

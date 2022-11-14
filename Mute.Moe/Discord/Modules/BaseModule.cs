@@ -7,10 +7,8 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
-using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
 
@@ -182,8 +180,7 @@ namespace Mute.Moe.Discord.Modules
 
         protected async Task DisplayLazyPaginatedReply<T>(string title, IAsyncEnumerable<T> pagesEnumerable, Action<T, EmbedBuilder>? build = null)
         {
-            if (build == null)
-                build = (i, b) => b.Description = i?.ToString() ?? "";
+            build ??= (i, b) => b.Description = i?.ToString() ?? "";
 
             var items = new LazyList<T>(pagesEnumerable);
             await items.Start();

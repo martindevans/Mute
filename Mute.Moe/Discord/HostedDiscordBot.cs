@@ -35,7 +35,7 @@ namespace Mute.Moe.Discord
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _commands = commands ?? throw new ArgumentNullException(nameof(commands));
             _services = services ?? throw new ArgumentNullException(nameof(services));
-            _interactions = interactions ?? throw new ArgumentNullException(nameof(services));
+            _interactions = interactions ?? throw new ArgumentNullException(nameof(interactions));
         }
 
         public async Task StartAsync(CancellationToken cancellationToken = default)
@@ -64,7 +64,7 @@ namespace Mute.Moe.Discord
             // Hook the MessageReceived Event into our Command Handler
             Client.MessageReceived += HandleMessage;
             _commands.CommandExecuted += CommandExecuted;
-            Client.SlashCommandExecuted += a => _interactions.ExecuteCommandAsync(new InteractionContext(Client, a, a.User, a.Channel), _services);
+            Client.SlashCommandExecuted += a => _interactions.ExecuteCommandAsync(new InteractionContext(Client, a, a.Channel), _services);
 
             var tcs = new TaskCompletionSource<bool>();
             Client.Ready += () => {

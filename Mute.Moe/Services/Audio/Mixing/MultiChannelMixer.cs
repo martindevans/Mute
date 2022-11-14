@@ -37,7 +37,7 @@ namespace Mute.Moe.Services.Audio.Mixing
 
         public void Add(IMixerInput input)
         {
-            var samples = _inputMap.GetOrAdd(input, a => input.ToMono().Resample(MixingFormat.SampleRate));
+            var samples = _inputMap.GetOrAdd(input, _ => input.ToMono().Resample(MixingFormat.SampleRate));
             _inputs.AddMixerInput(samples);
         }
 

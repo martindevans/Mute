@@ -76,7 +76,7 @@ namespace Mute.Moe.Discord.Modules
                     launches,
                     () => "There are no upcoming SpaceX launches!",
                     null,
-                    (l, i) => l.Summary()
+                    (l, _) => l.Summary()
                 );
             }
         }
@@ -117,7 +117,7 @@ namespace Mute.Moe.Discord.Modules
                     => string.Join("\n", await DescribeUpcomingFlights(count));
 
                 yield return new Key("spacex",
-                    new Decomposition("*next*launch*", d => NextLaunch(1)!),
+                    new Decomposition("*next*launch*", _ => NextLaunch(1)!),
                     new Decomposition("#*launches*", d => NextLaunch(int.Parse(d[0]))!),
                     new Decomposition("*launches*#", d => NextLaunch(int.Parse(d[0]))!)
                 );

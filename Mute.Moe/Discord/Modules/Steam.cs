@@ -155,10 +155,10 @@ namespace Mute.Moe.Discord.Modules
                 }
 
                 yield return new Key("steam",
-                    new Decomposition("*what*my*steam*id*", (c, s) => GetSteamId(c)!),
-                    new Decomposition("*what*my*steamid*", (c, s) => GetSteamId(c)!),
-                    new Decomposition("*tell*my*steam*id*", (c, s) => GetSteamId(c)!),
-                    new Decomposition("*tell*my*steamid*", (c, s) => GetSteamId(c)!)
+                    new Decomposition("*what*my*steam*id*", (c, _) => GetSteamId(c)!),
+                    new Decomposition("*what*my*steamid*", (c, _) => GetSteamId(c)!),
+                    new Decomposition("*tell*my*steam*id*", (c, _) => GetSteamId(c)!),
+                    new Decomposition("*tell*my*steamid*", (c, _) => GetSteamId(c)!)
                 );
             }
         }

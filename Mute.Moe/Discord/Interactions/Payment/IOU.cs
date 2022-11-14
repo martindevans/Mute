@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
-using MoreLinq;
 using Mute.Moe.Discord.Modules.Payment;
 using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Payment;
