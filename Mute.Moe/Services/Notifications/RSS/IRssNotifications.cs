@@ -1,21 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.Notifications.RSS
+namespace Mute.Moe.Services.Notifications.RSS;
+
+public interface IRssNotifications
 {
-    public interface IRssNotifications
-    {
-        Task Subscribe(string feedUrl, ulong channel, ulong? mentionGroup);
+    Task Subscribe(string feedUrl, ulong channel, ulong? mentionGroup);
 
-        IAsyncEnumerable<IRssSubscription> GetSubscriptions();
-    }
+    IAsyncEnumerable<IRssSubscription> GetSubscriptions();
+}
 
-    public interface IRssSubscription
-    {
-        string FeedUrl { get; }
+public interface IRssSubscription
+{
+    string FeedUrl { get; }
 
-        ulong Channel { get; }
+    ulong Channel { get; }
 
-        ulong? MentionRole { get; }
-    }
+    ulong? MentionRole { get; }
 }

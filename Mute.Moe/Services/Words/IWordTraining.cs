@@ -1,10 +1,9 @@
 ﻿using System.Threading.Tasks;
 
 
-namespace Mute.Moe.Services.Words
+namespace Mute.Moe.Services.Words;
+
+public interface IWordTraining
 {
-    public interface IWordTraining
-    {
-        Task Train( string word,  string exampleSentence);
-    }
+    Task Train( string word,  string exampleSentence);
 }

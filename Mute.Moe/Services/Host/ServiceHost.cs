@@ -5,37 +5,36 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Mute.Moe.Services.Host
+namespace Mute.Moe.Services.Host;
+
+public class ServiceHost
 {
-    public class ServiceHost
+    private readonly IServiceProvider _provider;
+
+    private readonly List<IHostedService> _services = new List<IHostedService>();
+
+    public ServiceHost(IServiceProvider provider)
     {
-        private readonly IServiceProvider _provider;
+        _provider = provider;
+    }
 
-        private readonly List<IHostedService> _services = new List<IHostedService>();
+    public async Task StartAsync(CancellationToken cancel)
+    {
+        var services = _provider.GetServices<IHostedService>().ToImmutableList();
 
-        public ServiceHost(IServiceProvider provider)
+        Console.WriteLine("Starting services:");
+        foreach (var service in services)
         {
-            _provider = provider;
+            Console.WriteLine($" - {service.GetType().Name}");
+            await service.StartAsync(cancel);
+            _services.Add(service);
         }
+    }
 
-        public async Task StartAsync(CancellationToken cancel)
-        {
-            var services = _provider.GetServices<IHostedService>().ToImmutableList();
-
-            Console.WriteLine($"Starting services:");
-            foreach (var service in services)
-            {
-                Console.WriteLine($" - {service.GetType().Name}");
-                await service.StartAsync(cancel);
-                _services.Add(service);
-            }
-        }
-
-        public async Task StopAsync(CancellationToken cancel)
-        {
-            foreach (var service in _services)
-                await service.StopAsync(cancel);
-            _services.Clear();
-        }
+    public async Task StopAsync(CancellationToken cancel)
+    {
+        foreach (var service in _services)
+            await service.StopAsync(cancel);
+        _services.Clear();
     }
 }

@@ -3,27 +3,25 @@ using System.Threading.Tasks;
 using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Extensions;
 
-namespace Mute.Moe.Discord.Modules.Payment
+namespace Mute.Moe.Discord.Modules.Payment;
+
+public static class TransactionFormatting
 {
-    public static class TransactionFormatting
+    public static string FormatCurrency(decimal amount, string unit)
     {
-        public static string FormatCurrency(decimal amount, string unit)
-        {
-            var sym = unit.TryGetCurrencySymbol();
+        var sym = unit.TryGetCurrencySymbol();
 
-            if (unit == sym)
-                return $"{amount}({unit.ToUpperInvariant()})";
-            else
-                return $"{sym}{amount}";
-        }
+        if (unit == sym)
+            return $"{amount}({unit.ToUpperInvariant()})";
+        return $"{sym}{amount}";
+    }
 
-        public static async Task<string> FormatTransaction(IUserService users, ulong from, ulong to, string? note, DateTime instant, decimal amount, string unit, bool mention = false)
-        {
-            var fromName = await users.Name(from, mention: mention);
-            var toName = await users.Name(to, mention: mention);
-            var noteFormat = string.IsNullOrWhiteSpace(note) ? "" : $"'{note}'";
+    public static async Task<string> FormatTransaction(IUserService users, ulong from, ulong to, string? note, DateTime instant, decimal amount, string unit, bool mention = false)
+    {
+        var fromName = await users.Name(from, mention: mention);
+        var toName = await users.Name(to, mention: mention);
+        var noteFormat = string.IsNullOrWhiteSpace(note) ? "" : $"'{note}'";
 
-            return $"[{instant:HH\\:mm UTC dd-MMM-yyyy}] {FormatCurrency(amount, unit)} {fromName} => {toName} {noteFormat}";
-        }
+        return $"[{instant:HH\\:mm UTC dd-MMM-yyyy}] {FormatCurrency(amount, unit)} {fromName} => {toName} {noteFormat}";
     }
 }

@@ -1,10 +1,9 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.Images.Cats
+namespace Mute.Moe.Services.Images.Cats;
+
+public interface ICatPictureProvider
 {
-    public interface ICatPictureProvider
-    {
-        Task<Stream> GetCatPictureAsync();
-    }
+    Task<Stream> GetCatPictureAsync();
 }

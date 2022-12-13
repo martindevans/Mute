@@ -2,21 +2,20 @@
 using Discord;
 using Mute.Moe.Services.Audio.Mixing.Channels;
 
-namespace Mute.Moe.Services.Audio
+namespace Mute.Moe.Services.Audio;
+
+/// <summary>
+/// Sends/receives audio in a discord voice channel in a particular guild
+/// </summary>
+public interface IGuildVoice
 {
-    /// <summary>
-    /// Sends/receives audio in a discord voice channel in a particular guild
-    /// </summary>
-    public interface IGuildVoice
-    {
-        IGuild Guild { get; }
+    IGuild Guild { get; }
 
-        IVoiceChannel? Channel { get; }
+    IVoiceChannel? Channel { get; }
 
-        Task Move(IVoiceChannel? channel);
+    Task Move(IVoiceChannel? channel);
 
-        Task Stop();
+    Task Stop();
 
-        void Open(IMixerChannel channel);
-    }
+    void Open(IMixerChannel channel);
 }

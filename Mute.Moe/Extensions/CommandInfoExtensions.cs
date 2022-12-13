@@ -4,19 +4,18 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Extensions
+namespace Mute.Moe.Extensions;
+
+public static class CommandInfoExtensions
 {
-    public static class CommandInfoExtensions
+    public static async Task<bool> CheckCommandPreconditions(this CommandInfo command, ICommandContext context, IServiceProvider services)
     {
-        public static async Task<bool> CheckCommandPreconditions(this CommandInfo command, ICommandContext context, IServiceProvider services)
-        {
-            var conditions = command.Preconditions.Concat(command.Module.Preconditions);
+        var conditions = command.Preconditions.Concat(command.Module.Preconditions);
 
-            foreach (var precondition in conditions)
-                if (!(await precondition.CheckPermissionsAsync(context, command, services)).IsSuccess)
-                    return false;
+        foreach (var precondition in conditions)
+            if (!(await precondition.CheckPermissionsAsync(context, command, services)).IsSuccess)
+                return false;
 
-            return true;
-        }
+        return true;
     }
 }

@@ -1,18 +1,17 @@
 ﻿using System.Collections.Generic;
 
-namespace Mute.Moe.Services.Information.Stocks
+namespace Mute.Moe.Services.Information.Stocks;
+
+public interface IStockSearch
 {
-    public interface IStockSearch
-    {
-        IAsyncEnumerable<IStockSearchResult> Search(string search);
-    }
+    IAsyncEnumerable<IStockSearchResult> Search(string search);
+}
 
-    public interface IStockSearchResult
-    {
-        string Symbol { get; }
+public interface IStockSearchResult
+{
+    string Symbol { get; }
 
-        string Name { get; }
+    string Name { get; }
 
-        string Currency { get; }
-    }
+    string Currency { get; }
 }

@@ -2,17 +2,16 @@
 using Discord.Commands;
 
 
-namespace Mute.Moe.Services.Intent
+namespace Mute.Moe.Services.Intent;
+
+public interface IIntentRecognizer
 {
-    public interface IIntentRecognizer
-    {
-        Task<IIntentResult?> Recognize(string sentence);
-    }
+    Task<IIntentResult?> Recognize(string sentence);
+}
 
-    public interface IIntentResult
-    {
-        CommandInfo Command { get; }
+public interface IIntentResult
+{
+    CommandInfo Command { get; }
 
-        ParseResult Arguments { get; }
-    }
+    ParseResult Arguments { get; }
 }

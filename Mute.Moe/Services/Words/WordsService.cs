@@ -2,27 +2,26 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Mute.Moe.Services.Words
+namespace Mute.Moe.Services.Words;
+
+public class WordsService
 {
-    public class WordsService
+    private readonly HashSet<string> _words;
+
+    public IEnumerable<string> Words => _words;
+
+    public WordsService(Configuration config)
     {
-        private readonly HashSet<string> _words;
+        if (config.Dictionary == null)
+            throw new ArgumentNullException(nameof(config.Dictionary));
+        if (config.Dictionary.WordListPath == null)
+            throw new ArgumentNullException(nameof(config.Dictionary.WordListPath));
 
-        public IEnumerable<string> Words => _words;
+        _words = new HashSet<string>(File.ReadAllLines(config.Dictionary.WordListPath));
+    }
 
-        public WordsService(Configuration config)
-        {
-            if (config.Dictionary == null)
-                throw new ArgumentNullException(nameof(config.Dictionary));
-            if (config.Dictionary.WordListPath == null)
-                throw new ArgumentNullException(nameof(config.Dictionary.WordListPath));
-
-            _words = new HashSet<string>(File.ReadAllLines(config.Dictionary.WordListPath));
-        }
-
-        public bool Contains(string word)
-        {
-            return _words.Contains(word.ToLowerInvariant());
-        }
+    public bool Contains(string word)
+    {
+        return _words.Contains(word.ToLowerInvariant());
     }
 }

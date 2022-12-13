@@ -1,18 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.Notifications.SpaceX
+namespace Mute.Moe.Services.Notifications.SpaceX;
+
+public interface ISpacexNotifications
 {
-    public interface ISpacexNotifications
-    {
-        Task Subscribe(ulong channel, ulong? mentionGroup);
+    Task Subscribe(ulong channel, ulong? mentionGroup);
 
-        IAsyncEnumerable<ISpacexSubscription> GetSubscriptions();
-    }
+    IAsyncEnumerable<ISpacexSubscription> GetSubscriptions();
+}
 
-    public interface ISpacexSubscription
-    {
-        ulong Channel { get; }
-        ulong? MentionRole { get; }
-    }
+public interface ISpacexSubscription
+{
+    ulong Channel { get; }
+    ulong? MentionRole { get; }
 }

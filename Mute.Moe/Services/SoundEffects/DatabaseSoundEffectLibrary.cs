@@ -13,187 +13,186 @@ using Mute.Moe.Services.Database;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace Mute.Moe.Services.SoundEffects
+namespace Mute.Moe.Services.SoundEffects;
+
+public class DatabaseSoundEffectLibrary
+    : ISoundEffectLibrary
 {
-    public class DatabaseSoundEffectLibrary
-        : ISoundEffectLibrary
+    private const string InsertSfxSql = "INSERT INTO `Sfx2` (`GuildId`, `Name`, `FileName`) VALUES (@GuildId, @Name, @FileName);";
+    private const string GetSfxByNameSql = "Select * from Sfx2 where Name = @Name AND GuildId = @GuildId";
+    private const string FindSfxSql = "Select * from Sfx2 where GuildId = @GuildId AND Name like '%' || @Search || '%'";
+    private const string FindAllSfxSql = "Select * from Sfx2 where GuildId = @GuildId";
+
+    private readonly string _sfxFolder;
+
+    private readonly IDatabaseService _database;
+    private readonly IFileSystem _fs;
+
+    public DatabaseSoundEffectLibrary(Configuration config, IDatabaseService database, IFileSystem fs)
     {
-        private const string InsertSfxSql = "INSERT INTO `Sfx2` (`GuildId`, `Name`, `FileName`) VALUES (@GuildId, @Name, @FileName);";
-        private const string GetSfxByNameSql = "Select * from Sfx2 where Name = @Name AND GuildId = @GuildId";
-        private const string FindSfxSql = "Select * from Sfx2 where GuildId = @GuildId AND Name like '%' || @Search || '%'";
-        private const string FindAllSfxSql = "Select * from Sfx2 where GuildId = @GuildId";
+        _database = database;
+        _fs = fs;
 
-        private readonly string _sfxFolder;
+        _sfxFolder = config.SoundEffects?.SfxFolder ?? throw new ArgumentNullException(nameof(config.SoundEffects.SfxFolder));
 
-         private readonly IDatabaseService _database;
-         private readonly IFileSystem _fs;
+        _database.Exec("CREATE TABLE IF NOT EXISTS `Sfx2` (`GuildId` TEXT NOT NULL, `Name` TEXT NOT NULL, `FileName` TEXT NOT NULL)");
+    }
 
-         public DatabaseSoundEffectLibrary(Configuration config, IDatabaseService database, IFileSystem fs)
-         {
-             _database = database;
-             _fs = fs;
+    public async Task<ISoundEffect> Create(ulong guild, string name, byte[] data)
+    {
+        var normalized = NormalizeAudioData(data);
 
-             _sfxFolder = config.SoundEffects?.SfxFolder ?? throw new ArgumentNullException(nameof(config.SoundEffects.SfxFolder));
+        //Choose a unique name for this file based on the hash(name, data) and guild
+        var hashName = name.SHA256();
+        var hashData = normalized.SHA256();
+        var hash = $"{hashName}{hashData}{guild}".SHA256();
+        var fileName = hash + ".wav";
+        var pathDir = Path.Combine(_sfxFolder, guild.ToString());
+        var path = Path.Combine(pathDir, fileName);
 
-             _database.Exec("CREATE TABLE IF NOT EXISTS `Sfx2` (`GuildId` TEXT NOT NULL, `Name` TEXT NOT NULL, `FileName` TEXT NOT NULL)");
-         }
+        //Check that there isn't a file collision
+        if (_fs.File.Exists(path))
+            throw new InvalidOperationException("File already exists, use a different name");
 
-         public async Task<ISoundEffect> Create(ulong guild, string name, byte[] data)
+        //Ensure the path exists to put the file where it needs to go
+        _fs.Directory.CreateDirectory(pathDir);
+
+        //Write out to disk
+        normalized.Position = 0;
+        await using (var fs = _fs.File.Create(path))
+            await normalized.CopyToAsync(fs);
+
+        //Insert into the database
+        await using (var cmd = _database.CreateCommand())
         {
-            var normalized = NormalizeAudioData(data);
-
-            //Choose a unique name for this file based on the hash(name, data) and guild
-            var hashName = name.SHA256();
-            var hashData = normalized.SHA256();
-            var hash = $"{hashName}{hashData}{guild}".SHA256();
-            var fileName = hash + ".wav";
-            var pathDir = Path.Combine(_sfxFolder, guild.ToString());
-            var path = Path.Combine(pathDir, fileName);
-
-            //Check that there isn't a file collision
-            if (_fs.File.Exists(path))
-                throw new InvalidOperationException("File already exists, use a different name");
-
-            //Ensure the path exists to put the file where it needs to go
-            _fs.Directory.CreateDirectory(pathDir);
-
-            //Write out to disk
-            normalized.Position = 0;
-            await using (var fs = _fs.File.Create(path))
-                await normalized.CopyToAsync(fs);
-
-            //Insert into the database
-            await using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertSfxSql;
-                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) { Value = name.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@FileName", System.Data.DbType.String) { Value = fileName });
-                await cmd.ExecuteNonQueryAsync();
-            }
-
-            return new DatabaseSoundEffect(_sfxFolder, guild, fileName, name);
+            cmd.CommandText = InsertSfxSql;
+            cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
+            cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) { Value = name.ToLowerInvariant() });
+            cmd.Parameters.Add(new SQLiteParameter("@FileName", System.Data.DbType.String) { Value = fileName });
+            await cmd.ExecuteNonQueryAsync();
         }
 
-         public async Task<ISoundEffect> Alias(string alias, ISoundEffect sfx)
-         {
-             alias = alias.ToLowerInvariant();
+        return new DatabaseSoundEffect(_sfxFolder, guild, fileName, name);
+    }
 
-             //Check if this sfx alias already exists
-             if (await Get(sfx.Guild, alias) != null)
-                 throw new InvalidOperationException("Sound effect `{alias}` already exists in this guild");
+    public async Task<ISoundEffect> Alias(string alias, ISoundEffect sfx)
+    {
+        alias = alias.ToLowerInvariant();
 
-             await using (var cmd = _database.CreateCommand())
-             {
-                 cmd.CommandText = InsertSfxSql;
-                 cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) {Value = sfx.Guild});
-                 cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) {Value = alias});
-                 cmd.Parameters.Add(new SQLiteParameter("@FileName", System.Data.DbType.String) {Value = sfx.Path});
+        //Check if this sfx alias already exists
+        if (await Get(sfx.Guild, alias) != null)
+            throw new InvalidOperationException("Sound effect `{alias}` already exists in this guild");
 
-                 await cmd.ExecuteNonQueryAsync();
-             }
-
-             return new DatabaseSoundEffect(_sfxFolder, sfx.Guild, sfx.Path, alias);
-         }
-
-         public async Task<ISoundEffect?> Get(ulong guild, string name)
+        await using (var cmd = _database.CreateCommand())
         {
-            ISoundEffect Parse(DbDataReader reader)
-            {
-                return new DatabaseSoundEffect(
-                    _sfxFolder,
-                    ulong.Parse((string)reader["GuildId"]),
-                    (string)reader["FileName"],
-                    (string)reader["Name"]
-                );
-            }
+            cmd.CommandText = InsertSfxSql;
+            cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) {Value = sfx.Guild});
+            cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) {Value = alias});
+            cmd.Parameters.Add(new SQLiteParameter("@FileName", System.Data.DbType.String) {Value = sfx.Path});
 
-            DbCommand Prepare(IDatabaseService db)
-            {
-                var cmd = db.CreateCommand();
-                cmd.CommandText = GetSfxByNameSql;
-                cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) { Value = name.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
-                return cmd;
-            }
-
-            return await new SqlAsyncResult<ISoundEffect>(_database, Prepare, Parse).FirstOrDefaultAsync();
+            await cmd.ExecuteNonQueryAsync();
         }
 
-        public IAsyncEnumerable<ISoundEffect> Find(ulong guild, string search)
+        return new DatabaseSoundEffect(_sfxFolder, sfx.Guild, sfx.Path, alias);
+    }
+
+    public async Task<ISoundEffect?> Get(ulong guild, string name)
+    {
+        ISoundEffect Parse(DbDataReader reader)
         {
-            ISoundEffect Parse(DbDataReader reader)
-            {
-                return new DatabaseSoundEffect(
-                    _sfxFolder, 
-                    ulong.Parse((string)reader["GuildId"]),
-                    (string)reader["FileName"],
-                    (string)reader["Name"]
-                );
-            }
-
-            DbCommand Prepare(IDatabaseService db)
-            {
-                var cmd = db.CreateCommand();
-
-                cmd.CommandText = search == "*"
-                                ? FindAllSfxSql
-                                : FindSfxSql;
-
-                cmd.Parameters.Add(new SQLiteParameter("@Search", System.Data.DbType.String) { Value = search.ToLowerInvariant() });
-                cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
-                return cmd;
-            }
-
-            return new SqlAsyncResult<ISoundEffect>(_database, Prepare, Parse);
+            return new DatabaseSoundEffect(
+                _sfxFolder,
+                ulong.Parse((string)reader["GuildId"]),
+                (string)reader["FileName"],
+                (string)reader["Name"]
+            );
         }
 
-         private static MemoryStream NormalizeAudioData(byte[] data)
+        DbCommand Prepare(IDatabaseService db)
         {
-            #if NCRUNCH
+            var cmd = db.CreateCommand();
+            cmd.CommandText = GetSfxByNameSql;
+            cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) { Value = name.ToLowerInvariant() });
+            cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
+            return cmd;
+        }
+
+        return await new SqlAsyncResult<ISoundEffect>(_database, Prepare, Parse).FirstOrDefaultAsync();
+    }
+
+    public IAsyncEnumerable<ISoundEffect> Find(ulong guild, string search)
+    {
+        ISoundEffect Parse(DbDataReader reader)
+        {
+            return new DatabaseSoundEffect(
+                _sfxFolder, 
+                ulong.Parse((string)reader["GuildId"]),
+                (string)reader["FileName"],
+                (string)reader["Name"]
+            );
+        }
+
+        DbCommand Prepare(IDatabaseService db)
+        {
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = search == "*"
+                ? FindAllSfxSql
+                : FindSfxSql;
+
+            cmd.Parameters.Add(new SQLiteParameter("@Search", System.Data.DbType.String) { Value = search.ToLowerInvariant() });
+            cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.ToString() });
+            return cmd;
+        }
+
+        return new SqlAsyncResult<ISoundEffect>(_database, Prepare, Parse);
+    }
+
+    private static MemoryStream NormalizeAudioData(byte[] data)
+    {
+#if NCRUNCH
                 return new MemoryStream(data);
-            #endif
+#endif
 
-            //Construct reader which can read the audio (whatever format it is in)
-            var reader = new StreamMediaFoundationReader(new MemoryStream(data));
-            var sampleProvider = reader.ToSampleProvider();
+        //Construct reader which can read the audio (whatever format it is in)
+        var reader = new StreamMediaFoundationReader(new MemoryStream(data));
+        var sampleProvider = reader.ToSampleProvider();
 
-            // find the max peak
-            float max = 0;
-            var buffer = new float[reader.WaveFormat.SampleRate];
-            int read;
-            do
-            {
-                read = sampleProvider.Read(buffer, 0, buffer.Length);
-                if (read > 0)
-                    max = Math.Max(max, Enumerable.Range(0, read).Select(i => Math.Abs(buffer[i])).Max());
-            } while (read > 0);
-
-            if (Math.Abs(max) < float.Epsilon || max > 1.0f)
-                throw new InvalidOperationException("Audio normalization failed to find a reasonable peak volume");
-            
-            //Write (as wav) with soft clipping and peak volume normalization
-            var output = new MemoryStream((int)(reader.Length * 4));
-            var input = new SoftClipSampleProvider(new VolumeSampleProvider(sampleProvider) { Volume = 1 / max - 0.05f });
-            reader.Position = 0;
-            WaveFileWriter.WriteWavFileToStream(output, input.ToWaveProvider16());
-
-            return output;
-        }
-
-        private class DatabaseSoundEffect
-            : ISoundEffect
+        // find the max peak
+        float max = 0;
+        var buffer = new float[reader.WaveFormat.SampleRate];
+        int read;
+        do
         {
-            public ulong Guild { get; }
-            public string Path { get; }
-            public string Name { get; }
+            read = sampleProvider.Read(buffer, 0, buffer.Length);
+            if (read > 0)
+                max = Math.Max(max, Enumerable.Range(0, read).Select(i => Math.Abs(buffer[i])).Max());
+        } while (read > 0);
 
-            public DatabaseSoundEffect(string rootPath, ulong guild, string fileName, string name)
-            {
-                Guild = guild;
-                Path = System.IO.Path.Combine(rootPath, guild.ToString(), fileName);
-                Name = name;
-            }
+        if (Math.Abs(max) < float.Epsilon || max > 1.0f)
+            throw new InvalidOperationException("Audio normalization failed to find a reasonable peak volume");
+            
+        //Write (as wav) with soft clipping and peak volume normalization
+        var output = new MemoryStream((int)(reader.Length * 4));
+        var input = new SoftClipSampleProvider(new VolumeSampleProvider(sampleProvider) { Volume = 1 / max - 0.05f });
+        reader.Position = 0;
+        WaveFileWriter.WriteWavFileToStream(output, input.ToWaveProvider16());
+
+        return output;
+    }
+
+    private class DatabaseSoundEffect
+        : ISoundEffect
+    {
+        public ulong Guild { get; }
+        public string Path { get; }
+        public string Name { get; }
+
+        public DatabaseSoundEffect(string rootPath, ulong guild, string fileName, string name)
+        {
+            Guild = guild;
+            Path = System.IO.Path.Combine(rootPath, guild.ToString(), fileName);
+            Name = name;
         }
     }
 }

@@ -3,74 +3,71 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Utilities
+namespace Mute.Moe.Utilities;
+
+public class AsyncLock
 {
-    public class AsyncLock
+    private readonly object _mutex = new();
+
+    private bool _taken;
+    private readonly Queue<TaskCompletionSource<IDisposable>> _waiting = new();
+
+    public Task<IDisposable> LockAsync(CancellationToken cancellationToken = default)
     {
-        private readonly object _mutex = new();
-
-        private bool _taken;
-        private readonly Queue<TaskCompletionSource<IDisposable>> _waiting = new();
-
-        public Task<IDisposable> LockAsync(CancellationToken cancellationToken = default)
+        lock (_mutex)
         {
-            lock (_mutex)
+            if (!_taken)
             {
-                if (!_taken)
-                {
-                    // If the lock is available, take it immediately.
-                    _taken = true;
-                    return Task.FromResult<IDisposable>(new LockLifetime(this));
-                }
-                else
-                {
-                    var completion = new TaskCompletionSource<IDisposable>();
-                    // ReSharper disable once MethodSupportsCancellation
-                    cancellationToken.Register(() => { completion.SetCanceled(); });
-                    _waiting.Enqueue(completion);
+                // If the lock is available, take it immediately.
+                _taken = true;
+                return Task.FromResult<IDisposable>(new LockLifetime(this));
+            }
 
-                    return completion.Task;
-                }
+            var completion = new TaskCompletionSource<IDisposable>();
+            // ReSharper disable once MethodSupportsCancellation
+            cancellationToken.Register(() => { completion.SetCanceled(); });
+            _waiting.Enqueue(completion);
+
+            return completion.Task;
+        }
+    }
+
+    private void Release()
+    {
+        lock (_mutex)
+        {
+            _taken = false;
+            while (_waiting.Count > 0)
+            {
+                var tcs = _waiting.Dequeue();
+                if (tcs.Task.IsCanceled)
+                    continue;
+
+                _taken = true;
+                tcs.SetResult(new LockLifetime(this));
+                return;
             }
         }
+    }
 
-        private void Release()
+    private class LockLifetime
+        : IDisposable
+    {
+        private readonly AsyncLock _parent;
+        private bool _released;
+
+        public LockLifetime(AsyncLock parent)
         {
-            lock (_mutex)
-            {
-                _taken = false;
-                while (_waiting.Count > 0)
-                {
-                    var tcs = _waiting.Dequeue();
-                    if (tcs.Task.IsCanceled)
-                        continue;
-
-                    _taken = true;
-                    tcs.SetResult(new LockLifetime(this));
-                    return;
-                }
-            }
+            _parent = parent;
         }
 
-        private class LockLifetime
-            : IDisposable
+        public void Dispose()
         {
-            private readonly AsyncLock _parent;
-            private bool _released;
+            if (_released)
+                throw new InvalidOperationException("Lock is already released");
 
-            public LockLifetime(AsyncLock parent)
-            {
-                _parent = parent;
-            }
-
-            public void Dispose()
-            {
-                if (_released)
-                    throw new InvalidOperationException("Lock is already released");
-
-                _parent.Release();
-                _released = true;
-            }
+            _parent.Release();
+            _released = true;
         }
     }
 }

@@ -2,27 +2,26 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.Information.UrbanDictionary
+namespace Mute.Moe.Services.Information.UrbanDictionary;
+
+public interface IUrbanDictionary
 {
-    public interface IUrbanDictionary
-    {
-        Task<IReadOnlyList<IUrbanDefinition>> SearchTermAsync(string term);
-    }
+    Task<IReadOnlyList<IUrbanDefinition>> SearchTermAsync(string term);
+}
 
-    public interface IUrbanDefinition
-    {
-        string Definition { get; }
+public interface IUrbanDefinition
+{
+    string Definition { get; }
 
-        Uri Permalink { get; }
+    Uri Permalink { get; }
 
-        int ThumbsUp { get; }
+    int ThumbsUp { get; }
 
-        int ThumbsDown { get; }
+    int ThumbsDown { get; }
 
-        string Word { get; }
+    string Word { get; }
 
-        DateTime WrittenOn { get; }
+    DateTime WrittenOn { get; }
 
-        string Example { get; }
-    }
+    string Example { get; }
 }

@@ -41,92 +41,91 @@ using Mute.Moe.Discord.Services.Users;
 using Oddity;
 using Mute.Moe.Services.Host;
 
-namespace Mute.Moe
+namespace Mute.Moe;
+
+public class Startup
 {
-    public class Startup
+    public Configuration Configuration { get; }
+
+    public Startup(Configuration configuration)
     {
-        public Configuration Configuration { get; }
+        Configuration = configuration;
+    }
 
-        public Startup(Configuration configuration)
-        {
-            Configuration = configuration;
-        }
+    private static void ConfigureBaseServices(IServiceCollection services)
+    {
+        services.AddHttpClient();
 
-        private static void ConfigureBaseServices(IServiceCollection services)
-        {
-            services.AddHttpClient();
+        services.AddSingleton(services);
+        services.AddSingleton(s => new InteractiveService(s.GetRequiredService<BaseSocketClient>()));
 
-            services.AddSingleton(services);
-            services.AddSingleton(s => new InteractiveService(s.GetRequiredService<BaseSocketClient>()));
+        services.AddTransient<Random>();
+        services.AddTransient<IDiceRoller, CryptoDiceRoller>();
+        services.AddTransient<ISpacexInfo, OdditySpaceX>();
 
-            services.AddTransient<Random>();
-            services.AddTransient<IDiceRoller, CryptoDiceRoller>();
-            services.AddTransient<ISpacexInfo, OdditySpaceX>();
+        services.AddSingleton(new OddityCore());
+        services.AddSingleton<IFileSystem, FileSystem>();
+        services.AddSingleton<HttpClient, HttpClient>();
+        services.AddSingleton<IDatabaseService, SqliteDatabase>();
+        services.AddHostedService<ISentimentEvaluator, TensorflowSentiment>();
+        services.AddSingleton<ISentimentTrainer, DatabaseSentimentTrainer>();
+        services.AddSingleton<ICatPictureProvider, CataasPictures>();
+        services.AddSingleton<IArtificialCatPictureProvider, ThisCatDoesNotExist>();
+        services.AddSingleton<IDogPictureService, DogceoPictures>();
+        services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
+        services.AddSingleton<IMangaInfo, MikibotAnilistMangaSearch>();
+        services.AddSingleton<ICharacterInfo, MikibotAnilistCharacterSearch>();
+        services.AddSingleton<ITransactions, DatabaseTransactions>();
+        services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
+        services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
+        services.AddHostedService<IUptime, UtcDifferenceUptime>();
+        services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
+        services.AddSingleton<IForexInfo, AlphaVantageForex>();
+        services.AddSingleton<IStockSearch, AlphaVantageStockSearch>();
+        services.AddSingleton<IGroups, DatabaseGroupService>();
+        services.AddSingleton<IReminders, DatabaseReminders>();
+        services.AddHostedService<IReminderSender, AsyncReminderSender>();
+        services.AddSingleton<IWikipedia, WikipediaApi>();
+        services.AddSingleton<ISoundEffectLibrary, DatabaseSoundEffectLibrary>();
+        services.AddSingleton<ISoundEffectPlayer, SoundEffectPlayer>();
+        services.AddSingleton<IWords, HttpWordVectors>();
+        services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
+        services.AddHostedService<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
+        services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
+        services.AddSingleton<IYoutubeDownloader, YoutubeDlDownloader>();
+        services.AddSingleton<IWordTraining, DatabaseWordTraining>();
+        services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();
+        services.AddSingleton<IGuildVoiceCollection, InMemoryGuildVoiceCollection>();
+        services.AddSingleton<IGuildMusicQueueCollection, InMemoryGuildMusicQueueCollection>();
+        services.AddSingleton<IGuildSpeechQueueCollection, InMemoryGuildSpeechQueueCollection>();
+        services.AddSingleton<IGuildSoundEffectQueueCollection, InMemoryGuildSoundEffectQueueCollection>();
+        services.AddSingleton<IRss, HttpRss>();
+        services.AddSingleton<IRssNotifications, DatabaseRssNotifications>();
+        services.AddHostedService<IRssNotificationsSender, DatabaseRssNotificationsSender>();
+        services.AddSingleton<ICron, InMemoryCron>();
+        services.AddSingleton<IUserService, DiscordUserService>();
 
-            services.AddSingleton(new OddityCore());
-            services.AddSingleton<IFileSystem, FileSystem>();
-            services.AddSingleton<HttpClient, HttpClient>();
-            services.AddSingleton<IDatabaseService, SqliteDatabase>();
-            services.AddHostedService<ISentimentEvaluator, TensorflowSentiment>();
-            services.AddSingleton<ISentimentTrainer, DatabaseSentimentTrainer>();
-            services.AddSingleton<ICatPictureProvider, CataasPictures>();
-            services.AddSingleton<IArtificialCatPictureProvider, ThisCatDoesNotExist>();
-            services.AddSingleton<IDogPictureService, DogceoPictures>();
-            services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
-            services.AddSingleton<IMangaInfo, MikibotAnilistMangaSearch>();
-            services.AddSingleton<ICharacterInfo, MikibotAnilistCharacterSearch>();
-            services.AddSingleton<ITransactions, DatabaseTransactions>();
-            services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
-            services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
-            services.AddHostedService<IUptime, UtcDifferenceUptime>();
-            services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
-            services.AddSingleton<IForexInfo, AlphaVantageForex>();
-            services.AddSingleton<IStockSearch, AlphaVantageStockSearch>();
-            services.AddSingleton<IGroups, DatabaseGroupService>();
-            services.AddSingleton<IReminders, DatabaseReminders>();
-            services.AddHostedService<IReminderSender, AsyncReminderSender>();
-            services.AddSingleton<IWikipedia, WikipediaApi>();
-            services.AddSingleton<ISoundEffectLibrary, DatabaseSoundEffectLibrary>();
-            services.AddSingleton<ISoundEffectPlayer, SoundEffectPlayer>();
-            services.AddSingleton<IWords, HttpWordVectors>();
-            services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
-            services.AddHostedService<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
-            services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
-            services.AddSingleton<IYoutubeDownloader, YoutubeDlDownloader>();
-            services.AddSingleton<IWordTraining, DatabaseWordTraining>();
-            services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();
-            services.AddSingleton<IGuildVoiceCollection, InMemoryGuildVoiceCollection>();
-            services.AddSingleton<IGuildMusicQueueCollection, InMemoryGuildMusicQueueCollection>();
-            services.AddSingleton<IGuildSpeechQueueCollection, InMemoryGuildSpeechQueueCollection>();
-            services.AddSingleton<IGuildSoundEffectQueueCollection, InMemoryGuildSoundEffectQueueCollection>();
-            services.AddSingleton<IRss, HttpRss>();
-            services.AddSingleton<IRssNotifications, DatabaseRssNotifications>();
-            services.AddHostedService<IRssNotificationsSender, DatabaseRssNotificationsSender>();
-            services.AddSingleton<ICron, InMemoryCron>();
-            services.AddSingleton<IUserService, DiscordUserService>();
+        //Eventually these should all become interface -> concrete type bindings
+        services.AddHostedService<AutoReactionTrainer>();
+        services.AddSingleton<Status>();
+        services
+            .AddSingleton<GameService>()
+            .AddSingleton<ConversationalResponseService>()
+            .AddSingleton<WordsService>()
+            .AddSingleton<SeasonalAvatar>()
+            .AddSingleton(Script.Load);
+    }
 
-            //Eventually these should all become interface -> concrete type bindings
-            services.AddHostedService<AutoReactionTrainer>();
-            services.AddSingleton<Status>();
-            services
-                .AddSingleton<GameService>()
-                .AddSingleton<ConversationalResponseService>()
-                .AddSingleton<WordsService>()
-                .AddSingleton<SeasonalAvatar>()
-                .AddSingleton(Script.Load);
-        }
+    public void ConfigureServices(IServiceCollection services)
+    {
+        ConfigureBaseServices(services);
 
-        public void ConfigureServices(IServiceCollection services)
-        {
-            ConfigureBaseServices(services);
+        HostedDiscordBot.ConfigureServices(services);
+        services.AddSingleton<HostedDiscordBot>();
 
-            HostedDiscordBot.ConfigureServices(services);
-            services.AddSingleton<HostedDiscordBot>();
+        services.AddSingleton(Configuration);
 
-            services.AddSingleton(Configuration);
-
-            if (Configuration.Auth == null)
-                throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
-        }
+        if (Configuration.Auth == null)
+            throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
     }
 }

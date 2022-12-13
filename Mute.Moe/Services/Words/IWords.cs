@@ -2,21 +2,20 @@
 using System.Threading.Tasks;
 
 
-namespace Mute.Moe.Services.Words
+namespace Mute.Moe.Services.Words;
+
+public interface IWords
 {
-    public interface IWords
-    {
-        Task<IReadOnlyList<float>?> Vector(string word);
+    Task<IReadOnlyList<float>?> Vector(string word);
 
-        Task<IReadOnlyList<ISimilarWord>?> Similar(string word);
+    Task<IReadOnlyList<ISimilarWord>?> Similar(string word);
 
-         Task<double?> Similarity(string a, string b);
-    }
+    Task<double?> Similarity(string a, string b);
+}
 
-    public interface ISimilarWord
-    {
-        string Word { get; }
+public interface ISimilarWord
+{
+    string Word { get; }
 
-        float Similarity { get; }
-    }
+    float Similarity { get; }
 }

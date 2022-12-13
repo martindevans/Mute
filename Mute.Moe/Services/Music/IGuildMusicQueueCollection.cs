@@ -3,41 +3,40 @@
 using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Audio.Mixing.Channels;
 
-namespace Mute.Moe.Services.Music
+namespace Mute.Moe.Services.Music;
+
+public interface IGuildMusicQueueCollection
 {
-    public interface IGuildMusicQueueCollection
+    Task<IGuildMusicQueue> Get(ulong guild);
+}
+
+public interface IGuildMusicQueue
+    : ISimpleQueueChannel<ITrack>
+{
+    IGuildVoice VoicePlayer { get; }
+}
+
+public class InMemoryGuildMusicQueueCollection
+    : BaseInMemoryAudioPlayerQueueCollection<InMemoryGuildMusicQueue, IGuildMusicQueue>, IGuildMusicQueueCollection
+{
+    public InMemoryGuildMusicQueueCollection(IGuildVoiceCollection voice)
+        : base(voice)
     {
-        Task<IGuildMusicQueue> Get(ulong guild);
     }
 
-    public interface IGuildMusicQueue
-        : ISimpleQueueChannel<ITrack>
+    protected override InMemoryGuildMusicQueue Create(IGuildVoice voice)
     {
-        IGuildVoice VoicePlayer { get; }
+        return new(voice);
     }
+}
 
-    public class InMemoryGuildMusicQueueCollection
-        : BaseInMemoryAudioPlayerQueueCollection<InMemoryGuildMusicQueue, IGuildMusicQueue>, IGuildMusicQueueCollection
+public class InMemoryGuildMusicQueue
+    : SimpleQueueChannel<ITrack>, IGuildMusicQueue
+{
+    public IGuildVoice VoicePlayer { get; }
+
+    public InMemoryGuildMusicQueue(IGuildVoice voice)
     {
-        public InMemoryGuildMusicQueueCollection(IGuildVoiceCollection voice)
-            : base(voice)
-        {
-        }
-
-         protected override InMemoryGuildMusicQueue Create(IGuildVoice voice)
-        {
-            return new(voice);
-        }
-    }
-
-    public class InMemoryGuildMusicQueue
-        : SimpleQueueChannel<ITrack>, IGuildMusicQueue
-    {
-        public IGuildVoice VoicePlayer { get; }
-
-        public InMemoryGuildMusicQueue(IGuildVoice voice)
-        {
-            VoicePlayer = voice;
-        }
+        VoicePlayer = voice;
     }
 }

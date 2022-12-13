@@ -1,9 +1,8 @@
 ﻿using Discord.Interactions;
 
-namespace Mute.Moe.Discord.Interactions
+namespace Mute.Moe.Discord.Interactions;
+
+public class BaseInteractionModule
+    : InteractionModuleBase
 {
-    public class BaseInteractionModule
-        : InteractionModuleBase
-    {
-    }
 }

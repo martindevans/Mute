@@ -1,8 +1,7 @@
-﻿namespace Mute.Moe.Discord.Services.Responses.Ellen.Knowledge
+﻿namespace Mute.Moe.Discord.Services.Responses.Ellen.Knowledge;
+
+public class Root
+    : IKnowledge
 {
-    public class Root
-        : IKnowledge
-    {
-        public IKnowledge? Previous => null;
-    }
+    public IKnowledge? Previous => null;
 }

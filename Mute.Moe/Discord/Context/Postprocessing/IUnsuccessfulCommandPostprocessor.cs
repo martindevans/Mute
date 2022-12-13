@@ -2,12 +2,11 @@
 using Discord.Commands;
 
 
-namespace Mute.Moe.Discord.Context.Postprocessing
-{
-    public interface IUnsuccessfulCommandPostprocessor
-    {
-        uint Order { get; }
+namespace Mute.Moe.Discord.Context.Postprocessing;
 
-        Task<bool> Process( MuteCommandContext context,  IResult result);
-    }
+public interface IUnsuccessfulCommandPostprocessor
+{
+    uint Order { get; }
+
+    Task<bool> Process( MuteCommandContext context,  IResult result);
 }

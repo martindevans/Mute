@@ -1,10 +1,9 @@
 ﻿using System.Threading.Tasks;
 
 
-namespace Mute.Moe.Services.Sentiment.Training
+namespace Mute.Moe.Services.Sentiment.Training;
+
+public interface ISentimentTrainer
 {
-    public interface ISentimentTrainer
-    {
-        Task Teach( string text, Sentiment sentiment);
-    }
+    Task Teach( string text, Sentiment sentiment);
 }

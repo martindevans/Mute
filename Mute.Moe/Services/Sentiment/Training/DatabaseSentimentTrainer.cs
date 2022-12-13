@@ -4,37 +4,36 @@ using System.Threading.Tasks;
 
 using Mute.Moe.Services.Database;
 
-namespace Mute.Moe.Services.Sentiment.Training
+namespace Mute.Moe.Services.Sentiment.Training;
+
+public class DatabaseSentimentTrainer
+    : ISentimentTrainer
 {
-    public class DatabaseSentimentTrainer
-        : ISentimentTrainer
+    private const string InsertTaggedSentimentData = "INSERT INTO TaggedSentimentData (Content, Score) values(@Content, @Score)";
+
+    private readonly IDatabaseService _database;
+
+    public DatabaseSentimentTrainer(IDatabaseService database)
     {
-        private const string InsertTaggedSentimentData = "INSERT INTO TaggedSentimentData (Content, Score) values(@Content, @Score)";
+        _database = database;
 
-        private readonly IDatabaseService _database;
-
-        public DatabaseSentimentTrainer(Configuration config, IDatabaseService database)
+        // Create database structure
+        try
         {
-            _database = database;
-
-            // Create database structure
-            try
-            {
-                _database.Exec("CREATE TABLE IF NOT EXISTS `TaggedSentimentData` (`Content` TEXT NOT NULL UNIQUE, `Score` TEXT NOT NULL)");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            _database.Exec("CREATE TABLE IF NOT EXISTS `TaggedSentimentData` (`Content` TEXT NOT NULL UNIQUE, `Score` TEXT NOT NULL)");
         }
-
-        public async Task Teach(string text, Sentiment sentiment)
+        catch (Exception e)
         {
-            await using var cmd = _database.CreateCommand();
-            cmd.CommandText = InsertTaggedSentimentData;
-            cmd.Parameters.Add(new SQLiteParameter("@Content", System.Data.DbType.String) {Value = text.ToLowerInvariant()});
-            cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) {Value = ((int)sentiment).ToString()});
-            await cmd.ExecuteNonQueryAsync();
+            Console.WriteLine(e);
         }
+    }
+
+    public async Task Teach(string text, Sentiment sentiment)
+    {
+        await using var cmd = _database.CreateCommand();
+        cmd.CommandText = InsertTaggedSentimentData;
+        cmd.Parameters.Add(new SQLiteParameter("@Content", System.Data.DbType.String) {Value = text.ToLowerInvariant()});
+        cmd.Parameters.Add(new SQLiteParameter("@Score", System.Data.DbType.String) {Value = ((int)sentiment).ToString()});
+        await cmd.ExecuteNonQueryAsync();
     }
 }

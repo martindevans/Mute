@@ -8,130 +8,131 @@ using Discord;
 using Discord.Commands;
 using Humanizer;
 using Humanizer.Localisation;
+using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Responses.Eliza;
 using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Utilities;
 
-namespace Mute.Moe.Discord.Modules
+namespace Mute.Moe.Discord.Modules;
+
+[UsedImplicitly]
+public class Reminders
+    : BaseModule, IKeyProvider
 {
-    public class Reminders
-        : BaseModule, IKeyProvider
+    private static readonly Color Color = Color.Purple;
+
+    private readonly IReminders _reminders;
+
+    private const string PastValueErrorMessage = "I'm sorry, but $moment$ is in the past.";
+
+    public Reminders(IReminders reminders)
     {
-        private static readonly Color Color = Color.Purple;
+        _reminders = reminders;
+    }
 
-        private readonly IReminders _reminders;
+    [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder"), Summary("I will remind you of something after a period of time")]
+    public async Task CreateReminderCmd([Remainder] string message)
+    {
+        var msg = await CreateReminder(Context, message);
+        await TypingReplyAsync(msg);
+    }
 
-        private const string PastValueErrorMessage = "I'm sorry, but $moment$ is in the past.";
+    [Command("reminders"), Summary("I will give you a list of all your pending reminders")]
+    public async Task ListReminders()
+    {
+        await ListReminders(Context.User);
+    }
 
-        public Reminders(IReminders reminders)
+    [Command("reminders"), Summary("I will give you a list of all pending reminders for a user"), RequireOwner]
+    public async Task ListReminders( IUser user)
+    {
+        var items = await _reminders.Get(user.Id).ToArrayAsync();
+
+        await DisplayItemList(
+            items,
+            async () => await ReplyAsync("No pending reminders"),
+            async i => {
+                await ReplyAsync("One pending reminder:");
+                await DisplayReminder(i);
+            },
+            async l => await ReplyAsync($"{l.Count} pending reminders:"),
+            async (n, _) => await DisplayReminder(n)
+        );
+    }
+
+    private async Task DisplayReminder( IReminder reminder)
+    {
+        var embed = new EmbedBuilder()
+            .WithColor(Color)
+            .WithDescription(reminder.Message.Replace("`", "'"))
+            .WithTimestamp(new DateTimeOffset(reminder.TriggerTime))
+            .WithFooter(new BalderHash32(reminder.ID).ToString())
+            .Build();
+
+        await ReplyAsync(embed: embed);
+    }
+
+    [Command("cancel-reminder"), Alias("reminder-cancel", "remind-cancel", "cancel-remind", "unremind"), Summary("I will delete a reminder with the given ID")]
+    public async Task CancelReminder( string id)
+    {
+        var parsed = BalderHash32.Parse(id);
+        if (!parsed.HasValue)
         {
-            _reminders = reminders;
+            await TypingReplyAsync("Invalid ID");
+            return;
         }
 
-        [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder"), Summary("I will remind you of something after a period of time")]
-        public async Task CreateReminderCmd([Remainder] string message)
+        if (await _reminders.Delete(Context.User.Id, parsed.Value.Value))
+            await TypingReplyAsync($"Deleted reminder `{id}`");
+        else
+            await TypingReplyAsync($"I can't find a reminder with id `{id}`");
+    }
+
+    private async Task<string> CreateReminder(ICommandContext context, string message)
+    {
+        DateTime triggerMoment;
+
+        // Parse a moment from message
+        var exactTimeResult = FuzzyParsing.Moment(message);
+        if (exactTimeResult.IsValid)
         {
-            var msg = await CreateReminder(Context, message);
-            await TypingReplyAsync(msg);
+            if (exactTimeResult.Value < DateTime.UtcNow)
+                return PastValueErrorMessage.Replace("$moment$", exactTimeResult.Value.ToString(CultureInfo.InvariantCulture));
+
+            triggerMoment = exactTimeResult.Value;
+        }
+        else
+        {
+            // Attempt to parse a time range instead of an exact time (e.g. `next week`)
+            var rangeTimeResult = FuzzyParsing.MomentRange(message);
+            if (!rangeTimeResult.IsValid)
+                return "That doesn't seem to be a valid moment.";
+
+            // Send the reminder just after the start of the range
+            triggerMoment = rangeTimeResult.Value.Item1 + (rangeTimeResult.Value.Item2 - rangeTimeResult.Value.Item1) * 0.05f;
         }
 
-        [Command("reminders"), Summary("I will give you a list of all your pending reminders")]
-        public async Task ListReminders()
-        {
-            await ListReminders(Context.User);
-        }
+        var duration = triggerMoment - DateTime.UtcNow;
 
-        [Command("reminders"), Summary("I will give you a list of all pending reminders for a user"), RequireOwner]
-        public async Task ListReminders( IUser user)
-        {
-            var items = await _reminders.Get(user.Id).ToArrayAsync();
+        // Add some context to the message
+        var prelude = $"{context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerMoment, culture: CultureInfo.GetCultureInfo("en-gn"))}...";
+        var msg = $"remind me {message}";
 
-            await DisplayItemList(
-                items,
-                async () => await ReplyAsync("No pending reminders"),
-                async i => {
-                    await ReplyAsync("One pending reminder:");
-                    await DisplayReminder(i);
-                },
-                async l => await ReplyAsync($"{l.Count} pending reminders:"),
-                async (n, _) => await DisplayReminder(n)
+        // Save to database
+        var n = await _reminders.Create(triggerMoment, prelude, msg, context.Message.Channel.Id, context.User.Id);
+
+        var friendlyId = new BalderHash32(n.ID);
+        return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{friendlyId}`)";
+    }
+
+    public IEnumerable<Key> Keys
+    {
+        get
+        {
+            yield return new Key("remind",
+                new Decomposition("remind me *", (c, d) => CreateReminder(c, d[0])!)
             );
-        }
-
-        private async Task DisplayReminder( IReminder reminder)
-        {
-            var embed = new EmbedBuilder()
-                 .WithColor(Color)
-                 .WithDescription(reminder.Message.Replace("`", "'"))
-                 .WithTimestamp(new DateTimeOffset(reminder.TriggerTime))
-                 .WithFooter(new BalderHash32(reminder.ID).ToString())
-                 .Build();
-
-            await ReplyAsync(embed: embed);
-        }
-
-        [Command("cancel-reminder"), Alias("reminder-cancel", "remind-cancel", "cancel-remind", "unremind"), Summary("I will delete a reminder with the given ID")]
-        public async Task CancelReminder( string id)
-        {
-            var parsed = BalderHash32.Parse(id);
-            if (!parsed.HasValue)
-            {
-                await TypingReplyAsync("Invalid ID");
-                return;
-            }
-
-            if (await _reminders.Delete(Context.User.Id, parsed.Value.Value))
-                await TypingReplyAsync($"Deleted reminder `{id}`");
-            else
-                await TypingReplyAsync($"I can't find a reminder with id `{id}`");
-        }
-
-        private async Task<string> CreateReminder(ICommandContext context, string message)
-        {
-            DateTime triggerMoment;
-
-            // Parse a moment from message
-            var exactTimeResult = FuzzyParsing.Moment(message);
-            if (exactTimeResult.IsValid)
-            {
-                if (exactTimeResult.Value < DateTime.UtcNow)
-                    return PastValueErrorMessage.Replace("$moment$", exactTimeResult.Value.ToString(CultureInfo.InvariantCulture));
-
-                triggerMoment = exactTimeResult.Value;
-            }
-            else
-            {
-                // Attempt to parse a time range instead of an exact time (e.g. `next week`)
-                var rangeTimeResult = FuzzyParsing.MomentRange(message);
-                if (!rangeTimeResult.IsValid)
-                    return "That doesn't seem to be a valid moment.";
-
-                // Send the reminder just after the start of the range
-                triggerMoment = rangeTimeResult.Value.Item1 + (rangeTimeResult.Value.Item2 - rangeTimeResult.Value.Item1) * 0.05f;
-            }
-
-            var duration = triggerMoment - DateTime.UtcNow;
-
-            // Add some context to the message
-            var prelude = $"{context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerMoment, culture: CultureInfo.GetCultureInfo("en-gn"))}...";
-            var msg = $"remind me {message}";
-
-            // Save to database
-            var n = await _reminders.Create(triggerMoment, prelude, msg, context.Message.Channel.Id, context.User.Id);
-
-            var friendlyId = new BalderHash32(n.ID);
-            return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{friendlyId}`)";
-        }
-
-        public IEnumerable<Key> Keys
-        {
-            get
-            {
-                yield return new Key("remind",
-                    new Decomposition("remind me *", (c, d) => CreateReminder(c, d[0])!)
-                );
-            }
         }
     }
 }

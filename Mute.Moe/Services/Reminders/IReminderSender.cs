@@ -1,9 +1,8 @@
 ﻿using Mute.Moe.Services.Host;
 
-namespace Mute.Moe.Services.Reminders
+namespace Mute.Moe.Services.Reminders;
+
+public interface IReminderSender
+    : IHostedService
 {
-    public interface IReminderSender
-        : IHostedService
-    {
-    }
 }

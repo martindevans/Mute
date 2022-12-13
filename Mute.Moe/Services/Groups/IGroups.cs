@@ -3,16 +3,15 @@ using System.Threading.Tasks;
 using Discord;
 
 
-namespace Mute.Moe.Services.Groups
+namespace Mute.Moe.Services.Groups;
+
+public interface IGroups
 {
-    public interface IGroups
-    {
-        Task<bool> IsUnlocked(IRole role);
+    Task<bool> IsUnlocked(IRole role);
 
-        IAsyncEnumerable<IRole> GetUnlocked(IGuild guild);
+    IAsyncEnumerable<IRole> GetUnlocked(IGuild guild);
 
-        Task Unlock( IRole role);
+    Task Unlock( IRole role);
 
-        Task Lock( IRole role);
-    }
+    Task Lock( IRole role);
 }

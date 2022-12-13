@@ -1,15 +1,14 @@
 ﻿using System;
 
-namespace Mute.Moe.Discord.Attributes
-{
-    public class HelpGroupAttribute
-        : Attribute
-    {
-        public string GroupId { get; }
+namespace Mute.Moe.Discord.Attributes;
 
-        public HelpGroupAttribute(string groupId)
-        {
-            GroupId = groupId;
-        }
+public class HelpGroupAttribute
+    : Attribute
+{
+    public string GroupId { get; }
+
+    public HelpGroupAttribute(string groupId)
+    {
+        GroupId = groupId;
     }
 }

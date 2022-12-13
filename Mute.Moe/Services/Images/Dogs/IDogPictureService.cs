@@ -1,10 +1,9 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.Images.Dogs
+namespace Mute.Moe.Services.Images.Dogs;
+
+public interface IDogPictureService
 {
-    public interface IDogPictureService
-    {
-        Task<Stream> GetDogPictureAsync();
-    }
+    Task<Stream> GetDogPictureAsync();
 }

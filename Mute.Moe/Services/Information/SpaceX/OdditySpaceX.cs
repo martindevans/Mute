@@ -7,65 +7,62 @@ using Oddity.Models.Cores;
 using Oddity.Models.Launches;
 using Oddity.Models.Roadster;
 
-namespace Mute.Moe.Services.Information.SpaceX
+namespace Mute.Moe.Services.Information.SpaceX;
+
+public class OdditySpaceX
+    : ISpacexInfo
 {
-    public class OdditySpaceX
-        : ISpacexInfo
+    private readonly OddityCore _oddity;
+
+    public OdditySpaceX(OddityCore oddity)
     {
-        private readonly OddityCore _oddity;
+        _oddity = oddity;
+    }
 
-        public OdditySpaceX(OddityCore oddity)
+    public async Task<LaunchInfo?> NextLaunch()
+    {
+        try
         {
-            _oddity = oddity;
+            return await _oddity.LaunchesEndpoint.GetNext().ExecuteAsync();
         }
-
-        public async Task<LaunchInfo?> NextLaunch()
+        catch (TaskCanceledException e)
         {
-            try
-            {
-                return await _oddity.LaunchesEndpoint.GetNext().ExecuteAsync();
-            }
-            catch (TaskCanceledException e)
-            {
-                Console.WriteLine($"`NextLaunch` failed: {e}");
-                return null;
-            }
+            Console.WriteLine($"`NextLaunch` failed: {e}");
+            return null;
         }
+    }
 
-        public async Task<LaunchInfo?> Launch(uint id)
-        {
-            var result = await _oddity.LaunchesEndpoint.Query()
-                                      .WithFieldEqual(a => a.FlightNumber, id)
-                                      .ExecuteAsync();
+    public async Task<LaunchInfo?> Launch(uint id)
+    {
+        var result = await _oddity.LaunchesEndpoint.Query()
+            .WithFieldEqual(a => a.FlightNumber, id)
+            .ExecuteAsync();
 
-            if (result.Data.Count != 1)
-                return null;
-            else
-                return result.Data.Single();
-        }
+        return result.Data.Count != 1
+             ? null
+             : result.Data.Single();
+    }
 
-        public async Task<CoreInfo?> Core(string id)
-        {
-            var result = await _oddity.CoresEndpoint.Query()
-                                      .WithFieldEqual(a => a.Serial, id)
-                                      .WithLimit(1)
-                                      .ExecuteAsync();
+    public async Task<CoreInfo?> Core(string id)
+    {
+        var result = await _oddity.CoresEndpoint.Query()
+            .WithFieldEqual(a => a.Serial, id)
+            .WithLimit(1)
+            .ExecuteAsync();
 
-            await result.GoToFirstPage();
-            if (result.Data.Count != 1)
-                return null;
-            else
-                return result.Data.Single();
-        }
+        await result.GoToFirstPage();
+        return result.Data.Count != 1
+             ? null
+             : result.Data.Single();
+    }
 
-        public async Task<IReadOnlyList<LaunchInfo>> Upcoming()
-        {
-            return await _oddity.LaunchesEndpoint.GetUpcoming().ExecuteAsync();
-        }
+    public async Task<IReadOnlyList<LaunchInfo>> Upcoming()
+    {
+        return await _oddity.LaunchesEndpoint.GetUpcoming().ExecuteAsync();
+    }
 
-        public async Task<RoadsterInfo> Roadster()
-        {
-            return await _oddity.RoadsterEndpoint.Get().ExecuteAsync();
-        }
+    public async Task<RoadsterInfo> Roadster()
+    {
+        return await _oddity.RoadsterEndpoint.Get().ExecuteAsync();
     }
 }

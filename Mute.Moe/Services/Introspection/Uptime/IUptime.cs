@@ -1,11 +1,10 @@
 ﻿using System;
 using Mute.Moe.Services.Host;
 
-namespace Mute.Moe.Services.Introspection.Uptime
+namespace Mute.Moe.Services.Introspection.Uptime;
+
+public interface IUptime
+    : IHostedService
 {
-    public interface IUptime
-        : IHostedService
-    {
-        TimeSpan Uptime { get; }
-    }
+    TimeSpan Uptime { get; }
 }

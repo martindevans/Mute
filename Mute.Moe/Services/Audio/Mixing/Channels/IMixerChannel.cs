@@ -1,8 +1,7 @@
-﻿namespace Mute.Moe.Services.Audio.Mixing.Channels
+﻿namespace Mute.Moe.Services.Audio.Mixing.Channels;
+
+public interface IMixerChannel
+    : IMixerInput
 {
-    public interface IMixerChannel
-        : IMixerInput
-    {
-        void Stop();
-    }
+    void Stop();
 }

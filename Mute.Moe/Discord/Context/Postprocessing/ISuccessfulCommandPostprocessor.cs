@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace Mute.Moe.Discord.Context.Postprocessing
+namespace Mute.Moe.Discord.Context.Postprocessing;
+
+public interface ISuccessfulCommandPostprocessor
 {
-    public interface ISuccessfulCommandPostprocessor
-    {
-        Task Process(MuteCommandContext context);
-    }
+    Task Process(MuteCommandContext context);
 }

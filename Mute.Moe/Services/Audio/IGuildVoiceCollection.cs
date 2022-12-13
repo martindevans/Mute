@@ -1,18 +1,17 @@
 ﻿using System.Threading.Tasks;
 
 
-namespace Mute.Moe.Services.Audio
+namespace Mute.Moe.Services.Audio;
+
+/// <summary>
+/// Collection of audio players for guilds
+/// </summary>
+public interface IGuildVoiceCollection
 {
     /// <summary>
-    /// Collection of audio players for guilds
+    /// Get the player for the given guild
     /// </summary>
-    public interface IGuildVoiceCollection
-    {
-        /// <summary>
-        /// Get the player for the given guild
-        /// </summary>
-        /// <param name="guild"></param>
-        /// <returns></returns>
-        Task<IGuildVoice> GetPlayer(ulong guild);
-    }
+    /// <param name="guild"></param>
+    /// <returns></returns>
+    Task<IGuildVoice> GetPlayer(ulong guild);
 }

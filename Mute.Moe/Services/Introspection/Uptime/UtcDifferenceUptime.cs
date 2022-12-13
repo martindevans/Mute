@@ -2,22 +2,21 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.Introspection.Uptime
+namespace Mute.Moe.Services.Introspection.Uptime;
+
+public class UtcDifferenceUptime
+    : IUptime
 {
-    public class UtcDifferenceUptime
-        : IUptime
+    public DateTime StartTimeUtc { get; private set; }
+
+    public TimeSpan Uptime => DateTime.UtcNow - StartTimeUtc;
+
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        public DateTime StartTimeUtc { get; private set; }
+        StartTimeUtc = DateTime.UtcNow;
+    }
 
-        public TimeSpan Uptime => DateTime.UtcNow - StartTimeUtc;
-
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            StartTimeUtc = DateTime.UtcNow;
-        }
-
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-        }
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
     }
 }

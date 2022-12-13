@@ -1,20 +1,19 @@
 ﻿using System;
 
-namespace Mute.Moe.Extensions
+namespace Mute.Moe.Extensions;
+
+public static class DateTimeExtensions
 {
-    public static class DateTimeExtensions
+    private static readonly DateTime UnixEpoch = new(1970, 1, 1);
+
+    public static ulong UnixTimestamp(this DateTime time)
     {
-        private static readonly DateTime UnixEpoch = new(1970, 1, 1);
+        return (ulong)time.Subtract(UnixEpoch).TotalSeconds;
+    }
 
-        public static ulong UnixTimestamp(this DateTime time)
-        {
-            return (ulong)time.Subtract(UnixEpoch).TotalSeconds;
-        }
-
-        public static DateTime FromUnixTimestamp(this ulong unixTime)
-        {
-            var t = UnixEpoch.Add(TimeSpan.FromSeconds(unixTime));
-            return new DateTime(t.Ticks, DateTimeKind.Utc);
-        }
+    public static DateTime FromUnixTimestamp(this ulong unixTime)
+    {
+        var t = UnixEpoch.Add(TimeSpan.FromSeconds(unixTime));
+        return new DateTime(t.Ticks, DateTimeKind.Utc);
     }
 }

@@ -10,116 +10,115 @@ using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Services.Responses.Ellen.Knowledge;
 using Mute.Moe.Discord.Services.Responses.Ellen.Topics;
 
-namespace Mute.Moe.Discord.Services.Responses.Ellen
+namespace Mute.Moe.Discord.Services.Responses.Ellen;
+
+public class EllenResponse
+    : IResponse
 {
-    public class EllenResponse
-        : IResponse
+    private readonly IReadOnlyList<ITopic> _topics;
+
+    public double BaseChance => 0;
+    public double MentionedChance => 0;
+
+    public EllenResponse(IServiceProvider services)
+    {
+        //Get topics
+        _topics = (from t in Assembly.GetExecutingAssembly().GetTypes()
+            where t.IsClass
+            where typeof(ITopicProvider).IsAssignableFrom(t)
+            let i = ActivatorUtilities.CreateInstance(services, t) as ITopicProvider
+            where i != null
+            from k in i.Keys
+            orderby k.Rank
+            select k).ToList();
+    }
+
+    public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
+    {
+        return new EllenConversation(_topics, new Root());
+    }
+
+    private class EllenConversation
+        : IConversation
     {
         private readonly IReadOnlyList<ITopic> _topics;
 
-        public double BaseChance => 0;
-        public double MentionedChance => 0;
+        private ITopicDiscussion? _active;
+        private IKnowledge _knowledge;
 
-        public EllenResponse(IServiceProvider services)
+        public bool IsComplete { get; private set; }
+
+        public EllenConversation(IReadOnlyList<ITopic> topics, IKnowledge root)
         {
-            //Get topics
-            _topics = (from t in Assembly.GetExecutingAssembly().GetTypes()
-                       where t.IsClass
-                       where typeof(ITopicProvider).IsAssignableFrom(t)
-                       let i = ActivatorUtilities.CreateInstance(services, t) as ITopicProvider
-                       where i != null
-                       from k in i.Keys
-                       orderby k.Rank
-                       select k).ToList();
+            _topics = topics;
+            _knowledge = root;
         }
 
-        public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
+        public async Task<string?> Respond(MuteCommandContext message, bool containsMention, CancellationToken ct)
         {
-            return new EllenConversation(_topics, new Root());
-        }
-
-        private class EllenConversation
-            : IConversation
-        {
-            private readonly IReadOnlyList<ITopic> _topics;
-
-            private ITopicDiscussion? _active;
-            private IKnowledge _knowledge;
-
-            public bool IsComplete { get; private set; }
-
-            public EllenConversation(IReadOnlyList<ITopic> topics, IKnowledge root)
+            async Task<string?> ContinueActiveDiscussion()
             {
-                _topics = topics;
-                _knowledge = root;
-            }
-
-            public async Task<string?> Respond(MuteCommandContext message, bool containsMention, CancellationToken ct)
-            {
-                async Task<string?> ContinueActiveDiscussion()
+                // if there is an active discussion, try to continue it
+                if (_active is {IsComplete: false})
                 {
-                    // if there is an active discussion, try to continue it
-                    if (_active is {IsComplete: false})
-                    {
-                        (var reply, _knowledge) = await _active.Reply(_knowledge, message);
+                    (var reply, _knowledge) = await _active.Reply(_knowledge, message);
 
-                        return reply;
-                    }
-
-                    return null;
-                }
-
-                // Try to coninue the active discussion
-                var reply = await ContinueActiveDiscussion();
-                if (reply != null)
                     return reply;
-
-                // Either there was no active discussion, or the active discussion didn't produce a reply. Try to
-                // start a new discussion from all relevant topics. Relevant topics with the same rank are shuffled.
-                var topics = from t in _topics.AsParallel()
-                             where IsRelevant(t, message)
-                             group t by t.Rank into g
-                             orderby g.Key
-                             from t in g.Shuffle()
-                             select t;
-
-                // Try to start a conversation replying to every topic (each topic gets it's own task)
-                var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                var starters = (from t in topics
-                                let task = t.TryBegin(message, _knowledge, cts.Token)
-                                select task).ToArray();
-
-                // Find the first (highest ranked) task which produced a useful result
-                foreach (var task in starters)
-                {
-                    var discussion = await task;
-                    if (discussion is {IsComplete: false})
-                    {
-                        // Try to use this discussion
-                        _active = discussion;
-                        reply = await ContinueActiveDiscussion();
-                        if (reply != null)
-                        {
-                            // Successfully generated a response! cancel all the other tasks
-                            cts.Cancel();
-                            return reply;
-                        }
-                    }
                 }
 
-                // None of the topics produced a result, end the conversation
-                IsComplete = true;
                 return null;
             }
 
-            private static bool IsRelevant(ITopic key, MuteCommandContext context)
-            {
-                foreach (var keyword in key.Keywords)
-                    if (context.Message.Content.Contains(keyword, StringComparison.InvariantCultureIgnoreCase))
-                        return true;
+            // Try to coninue the active discussion
+            var reply = await ContinueActiveDiscussion();
+            if (reply != null)
+                return reply;
 
-                return false;
+            // Either there was no active discussion, or the active discussion didn't produce a reply. Try to
+            // start a new discussion from all relevant topics. Relevant topics with the same rank are shuffled.
+            var topics = from t in _topics.AsParallel()
+                where IsRelevant(t, message)
+                group t by t.Rank into g
+                orderby g.Key
+                from t in g.Shuffle()
+                select t;
+
+            // Try to start a conversation replying to every topic (each topic gets it's own task)
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            var starters = (from t in topics
+                let task = t.TryBegin(message, _knowledge, cts.Token)
+                select task).ToArray();
+
+            // Find the first (highest ranked) task which produced a useful result
+            foreach (var task in starters)
+            {
+                var discussion = await task;
+                if (discussion is {IsComplete: false})
+                {
+                    // Try to use this discussion
+                    _active = discussion;
+                    reply = await ContinueActiveDiscussion();
+                    if (reply != null)
+                    {
+                        // Successfully generated a response! cancel all the other tasks
+                        cts.Cancel();
+                        return reply;
+                    }
+                }
             }
+
+            // None of the topics produced a result, end the conversation
+            IsComplete = true;
+            return null;
+        }
+
+        private static bool IsRelevant(ITopic key, MuteCommandContext context)
+        {
+            foreach (var keyword in key.Keywords)
+                if (context.Message.Content.Contains(keyword, StringComparison.InvariantCultureIgnoreCase))
+                    return true;
+
+            return false;
         }
     }
 }

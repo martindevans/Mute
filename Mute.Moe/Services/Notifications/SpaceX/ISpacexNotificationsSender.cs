@@ -1,9 +1,8 @@
 ﻿using Mute.Moe.Services.Host;
 
-namespace Mute.Moe.Services.Notifications.SpaceX
+namespace Mute.Moe.Services.Notifications.SpaceX;
+
+public interface ISpacexNotificationsSender
+    : IHostedService
 {
-    public interface ISpacexNotificationsSender
-        : IHostedService
-    {
-    }
 }

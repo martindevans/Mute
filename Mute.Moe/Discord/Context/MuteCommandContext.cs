@@ -4,44 +4,43 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace Mute.Moe.Discord.Context
+namespace Mute.Moe.Discord.Context;
+
+public class MuteCommandContext
+    : SocketCommandContext
 {
-    public class MuteCommandContext
-        : SocketCommandContext
+    public IServiceProvider Services { get; }
+
+    private readonly ConcurrentDictionary<Type, object> _resources = new();
+
+    public MuteCommandContext(DiscordSocketClient client, SocketUserMessage msg, IServiceProvider services)
+        : base(client, msg)
     {
-        public IServiceProvider Services { get; }
+        Services = services;
+    }
 
-        private readonly ConcurrentDictionary<Type, object> _resources = new();
-
-        public MuteCommandContext(DiscordSocketClient client, SocketUserMessage msg, IServiceProvider services)
-            : base(client, msg)
+    public bool TryGet<T>(out T? value)
+        where T : class
+    {
+        if (_resources.TryGetValue(typeof(T), out var obj))
         {
-            Services = services;
+            value = (T)obj;
+            return true;
         }
 
-        public bool TryGet<T>(out T? value)
-            where T : class
-        {
-            if (_resources.TryGetValue(typeof(T), out var obj))
-            {
-                value = (T)obj;
-                return true;
-            }
+        value = null;
+        return false;
+    }
 
-            value = null;
-            return false;
-        }
+    public Task<T> GetOrAdd<T>(Func<Task<T>> create)
+        where T : class
+    {
+        return Task.FromResult((T)_resources.GetOrAdd(typeof(T), _ => Task.Run(async () => await create()).Result));
+    }
 
-         public Task<T> GetOrAdd<T>(Func<Task<T>> create)
-            where T : class
-        {
-            return Task.FromResult((T)_resources.GetOrAdd(typeof(T), _ => Task.Run(async () => await create()).Result));
-        }
-
-        public T GetOrAdd<T>(Func<T> create)
-            where T : class
-        {
-            return (T)_resources.GetOrAdd(typeof(T), _ => create());
-        }
+    public T GetOrAdd<T>(Func<T> create)
+        where T : class
+    {
+        return (T)_resources.GetOrAdd(typeof(T), _ => create());
     }
 }

@@ -2,10 +2,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.Notifications.Cron
+namespace Mute.Moe.Services.Notifications.Cron;
+
+public interface ICron
 {
-    public interface ICron
-    {
-        Task Interval(TimeSpan duration, Func<Task> act, int iterations, CancellationToken ct = default);
-    }
+    Task Interval(TimeSpan duration, Func<Task> act, int iterations, CancellationToken ct = default);
 }

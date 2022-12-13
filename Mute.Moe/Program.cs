@@ -9,81 +9,80 @@ using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
 using Newtonsoft.Json;
 
-namespace Mute.Moe
+namespace Mute.Moe;
+
+public class Program
 {
-    public class Program
+    public static async Task Main(string[] args)
     {
-        public static async Task Main(string[] args)
-        {
-            DependencyHelper.TestDependencies();
+        DependencyHelper.TestDependencies();
 
-            var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)));
-            if (config == null)
-                throw new InvalidOperationException("Config was null");
+        var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)));
+        if (config == null)
+            throw new InvalidOperationException("Config was null");
 
-            var collection = new ServiceCollection();
-            collection.AddSingleton<ServiceHost>();
-            var startup = new Startup(config);
-            startup.ConfigureServices(collection);
-            var provider = collection.BuildServiceProvider();
+        var collection = new ServiceCollection();
+        collection.AddSingleton<ServiceHost>();
+        var startup = new Startup(config);
+        startup.ConfigureServices(collection);
+        var provider = collection.BuildServiceProvider();
 
-            // Find interactions
-            var interactions = provider.GetRequiredService<InteractionService>();
-            await interactions.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
+        // Find interactions
+        var interactions = provider.GetRequiredService<InteractionService>();
+        await interactions.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
 
-            // Connect to Discord
-            var bot = provider.GetRequiredService<HostedDiscordBot>();
-            await bot.StartAsync();
+        // Connect to Discord
+        var bot = provider.GetRequiredService<HostedDiscordBot>();
+        await bot.StartAsync();
 
-            // Get information about a guild, when this completes it means the bot is in a sensible state to start other services
-            await bot.Client.Rest.GetGuildAsync(415655090842763265);
-            await Task.Delay(1000);
-            await provider.GetRequiredService<ServiceHost>().StartAsync(default);
+        // Get information about a guild, when this completes it means the bot is in a sensible state to start other services
+        await bot.Client.Rest.GetGuildAsync(415655090842763265);
+        await Task.Delay(1000);
+        await provider.GetRequiredService<ServiceHost>().StartAsync(default);
 
-            // Register interactions. If this is debug mode only register them to the test guild
+        // Register interactions. If this is debug mode only register them to the test guild
 #if DEBUG
-            await interactions.RegisterCommandsToGuildAsync(537765528991825920); // Nadeko Test
-            await interactions.RegisterCommandsToGuildAsync(415655090842763265); // Lightbulb Appreciation Society
+        await interactions.RegisterCommandsToGuildAsync(537765528991825920); // Nadeko Test
+        await interactions.RegisterCommandsToGuildAsync(415655090842763265); // Lightbulb Appreciation Society
 #else
             await interactions.RegisterCommandsGloballyAsync(true);
 #endif
 
-            WaitForExitSignal();
+        WaitForExitSignal();
 
-            await bot.StopAsync();
-            await provider.GetRequiredService<ServiceHost>().StopAsync(default);
-        }
-
-        /// <summary>
-        /// Wait for an exit signal to terminate the application
-        /// </summary>
-        private static void WaitForExitSignal()
-        {
-            Console.WriteLine("type 'exit' to exit");
-            while (true)
-            {
-                var line = Console.ReadLine();
-                if (line != null && line.ToLowerInvariant() == "exit")
-                    return;
-            }
-        }
+        await bot.StopAsync();
+        await provider.GetRequiredService<ServiceHost>().StopAsync(default);
     }
 
-    internal class DependencyHelper
+    /// <summary>
+    /// Wait for an exit signal to terminate the application
+    /// </summary>
+    private static void WaitForExitSignal()
     {
-        [DllImport("opus", EntryPoint = "opus_get_version_string", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr OpusVersionString();
-
-        [DllImport("libsodium", EntryPoint = "sodium_version_string", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr SodiumVersionString();
-        
-        public static void TestDependencies()
+        Console.WriteLine("type 'exit' to exit");
+        while (true)
         {
-            var opusVersion = Marshal.PtrToStringAnsi(OpusVersionString());
-            Console.WriteLine($"Loaded opus with version string: {opusVersion}");
-
-            var sodiumVersion = Marshal.PtrToStringAnsi(SodiumVersionString());
-            Console.WriteLine($"Loaded sodium with version string: {sodiumVersion}");
+            var line = Console.ReadLine();
+            if (line != null && line.ToLowerInvariant() == "exit")
+                return;
         }
+    }
+}
+
+internal class DependencyHelper
+{
+    [DllImport("opus", EntryPoint = "opus_get_version_string", CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr OpusVersionString();
+
+    [DllImport("libsodium", EntryPoint = "sodium_version_string", CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr SodiumVersionString();
+        
+    public static void TestDependencies()
+    {
+        var opusVersion = Marshal.PtrToStringAnsi(OpusVersionString());
+        Console.WriteLine($"Loaded opus with version string: {opusVersion}");
+
+        var sodiumVersion = Marshal.PtrToStringAnsi(SodiumVersionString());
+        Console.WriteLine($"Loaded sodium with version string: {sodiumVersion}");
     }
 }

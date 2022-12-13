@@ -4,17 +4,15 @@ using Discord;
 using Discord.Commands;
 
 
-namespace Mute.Moe.Discord.Attributes
+namespace Mute.Moe.Discord.Attributes;
+
+public class RequireVoiceChannel
+    : PreconditionAttribute 
 {
-    public class RequireVoiceChannel
-        : PreconditionAttribute 
+    public override async Task<PreconditionResult> CheckPermissionsAsync( ICommandContext context, CommandInfo command, IServiceProvider services)
     {
-        public override async Task<PreconditionResult> CheckPermissionsAsync( ICommandContext context, CommandInfo command, IServiceProvider services)
-        {
-            if (context.User is IVoiceState)
-                return PreconditionResult.FromSuccess();
-            else
-                return PreconditionResult.FromError("Not in a voice channel");
-        }
+        return context.User is IVoiceState
+             ? PreconditionResult.FromSuccess()
+             : PreconditionResult.FromError("Not in a voice channel");
     }
 }

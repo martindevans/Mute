@@ -1,27 +1,26 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.Information.Anime
+namespace Mute.Moe.Services.Information.Anime;
+
+public interface ICharacterInfo
 {
-    public interface ICharacterInfo
-    {
-        Task<ICharacter?> GetCharacterInfoAsync(string search);
+    Task<ICharacter?> GetCharacterInfoAsync(string search);
 
-        IAsyncEnumerable<ICharacter> GetCharactersInfoAsync(string search);
-    }
+    IAsyncEnumerable<ICharacter> GetCharactersInfoAsync(string search);
+}
 
-    public interface ICharacter
-    {
-        string Id { get; }
+public interface ICharacter
+{
+    string Id { get; }
 
-        string GivenName { get; }
+    string GivenName { get; }
 
-        string FamilyName { get; }
+    string FamilyName { get; }
 
-        string Description { get; }
+    string Description { get; }
 
-        string Url { get; }
+    string Url { get; }
 
-        string ImageUrl { get; }
-    }
+    string ImageUrl { get; }
 }
