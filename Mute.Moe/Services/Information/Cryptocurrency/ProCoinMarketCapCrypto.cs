@@ -169,7 +169,7 @@ public class ProCoinMarketCapCrypto
                     break;
 
                 //This isn't an even distribution, but who cares?
-                if (random.NextDouble() < ((100f - tokens.Count) / countRemaining))
+                if (random.NextDouble() < (100f - tokens.Count) / countRemaining)
                     tokens.Add(symbol);
                 countRemaining--;
             }

@@ -44,7 +44,7 @@ public enum PendingState
 
     Confirmed,
 
-    Denied
+    Denied,
 }
 
 /// <summary>

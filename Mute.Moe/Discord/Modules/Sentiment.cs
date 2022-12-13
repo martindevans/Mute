@@ -51,7 +51,7 @@ public class Sentiment
             Moe.Services.Sentiment.Sentiment.Positive => EmojiLookup.ThumbsUp,
             Moe.Services.Sentiment.Sentiment.Neutral => EmojiLookup.Expressionless,
             Moe.Services.Sentiment.Sentiment.Negative => EmojiLookup.ThumbsDown,
-            _ => null
+            _ => null,
         };
 
         if (emoji != null)
@@ -87,7 +87,7 @@ public class Sentiment
             Moe.Services.Sentiment.Sentiment.Negative => embed.WithColor(Color.Red),
             Moe.Services.Sentiment.Sentiment.Positive => embed.WithColor(Color.Blue),
             Moe.Services.Sentiment.Sentiment.Neutral => embed.WithColor(Color.DarkGrey),
-            _ => throw new ArgumentOutOfRangeException()
+            _ => throw new ArgumentOutOfRangeException(),
         };
 
         await ReplyAsync(embed);

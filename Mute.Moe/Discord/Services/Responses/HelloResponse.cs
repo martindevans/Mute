@@ -18,15 +18,15 @@ public class HelloResponse
     public double MentionedChance => 0;
 
     private static readonly IReadOnlyList<string> GeneralGreetings = new List<string> {
-        "Hello {0}", "Hi", "Hiya {0}", "Heya {0}", "Howdy {0}", "\\o", "o/", "Greetings {0}"
+        "Hello {0}", "Hi", "Hiya {0}", "Heya {0}", "Howdy {0}", "\\o", "o/", "Greetings {0}",
     };
 
     private static readonly IReadOnlyList<string> MorningGreetings = new List<string> {
-        "Good morning {0}"
+        "Good morning {0}",
     };
 
     private static readonly IReadOnlyList<string> EveningGreetings = new List<string> {
-        "Good evening {0}"
+        "Good evening {0}",
     };
 
     private static readonly IReadOnlyList<string> AllGreetings = GeneralGreetings.Concat(MorningGreetings).Concat(EveningGreetings).Select(a => string.Format(a, "").Trim().ToLowerInvariant()).ToArray();
@@ -56,7 +56,7 @@ public class HelloResponse
         return hour switch {
             > 5 and <= 12 when _random.NextDouble() < 0.25f => MorningGreetings.Random(_random),
             > 18 and <= 24 when _random.NextDouble() < 0.25f => EveningGreetings.Random(_random),
-            _ => GeneralGreetings.Random(_random)
+            _ => GeneralGreetings.Random(_random),
         };
     }
 

@@ -37,5 +37,5 @@ public interface IMusicLibrary
 public enum TrackOrder
 {
     Random,
-    Id
+    Id,
 }

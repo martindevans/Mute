@@ -191,7 +191,7 @@ public class AsyncReminderSender
                     if (!string.IsNullOrWhiteSpace(_reminder.Prelude))
                         await channel.SendMessageAsync(_reminder.Prelude);
 
-                    string name = await Name(_reminder.UserId, channel.Guild);
+                    var name = await Name(_reminder.UserId, channel.Guild);
 
                     var embed = new EmbedBuilder()
                         .WithDescription(_reminder.Message)

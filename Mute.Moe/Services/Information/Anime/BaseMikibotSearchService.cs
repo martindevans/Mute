@@ -150,9 +150,10 @@ public abstract class BaseMikibotSearchService<TSearchItem, TItem>
     {
         search = search.ToLowerInvariant();
 
-        for (var i = 0; true; i++)
+        var index = 0;
+        while (true)
         {
-            var page = await SearchPage(client, search, i);
+            var page = await SearchPage(client, search, index++);
 
             foreach (var item in page.Items)
                 yield return item;

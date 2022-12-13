@@ -24,19 +24,19 @@ public class SentimentResponse
         EmojiLookup.ThumbsDown,
         EmojiLookup.Worried,
         EmojiLookup.SlightlyFrowning,
-        EmojiLookup.Crying
+        EmojiLookup.Crying,
     };
     public static readonly IReadOnlyList<string> Happy = new[] {
         EmojiLookup.Heart,
         EmojiLookup.ThumbsUp,
         EmojiLookup.Grin,
         EmojiLookup.Smile,
-        EmojiLookup.SlightSmile
+        EmojiLookup.SlightSmile,
     };
     public static readonly IReadOnlyList<string> Neutral = new[] {
         EmojiLookup.Expressionless,
         EmojiLookup.Pensive,
-        EmojiLookup.Confused
+        EmojiLookup.Confused,
     };
 
     private readonly SentimentReactionConfig _config;

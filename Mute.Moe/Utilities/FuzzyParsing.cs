@@ -81,7 +81,7 @@ public static class FuzzyParsing
                {
                    IsValid = false,
                    Value = (DateTime.MinValue, DateTime.MaxValue),
-                   ErrorMessage = "That doesn't seem to be a valid time range."
+                   ErrorMessage = "That doesn't seem to be a valid time range.",
                };
     }
 
@@ -187,7 +187,7 @@ public static class FuzzyParsing
                {
                    IsValid = false,
                    Value = DateTime.MinValue,
-                   ErrorMessage = "That doesn't seem to be a valid moment."
+                   ErrorMessage = "That doesn't seem to be a valid moment.",
                };
     }
 
@@ -229,7 +229,7 @@ public static class FuzzyParsing
                 return new TimeOffsetExtraction {
                     IsValid = true,
                     UtcOffset = TimeSpan.FromMinutes(int.Parse(utcOff)),
-                    ErrorMessage = null
+                    ErrorMessage = null,
                 };
             }
 
@@ -240,7 +240,7 @@ public static class FuzzyParsing
         {
             IsValid = false,
             UtcOffset = TimeSpan.Zero,
-            ErrorMessage = "I'm sorry, that doesn't seem to be a valid timezone"
+            ErrorMessage = "I'm sorry, that doesn't seem to be a valid timezone",
         };
     }
 

@@ -59,8 +59,6 @@ public class SoftClipSampleProvider
         }
 
         [DllImport("opus", CallingConvention = CallingConvention.Cdecl)]
-#pragma warning disable IDE1006 // Naming Styles
-        private static extern void opus_pcm_soft_clip(IntPtr pcm, int frameSize, int channels, float[] softClipMem);
-#pragma warning restore IDE1006 // Naming Styles
+        private static extern void opus_pcm_soft_clip(nint pcm, int frameSize, int channels, float[] softClipMem);
     }
 }

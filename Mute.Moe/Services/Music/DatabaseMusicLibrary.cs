@@ -105,7 +105,7 @@ public class DatabaseMusicLibrary
                 TrackOrder.Random => FindTrackSql.Replace("{{order}}", "random()"),
                 null => FindTrackSql.Replace("{{order}}", "rowid"),
                 TrackOrder.Id => FindTrackSql.Replace("{{order}}", "rowid"),
-                _ => FindTrackSql.Replace("{{order}}", "rowid")
+                _ => FindTrackSql.Replace("{{order}}", "rowid"),
             };
 
             var cmd = db.CreateCommand();

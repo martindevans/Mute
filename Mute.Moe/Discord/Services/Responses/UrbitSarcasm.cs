@@ -18,7 +18,7 @@ public class UrbitSarcasm
     private readonly Random _random;
 
     private readonly HashSet<string> _triggerWords = new() {
-        "urbit", "hoon", "arvo", "nock"
+        "urbit", "hoon", "arvo", "nock",
     };
 
     public UrbitSarcasm(Random random)
@@ -88,7 +88,7 @@ public class UrbitSarcasm
     private readonly IReadOnlyList<string> _intros = new[] {
         "Just write some Hoon that",
         "Just compose Nock formulas that",
-        "Just use Arvo to"
+        "Just use Arvo to",
     };
 
     private readonly IReadOnlyList<string> _ships = new[] {
@@ -119,7 +119,7 @@ public class UrbitSarcasm
         "trip",
         "mint",
         "bone",
-        "burn"
+        "burn",
     };
 
     private readonly IReadOnlyList<string> _adjectives = new[] {
@@ -142,7 +142,7 @@ public class UrbitSarcasm
         "lapidary",
         "ultralapidary",
         "running",
-        "jogging"
+        "jogging",
     };
 
     private readonly IReadOnlyList<string> _nouns = new[] {
@@ -192,7 +192,7 @@ public class UrbitSarcasm
         "moon",
         "comet",
         "ship",
-        "pier"
+        "pier",
     };
 
     private readonly IReadOnlyList<ValueTuple<string, string>> _runes = new[] {
@@ -228,7 +228,7 @@ public class UrbitSarcasm
         ("tec", "`"),
         ("tis", "="),
         ("wut", "?"),
-        ("zap", "!")
+        ("zap", "!"),
     };
     #endregion
 }

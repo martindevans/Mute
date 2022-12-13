@@ -14,7 +14,7 @@ public enum Sentiment
 {
     Negative = 0,
     Positive = 1,
-    Neutral = 2
+    Neutral = 2,
 }
 
 public readonly struct SentimentResult

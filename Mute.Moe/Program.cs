@@ -72,10 +72,10 @@ public class Program
 internal class DependencyHelper
 {
     [DllImport("opus", EntryPoint = "opus_get_version_string", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr OpusVersionString();
+    private static extern nint OpusVersionString();
 
     [DllImport("libsodium", EntryPoint = "sodium_version_string", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr SodiumVersionString();
+    private static extern nint SodiumVersionString();
         
     public static void TestDependencies()
     {

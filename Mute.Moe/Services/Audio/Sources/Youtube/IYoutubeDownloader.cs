@@ -47,5 +47,5 @@ public enum YoutubeDownloadStatus
 
     FailedInvalidUrl,
     FailedDuringDownload,
-    FailedInvalidDownloadResult
+    FailedInvalidDownloadResult,
 }

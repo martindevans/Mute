@@ -142,7 +142,7 @@ public class DatabasePendingTransactions
         return results.Length switch {
             > 1 => throw new InvalidOperationException($"Modified more than 1 payment at once! ID:{id}"),
             0 => null,
-            _ => results[0]
+            _ => results[0],
         };
     }
 
@@ -156,7 +156,7 @@ public class DatabasePendingTransactions
             PendingState.Confirmed => ConfirmResult.AlreadyConfirmed,
             PendingState.Denied => ConfirmResult.AlreadyDenied,
             PendingState.Pending => ConfirmResult.Confirmed,
-            _ => throw new InvalidOperationException($"Unknown debt state! ID: {debtId} State:{result}")
+            _ => throw new InvalidOperationException($"Unknown debt state! ID: {debtId} State:{result}"),
         };
     }
 
@@ -170,7 +170,7 @@ public class DatabasePendingTransactions
             PendingState.Confirmed => DenyResult.AlreadyConfirmed,
             PendingState.Denied => DenyResult.AlreadyDenied,
             PendingState.Pending => DenyResult.Denied,
-            _ => throw new InvalidOperationException($"Unknown debt state! ID: {debtId} State:{result}")
+            _ => throw new InvalidOperationException($"Unknown debt state! ID: {debtId} State:{result}"),
         };
     }
 }

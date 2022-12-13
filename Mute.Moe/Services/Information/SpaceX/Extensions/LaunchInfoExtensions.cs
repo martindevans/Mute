@@ -119,7 +119,7 @@ public static class LaunchInfoExtensions
         switch (precision.Value)
         {
             case DatePrecision.Hour:
-                return (date.Value - DateTime.UtcNow) > TimeSpan.FromDays(1)
+                return date.Value - DateTime.UtcNow > TimeSpan.FromDays(1)
                      ? date.Value.Humanize()
                      : $"about {date.Value.Humanize()}";
 

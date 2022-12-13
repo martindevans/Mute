@@ -17,7 +17,7 @@ public static class ArraySegmentExtensions
         var handle = GCHandle.Alloc(segment.Array, GCHandleType.Pinned);
 
         var size = Marshal.SizeOf(typeof(T));
-        var ptr = new IntPtr(handle.AddrOfPinnedObject().ToInt64() + segment.Offset * size);
+        var ptr = handle.AddrOfPinnedObject() + segment.Offset * size;
 
         return new DisposableHandle(ptr, handle);
     }
@@ -25,10 +25,10 @@ public static class ArraySegmentExtensions
     internal struct DisposableHandle
         : IDisposable
     {
-        private readonly IntPtr _ptr;
+        private readonly nint _ptr;
         private GCHandle _handle;
 
-        public IntPtr Ptr
+        public nint Ptr
         {
             get
             {
@@ -38,7 +38,7 @@ public static class ArraySegmentExtensions
             }
         }
 
-        internal DisposableHandle(IntPtr ptr, GCHandle handle)
+        internal DisposableHandle(nint ptr, GCHandle handle)
         {
             _ptr = ptr;
             _handle = handle;

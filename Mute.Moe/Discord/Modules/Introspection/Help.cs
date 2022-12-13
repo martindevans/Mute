@@ -46,7 +46,7 @@ public class Help
         {
             Pages = pages,
             Color = Color.Green,
-            Title = $"Use `{_prefixCharacter}help name` to find out about a specific command or module"
+            Title = $"Use `{_prefixCharacter}help name` to find out about a specific command or module",
         });
     }
 

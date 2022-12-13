@@ -117,7 +117,7 @@ public class TicTacToe
     {
         None,
         X,
-        O
+        O,
     }
 
     private enum GameState
@@ -125,7 +125,7 @@ public class TicTacToe
         InPlay,
         OWins,
         XWins,
-        Draw
+        Draw,
     }
 
     private class GameBoard
@@ -178,7 +178,7 @@ public class TicTacToe
                     CellState.X => GameState.XWins,
                     CellState.O => GameState.OWins,
                     CellState.None => throw new ArgumentOutOfRangeException(nameof(cell), cell, null),
-                    _ => throw new ArgumentOutOfRangeException(nameof(cell), cell, null)
+                    _ => throw new ArgumentOutOfRangeException(nameof(cell), cell, null),
                 };
             }
 

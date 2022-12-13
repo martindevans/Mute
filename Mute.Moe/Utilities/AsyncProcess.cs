@@ -17,7 +17,7 @@ public static class AsyncProcess
             RedirectStandardOutput = false,
             RedirectStandardError = false,
             UseShellExecute = false,
-            WorkingDirectory = workingDirectory
+            WorkingDirectory = workingDirectory,
         };
 
         using var process = new Process { StartInfo = startInfo };
