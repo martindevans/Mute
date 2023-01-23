@@ -43,7 +43,7 @@ public class DatabaseMusicLibrary
     public async Task<ITrack> Add(ulong guild, ulong owner, Stream audio, string title, TimeSpan duration, string? url = null, string? thumbnailUrl = null)
     {
         // Make sure the guild music folder exists
-        var guildDir = _fs.Path.Combine(_config.MusicFolder, guild.ToString());
+        var guildDir = _fs.Path.Combine(_config.MusicFolder!, guild.ToString());
         _fs.Directory.CreateDirectory(guildDir);
 
         // Choose a unique name for this file based on the parameters

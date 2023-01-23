@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -89,7 +90,7 @@ public class Words
         }
     }
 
-    [Command("similar"), Hidden]
+    [Command("similar")]
     public async Task GetSimilarWords(string a, int n = 15)
     {
         var result = await _wordVectors.Similar(a);
@@ -142,6 +143,68 @@ public class Words
                 await um.AddReactionAsync(new Emoji(EmojiLookup.OpenBook));
                 await um.AddReactionAsync(new Emoji(EmojiLookup.Tick));
             }
+        }
+    }
+
+    [Command("lerp")]
+    public async Task LerpWords(string start, string end, int sampling = 32)
+    {
+        var a = await _wordVectors.Vector(start);
+        if (a == null)
+        {
+            await TypingReplyAsync($"I don't the word '{start}'");
+            return;
+        }
+
+        var b = await _wordVectors.Vector(end);
+        if (b == null)
+        {
+            await TypingReplyAsync($"I don't the word '{end}'");
+            return;
+        }
+
+        var results = new HashSet<string> { start };
+        var current = start;
+        for (var i = 0; i < 128; i++)
+        {
+            // Find words similar to the current word
+            var similar = await _wordVectors.Similar(current);
+            if (similar == null)
+            {
+                await TypingReplyAsync($"I can't find any similar words to `{current}` :(");
+                return;
+            }
+
+            // Find the one which is most similar to the _end_ word
+            var bestScore = double.NegativeInfinity;
+            string? closest = null;
+            foreach (var candidate in similar.Take(sampling))
+            {
+                var candidateWord = candidate.Word;
+                if (results.Contains(candidateWord))
+                    continue;
+                
+                var similarity = await _wordVectors.Similarity(candidateWord, end);
+                if (similarity > bestScore)
+                {
+                    bestScore = similarity.Value;
+                    closest = candidateWord;
+                }
+            }
+
+            if (closest == null)
+            {
+                await TypingReplyAsync("I can't find any more similar words :(");
+                return;
+            }
+
+            current =  closest;
+            results.Add(closest);
+            await TypingReplyAsync($"{i + 1}. {closest} ({bestScore})");
+            await Task.Delay(25);
+
+            if (closest == end)
+                break;
         }
     }
 }

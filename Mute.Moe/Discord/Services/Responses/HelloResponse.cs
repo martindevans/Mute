@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.WebSocket;
-
+using JetBrains.Annotations;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
+[UsedImplicitly]
 public class HelloResponse
     : IResponse
 {

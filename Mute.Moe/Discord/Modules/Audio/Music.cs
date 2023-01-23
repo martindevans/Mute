@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BalderHash;
+using BalderHash.Extensions;
 using Discord;
 using Discord.Commands;
 using JetBrains.Annotations;
@@ -178,33 +179,34 @@ public class Music
         // Get all potential tracks from those searches
         var tracks = await Search(search).ToArrayAsync();
 
-        // if we failed to find a track in the database, try to treat the search string as a URL
-        if (tracks.Length == 0)
+        switch (tracks.Length)
         {
-            if (Uri.TryCreate(search, UriKind.Absolute, out _))
-                await PlayUrl(search);
-            else
-                await ReplyAsync("I can't find a track matching that search in the library");
-            return;
+            // if we failed to find a track in the database, try to treat the search string as a URL
+            case 0:
+            {
+                if (Uri.TryCreate(search, UriKind.Absolute, out _))
+                    await PlayUrl(search);
+                else
+                    await ReplyAsync("I can't find a track matching that search in the library");
+                return;
+            }
+            // We found exactly one track, play it
+            case 1:
+                await Enqueue(tracks[0]);
+                return;
+
+            // Found multiple matches, display them and play a random one
+            default:
+                await DisplayItemList(
+                    tracks,
+                    () => "Found nothing",
+                    xs => $"Found {xs.Count} matching tracks in the library:",
+                    TrackString
+                );
+
+                await Enqueue(tracks.Random(_rng));
+                break;
         }
-
-        // We found exactly one track, play it
-        if (tracks.Length == 1)
-        {
-            await Enqueue(tracks[0]);
-            return;
-        }
-
-        // Found multiple matches, display them and play a random one
-        await DisplayItemList(
-            tracks,
-            () => "Found nothing",
-            xs => $"Found {xs.Count} matching tracks in the library:",
-            TrackString
-        );
-
-        await Enqueue(tracks.Random(_rng));
-
     }
 
     [Command("find"), Summary("Find tracks by a search string")]
@@ -221,23 +223,25 @@ public class Music
         // Get all potential tracks from those searches
         var tracks = await Search(search).ToArrayAsync();
 
-        // if we failed to find a track in the database, try to treat the search string as a URL
-        if (tracks.Length == 0)
+        switch (tracks.Length)
         {
-            await ReplyAsync("I can't find a track matching that search in the library");
-        }
-        else if (tracks.Length == 1)
-        {
-            await ReplyAsync(await tracks[0].DiscordEmbed());
-        }
-        else
-        {
-            await DisplayItemList(
-                tracks,
-                () => "Found nothing",
-                xs => $"Found {xs.Count} matching tracks in the library:",
-                TrackString
-            );
+            // if we failed to find a track in the database, try to treat the search string as a URL
+            case 0:
+                await ReplyAsync("I can't find a track matching that search in the library");
+                break;
+            case 1:
+
+                await ReplyAsync(await tracks[0].DiscordEmbed());
+                break;
+
+            default:
+                await DisplayItemList(
+                    tracks,
+                    () => "Found nothing",
+                    xs => $"Found {xs.Count} matching tracks in the library:",
+                    TrackString
+                );
+                break;
         }
 
     }
@@ -273,7 +277,7 @@ public class Music
 
     private static string TrackString( ITrack track, int index)
     {
-        return $"{index}. **{track.Title}** (`{track.ID.MeaninglessString()}`)";
+        return $"{index}. **{track.Title}** (`{track.ID.BalderHash()}`)";
     }
 
         

@@ -13,7 +13,7 @@ namespace Mute.Moe.Discord.Modules;
 public class Time
     : BaseModule, IKeyProvider
 {
-    [Command("time"), Summary("I will tell you the time")]
+    [Command("time"), Summary("I will tell you the time"), UsedImplicitly]
     public async Task TimeAsync([Remainder] string? tz = null)
     {
         await TypingReplyAsync(GetTime(tz));

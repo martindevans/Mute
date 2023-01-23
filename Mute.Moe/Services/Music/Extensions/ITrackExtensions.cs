@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using BalderHash.Extensions;
 using Discord;
 
 using Mute.Moe.Extensions;
@@ -13,7 +14,7 @@ public static class ITrackExtensions
         var embed = new EmbedBuilder()
             .WithTitle(track.Title)
             .WithDescription($"Duration: {track.Duration.Minutes}m{track.Duration.Seconds}s")
-            .WithFooter($"{track.ID.MeaninglessString()}");
+            .WithFooter($"{track.ID.BalderHash()}");
 
         if (!string.IsNullOrWhiteSpace(track.Url))
             embed = embed.WithUrl(track.Url);

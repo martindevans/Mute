@@ -159,21 +159,21 @@ public class SoundEffects
             return;
         }
 
-        if (a == null && b == null)
+        switch (a, b)
         {
-            await TypingReplyAsync($"Cannot create an alias because neither `{name}` nor `{alias}` exist");
-            return;
-        }
+            case (null, null):
+                await TypingReplyAsync($"Cannot create an alias because neither `{name}` nor `{alias}` exist");
+                return;
 
-        if (a == null)
-        {
-            await _library.Alias(name, b!);
-            await TypingReplyAsync($"Aliased `{b!.Name}` as `{name}`");
-        }
-        else
-        {
-            await _library.Alias(name, a);
-            await TypingReplyAsync($"Aliased `{a.Name}` as `{alias}`");
+            case (null, _):
+                await _library.Alias(name, b);
+                await TypingReplyAsync($"Aliased `{b.Name}` as `{name}`");
+                return;
+
+            case (_, null):
+                await _library.Alias(name, a);
+                await TypingReplyAsync($"Aliased `{a.Name}` as `{alias}`");
+                return;
         }
     }
 }

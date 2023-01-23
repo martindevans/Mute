@@ -137,7 +137,13 @@ public static class FuzzyParsing
             // Try to get the date/time
             var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2.datetime"));
             if (dt == null)
-                return null;
+            {
+                var d = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2.date"));
+                if (d == null)
+                    return null;
+
+                dt = d;
+            }
 
             var values = (IList<Dictionary<string, string>>?)dt.Resolution["values"];
             if (values == null || values.Count == 0)

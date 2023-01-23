@@ -30,7 +30,7 @@ public class HttpWordVectors
     public HttpWordVectors(Configuration config, IHttpClientFactory client)
     {
         _client = client.CreateClient();
-        _client.Timeout = TimeSpan.FromMilliseconds(25);
+        _client.Timeout = TimeSpan.FromMilliseconds(125);
 
         _baseUrl = config.WordVectors?.WordVectorsBaseUrl ?? throw new ArgumentNullException(nameof(config.WordVectors.WordVectorsBaseUrl));
 
@@ -158,22 +158,6 @@ public class HttpWordVectors
         {
             Word = word;
             Vector = vector;
-        }
-
-        private double? _length;
-        public double Length
-        {
-            get
-            {
-                if (_length == null)
-                {
-                    var acc = 0.0;
-                    foreach (var f in Vector)
-                        acc += f * f;
-                    _length = Math.Sqrt(acc);
-                }
-                return _length.Value;
-            }
         }
     }
 

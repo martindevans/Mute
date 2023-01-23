@@ -153,15 +153,19 @@ public class BaseModule
             await _message.RemoveReactionAsync(reaction.Emote, reaction.UserId);
 
             var redraw = false;
-            if (reaction.Emote.Name == SkipBackward)
+            switch (reaction.Emote.Name)
             {
-                await _items.GotoStart();
-                redraw = true;
+                case SkipBackward:
+                    await _items.GotoStart();
+                    redraw = true;
+                    break;
+                case MoveBackward:
+                    redraw = await _items.MoveBackward();
+                    break;
+                case MoveForward:
+                    redraw = await _items.MoveForward();
+                    break;
             }
-            else if (reaction.Emote.Name == MoveBackward)
-                redraw = await _items.MoveBackward();
-            else if (reaction.Emote.Name == MoveForward)
-                redraw = await _items.MoveForward();
 
             if (redraw)
                 await Draw();

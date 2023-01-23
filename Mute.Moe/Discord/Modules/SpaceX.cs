@@ -98,15 +98,12 @@ public class SpaceX
     #region helpers
     private async Task<IReadOnlyList<string>> DescribeUpcomingFlights(int count)
     {
-        var next = (await _spacex.Upcoming()).Where(a => a.DateUtc.HasValue).OrderBy(a => a.DateUtc ?? DateTime.MaxValue).Take(count).ToArray();
-
-        var responses = new List<string>();
-        foreach (var item in next)
-        {
-            var response = item.Summary();
-            responses.Add(response);
-        }
-        return responses;
+        return (await _spacex.Upcoming())
+              .Where(a => a.DateUtc.HasValue)
+              .OrderBy(a => a.DateUtc ?? DateTime.MaxValue)
+              .Take(count)
+              .Select(item => item.Summary())
+              .ToList();
     }
     #endregion
 
