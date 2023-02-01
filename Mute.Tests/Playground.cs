@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
-using System.ServiceModel.Syndication;
-using System.Xml;
-using Humanizer;
-using Humanizer.DateTimeHumanizeStrategy;
 using JetBrains.Annotations;
 using Microsoft.Recognizers.Text.DateTime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

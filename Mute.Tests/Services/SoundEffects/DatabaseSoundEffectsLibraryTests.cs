@@ -11,7 +11,7 @@ namespace Mute.Tests.Services.SoundEffects
     [TestClass]
     public class DatabaseSoundEffectsLibraryTests
     {
-        private (IDatabaseService, ISoundEffectLibrary) Create()
+        private static (IDatabaseService, ISoundEffectLibrary) Create()
         {
             var db = new SqliteInMemoryDatabase();
             var sx = new DatabaseSoundEffectLibrary(new Moe.Configuration {
@@ -26,7 +26,7 @@ namespace Mute.Tests.Services.SoundEffects
         [TestMethod]
         public async Task CreateSoundEffectDoesNotThrow()
         {
-            var (db, sx) = Create();
+            var (_, sx) = Create();
 
             var effect = await sx.Create(123, "name", new byte[] { 0, 0, 0, 0 });
 
@@ -38,7 +38,7 @@ namespace Mute.Tests.Services.SoundEffects
         [TestMethod]
         public async Task CreateSoundEffectThrowsWithDuplicate()
         {
-            var (db, sx) = Create();
+            var (_, sx) = Create();
 
             await sx.Create(123, "name", new byte[] { 0, 0, 0, 0 });
 
@@ -59,7 +59,7 @@ namespace Mute.Tests.Services.SoundEffects
         [TestMethod]
         public async Task GetGetsExistingSoundEffect()
         {
-            var (db, sx) = Create();
+            var (_, sx) = Create();
 
             var created = await sx.Create(123, "name", new byte[] { 0, 0, 0, 0 });
             var got = await sx.Get(123, "name");
@@ -73,7 +73,7 @@ namespace Mute.Tests.Services.SoundEffects
         [TestMethod]
         public async Task GetGetsNothingForSoundEffectInOtherGuild()
         {
-            var (db, sx) = Create();
+            var (_, sx) = Create();
 
             await sx.Create(123, "name", new byte[] { 0, 0, 0, 0 });
 
@@ -85,20 +85,21 @@ namespace Mute.Tests.Services.SoundEffects
         [TestMethod]
         public async Task GetGetsByAlias()
         {
-            var (db, sx) = Create();
+            var (_, sx) = Create();
 
             var created = await sx.Create(123, "name", new byte[] { 0, 0, 0, 0 });
-            var aliased = await sx.Alias("name2", created);
+            await sx.Alias("name2", created);
 
             var got = await sx.Get(123, "name2");
 
+            Assert.IsNotNull(got);
             Assert.AreEqual(created.Path, got.Path);
         }
 
         [TestMethod]
         public async Task CannotCreateDuplicateAlias()
         {
-            var (db, sx) = Create();
+            var (_, sx) = Create();
 
             var created = await sx.Create(123, "name", new byte[] { 0, 0, 0, 0 });
             await sx.Alias("name2", created);
@@ -120,13 +121,13 @@ namespace Mute.Tests.Services.SoundEffects
         [TestMethod]
         public async Task FindFindsBySubstring()
         {
-            var (db, sx) = Create();
+            var (_, sx) = Create();
 
             var created = await sx.Create(123, "name", new byte[] { 0, 0, 0, 0 });
 
-            var aliased1 = await sx.Alias("nam", created);
-            var aliased2 = await sx.Alias("na", created);
-            var aliased3 = await sx.Alias("n", created);
+            await sx.Alias("nam", created);
+            await sx.Alias("na", created);
+            await sx.Alias("n", created);
 
             var found = await (sx.Find(123, "na")).ToArrayAsync();
 

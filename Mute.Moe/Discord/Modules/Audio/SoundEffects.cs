@@ -33,6 +33,7 @@ public class SoundEffects
     }
 
     [Command, Summary("I will join the voice channel you are in and play a sound effect"), Priority(0)]
+    [UsedImplicitly]
     public async Task Play( string id)
     {
         var found = await _library.Find(Context.Guild.Id, id).ToArrayAsync();
@@ -65,6 +66,7 @@ public class SoundEffects
     }
 
     [Command("find"), Summary("I will list all available sfx"), Priority(1)]
+    [UsedImplicitly]
     public async Task Find( string search)
     {
         var sfx = await _library.Find(Context.Guild.Id, search).OrderBy(a => a.Name).ToArrayAsync();
@@ -90,6 +92,7 @@ public class SoundEffects
     }
 
     [Command("create"), Summary("I will add a new sound effect to the database"), Priority(1)]
+    [UsedImplicitly]
     public async Task Create( string name)
     {
         await TypingReplyAsync("Please upload an audio file for this sound effect. It must be under 15s and 1MiB!");
@@ -148,6 +151,7 @@ public class SoundEffects
     }
 
     [Command("alias"), Summary("I will create an alias for another sound effect"), Priority(1)]
+    [UsedImplicitly]
     public async Task Alias( string name,  string alias)
     {
         var a = await _library.Get(Context.Guild.Id, name);

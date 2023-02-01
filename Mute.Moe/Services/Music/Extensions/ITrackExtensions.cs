@@ -2,8 +2,6 @@
 using BalderHash.Extensions;
 using Discord;
 
-using Mute.Moe.Extensions;
-
 namespace Mute.Moe.Services.Music.Extensions;
 
 // ReSharper disable once InconsistentNaming
