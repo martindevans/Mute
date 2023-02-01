@@ -13,7 +13,7 @@ namespace Mute.Moe.Discord.Interactions.Payment;
 
 [UsedImplicitly]
 public class IOU
-    : BaseInteractionModule
+    : InteractionModuleBase
 {
     private readonly ITransactions _transactions;
     private readonly BaseSocketClient _client;

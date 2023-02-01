@@ -13,7 +13,7 @@ namespace Mute.Moe.Discord.Interactions.Payment;
 
 [UsedImplicitly]
 public class UOI
-    : BaseInteractionModule
+    : InteractionModuleBase
 {
     private readonly IPendingTransactions _pending;
     private readonly IUserService _users;

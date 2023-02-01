@@ -10,9 +10,11 @@ using Discord.Interactions;
 using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualBasic;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Context.Postprocessing;
 using Mute.Moe.Discord.Context.Preprocessing;
+using Mute.Moe.Discord.Interactions;
 using Mute.Moe.Discord.Services.Responses;
 using ExecuteResult = Discord.Commands.ExecuteResult;
 using IResult = Discord.Commands.IResult;
@@ -54,6 +56,8 @@ public class HostedDiscordBot
         try
         {
             await _commands.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
+            await _interactions.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
+            _interactions.AddModalInfo<FoodModal>();
         }
         catch (Exception e)
         {
@@ -64,7 +68,14 @@ public class HostedDiscordBot
         // Hook the MessageReceived Event into our Command Handler
         Client.MessageReceived += HandleMessage;
         _commands.CommandExecuted += CommandExecuted;
+
+        // Hook up interactions
         Client.SlashCommandExecuted += a => _interactions.ExecuteCommandAsync(new InteractionContext(Client, a, a.Channel), _services);
+        Client.InteractionCreated += async x =>
+        {
+            var ctx = new SocketInteractionContext(Client, x);
+            await _interactions.ExecuteCommandAsync(ctx, _services);
+        };
 
         var tcs = new TaskCompletionSource<bool>();
         Client.Ready += () => {
@@ -150,7 +161,7 @@ public class HostedDiscordBot
         }
     }
 
-    private async Task ProcessAsCommand(int offset,  MuteCommandContext context)
+    private async Task ProcessAsCommand(int offset, MuteCommandContext context)
     {
         // When there's a mention the command may or may not include the prefix. Check if it does include it and skip over it if so
         if (context.Message.Content[offset] == _config.PrefixCharacter)

@@ -27,10 +27,6 @@ public class Program
         startup.ConfigureServices(collection);
         var provider = collection.BuildServiceProvider();
 
-        // Find interactions
-        var interactions = provider.GetRequiredService<InteractionService>();
-        await interactions.AddModulesAsync(Assembly.GetExecutingAssembly(), provider);
-
         // Connect to Discord
         var bot = provider.GetRequiredService<HostedDiscordBot>();
         await bot.StartAsync();
@@ -41,11 +37,12 @@ public class Program
         await provider.GetRequiredService<ServiceHost>().StartAsync(default);
 
         // Register interactions. If this is debug mode only register them to the test guild
+        var interactions = provider.GetRequiredService<InteractionService>();
 #if DEBUG
         await interactions.RegisterCommandsToGuildAsync(537765528991825920); // Nadeko Test
         await interactions.RegisterCommandsToGuildAsync(415655090842763265); // Lightbulb Appreciation Society
 #else
-            await interactions.RegisterCommandsGloballyAsync(true);
+        await interactions.RegisterCommandsGloballyAsync(true);
 #endif
 
         WaitForExitSignal();
