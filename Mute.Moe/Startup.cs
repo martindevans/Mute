@@ -34,12 +34,15 @@ using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Words;
 using System.Net.Http;
 using Discord.WebSocket;
+using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses.Eliza.Scripts;
+using Mute.Moe.Discord.Services.Responses.Enigma;
 using Mute.Moe.Discord.Services.Users;
 using Oddity;
 using Mute.Moe.Services.Host;
+using Mute.Moe.Services.LLM;
 
 namespace Mute.Moe;
 
@@ -70,7 +73,6 @@ public class Startup
         services.AddHostedService<ISentimentEvaluator, TensorflowSentiment>();
         services.AddSingleton<ISentimentTrainer, DatabaseSentimentTrainer>();
         services.AddSingleton<ICatPictureProvider, CataasPictures>();
-        services.AddSingleton<IArtificialCatPictureProvider, ThisCatDoesNotExist>();
         services.AddSingleton<IDogPictureService, DogceoPictures>();
         services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
         services.AddSingleton<IMangaInfo, MikibotAnilistMangaSearch>();
@@ -104,6 +106,10 @@ public class Startup
         services.AddHostedService<IRssNotificationsSender, DatabaseRssNotificationsSender>();
         services.AddSingleton<ICron, InMemoryCron>();
         services.AddSingleton<IUserService, DiscordUserService>();
+        services.AddSingleton<ILargeLanguageModel, NullLLM>();
+
+        services.AddSingleton(s => new EnigmaResponse(s.GetRequiredService<ILargeLanguageModel>()));
+        services.AddSingleton<IConversationPreprocessor>(s => s.GetRequiredService<EnigmaResponse>());
 
         //Eventually these should all become interface -> concrete type bindings
         services.AddHostedService<AutoReactionTrainer>();

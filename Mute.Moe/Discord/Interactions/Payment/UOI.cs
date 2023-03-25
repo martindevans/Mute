@@ -36,6 +36,11 @@ public class UOI
             var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
             var fid = new BalderHash32(id).ToString();
 
+            var additional = "";
+            if (note != null)
+                additional = $". '{note}'";
+
+            await RespondAsync($"{Context.User.Mention} claims {user.Mention} owes {amount} {unit}" + additional);
             await RespondAsync($"{user.Mention} type `/confirm {fid}` to confirm that you owe this");
             await FollowupAsync($"{user.Mention} type `/deny {fid}` to deny that you owe this. Please talk to the other user about why!");
         }
@@ -53,6 +58,11 @@ public class UOI
             var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
             var fid = new BalderHash32(id).ToString();
 
+            var additional = "";
+            if (note != null)
+                additional = $". '{note}'";
+
+            await RespondAsync($"{Context.User.Mention} claims they paid {user.Mention} {amount} {unit}" + additional);
             await RespondAsync($"{user.Mention} type `/confirm {fid}` to confirm that you have been paid this");
             await FollowupAsync($"{user.Mention} type `/deny {fid}` to deny that you received this payment. Please talk to the other user about why!");
         }
@@ -69,16 +79,14 @@ public class UOI
         }
 
         var transactions = await _pending.Get(debtId: fid.Value.Value).ToListAsync();
-        if (transactions.Count == 0)
+        switch (transactions.Count)
         {
-            await RespondAsync($"Cannot find a transaction with ID `{fid}`");
-            return;
-        }
-
-        if (transactions.Count > 1)
-        {
-            await RespondAsync($"Found multiple transactions with ID `{fid}`! This is probably an error, please report it.");
-            return;
+            case 0:
+                await RespondAsync($"Cannot find a transaction with ID `{fid}`");
+                return;
+            case > 1:
+                await RespondAsync($"Found multiple transactions with ID `{fid}`! This is probably an error, please report it.");
+                return;
         }
 
         var transaction = transactions[0];
@@ -120,16 +128,14 @@ public class UOI
         }
 
         var transactions = await _pending.Get(debtId: fid.Value.Value).ToListAsync();
-        if (transactions.Count == 0)
+        switch (transactions.Count)
         {
-            await RespondAsync($"Cannot find a transaction with ID `{fid}`");
-            return;
-        }
-
-        if (transactions.Count > 1)
-        {
-            await RespondAsync($"Found multiple transactions with ID `{fid}`! This is probably an error, please report it.");
-            return;
+            case 0:
+                await RespondAsync($"Cannot find a transaction with ID `{fid}`");
+                return;
+            case > 1:
+                await RespondAsync($"Found multiple transactions with ID `{fid}`! This is probably an error, please report it.");
+                return;
         }
 
         var transaction = transactions[0];

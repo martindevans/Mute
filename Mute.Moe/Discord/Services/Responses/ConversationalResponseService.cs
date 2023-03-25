@@ -27,7 +27,7 @@ public class ConversationalResponseService
         _client = client;
         _random = random;
 
-        //Create response generators
+        // Create response generators
         _responses.AddRange(from t in Assembly.GetExecutingAssembly().GetTypes()
             where t.IsClass
             where typeof(IResponse).IsAssignableFrom(t)
@@ -59,10 +59,10 @@ public class ConversationalResponseService
 
     private async Task<IConversation?> GetOrCreateConversation(MuteCommandContext context, bool mentionsBot)
     {
-        //Create a new conversation starting with this message
+        // Create a new conversation starting with this message
         var newConv = await TryCreateConversation(context, mentionsBot);
 
-        //Use the existing conversation if it is not over, or else replace it with the new conversation
+        // Use the existing conversation if it is not over, or else replace it with the new conversation
         return _conversations.AddOrUpdate(
             context.User,
             _ => newConv,
@@ -72,7 +72,7 @@ public class ConversationalResponseService
 
     private async Task<IConversation?> TryCreateConversation(MuteCommandContext context, bool mentionsBot)
     {
-        //Find generators which can respond to this message
+        // Find generators which can respond to this message
         var random = new Random(context.Message.Id.GetHashCode());
         var candidates = new List<IConversation>();
         foreach (var generator in _responses.AsParallel())

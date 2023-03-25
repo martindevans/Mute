@@ -16,7 +16,7 @@ public class GameService
     private readonly DiscordSocketClient _client;
     private readonly IDatabaseService _database;
 
-    public GameService( DiscordSocketClient client,  IDatabaseService database)
+    public GameService(DiscordSocketClient client, IDatabaseService database)
     {
         _client = client;
         _database = database;

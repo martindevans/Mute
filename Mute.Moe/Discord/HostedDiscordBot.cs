@@ -10,7 +10,7 @@ using Discord.Interactions;
 using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualBasic;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Context.Postprocessing;
 using Mute.Moe.Discord.Context.Preprocessing;
@@ -57,7 +57,18 @@ public class HostedDiscordBot
         {
             await _commands.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
             await _interactions.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
-            _interactions.AddModalInfo<FoodModal>();
+
+            var modals = from type in Assembly.GetExecutingAssembly().GetTypes()
+                         where type.GetCustomAttribute<InteractionModalAttribute>() != null
+                         select type;
+            foreach (var modal in modals)
+            {
+                _interactions
+                   .GetType()
+                   .GetMethod(nameof(InteractionService.AddModalInfo), BindingFlags.Instance | BindingFlags.Public, Array.Empty<Type>())!
+                   .MakeGenericMethod(modal)
+                   .Invoke(_interactions, null);
+            }
         }
         catch (Exception e)
         {
@@ -149,8 +160,6 @@ public class HostedDiscordBot
         // Either process as command or try to process conversationally
         if (hasPrefix)
         {
-            foreach (var pre in _services.GetServices<ICommandPreprocessor>())
-                await pre.Process(context);
             await ProcessAsCommand(prefixPos, context);
         }
         else

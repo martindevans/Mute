@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
-
 using Mute.Moe.Discord.Modules.Introspection;
 using Mute.Moe.Extensions;
 
@@ -16,7 +15,7 @@ public class DisplayCommandError
     private readonly Configuration _config;
     private readonly char _prefix;
 
-    public DisplayCommandError( Configuration config, CommandService commands, Random random)
+    public DisplayCommandError(Configuration config, CommandService commands, Random random)
     {
         _commands = commands;
         _random = random;

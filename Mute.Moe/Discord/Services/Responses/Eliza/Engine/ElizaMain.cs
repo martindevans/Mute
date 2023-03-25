@@ -207,7 +207,7 @@ public sealed class ElizaMain
                 if (input.Length > i + 2)
                 {
                     var next = input[i + 1];
-                    if (next == '@' || next == '#')
+                    if (next is '@' or '#')
                     {
                         while (i < input.Length && input[i] != '>')
                         {

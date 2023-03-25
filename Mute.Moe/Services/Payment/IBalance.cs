@@ -1,6 +1,4 @@
-﻿
-
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Mute.Moe.Discord.Modules.Payment;
 using Mute.Moe.Discord.Services.Users;
@@ -54,7 +52,7 @@ internal class Balance
     public ulong UserB { get; }
     public decimal Amount { get; }
 
-    public Balance( string unit, ulong a, ulong b, decimal amount)
+    public Balance(string unit, ulong a, ulong b, decimal amount)
     {
         Unit = unit;
         UserA = a;

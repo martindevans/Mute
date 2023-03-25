@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Interactions;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
 
 namespace Mute.Moe.Discord.Interactions;
 
@@ -45,10 +46,12 @@ public class Utility
 }
 
 // Defines the modal that will be sent.
+[InteractionModal]
 public class FoodModal
     : IModal
 {
     public string Title => "Test Modal";
+
     // Strings with the ModalTextInput attribute will automatically become components.
     [InputLabel("Input A")]
     [ModalTextInput("food_name", placeholder: "Pizza", maxLength: 20)]

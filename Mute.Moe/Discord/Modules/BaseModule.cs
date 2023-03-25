@@ -256,24 +256,26 @@ public class BaseModule
     /// <returns></returns>
     protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<T, Task>? singleResult, Func<IReadOnlyList<T>, Task>? manyPrelude, Func<T, int, Task> displayItem)
     {
-        if (items.Count == 0)
+        switch (items.Count)
         {
-            await nothing();
-            return;
-        }
+            case 0:
+                await nothing();
+                return;
 
-        if (items.Count == 1 && singleResult != null)
-        {
-            await singleResult(items.Single());
-        }
-        else
-        {
-            if (manyPrelude != null)
-                await manyPrelude(items);
+            case 1 when singleResult != null:
+                await singleResult(items.Single());
+                break;
 
-            var index = 0;
-            foreach (var item in items)
-                await displayItem(item, index++);
+            default:
+            {
+                if (manyPrelude != null)
+                    await manyPrelude(items);
+
+                var index = 0;
+                foreach (var item in items)
+                    await displayItem(item, index++);
+                break;
+            }
         }
     }
 
@@ -300,39 +302,43 @@ public class BaseModule
     /// <returns></returns>
     protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<string> nothing, Func<T, Task>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
     {
-        if (items.Count == 0)
+        switch (items.Count)
         {
-            await TypingReplyAsync(nothing());
-        }
-        else if (items.Count == 1 && singleItem != null)
-        {
-            await singleItem(items[0]);
-        }
-        else
-        {
-            var p = manyPrelude?.Invoke(items);
-            if (p != null)
-                await ReplyAsync(p);
+            case 0:
+                await TypingReplyAsync(nothing());
+                break;
 
-            var builder = new StringBuilder();
+            case 1 when singleItem != null:
+                await singleItem(items[0]);
+                break;
 
-            for (var i = 0; i < items.Count; i++)
+            default:
             {
-                var item = items[i];
-                var str = itemToString(item, i);
+                var p = manyPrelude?.Invoke(items);
+                if (p != null)
+                    await ReplyAsync(p);
 
-                if (builder.Length + str.Length > 1000)
+                var builder = new StringBuilder();
+
+                for (var i = 0; i < items.Count; i++)
                 {
-                    await ReplyAsync(builder.ToString());
-                    builder.Clear();
+                    var item = items[i];
+                    var str = itemToString(item, i);
+
+                    if (builder.Length + str.Length > 1000)
+                    {
+                        await ReplyAsync(builder.ToString());
+                        builder.Clear();
+                    }
+
+                    builder.Append(str);
+                    builder.Append('\n');
                 }
 
-                builder.Append(str);
-                builder.Append('\n');
+                if (builder.Length > 0)
+                    await ReplyAsync(builder.ToString());
+                break;
             }
-
-            if (builder.Length > 0)
-                await ReplyAsync(builder.ToString());
         }
     }
 

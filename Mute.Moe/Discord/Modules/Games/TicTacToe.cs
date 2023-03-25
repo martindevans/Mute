@@ -215,10 +215,9 @@ public class TicTacToe
                 where cell == CellState.None
                 select cell).Count();
 
-            if (count == 0)
-                return GameState.Draw;
-
-            return GameState.InPlay;
+            return count == 0
+                 ? GameState.Draw
+                 : GameState.InPlay;
         }
     }
 }

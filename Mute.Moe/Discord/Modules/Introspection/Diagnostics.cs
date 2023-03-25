@@ -59,12 +59,14 @@ public class Diagnostics
     {
         var latency = _status.Latency.TotalMilliseconds;
 
-        if (latency < 75)
-            await TypingReplyAsync($"My latency is {latency}ms, that's great!");
-        else if (latency < 150)
-            await TypingReplyAsync($"My latency is {latency}ms");
-        else
-            await TypingReplyAsync($"My latency is {latency}ms, that's a bit slow");
+        var message = (latency) switch
+        {
+            < 75 => $"My latency is {latency}ms, that's great!",
+            < 150 => $"My latency is {latency}ms",
+            _ => $"My latency is {latency}ms, that's a bit slow"
+        };
+
+        await TypingReplyAsync(message);
     }
 
     [Command("home"), Summary("I will tell you where to find my source code"), Alias("source", "github")]

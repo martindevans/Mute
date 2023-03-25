@@ -76,16 +76,14 @@ public class Uoi
         }
 
         var transactions = await _pending.Get(debtId: fid.Value.Value).ToArrayAsync();
-        if (transactions.Length == 0)
+        switch (transactions.Length)
         {
-            await TypingReplyAsync($"Cannot find a transaction with ID `{fid}`");
-            return;
-        }
-
-        if (transactions.Length > 1)
-        {
-            await TypingReplyAsync($"Found multiple transactions with ID `{fid}`! This is probably an error, please report it.");
-            return;
+            case 0:
+                await TypingReplyAsync($"Cannot find a transaction with ID `{fid}`");
+                return;
+            case > 1:
+                await TypingReplyAsync($"Found multiple transactions with ID `{fid}`! This is probably an error, please report it.");
+                return;
         }
 
         var transaction = transactions[0];
@@ -127,16 +125,14 @@ public class Uoi
         }
 
         var transactions = await _pending.Get(debtId: fid.Value.Value).ToArrayAsync();
-        if (transactions.Length == 0)
+        switch (transactions.Length)
         {
-            await TypingReplyAsync($"Cannot find a transaction with ID `{fid}`");
-            return;
-        }
-
-        if (transactions.Length > 1)
-        {
-            await TypingReplyAsync($"Found multiple transactions with ID `{fid}`! This is probably an error, please report it.");
-            return;
+            case 0:
+                await TypingReplyAsync($"Cannot find a transaction with ID `{fid}`");
+                return;
+            case > 1:
+                await TypingReplyAsync($"Found multiple transactions with ID `{fid}`! This is probably an error, please report it.");
+                return;
         }
 
         var transaction = transactions[0];
@@ -199,9 +195,9 @@ public class Uoi
             var amount = TransactionFormatting.FormatCurrency(p.Amount, p.Unit);
 
             var fid = new BalderHash32(p.Id).ToString();
-            if (longForm)
-                return $"{receiver} Type `!confirm {fid}` or `!deny {fid}` to confirm/deny transaction of {amount} from {payer} {note}";
-            return $"`{fid}`: {payer} paid {amount} to {receiver} {note}";
+            return longForm
+                 ? $"{receiver} Type `!confirm {fid}` or `!deny {fid}` to confirm/deny transaction of {amount} from {payer} {note}"
+                 : $"`{fid}`: {payer} paid {amount} to {receiver} {note}";
         }
 
         var pendingArr = await pending.ToListAsync();

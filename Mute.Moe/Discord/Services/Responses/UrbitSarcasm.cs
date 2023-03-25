@@ -73,9 +73,9 @@ public class UrbitSarcasm
         var (r2Left, r2Right) = _runes.Random(_random);
 
         var result = $"Urbit is easy! {intro} {verb} {Article(noun1)} "
-                     + $"{noun1} with {Article(adjective1)} {adjective1} {noun2} "
-                     + $"using the {r1Left}{r2Left} ({r1Right}{r2Right}) twig and {produce} "
-                     + $"{adjective2} {Plural(noun3)}";
+                   + $"{noun1} with {Article(adjective1)} {adjective1} {noun2} "
+                   + $"using the {r1Left}{r2Left} ({r1Right}{r2Right}) twig and {produce} "
+                   + $"{adjective2} {Plural(noun3)}";
 
         if (_random.NextDouble() > 0.25)
             result += $" for {_ships.Random(_random)}";
@@ -100,7 +100,7 @@ public class UrbitSarcasm
         "~lidpes-fogtug",
         "~tasfyn-partyv",
         "~porned-fapped",
-        "~torbyt^sogwyx",
+        "~torbyt-sogwyx",
     };
 
     private readonly IReadOnlyList<string> _verbs = new[] {

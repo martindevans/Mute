@@ -68,9 +68,7 @@ public class UserInfo
             let gu = g.GetUser(id)
             select gu).ToArray();
 
-        if (users.Length == 1)
-            return GetUserInfo(users.Single());
-        return GetUserInfo(_client.GetUser(id));
+        return GetUserInfo(users.Length == 1 ? users.Single() : _client.GetUser(id));
     }
 
     private static string GetUserInfo(IUser user)
