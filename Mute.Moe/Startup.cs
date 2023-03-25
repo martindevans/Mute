@@ -37,7 +37,6 @@ using Discord.WebSocket;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
-using Mute.Moe.Discord.Services.Responses.Eliza.Scripts;
 using Mute.Moe.Discord.Services.Responses.Enigma;
 using Mute.Moe.Discord.Services.Users;
 using Oddity;
@@ -118,8 +117,7 @@ public class Startup
             .AddSingleton<GameService>()
             .AddSingleton<ConversationalResponseService>()
             .AddSingleton<WordsService>()
-            .AddSingleton<SeasonalAvatar>()
-            .AddSingleton(Script.Load);
+            .AddSingleton<SeasonalAvatar>();
     }
 
     public void ConfigureServices(IServiceCollection services)

@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services.Responses.Eliza;
-using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Services.Information.SpaceX;
 using Mute.Moe.Services.Information.SpaceX.Extensions;
 using Mute.Moe.Services.Notifications.SpaceX;
@@ -16,7 +13,7 @@ namespace Mute.Moe.Discord.Modules;
 [UsedImplicitly]
 [Group("spacex")]
 public class SpaceX
-    : BaseModule, IKeyProvider
+    : BaseModule
 {
     private readonly ISpacexInfo _spacex;
     private readonly ISpacexNotifications _notifications;
@@ -93,32 +90,5 @@ public class SpaceX
     {
         await _notifications.Subscribe(Context.Channel.Id, role?.Id);
         await TypingReplyAsync("Subscribed to receive SpaceX mission updates");
-    }
-
-    #region helpers
-    private async Task<IReadOnlyList<string>> DescribeUpcomingFlights(int count)
-    {
-        return (await _spacex.Upcoming())
-              .Where(a => a.DateUtc.HasValue)
-              .OrderBy(a => a.DateUtc ?? DateTime.MaxValue)
-              .Take(count)
-              .Select(item => item.Summary())
-              .ToList();
-    }
-    #endregion
-
-    public IEnumerable<Key> Keys
-    {
-        get
-        {
-            async Task<string> NextLaunch(int count)
-                => string.Join("\n", await DescribeUpcomingFlights(count));
-
-            yield return new Key("spacex",
-                new Decomposition("*next*launch*", _ => NextLaunch(1)!),
-                new Decomposition("#*launches*", d => NextLaunch(int.Parse(d[0]))!),
-                new Decomposition("*launches*#", d => NextLaunch(int.Parse(d[0]))!)
-            );
-        }
     }
 }

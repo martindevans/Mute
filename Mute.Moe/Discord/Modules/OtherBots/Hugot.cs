@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Discord.Services.Responses.Eliza;
-using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.OtherBots;
@@ -14,7 +11,7 @@ namespace Mute.Moe.Discord.Modules.OtherBots;
 [UsedImplicitly]
 [Hidden]
 public class Hugot
-    : BaseModule, IKeyProvider
+    : BaseModule
 {
     private const double ReactionChance = 0.05;
     private const double ReplyChance = 0.01;
@@ -47,16 +44,5 @@ public class Hugot
             await Context.Message.AddReactionAsync(new Emoji(_reactions[_random.Next(_responses.Length)]));
         else if (_random.NextDouble() <= ReplyChance)
             await TypingReplyAsync(_responses[_random.Next(_responses.Length)]);
-    }
-
-    public IEnumerable<Key> Keys
-    {
-        get
-        {
-            yield return new Key("hugot",
-                new Decomposition("*", "I don't want to talk about him"),
-                new Decomposition("*", "I haven't seen him around for a while...")
-            );
-        }
     }
 }

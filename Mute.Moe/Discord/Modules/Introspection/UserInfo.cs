@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -7,26 +6,21 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using Humanizer;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services.Responses.Eliza;
-using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Discord.Services.Users;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 
 [UsedImplicitly]
 public class UserInfo
-    : BaseModule, IKeyProvider
+    : BaseModule
 {
-    private readonly DiscordSocketClient _client;
     private readonly IUserService _users;
     private readonly HttpClient _http;
 
-    public UserInfo(DiscordSocketClient client, IHttpClientFactory http, IUserService users)
+    public UserInfo(IHttpClientFactory http, IUserService users)
     {
-        _client = client;
         _users = users;
         _http = http.CreateClient();
     }
@@ -57,18 +51,6 @@ public class UserInfo
         m.Position = 0;
 
         await Context.Channel.SendFileAsync(m, $"{_users.Name(u)}.png");
-    }
-
-    private string GetUserInfo(string userid)
-    {
-        if (!MentionUtils.TryParseUser(userid, out var id))
-            return "I don't know who that is";
-
-        var users = (from g in _client.Guilds
-            let gu = g.GetUser(id)
-            select gu).ToArray();
-
-        return GetUserInfo(users.Length == 1 ? users.Single() : _client.GetUser(id));
     }
 
     private static string GetUserInfo(IUser user)
@@ -106,16 +88,5 @@ public class UserInfo
         }
 
         return str.ToString();
-    }
-
-    public IEnumerable<Key> Keys
-    {
-        get
-        {
-            yield return new Key("who",
-                new Decomposition("who is *", d => GetUserInfo(d[0])),
-                new Decomposition("who * is *", d => GetUserInfo(d[1]))
-            );
-        }
     }
 }

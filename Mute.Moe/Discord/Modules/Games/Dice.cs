@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Discord.Services.Responses.Eliza;
-using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Services.Randomness;
 
 namespace Mute.Moe.Discord.Modules.Games;
@@ -13,7 +11,7 @@ namespace Mute.Moe.Discord.Modules.Games;
 [UsedImplicitly]
 [HelpGroup("games")]
 public class Dice
-    : BaseModule, IKeyProvider
+    : BaseModule
 {
     private readonly IDiceRoller _dice;
 
@@ -106,15 +104,6 @@ public class Dice
         return _dice.Flip() ? "Heads" : "Tails";
     }
 
-    private string? Roll(string dice, string sides)
-    {
-        if (!byte.TryParse(dice, out var pdice))
-            return null;
-        if (!byte.TryParse(sides, out var psides))
-            return null;
-        return Roll(pdice, psides);
-    }
-
     private string Roll(ushort dice, ulong sides)
     {
         var results = Enumerable.Range(0, dice).Select(_ => _dice.Roll(sides)).ToArray();
@@ -129,25 +118,5 @@ public class Dice
     {
         var index = (int)_dice.Roll((ulong)Ball8Replies.Count) - 1;
         return Ball8Replies[index];
-    }
-
-    public IEnumerable<Key> Keys
-    {
-        get
-        {
-            yield return new Key("flip",
-                new Decomposition("*", _ => Flip())
-            );
-
-            yield return new Key("roll",
-                new Decomposition("*roll #d#", d => Roll(d[1], d[2])),
-                new Decomposition("*roll #d# *", d => Roll(d[1], d[2])),
-                new Decomposition("*roll *#*", d => Roll("1", d[2]))
-            );
-
-            yield return new Key("8ball",
-                new Decomposition("*8ball *", _ => Magic8Ball())
-            );
-        }
     }
 }

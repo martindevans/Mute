@@ -23,7 +23,7 @@ namespace Mute.Moe.Discord.Services.Responses.Enigma
             var data = new
             {
                 llm = _llm.ToString(),
-                LastUpdate = LastUpdate,
+                LastUpdate,
                 Seed = _seed
             };
 

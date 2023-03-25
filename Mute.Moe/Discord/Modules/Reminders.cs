@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,8 +8,6 @@ using Discord.Commands;
 using Humanizer;
 using Humanizer.Localisation;
 using JetBrains.Annotations;
-using Mute.Moe.Discord.Services.Responses.Eliza;
-using Mute.Moe.Discord.Services.Responses.Eliza.Engine;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Utilities;
 
@@ -18,7 +15,7 @@ namespace Mute.Moe.Discord.Modules;
 
 [UsedImplicitly]
 public class Reminders
-    : BaseModule, IKeyProvider
+    : BaseModule
 {
     private static readonly Color Color = Color.Purple;
 
@@ -124,15 +121,5 @@ public class Reminders
 
         var friendlyId = new BalderHash32(n.ID);
         return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{friendlyId}`)";
-    }
-
-    public IEnumerable<Key> Keys
-    {
-        get
-        {
-            yield return new Key("remind",
-                new Decomposition("remind me *", (c, d) => CreateReminder(c, d[0])!)
-            );
-        }
     }
 }
