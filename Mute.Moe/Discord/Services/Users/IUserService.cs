@@ -19,7 +19,7 @@ public static class IUserServiceExtensions
             : uservice.Name(user, mention);
     }
 
-    public static string Name(this IUserService uservice, IUser user, bool mention = false)
+    public static string Name(this IUserService _, IUser user, bool mention = false)
     {
         if (mention)
             return user.Mention;

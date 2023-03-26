@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Mute.Moe.Discord.Context;
@@ -27,21 +28,24 @@ public class EnigmaResponse
 
     public async Task Process(MuteCommandContext context)
     {
-        var state = _channelState.GetOrAdd(context.Channel.Id, CreateContext);
+        var state = GetState(context.Channel);
 
-        if (state.TryReply(context.Message.CleanContent) is string reply)
+        if (state.TryReply(EnigmaMessage.From(context)) is string reply)
             await context.Channel.TypingReplyAsync(reply);
     }
 
     private ChannelState CreateContext(ulong key)
     {
-        var seed = HashCode.Combine(key, DateTime.UtcNow);
-        return new ChannelState(_llm, seed);
+        return new ChannelState(key, _llm);
     }
 
-    public ChannelState? GetState(IChannel channel)
+    public ChannelState GetState(IChannel channel)
     {
-        _channelState.TryGetValue(channel.Id, out var value);
-        return value;
+        return _channelState.GetOrAdd(channel.Id, CreateContext);
+    }
+
+    public IReadOnlyList<ChannelState> GetStates()
+    {
+        return _channelState.Select(a => a.Value).ToList();
     }
 }

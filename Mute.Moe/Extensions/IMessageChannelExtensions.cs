@@ -13,7 +13,7 @@ public static class IMessageChannelExtensions
 
     private static readonly TimeSpan SoftMaxDelay = TimeSpan.FromSeconds(2.0);
 
-    public static async Task<IUserMessage> TypingReplyAsync(this IMessageChannel channel,  string message, bool isTTS = false, Embed? embed = null, RequestOptions? options = null)
+    public static async Task<IUserMessage> TypingReplyAsync(this IMessageChannel channel, string message, bool isTTS = false, Embed? embed = null, RequestOptions? options = null)
     {
         using (channel.EnterTypingState())
         {
@@ -22,7 +22,7 @@ public static class IMessageChannelExtensions
         }
     }
 
-    private static TimeSpan Delay( string message)
+    private static TimeSpan Delay(string message)
     {
         var wordTime = message.Count(c => c == ' ') / WordsPerMinute;
         var symbTime = (message.Length - message.Count(char.IsLetter)) / (CharactersPerSecond * 180);
@@ -37,7 +37,7 @@ public static class IMessageChannelExtensions
 
 
 
-    public static async Task SendLongMessageAsync( this IMessageChannel channel, string message)
+    public static async Task SendLongMessageAsync(this IMessageChannel channel, string message)
     {
         var strings = message.Batch(1900).Select(a => new string(a.ToArray())).ToArray();
 

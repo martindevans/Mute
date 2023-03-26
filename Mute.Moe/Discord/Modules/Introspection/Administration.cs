@@ -7,7 +7,6 @@ using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses;
-using Mute.Moe.Discord.Services.Responses.Enigma;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Audio.Sources.Youtube;
 
@@ -22,15 +21,13 @@ public class Administration
     private readonly ConversationalResponseService _conversations;
     private readonly IYoutubeDownloader _yt;
     private readonly SeasonalAvatar _avatar;
-    private readonly EnigmaResponse _enigma;
 
-    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IYoutubeDownloader yt, SeasonalAvatar avatar, EnigmaResponse enigma)
+    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IYoutubeDownloader yt, SeasonalAvatar avatar)
     {
         _client = client;
         _conversations = conversations;
         _yt = yt;
         _avatar = avatar;
-        _enigma = enigma;
     }
 
     [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -63,22 +60,6 @@ public class Administration
         }
     }
 
-    [Command("enigma-status"), Summary("I will show the status of my current enigma conversation")]
-    public async Task EnigmaState(IChannel? channel = null)
-    {
-        await TypingReplyAsync($"There are {_enigma.Count} total active conversations");
-
-        channel ??= Context.Message.Channel;
-        var state = _enigma.GetState(channel);
-        if (state == null)
-        {
-            await TypingReplyAsync($"No active conversation state for {channel.Name}");
-            return;
-        }
-
-        await ReplyAsync($"{channel.Name}: {state}");
-    }
-
     [Command("presence"), Summary("I will set my presence")]
     public async Task SetPresence(ActivityType activity, [Remainder] string? presence)
     {
@@ -93,11 +74,24 @@ public class Administration
     }
 
     [Command("kill"), Alias("die", "self-destruct", "terminate"), Summary("I will immediately terminate my process ⊙︿⊙")]
-    public Task Kill(int exitCode = -1)
+    public async Task Kill(int exitCode = -1)
     {
-        Environment.Exit(exitCode);
-
-        return Task.CompletedTask;
+        try
+        {
+            switch (DateTime.UtcNow.Millisecond % 10)
+            {
+                case 0:
+                    await ReplyAsync($"Et tu, {Context.User.Username}?");
+                    return;
+                default:
+                    await ReplyAsync("x_x");
+                    break;
+            }
+        }
+        finally
+        {
+            Environment.Exit(exitCode);
+        }
     }
 
     [Command("nickname"), Alias("nick"), Summary("Set my nickname")]

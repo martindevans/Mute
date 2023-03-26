@@ -11,7 +11,7 @@ using Mute.Moe.Utilities;
 namespace Mute.Moe.Discord.Services.Responses;
 
 [UsedImplicitly]
-public class EssenceMemes
+public partial class EssenceMemes
     : IResponse
 {
     public double BaseChance => 0.15;
@@ -28,9 +28,12 @@ public class EssenceMemes
         _random = random;
     }
 
+    [GeneratedRegex("[^a-zA-Z0-9 -]", RegexOptions.IgnoreCase, "en-GB")]
+    private static partial Regex ReplaceRegex();
+
     public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
     {
-        var rgx = new Regex("[^a-zA-Z0-9 -]");
+        var rgx = ReplaceRegex();
         var msg = rgx.Replace(context.Message.Content, "");
 
         var words = msg.ToLowerInvariant().Split(' ');
