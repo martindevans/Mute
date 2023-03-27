@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -24,6 +27,7 @@ public class Enigma
         _enigma = enigma;
     }
 
+    #region status
     [Command("status"), Summary("I will show the status of my current enigma conversation")]
     public async Task Status(IChannel channel)
     {
@@ -64,19 +68,14 @@ public class Enigma
         await ReplyAsync(builder.ToString());
     }
 
-    private IGuild? TryGetChannelGuild(ulong channel)
-    {
-        if (_client.GetChannel(channel) is not IGuildChannel gc)
-            return null;
-        return gc.Guild;
-    }
-
     [Command("status"), Summary("I will show the status of my current enigma conversations")]
     public async Task Status()
     {
         await Status(false);
     }
+    #endregion
 
+    #region query
     [Command("query"), Summary("Query the conversation state for a channel")]
     public async Task Query(IChannel channel, [Remainder, UsedImplicitly] string msg)
     {
@@ -94,4 +93,35 @@ public class Enigma
     {
         await Query(Context.Channel, message);
     }
+    #endregion
+
+    #region helpers
+    private IGuild? TryGetChannelGuild(ulong channel)
+    {
+        return (_client.GetChannel(channel) as IGuildChannel)?.Guild;
+    }
+    #endregion
+
+    #region dev
+    [Command("stream"), Summary("Stream text into a message")]
+    public async Task Stream([Remainder, UsedImplicitly] string message)
+    {
+        await TypingReplyAsync(
+            Generate(message),
+            new MessageReference(Context.Message.Id)
+        );
+    }
+
+    private static async IAsyncEnumerable<string> Generate(string msg)
+    {
+        var rng = new Random();
+        var words = msg.Split(" ");
+
+        foreach (var word in words)
+        {
+            await Task.Delay(rng.Next(100, 1000));
+            yield return word;
+        }
+    }
+    #endregion
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -352,6 +353,76 @@ public class BaseModule
     protected async Task<IUserMessage> TypingReplyAsync(string message, bool isTTS = false, Embed? embed = null, RequestOptions? options = null)
     {
         return await Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
+    }
+
+    /// <summary>
+    /// Stream out a message from an async source, editing it into the message step by step
+    /// </summary>
+    /// <param name="message">Async source of message chunks to send (will be joined by spaces)</param>
+    /// <param name="messageReference">Optional message reference</param>
+    /// <param name="initialPing">Whether the initial message should "ping" the user</param>
+    /// <param name="initialMs">How long to wait before sending the initial message</param>
+    /// <param name="waitBetweenEdits">How long to wait between edits to the message</param>
+    /// <returns></returns>
+    protected async Task TypingReplyAsync(IAsyncEnumerable<string> message, MessageReference? messageReference = null, bool initialPing = false, int initialMs = 6250, int waitBetweenEdits = 2750)
+    {
+        using var typing = Context.Channel.EnterTypingState();
+
+        var initialising = true;
+        var contents = new StringBuilder();
+        IUserMessage? msg = null;
+
+        var timer = new Stopwatch();
+        timer.Start();
+
+        await foreach (var word in message)
+        {
+            contents.Append(' ');
+            contents.Append(word);
+
+            if (initialising)
+            {
+                if (timer.ElapsedMilliseconds > initialMs)
+                {
+                    initialising = false;
+                    timer.Restart();
+                    await UpdateMessage();
+                }
+            }
+            else
+            {
+                if (timer.ElapsedMilliseconds > waitBetweenEdits)
+                {
+                    timer.Restart();
+                    await UpdateMessage();
+                }
+            }
+        }
+
+        await UpdateMessage(true);
+
+        async Task UpdateMessage(bool final = false)
+        {
+            var c = contents.ToString();
+            if (!final)
+                c += "...";
+
+            if (msg == null)
+            {
+                // If an initialPing is not wanted send the message with no mentions allowed and then edit mentions back on
+                msg = await ReplyAsync(c, messageReference: messageReference, allowedMentions: initialPing ? AllowedMentions.All : AllowedMentions.None);
+                if (!initialPing)
+                {
+                    await msg.ModifyAsync(x =>
+                    {
+                        x.Content = c;
+                        x.AllowedMentions = AllowedMentions.All;
+                    });
+                }
+            }
+            else
+                await msg.ModifyAsync(x => x.Content = c);
+        }
     }
 
     protected async Task<IUserMessage> ReplyAsync(EmbedBuilder embed, RequestOptions? options = null)
