@@ -11,9 +11,9 @@ public static class TransactionFormatting
     {
         var sym = unit.TryGetCurrencySymbol();
 
-        if (unit == sym)
-            return $"{amount}({unit.ToUpperInvariant()})";
-        return $"{sym}{amount}";
+        return unit == sym
+             ? $"{amount}({unit.ToUpperInvariant()})"
+             : $"{sym}{amount}";
     }
 
     public static async Task<string> FormatTransaction(IUserService users, ulong from, ulong to, string? note, DateTime instant, decimal amount, string unit, bool mention = false)

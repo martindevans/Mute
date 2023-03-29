@@ -54,9 +54,8 @@ public class SentimentResponse
         if (s.ClassificationScore < Bracket || s.Classification == Sentiment.Neutral)
             return null;
 
-        if (s.Classification == Sentiment.Positive)
-            return new SentimentConversation(new Emoji(Happy.Random(_random)));
-        return new SentimentConversation(new Emoji(Sad.Random(_random)));
+        var emoji = s.Classification == Sentiment.Positive ? Happy : Sad;
+        return new SentimentConversation(new Emoji(emoji.Random(_random)));
     }
 
     private class SentimentConversation

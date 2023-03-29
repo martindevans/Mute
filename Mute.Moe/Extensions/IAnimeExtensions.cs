@@ -31,7 +31,7 @@ public static class IAnimeExtensions
             .WithUrl(anime.Url);
 
         // Attach appropriate title
-        if (anime.TitleJapanese != null && anime.TitleEnglish != null)
+        if (anime is { TitleJapanese: { }, TitleEnglish: { } })
             builder.WithAuthor(anime.TitleJapanese).WithTitle(anime.TitleEnglish);
         else if (anime.TitleEnglish != null ^ anime.TitleJapanese != null)
             builder.WithTitle(anime.TitleEnglish ?? anime.TitleJapanese);
@@ -40,7 +40,7 @@ public static class IAnimeExtensions
 
         // Extract a string describing dates
         string? dateString = null;
-        if (anime.StartDate.HasValue && anime.EndDate.HasValue)
+        if (anime is { StartDate: { }, EndDate: { } })
             dateString = $"{anime.StartDate.Value.UtcDateTime:dd-MMM-yyyy} -> {anime.EndDate.Value.UtcDateTime:dd-MMM-yyyy}";
         else if (anime.StartDate.HasValue)
             dateString = $"Started airing {anime.StartDate.Value.UtcDateTime:dd-MMM-yyyy}";

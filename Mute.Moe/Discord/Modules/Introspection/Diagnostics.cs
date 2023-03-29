@@ -59,7 +59,7 @@ public class Diagnostics
     {
         var latency = _status.Latency.TotalMilliseconds;
 
-        var message = (latency) switch
+        var message = latency switch
         {
             < 75 => $"My latency is {latency}ms, that's great!",
             < 150 => $"My latency is {latency}ms",

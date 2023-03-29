@@ -14,7 +14,7 @@ public class WarnDebuggerAttribute
         // Attach a "DebuggerWarningSent" object, to prevent this from spamming multiple warnings for one message
         if (context is MuteCommandContext mute)
         {
-            if (mute.TryGet<DebuggerWarningSent>(out var done))
+            if (mute.TryGet<DebuggerWarningSent>(out _))
                 return PreconditionResult.FromSuccess();
             mute.GetOrAdd(() => new DebuggerWarningSent());
         }

@@ -75,7 +75,7 @@ public class ConversationalResponseService
         // Find generators which can respond to this message
         var random = new Random(context.Message.Id.GetHashCode());
         var candidates = new List<IConversation>();
-        foreach (var generator in _responses.AsParallel())
+        foreach (var generator in _responses)
         {
             try
             {
@@ -96,14 +96,12 @@ public class ConversationalResponseService
         if (candidates.Count == 0)
             return null;
 
-        //If there are several pick a random one
+        // If there are several pick a random one
         return IEnumerableExtensions.Random(candidates, _random);
     }
 
     public IConversation? GetConversation(IGuildUser user)
     {
-        if (_conversations.TryGetValue(user, out var conversation))
-            return conversation;
-        return null;
+        return _conversations.GetValueOrDefault(user);
     }
 }

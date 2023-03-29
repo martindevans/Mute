@@ -78,7 +78,7 @@ public class ProCoinMarketCapCrypto
         TResponse? model;
         var serializer = new JsonSerializer();
         using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
-        using (var jsonTextReader = new JsonTextReader(sr))
+        await using (var jsonTextReader = new JsonTextReader(sr))
             model = serializer.Deserialize<TResponse>(jsonTextReader);
 
         if (model == null)
@@ -113,7 +113,7 @@ public class ProCoinMarketCapCrypto
         CmcMapResponse? model;
         var serializer = new JsonSerializer();
         using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
-        using (var jsonTextReader = new JsonTextReader(sr))
+        await using (var jsonTextReader = new JsonTextReader(sr))
             model = serializer.Deserialize<CmcMapResponse>(jsonTextReader);
 
         if (model == null)

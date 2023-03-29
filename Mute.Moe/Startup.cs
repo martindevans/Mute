@@ -135,12 +135,6 @@ public class Startup
         //services.AddSingleton<ILargeLanguageModel, NullLLM>();
         services.AddOpenAIService(settings => { settings.ApiKey = Configuration.OpenAI?.ApiKey ?? ""; });
         services.AddSingleton<ILargeLanguageModel, OpenAIChatCompletion>();
-        services.AddSingleton(new LargeLanguageModelGenerationOptions
-        {
-            MaxTokens = Configuration.LLM?.MaxTokens ?? 128,
-            TopP = Configuration.LLM?.TopP,
-            Temperature = Configuration.LLM?.Temperature,
-            TopK = Configuration.LLM?.TopK,
-        });
+        services.AddSingleton<LargeLanguageModelGenerationOptions>();
     }
 }

@@ -43,7 +43,7 @@ public class AlphaVantageForex
         ExchangeRateResponseContainer? response;
         var serializer = new JsonSerializer();
         using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
-        using (var jsonTextReader = new JsonTextReader(sr))
+        await using (var jsonTextReader = new JsonTextReader(sr))
             response = serializer.Deserialize<ExchangeRateResponseContainer?>(jsonTextReader);
 
         if (response is not { ErrorMessage: null })

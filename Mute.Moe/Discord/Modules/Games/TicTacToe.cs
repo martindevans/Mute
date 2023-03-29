@@ -52,7 +52,7 @@ public class TicTacToe
         }
     }
 
-    private async Task<bool> ApplyPlay( GameBoard board, (byte, byte) position, CellState player, string illegal, string win, string draw)
+    private async Task<bool> ApplyPlay(GameBoard board, (byte, byte) position, CellState player, string illegal, string win, string draw)
     {
         var result = board.Play(position.Item1, position.Item2, player);
 
@@ -79,7 +79,7 @@ public class TicTacToe
         return true;
     }
 
-    private static async Task<(byte, byte)> GetAiPlay( GameBoard board,  Random rng)
+    private static async Task<(byte, byte)> GetAiPlay(GameBoard board, Random rng)
     {
         var moves = from x in Enumerable.Range(0, 3)
             from y in Enumerable.Range(0, 3)
@@ -137,10 +137,9 @@ public class TicTacToe
             string C(int x, int y)
             {
                 var state = _state[x, y];
-                if (state != CellState.None)
-                    return state.ToString();
-
-                return "abcdefghi"[x + y * 3].ToString();
+                return state != CellState.None
+                     ? state.ToString()
+                     : "abcdefghi"[x + y * 3].ToString();
             }
 
             return $"{C(0, 0)}|{C(1, 0)}|{C(2, 0)}\n"

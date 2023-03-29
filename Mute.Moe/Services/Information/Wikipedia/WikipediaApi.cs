@@ -123,8 +123,7 @@ public class WikipediaApi
             // Wait on all the tasks and save them in a list
             var definitions = new List<IDefinition>();
             foreach (var definitionsTask in definitionsTasks)
-                foreach (var definition in await definitionsTask)
-                    definitions.Add(definition);
+                definitions.AddRange(await definitionsTask);
 
             return definitions;
         }

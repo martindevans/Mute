@@ -41,7 +41,7 @@ public class Manga
 
             var builder = new EmbedBuilder().WithDescription(desc).WithColor(Color.DarkGreen).WithImageUrl(manga.ImageUrl).WithFooter("🦑 https://anilist.co").WithUrl(manga.Url);
 
-            if (manga.TitleJapanese != null && manga.TitleEnglish != null)
+            if (manga is { TitleJapanese: { }, TitleEnglish: { } })
                 builder = builder.WithAuthor(manga.TitleJapanese).WithTitle(manga.TitleEnglish);
             else if (manga.TitleEnglish != null ^ manga.TitleJapanese != null)
                 builder = builder.WithTitle(manga.TitleEnglish ?? manga.TitleJapanese);

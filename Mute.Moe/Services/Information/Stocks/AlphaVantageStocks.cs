@@ -43,7 +43,7 @@ public class AlphaVantageStocks
         StockQuoteResponseContainer? response;
         var serializer = new JsonSerializer();
         using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
-        using (var jsonTextReader = new JsonTextReader(sr))
+        await using (var jsonTextReader = new JsonTextReader(sr))
             response = serializer.Deserialize<StockQuoteResponseContainer>(jsonTextReader);
 
         if (response?.Response?.Symbol == null)

@@ -10,15 +10,7 @@ public class AsyncFileClip
     : IAudioClip
 {
     private readonly Func<Task<ITrack?>>? _track;
-    public Task<ITrack?> Track
-    {
-        get
-        {
-            if (_track == null)
-                return Task.FromResult<ITrack?>(null);
-            return _track();
-        }
-    }
+    public Task<ITrack?> Track => _track == null ? Task.FromResult<ITrack?>(null) : _track();
 
     public string Name { get; }
 

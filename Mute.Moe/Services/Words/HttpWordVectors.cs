@@ -118,7 +118,7 @@ public class HttpWordVectors
             SimilarWord[]? results;
             var serializer = new JsonSerializer();
             using (var sr = new StreamReader(await resp.Content.ReadAsStreamAsync()))
-            using (var jsonTextReader = new JsonTextReader(sr))
+            await using (var jsonTextReader = new JsonTextReader(sr))
                 results = serializer.Deserialize<SimilarWord[]>(jsonTextReader);
             if (results == null)
                 return null;

@@ -59,34 +59,33 @@ public class Words
     {
         var result = await _wordVectors.Similarity(a, b);
 
-        if (!result.HasValue)
+        switch (result)
         {
-            var av = await _wordVectors.Vector(a);
-            if (av == null)
-                await TypingReplyAsync($"I don't know the word `{a}`");
-            var bv = await _wordVectors.Vector(b);
-            if (bv == null)
-                await TypingReplyAsync($"I don't know the word `{b}`");
-        }
-        else if (result < 0.2)
-        {
-            await TypingReplyAsync($"`{a}` and `{b}` are very different ({result:0.0##})");
-        }
-        else if (result < 0.5)
-        {
-            await TypingReplyAsync($"`{a}` and `{b}` are not very similar ({result:0.0##})");
-        }
-        else if (result < 0.65)
-        {
-            await TypingReplyAsync($"`{a}` and `{b}` are a bit similar ({result:0.0##})");
-        }
-        else if (result < 0.85)
-        {
-            await TypingReplyAsync($"`{a}` and `{b}` are quite similar ({result:0.0##})");
-        }
-        else
-        {
-            await TypingReplyAsync($"`{a}` and `{b}` are analagous ({result:0.0##})");
+            case null:
+            {
+                var av = await _wordVectors.Vector(a);
+                if (av == null)
+                    await TypingReplyAsync($"I don't know the word `{a}`");
+                var bv = await _wordVectors.Vector(b);
+                if (bv == null)
+                    await TypingReplyAsync($"I don't know the word `{b}`");
+                break;
+            }
+            case < 0.2:
+                await TypingReplyAsync($"`{a}` and `{b}` are very different ({result:0.0##})");
+                break;
+            case < 0.5:
+                await TypingReplyAsync($"`{a}` and `{b}` are not very similar ({result:0.0##})");
+                break;
+            case < 0.65:
+                await TypingReplyAsync($"`{a}` and `{b}` are a bit similar ({result:0.0##})");
+                break;
+            case < 0.85:
+                await TypingReplyAsync($"`{a}` and `{b}` are quite similar ({result:0.0##})");
+                break;
+            default:
+                await TypingReplyAsync($"`{a}` and `{b}` are analagous ({result:0.0##})");
+                break;
         }
     }
 

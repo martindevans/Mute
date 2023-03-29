@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using Discord;
 using Discord.WebSocket;
 using Mute.Moe.Services.Introspection.Uptime;
 
@@ -14,7 +12,6 @@ public class Status
     private readonly DiscordSocketClient _client;
     public TimeSpan Latency => TimeSpan.FromMilliseconds(_client.Latency);
     public int Shard => _client.ShardId;
-    public IReadOnlyCollection<IGuild> Guilds => _client.Guilds;
 
     public long MemoryWorkingSet => Environment.WorkingSet;
     public long TotalGCMemory => GC.GetTotalMemory(false);

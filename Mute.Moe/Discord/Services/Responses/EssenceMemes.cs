@@ -39,9 +39,9 @@ public partial class EssenceMemes
         var words = msg.ToLowerInvariant().Split(' ');
         if (_triggerWords.Overlaps(words))
         {
-            if (_random.NextDouble() < 0.5f)
-                return new TerminalConversation(Text());
-            return new TerminalConversation(null, Emotes());
+            return _random.NextDouble() < 0.5f
+                 ? new TerminalConversation(Text())
+                 : new TerminalConversation(null, Emotes());
         }
 
         return null;

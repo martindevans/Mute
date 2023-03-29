@@ -4,14 +4,13 @@ using NAudio.Wave.SampleProviders;
 
 namespace Mute.Moe.Services.Audio.Mixing.Extensions;
 
-// ReSharper disable once InconsistentNaming
 public static class ISampleProviderExtensions
 {
     public static ISampleProvider Resample(this ISampleProvider provider, int sampleRate)
     {
-        if (provider.WaveFormat.SampleRate == sampleRate)
-            return provider;
-        return new WdlResamplingSampleProvider(provider, sampleRate);
+        return provider.WaveFormat.SampleRate == sampleRate
+             ? provider
+             : new WdlResamplingSampleProvider(provider, sampleRate);
     }
 
     public static ISampleProvider SoftClip(this ISampleProvider provider)
