@@ -377,7 +377,6 @@ public class BaseModule
 
         await foreach (var word in message)
         {
-            contents.Append(' ');
             contents.Append(word);
 
             if (initialising)

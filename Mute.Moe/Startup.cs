@@ -42,6 +42,7 @@ using Mute.Moe.Discord.Services.Users;
 using Oddity;
 using Mute.Moe.Services.Host;
 using Mute.Moe.Services.LLM;
+using OpenAI.GPT3.Extensions;
 
 namespace Mute.Moe;
 
@@ -105,7 +106,6 @@ public class Startup
         services.AddHostedService<IRssNotificationsSender, DatabaseRssNotificationsSender>();
         services.AddSingleton<ICron, InMemoryCron>();
         services.AddSingleton<IUserService, DiscordUserService>();
-        services.AddSingleton<ILargeLanguageModel, NullLLM>();
 
         services.AddSingleton(s => new EnigmaResponse(s.GetRequiredService<ILargeLanguageModel>()));
         services.AddSingleton<IConversationPreprocessor>(s => s.GetRequiredService<EnigmaResponse>());
@@ -131,5 +131,16 @@ public class Startup
 
         if (Configuration.Auth == null)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
+
+        //services.AddSingleton<ILargeLanguageModel, NullLLM>();
+        services.AddOpenAIService(settings => { settings.ApiKey = Configuration.OpenAI?.ApiKey ?? ""; });
+        services.AddSingleton<ILargeLanguageModel, OpenAIChatCompletion>();
+        services.AddSingleton(new LargeLanguageModelGenerationOptions
+        {
+            MaxTokens = Configuration.LLM?.MaxTokens ?? 128,
+            TopP = Configuration.LLM?.TopP,
+            Temperature = Configuration.LLM?.Temperature,
+            TopK = Configuration.LLM?.TopK,
+        });
     }
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -38,6 +35,7 @@ public class Enigma
     }
 
     [Command("status"), Summary("I will show the status of my current enigma conversations")]
+    [RequireOwner]
     public async Task Status(bool all)
     {
         if (!all)
@@ -81,7 +79,7 @@ public class Enigma
     {
         var state = _enigma.GetState(channel);
 
-        var r = state.TryReply(EnigmaMessage.From(Context), false);
+        var r = state.TryReply(EnigmaMessage.From(Context.User.Id, msg), false);
         if (string.IsNullOrEmpty(r))
             r = "Null reply.";
 
@@ -99,29 +97,6 @@ public class Enigma
     private IGuild? TryGetChannelGuild(ulong channel)
     {
         return (_client.GetChannel(channel) as IGuildChannel)?.Guild;
-    }
-    #endregion
-
-    #region dev
-    [Command("stream"), Summary("Stream text into a message")]
-    public async Task Stream([Remainder, UsedImplicitly] string message)
-    {
-        await TypingReplyAsync(
-            Generate(message),
-            new MessageReference(Context.Message.Id)
-        );
-    }
-
-    private static async IAsyncEnumerable<string> Generate(string msg)
-    {
-        var rng = new Random();
-        var words = msg.Split(" ");
-
-        foreach (var word in words)
-        {
-            await Task.Delay(rng.Next(100, 1000));
-            yield return word;
-        }
     }
     #endregion
 }

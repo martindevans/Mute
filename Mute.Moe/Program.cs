@@ -16,9 +16,8 @@ public class Program
     {
         DependencyHelper.TestDependencies();
 
-        var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)));
-        if (config == null)
-            throw new InvalidOperationException("Config was null");
+        var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)))
+                  ?? throw new InvalidOperationException("Config was null");
 
         var collection = new ServiceCollection();
         collection.AddSingleton<ServiceHost>();
@@ -65,13 +64,15 @@ public class Program
     }
 }
 
-internal class DependencyHelper
+internal partial class DependencyHelper
 {
-    [DllImport("opus", EntryPoint = "opus_get_version_string", CallingConvention = CallingConvention.Cdecl)]
-    private static extern nint OpusVersionString();
+    [LibraryImport("opus", EntryPoint = "opus_get_version_string")]
+    [UnmanagedCallConv(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    private static partial nint OpusVersionString();
 
-    [DllImport("libsodium", EntryPoint = "sodium_version_string", CallingConvention = CallingConvention.Cdecl)]
-    private static extern nint SodiumVersionString();
+    [LibraryImport("libsodium", EntryPoint = "sodium_version_string")]
+    [UnmanagedCallConv(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    private static partial nint SodiumVersionString();
         
     public static void TestDependencies()
     {

@@ -22,6 +22,8 @@ public class Configuration
     [UsedImplicitly] public TTSConfig? TTS;
     [UsedImplicitly] public STTConfig? STT;
     [UsedImplicitly] public MusicLibraryConfig? MusicLibrary;
+    [UsedImplicitly] public OpenAIConfig? OpenAI;
+    [UsedImplicitly] public LLMConfig? LLM;
 
     [UsedImplicitly] public bool ProcessMessagesFromSelf;
     [UsedImplicitly] public char PrefixCharacter = '!';
@@ -156,7 +158,15 @@ public class MusicLibraryConfig
     [UsedImplicitly] public string? MusicFolder;
 }
 
-public class SolariumConfig
+public class OpenAIConfig
 {
-    [UsedImplicitly] public string? SolariumHostAddress;
+    [UsedImplicitly] public string? ApiKey;
+}
+
+public class LLMConfig
+{
+    [UsedImplicitly] public int? MaxTokens;
+    [UsedImplicitly] public float? TopP;
+    [UsedImplicitly] public float? Temperature;
+    [UsedImplicitly] public float? TopK;
 }

@@ -19,5 +19,10 @@ namespace Mute.Moe.Discord.Services.Responses.Enigma
             var content = context.Message.Resolve(TagHandling.NameNoPrefix, TagHandling.FullName, TagHandling.NameNoPrefix, TagHandling.NameNoPrefix, TagHandling.FullName);
             return new EnigmaMessage(context.User.Id, content);
         }
+
+        public static EnigmaMessage From(ulong userId, string content)
+        {
+            return new EnigmaMessage(userId, content);
+        }
     }
 }

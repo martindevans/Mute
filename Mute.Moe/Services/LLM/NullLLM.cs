@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Discord;
 
 namespace Mute.Moe.Services.LLM
 {
@@ -11,9 +12,15 @@ namespace Mute.Moe.Services.LLM
             return "NullLLM";
         }
 
-        public IReadOnlyList<ILargeLanguageModel.IGenerationResult> Generate()
+        public async IAsyncEnumerable<string> Generate(string prompt, LargeLanguageModelGenerationOptions? options = null)
         {
-            return Array.Empty<ILargeLanguageModel.IGenerationResult>();
+            yield break;
+        }
+
+        public EmbedBuilder Summary(EmbedBuilder embed)
+        {
+            return embed.WithTitle("No LLM")
+                 .WithTimestamp(DateTimeOffset.UtcNow);
         }
     }
 }
