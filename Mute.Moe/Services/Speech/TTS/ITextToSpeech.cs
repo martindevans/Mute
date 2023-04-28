@@ -9,6 +9,7 @@ public interface ITextToSpeech
     /// Convert a string of text to an audio clip ready for playback
     /// </summary>
     /// <param name="text"></param>
+    /// <param name="voice">Voice to use (service dependent)</param>
     /// <returns></returns>
-    Task<IAudioClip> Synthesize(string text);
+    Task<IAudioClip> Synthesize(string text, string? voice  = null);
 }

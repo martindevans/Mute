@@ -23,13 +23,24 @@ public class MicrosoftCognitiveTextToSpeech
         _config.SpeechSynthesisVoiceName = config.TTS?.MsCognitive?.Voice ?? throw new ArgumentNullException(nameof(config.TTS.MsCognitive.Voice));
     }
 
-    public async Task<IAudioClip> Synthesize(string text)
+    public async Task<IAudioClip> Synthesize(string text, string? voice = null)
     {
+        // Create a copy of the config if not using the default voice
+        var config = _config;
+        if (voice != null)
+        {
+            config = SpeechConfig.FromSubscription(
+                _config.SubscriptionKey,
+                _config.Region
+            );
+            config.SpeechSynthesisVoiceName = voice;
+        }
+
         var stream = AudioOutputStream.CreatePullStream();
 
         //Generate voice data into stream
         using (var streamConfig = AudioConfig.FromStreamOutput(stream))
-        using (var synthesizer = new SpeechSynthesizer(_config, streamConfig))
+        using (var synthesizer = new SpeechSynthesizer(config, streamConfig))
         {
             using var result = await synthesizer.SpeakTextAsync(text);
             if (result.Reason == ResultReason.Canceled)

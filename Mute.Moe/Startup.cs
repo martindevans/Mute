@@ -29,7 +29,6 @@ using Mute.Moe.Services.Notifications.RSS;
 using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Sentiment.Training;
-using Mute.Moe.Services.SoundEffects;
 using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Words;
 using System.Net.Http;
@@ -42,6 +41,7 @@ using Mute.Moe.Discord.Services.Users;
 using Oddity;
 using Mute.Moe.Services.Host;
 using Mute.Moe.Services.LLM;
+using Mute.Moe.Services.Speech.TTS;
 using OpenAI.GPT3.Extensions;
 
 namespace Mute.Moe;
@@ -65,6 +65,7 @@ public class Startup
         services.AddTransient<Random>();
         services.AddTransient<IDiceRoller, CryptoDiceRoller>();
         services.AddTransient<ISpacexInfo, OdditySpaceX>();
+        services.AddTransient<ITextToSpeech, MicrosoftCognitiveTextToSpeech>();
 
         services.AddSingleton(new OddityCore());
         services.AddSingleton<IFileSystem, FileSystem>();
@@ -88,8 +89,6 @@ public class Startup
         services.AddSingleton<IReminders, DatabaseReminders>();
         services.AddHostedService<IReminderSender, AsyncReminderSender>();
         services.AddSingleton<IWikipedia, WikipediaApi>();
-        services.AddSingleton<ISoundEffectLibrary, DatabaseSoundEffectLibrary>();
-        services.AddSingleton<ISoundEffectPlayer, SoundEffectPlayer>();
         services.AddSingleton<IWords, HttpWordVectors>();
         services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
         services.AddHostedService<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
@@ -100,7 +99,6 @@ public class Startup
         services.AddSingleton<IGuildVoiceCollection, InMemoryGuildVoiceCollection>();
         services.AddSingleton<IGuildMusicQueueCollection, InMemoryGuildMusicQueueCollection>();
         services.AddSingleton<IGuildSpeechQueueCollection, InMemoryGuildSpeechQueueCollection>();
-        services.AddSingleton<IGuildSoundEffectQueueCollection, InMemoryGuildSoundEffectQueueCollection>();
         services.AddSingleton<IRss, HttpRss>();
         services.AddSingleton<IRssNotifications, DatabaseRssNotifications>();
         services.AddHostedService<IRssNotificationsSender, DatabaseRssNotificationsSender>();

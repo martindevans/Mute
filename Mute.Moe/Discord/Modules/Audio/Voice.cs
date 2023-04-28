@@ -1,19 +1,11 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Diagnostics;
-//using System.Threading;
-//using System.Threading.Tasks;
-//using Discord;
-//using Discord.Audio.Streams;
-//using Discord.Commands;
-//using Discord.WebSocket;
-//using Mute.Moe.Discord.Attributes;
-//using Mute.Moe.Services.Audio.Mixing.Extensions;
-//using Mute.Moe.Utilities;
-//using NAudio.Wave;
-//using Mute.Moe.Services.Speech;
-
+﻿using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Attributes;
+using Mute.Moe.Services.Speech;
+using Mute.Moe.Services.Speech.TTS;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.Audio;
 
@@ -21,39 +13,42 @@ namespace Mute.Moe.Discord.Modules.Audio;
 public class Voice
     : BaseModule
 {
-    //private readonly IGuildSpeechQueueCollection _queueCollection;
+    private readonly IGuildSpeechQueueCollection _queueCollection;
+    private readonly ITextToSpeech _tts;
 
-    //public Voice(IGuildSpeechQueueCollection queueCollection)
-    //{
-    //    _queueCollection = queueCollection;
-    //}
+    public Voice(IGuildSpeechQueueCollection queueCollection, ITextToSpeech tts)
+    {
+        _queueCollection = queueCollection;
+        _tts = tts;
+    }
 
-    //[RequireOwner]
-    //[Command("tts")]
-    //[ThinkingReply(EmojiLookup.SpeakerMedVolume)]
-    //public async Task TextToSpeech([Remainder] string message)
-    //{
-    //    var user = Context.User;
+    [RequireOwner]
+    [Command("tts")]
+    [ThinkingReply(EmojiLookup.SpeakerMedVolume)]
+    public async Task TextToSpeech([Remainder] string message)
+    {
+        var user = Context.User;
 
-    //    if (!(user is IVoiceState vs))
-    //    {
-    //        await ReplyAsync("You are not in a voice channel");
-    //    }
-    //    else
-    //    {
-    //        var q = await _queueCollection.Get(Context.Guild.Id);
-    //        await q.VoicePlayer.Move(vs.VoiceChannel);
+        if (user is not IVoiceState vs)
+        {
+            await ReplyAsync("You are not in a voice channel");
+        }
+        else
+        {
+            // Get the audio output for this guild and move it to the right channel
+            var q = await _queueCollection.Get(Context.Guild.Id);
+            await q.VoicePlayer.Move(vs.VoiceChannel);
 
-    //        //Create audio clip
-    //        var audio = await (await _tts.Synthesize(message)).Open();
+            // Create audio clip
+            var audio = await (await _tts.Synthesize(message)).Open();
 
-    //        //Enqueue to TTS channel
-    //        var playing = await q.Enqueue(message, audio);
+            // Enqueue to TTS channel
+            var playing = await q.Enqueue(message, audio);
 
-    //        //Wait for it to finish playing
-    //        await playing;
-    //    }
-    //}
+            // Wait for it to finish playing
+            await playing;
+        }
+    }
 
     //[RequireOwner]
     //[Command("echo")]
