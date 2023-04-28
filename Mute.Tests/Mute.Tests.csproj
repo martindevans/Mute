@@ -30,7 +30,6 @@
     <Folder Include="Mocks\" />
     <Folder Include="Modules\" />
     <Folder Include="Services\Notifications\SpaceX\" />
-    <Folder Include="Services\SoundEffects\" />
   </ItemGroup>
 
   <ItemGroup>
