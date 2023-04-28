@@ -8,7 +8,6 @@ using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services.Audio.Sources.Youtube;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 
@@ -19,14 +18,12 @@ public class Administration
 {
     private readonly DiscordSocketClient _client;
     private readonly ConversationalResponseService _conversations;
-    private readonly IYoutubeDownloader _yt;
     private readonly SeasonalAvatar _avatar;
 
-    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IYoutubeDownloader yt, SeasonalAvatar avatar)
+    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, SeasonalAvatar avatar)
     {
         _client = client;
         _conversations = conversations;
-        _yt = yt;
         _avatar = avatar;
     }
 
@@ -98,25 +95,6 @@ public class Administration
     public async Task Nickname([Remainder] string name)
     {
         await Context.Guild.CurrentUser.ModifyAsync(a => a.Nickname = name);
-    }
-
-    [Command("test-yt")]
-    [ThinkingReply]
-    public async Task TestYt(string url)
-    {
-        var result = await _yt.DownloadAudio(url);
-
-        await ReplyAsync(result.Status.ToString());
-
-        if (result is { Status: YoutubeDownloadStatus.Success, File: { } })
-        {
-            await ReplyAsync(result.File.File.FullName);
-            await ReplyAsync(result.File.ThumbnailUrl);
-            await ReplyAsync(result.File.Title);
-            await ReplyAsync(result.File.Url);
-        }
-
-        result.File?.Dispose();
     }
 
     [Command("repick-avatar")]

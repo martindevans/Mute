@@ -9,7 +9,6 @@ using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services.Audio.Sources.Youtube;
 using Mute.Moe.Services.Music;
 using Mute.Moe.Services.Music.Extensions;
 using NAudio.Wave;
@@ -23,15 +22,13 @@ namespace Mute.Moe.Discord.Modules.Audio;
 public class Music
     : BaseModule
 {
-    private readonly IYoutubeDownloader _youtube;
     private readonly IMusicLibrary _library;
     private readonly Random _rng;
     private readonly IGuildMusicQueueCollection _queueCollection;
 
-    public Music(IGuildMusicQueueCollection queueCollection, IYoutubeDownloader youtube, IMusicLibrary library, Random rng)
+    public Music(IGuildMusicQueueCollection queueCollection, IMusicLibrary library, Random rng)
     {
         _queueCollection = queueCollection;
-        _youtube = youtube;
         _library = library;
         _rng = rng;
     }
@@ -117,53 +114,6 @@ public class Music
         await Enqueue(track);
     }
 
-    [Command("play-url"), Summary("Play a track from a given URL")]
-    [RequireVoiceChannel]
-    [ThinkingReply]
-    public async Task PlayUrl( string url)
-    {
-        // Tolerate misusing the play command to invoke `play-random`
-        if (url.ToLowerInvariant() == "random")
-        {
-            await PlayRandom();
-            return;
-        }
-
-        // Try to find this item in the library
-        var match = await (await _library.Get(Context.Guild.Id, url: url.ToLowerInvariant())).Cast<ITrack?>().SingleOrDefaultAsync();
-        if (match != null)
-        {
-            await Enqueue(match);
-            return;
-        }
-
-        // Try to download this URL using one of the downloaders we know of
-        if (await _youtube.IsValidUrl(url))
-        {
-            var ytd = await _youtube.DownloadAudio(url);
-            if (ytd.Status != YoutubeDownloadStatus.Success || ytd.File == null)
-            {
-                await ReplyAsync("I couldn't download that track");
-                return;
-            }
-
-            using (ytd.File)
-            await using (var stream = ytd.File.File.OpenRead())
-            {
-                // Add to library
-                var track = await _library.Add(Context.Guild.Id, Context.User.Id, stream, ytd.File.Title, ytd.File.Duration, ytd.File.Url, ytd.File.ThumbnailUrl);
-
-                // Play it
-                await Enqueue(track);
-            }
-        }
-        else
-        {
-            await ReplyAsync("Sorry, that isn't a URL I know how to play");
-        }
-            
-    }
-
     [Command("play"), Summary("Play a track which best matches the given search parameter")]
     [RequireVoiceChannel]
     [ThinkingReply]
@@ -181,15 +131,11 @@ public class Music
 
         switch (tracks.Length)
         {
-            // if we failed to find a track in the database, try to treat the search string as a URL
+            // if we failed to find a track in the database, fail
             case 0:
-            {
-                if (Uri.TryCreate(search, UriKind.Absolute, out _))
-                    await PlayUrl(search);
-                else
-                    await ReplyAsync("I can't find a track matching that search in the library");
-                return;
-            }
+                await ReplyAsync("I can't find a track matching that search in the library");
+                break;
+
             // We found exactly one track, play it
             case 1:
                 await Enqueue(tracks[0]);
@@ -246,7 +192,7 @@ public class Music
 
     }
 
-    private async Task Enqueue( ITrack track)
+    private async Task Enqueue(ITrack track)
     {
         // Get music queue
         var channel = await _queueCollection.Get(Context.Guild.Id);
@@ -257,6 +203,7 @@ public class Music
             await ReplyAsync("You must be in a voice channel!");
             return;
         }
+
         await channel.VoicePlayer.Move(vs.VoiceChannel);
 
         // Enqueue track
@@ -275,12 +222,12 @@ public class Music
         await message.ModifyAsync(a => a.Embed = embed.WithColor(Color.DarkPurple).Build());
     }
 
-    private static string TrackString( ITrack track, int index)
+    private static string TrackString(ITrack track, int index)
     {
         return $"{index}. **{track.Title}** (`{track.ID.BalderHash()}`)";
     }
 
-        
+
     private async IAsyncEnumerable<ITrack> Search(string search)
     {
         var results = new List<IAsyncEnumerable<ITrack>>();
@@ -304,13 +251,5 @@ public class Music
         // Get all potential tracks from those searches
         await foreach (var item in results.ToAsyncEnumerable().SelectMany(a => a).OrderBy(a => a.ID))
             yield return item;
-    }
-
-    [Command("upgrade-youtubedl")]
-    [ThinkingReply]
-    [RequireOwner]
-    public async Task Upgrade()
-    {
-        await Context.Channel.TypingReplyAsync($"Exit Code: {await _youtube.PerformMaintenance()}");
     }
 }

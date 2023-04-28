@@ -10,7 +10,6 @@ public class Configuration
     [UsedImplicitly] public AlphaAdvantageConfig? AlphaAdvantage;
     [UsedImplicitly] public CoinMarketCapConfig? CoinMarketCap;
     [UsedImplicitly] public DatabaseConfig? Database;
-    [UsedImplicitly] public YoutubeDlConfig? YoutubeDl;
     [UsedImplicitly] public SentimentConfig? Sentiment;
     [UsedImplicitly] public ElizaConfig? ElizaConfig;
     [UsedImplicitly] public SteamConfig? Steam;
@@ -69,15 +68,6 @@ public class CoinMarketCapConfig
 public class DatabaseConfig
 {
     [UsedImplicitly] public string? ConnectionString;
-}
-
-public class YoutubeDlConfig
-{
-    [UsedImplicitly] public string? RateLimit;
-    [UsedImplicitly] public string? InProgressDownloadFolder;
-
-    [UsedImplicitly] public string? YoutubeDlBinaryPath;
-    [UsedImplicitly] public string? FfmpegBinaryPath;
 }
 
 public class SentimentConfig

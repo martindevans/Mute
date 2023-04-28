@@ -20,7 +20,6 @@ using Mute.Moe.Services.Payment;
 using Mute.Moe.Services.Randomness;
 using Mute.Moe.Services.Sentiment;
 using Mute.Moe.Services.Audio;
-using Mute.Moe.Services.Audio.Sources.Youtube;
 using Mute.Moe.Services.Information.RSS;
 using Mute.Moe.Services.Information.UrbanDictionary;
 using Mute.Moe.Services.Information.Wikipedia;
@@ -93,7 +92,6 @@ public class Startup
         services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
         services.AddHostedService<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
         services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
-        services.AddSingleton<IYoutubeDownloader, YoutubeDlDownloader>();
         services.AddSingleton<IWordTraining, DatabaseWordTraining>();
         services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();
         services.AddSingleton<IGuildVoiceCollection, InMemoryGuildVoiceCollection>();
