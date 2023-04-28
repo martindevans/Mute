@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
+using MoreLinq;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Words;
@@ -18,13 +19,11 @@ public class Shiritori
 {
     private readonly WordsService _words;
     private readonly Random _random;
-    private readonly IWords _wordVectors;
 
-    public Shiritori(WordsService words, Random random, IWords wordVectors)
+    public Shiritori(WordsService words, Random random)
     {
         _words = words;
         _random = random;
-        _wordVectors = wordVectors;
     }
 
     [Command("help"), Summary("I will briefly explain the rules of the game")]
@@ -116,7 +115,7 @@ public class Shiritori
             }
 
             //Check that this word is in the dictionary or if it's not, check if it's got a valid word vector
-            if (!_words.Contains(theirWord) && await _wordVectors.Vector(theirWord) == null)
+            if (!_words.Contains(theirWord))
             {
                 await TypingReplyAsync("That's not a real word! I win :D");
                 return;
@@ -158,7 +157,7 @@ public class Shiritori
             //This uses almost the same set of words every time (only changing when a word is used) to improve cache hits in the word vector similarity lookup.
             case Mode.Easy:
             case Mode.Normal: {
-                return PickMostSimilar(previous, nextWords.Take(350));
+                return SelectWord(nextWords.Take(350));
             }
 
             //Specifically try to pick a word which starts with the same character as a previous word
@@ -176,7 +175,7 @@ public class Shiritori
                     .Where(a => a.Last() == chars.Key)
                     .Take(350);
 
-                return PickMostSimilar(previous, options);
+                return SelectWord(options);
             }
 
             default:
@@ -184,17 +183,11 @@ public class Shiritori
         }
     }
 
-    private string PickMostSimilar(string previous, IEnumerable<string> options)
+    private static string SelectWord(IEnumerable<string> options)
     {
-        //Order by word vector similarity
-        var sims = options.Select(a => (a, Task.Run(() => _wordVectors.Similarity(previous, a))))
-            .Select(a => (a.a, a.Item2.Result ?? 0))
-            .OrderByDescending(a => a.Item2);
-
-        //Take the most similar
-        return sims
-            .Select(a => a.a)
-            .First();
+        return options
+              .Shuffle()
+              .First();
     }
 
     private static DifficultyValues Get(Mode mode)

@@ -60,7 +60,6 @@
     <PackageReference Include="System.IO.Abstractions" Version="19.2.18" />
     <PackageReference Include="System.Linq.LevenshteinDistance" Version="0.99.0-beta" />
     <PackageReference Include="System.ServiceModel.Syndication" Version="7.0.0" />
-    <PackageReference Include="TensorFlowSharp" Version="1.15.1" />
   </ItemGroup>
 
   <ItemGroup>

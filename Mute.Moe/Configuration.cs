@@ -10,7 +10,6 @@ public class Configuration
     [UsedImplicitly] public AlphaAdvantageConfig? AlphaAdvantage;
     [UsedImplicitly] public CoinMarketCapConfig? CoinMarketCap;
     [UsedImplicitly] public DatabaseConfig? Database;
-    [UsedImplicitly] public SentimentConfig? Sentiment;
     [UsedImplicitly] public ElizaConfig? ElizaConfig;
     [UsedImplicitly] public SteamConfig? Steam;
     [UsedImplicitly] public SoundEffectConfig? SoundEffects;
@@ -68,13 +67,6 @@ public class CoinMarketCapConfig
 public class DatabaseConfig
 {
     [UsedImplicitly] public string? ConnectionString;
-}
-
-public class SentimentConfig
-{
-    [UsedImplicitly] public string? SentimentModelPath;
-    [UsedImplicitly] public string? SentimentModelInputLayer;
-    [UsedImplicitly] public string? SentimentModelOutputLayer;
 }
 
 public class ElizaConfig

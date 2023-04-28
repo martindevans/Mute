@@ -27,7 +27,6 @@ using Mute.Moe.Services.Music;
 using Mute.Moe.Services.Notifications.RSS;
 using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
-using Mute.Moe.Services.Sentiment.Training;
 using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Words;
 using System.Net.Http;
@@ -41,7 +40,6 @@ using Oddity;
 using Mute.Moe.Services.Host;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.Speech.TTS;
-using OpenAI.GPT3.Extensions;
 
 namespace Mute.Moe;
 
@@ -70,8 +68,7 @@ public class Startup
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddSingleton<HttpClient, HttpClient>();
         services.AddSingleton<IDatabaseService, SqliteDatabase>();
-        services.AddHostedService<ISentimentEvaluator, TensorflowSentiment>();
-        services.AddSingleton<ISentimentTrainer, DatabaseSentimentTrainer>();
+        services.AddHostedService<ISentimentEvaluator, NullSentiment>();
         services.AddSingleton<ICatPictureProvider, CataasPictures>();
         services.AddSingleton<IDogPictureService, DogceoPictures>();
         services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
@@ -92,7 +89,6 @@ public class Startup
         services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
         services.AddHostedService<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
         services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
-        services.AddSingleton<IWordTraining, DatabaseWordTraining>();
         services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();
         services.AddSingleton<IGuildVoiceCollection, InMemoryGuildVoiceCollection>();
         services.AddSingleton<IGuildMusicQueueCollection, InMemoryGuildMusicQueueCollection>();
@@ -107,7 +103,6 @@ public class Startup
         services.AddSingleton<IConversationPreprocessor>(s => s.GetRequiredService<EnigmaResponse>());
 
         //Eventually these should all become interface -> concrete type bindings
-        services.AddHostedService<AutoReactionTrainer>();
         services.AddSingleton<Status>();
         services
             .AddSingleton<GameService>()

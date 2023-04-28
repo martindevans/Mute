@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Words;
-using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules;
 
@@ -19,12 +16,10 @@ public class Words
     : BaseModule
 {
     private readonly IWords _wordVectors;
-    private readonly IWordTraining _training;
 
-    public Words(IWords wordVectors, IWordTraining training)
+    public Words(IWords wordVectors)
     {
         _wordVectors = wordVectors;
-        _training = training;
     }
 
     [Command("vector"), Summary("I will get the raw vector for a word"), Hidden]
@@ -105,44 +100,6 @@ public class Words
             items => $"The {items.Count} most similar words are:",
             (t, _) => $"`{t.Word}` ({t.Similarity})"
         );
-    }
-
-    [Command("teach"), Hidden]
-    public async Task TeachWord(string word)
-    {
-        word = word.ToLowerInvariant();
-
-        //Check if we already know this word, in which case we can just early exit
-        var vector = await _wordVectors.Vector(word);
-        if (vector != null)
-        {
-            await TypingReplyAsync($"I already know what {word} means!");
-            return;
-        }
-
-        //Prompt user for examples
-        await TypingReplyAsync($"I don't know what `{word}` means, can you use it in some example sentences?");
-
-        //Watch all messages in the channel for some time. Every message which contains the word will be taken as an example
-        var timer = new Stopwatch();
-        while (timer.Elapsed < TimeSpan.FromMinutes(1))
-        {
-            var message = await NextMessageAsync(false, true, TimeSpan.FromMinutes(1));
-            if (message == null)
-                continue;
-
-            var content = message.Content.ToLower();
-            if (!content.Contains(word))
-                continue;
-
-            await _training.Train(word, content);
-            timer.Restart();
-            if (message is IUserMessage um)
-            {
-                await um.AddReactionAsync(new Emoji(EmojiLookup.OpenBook));
-                await um.AddReactionAsync(new Emoji(EmojiLookup.Tick));
-            }
-        }
     }
 
     [Command("lerp")]
