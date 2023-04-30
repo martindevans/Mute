@@ -24,10 +24,10 @@ public class MicrosoftCognitiveSpeechToText
         _region = config.TTS?.MsCognitive?.Region ?? throw new ArgumentNullException(nameof(config.TTS.MsCognitive.Region));
     }
 
-    public async IAsyncEnumerable<RecognitionWord> ContinuousRecognition(IWaveProvider audioSource, [EnumeratorCancellation] CancellationToken cancellation, IAsyncEnumerable<string>? sourceLangs, IAsyncEnumerable<string>? phrases)
+    public async IAsyncEnumerable<RecognitionWord> ContinuousRecognition(ISampleProvider audioSource, [EnumeratorCancellation] CancellationToken cancellation, IAsyncEnumerable<string>? sourceLangs, IAsyncEnumerable<string>? phrases)
     {
         var config = SpeechConfig.FromSubscription(_key, _region);
-        var audioConfig = AudioConfig.FromStreamInput(new PullAdapter(audioSource, 24000), AudioStreamFormat.GetWaveFormatPCM(24000, 16, 1));
+        var audioConfig = AudioConfig.FromStreamInput(new PullAdapter(audioSource.ToWaveProvider(), 24000), AudioStreamFormat.GetWaveFormatPCM(24000, 16, 1));
 
         using var recogniser = new SpeechRecognizer(config,
             AutoDetectSourceLanguageConfig.FromLanguages(await (sourceLangs ?? Array.Empty<string>().ToAsyncEnumerable()).Append("en-GB").ToArrayAsync(cancellation)),
@@ -89,6 +89,11 @@ public class MicrosoftCognitiveSpeechToText
         // Finish sending remaining results
         foreach (var result in results)
             yield return result;
+    }
+
+    public IEnumerable<RecognitionWord> OneShotRecognition(ISampleProvider audio)
+    {
+        throw new NotImplementedException();
     }
 
     private class PullAdapter

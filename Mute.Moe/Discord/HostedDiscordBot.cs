@@ -153,8 +153,18 @@ public class HostedDiscordBot
         var context = new MuteCommandContext(Client, message, _services);
 
         // Apply generic message preproccessor
-        foreach (var pre in _services.GetServices<IMessagePreprocessor>())
-            await pre.Process(context);
+        var preprocessors = _services.GetServices<IMessagePreprocessor>().ToList();
+        foreach (var pre in preprocessors)
+        {
+            try
+            {
+                await pre.Process(context);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
 
         // Either process as command or try to process conversationally
         if (hasPrefix)

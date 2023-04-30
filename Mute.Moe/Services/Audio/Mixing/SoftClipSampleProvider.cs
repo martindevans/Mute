@@ -9,7 +9,7 @@ namespace Mute.Moe.Services.Audio.Mixing;
 /// <summary>
 /// Apply a soft clipping to the signal (so clipping does not generate unpleasant clicks)
 /// </summary>
-public class SoftClipSampleProvider
+public partial class SoftClipSampleProvider
     : ISampleProvider
 {
     private readonly ISampleProvider _upstream;
@@ -33,7 +33,7 @@ public class SoftClipSampleProvider
     /// <summary>
     /// Applies soft clipping to a signal
     /// </summary>
-    public sealed class OpusSoftClip
+    public sealed partial class OpusSoftClip
     {
         private readonly float[] _memory;
 
@@ -58,7 +58,8 @@ public class SoftClipSampleProvider
 #endif
         }
 
-        [DllImport("opus", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void opus_pcm_soft_clip(nint pcm, int frameSize, int channels, float[] softClipMem);
+        [LibraryImport("opus")]
+        [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+        private static partial void opus_pcm_soft_clip(nint pcm, int frameSize, int channels, float[] softClipMem);
     }
 }

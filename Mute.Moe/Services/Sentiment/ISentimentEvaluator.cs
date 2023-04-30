@@ -37,16 +37,22 @@ public readonly struct SentimentResult
         PositiveScore = positive;
         NeutralScore = neutral;
         ClassificationTime = time;
-
         ClassificationScore = Math.Max(negative, Math.Max(positive, neutral));
 
-        // ReSharper disable CompareOfFloatsByEqualityOperator
-        if (ClassificationScore == negative)
-            Classification = Sentiment.Negative;
-        else if (ClassificationScore == positive)
-            Classification = Sentiment.Positive;
-        else
+        if (ClassificationScore == 0)
+        {
             Classification = Sentiment.Neutral;
-        // ReSharper restore CompareOfFloatsByEqualityOperator
+        }
+        else
+        {
+            // ReSharper disable CompareOfFloatsByEqualityOperator
+            if (ClassificationScore == negative)
+                Classification = Sentiment.Negative;
+            else if (ClassificationScore == positive)
+                Classification = Sentiment.Positive;
+            else
+                Classification = Sentiment.Neutral;
+            // ReSharper restore CompareOfFloatsByEqualityOperator
+        }
     }
 }

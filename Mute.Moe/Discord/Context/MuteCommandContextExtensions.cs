@@ -6,10 +6,11 @@ namespace Mute.Moe.Discord.Context;
 
 public static class MuteCommandContextExtensions
 {
-    public static async Task<SentimentResult> Sentiment( this MuteCommandContext context)
+    public static async Task<SentimentResult> Sentiment(this MuteCommandContext context)
     {
-        var r = await context.GetOrAdd(async () => {
-            var sentiment = (ISentimentEvaluator)context.Services.GetRequiredService(typeof(ISentimentEvaluator));
+        var r = await context.GetOrAdd(async () =>
+        {
+            var sentiment = context.Services.GetRequiredService<ISentimentEvaluator>();
             return new SentimentResultContainer(await sentiment.Predict(context.Message.Content));
         });
 

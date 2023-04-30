@@ -21,3 +21,4 @@ Mute.Tests/obj
 /ml-models/sentiment/*.m
 /sfx
 /Mute.Moe/music_library
+/ml-models/audio/whisper/ggml-base.en.bin

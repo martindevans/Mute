@@ -132,7 +132,14 @@ public class STTConfig
         [UsedImplicitly] public string? Key;
     }
 
-    public MsCognitiveConfig? MsCognitive; 
+    public class WhisperConfig
+    {
+        [UsedImplicitly] public string? ModelPath;
+        [UsedImplicitly] public uint? Threads;
+    }
+
+    public MsCognitiveConfig? MsCognitive;
+    public WhisperConfig? Whisper;
 }
 
 public class MusicLibraryConfig

@@ -16,7 +16,7 @@ public class AsyncFileClip
 
     private readonly Task<FileInfo> _fileLoading;
 
-    public AsyncFileClip( Task<FileInfo> file, string name, Func<Task<ITrack?>>? track = null)
+    public AsyncFileClip(Task<FileInfo> file, string name, Func<Task<ITrack?>>? track = null)
     {
         _fileLoading = file;
         _track = track;

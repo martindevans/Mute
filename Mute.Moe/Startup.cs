@@ -39,6 +39,7 @@ using Mute.Moe.Discord.Services.Users;
 using Oddity;
 using Mute.Moe.Services.Host;
 using Mute.Moe.Services.LLM;
+using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
 
 namespace Mute.Moe;
@@ -63,6 +64,7 @@ public class Startup
         services.AddTransient<IDiceRoller, CryptoDiceRoller>();
         services.AddTransient<ISpacexInfo, OdditySpaceX>();
         services.AddTransient<ITextToSpeech, MicrosoftCognitiveTextToSpeech>();
+        services.AddTransient<ISpeechToText, WhisperSpeechToText>();
 
         services.AddSingleton(new OddityCore());
         services.AddSingleton<IFileSystem, FileSystem>();
@@ -101,6 +103,8 @@ public class Startup
 
         services.AddSingleton(s => new EnigmaResponse(s.GetRequiredService<ILargeLanguageModel>()));
         services.AddSingleton<IConversationPreprocessor>(s => s.GetRequiredService<EnigmaResponse>());
+
+        services.AddSingleton<IMessagePreprocessor, MobileAudioMessageTranscriptionPreprocessor>();
 
         //Eventually these should all become interface -> concrete type bindings
         services.AddSingleton<Status>();
