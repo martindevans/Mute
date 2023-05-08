@@ -62,11 +62,11 @@ public class Startup
 
         services.AddTransient<Random>();
         services.AddTransient<IDiceRoller, CryptoDiceRoller>();
-        services.AddTransient<ISpacexInfo, OdditySpaceX>();
-        services.AddTransient<ITextToSpeech, MicrosoftCognitiveTextToSpeech>();
+        services.AddTransient<ITextToSpeech, NullTextToSpeech>();
         services.AddTransient<ISpeechToText, WhisperSpeechToText>();
 
         services.AddSingleton(new OddityCore());
+        services.AddTransient<ISpacexInfo, OdditySpaceX>();
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddSingleton<HttpClient, HttpClient>();
         services.AddSingleton<IDatabaseService, SqliteDatabase>();

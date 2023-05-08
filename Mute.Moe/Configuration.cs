@@ -1,5 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
+using Microsoft.ML.OnnxRuntime;
 
 namespace Mute.Moe;
 
@@ -22,6 +23,7 @@ public class Configuration
     [UsedImplicitly] public MusicLibraryConfig? MusicLibrary;
     [UsedImplicitly] public OpenAIConfig? OpenAI;
     [UsedImplicitly] public LLMConfig? LLM;
+    [UsedImplicitly] public ONNXConfig? ONNX;
 
     [UsedImplicitly] public bool ProcessMessagesFromSelf;
     [UsedImplicitly] public char PrefixCharacter = '!';
@@ -137,8 +139,7 @@ public class STTConfig
         [UsedImplicitly] public string? ModelPath;
         [UsedImplicitly] public uint? Threads;
     }
-
-    public MsCognitiveConfig? MsCognitive;
+    
     public WhisperConfig? Whisper;
 }
 
@@ -158,4 +159,17 @@ public class LLMConfig
     [UsedImplicitly] public float? TopP;
     [UsedImplicitly] public float? Temperature;
     [UsedImplicitly] public float? TopK;
+}
+
+public class ONNXConfig
+{
+    public int? CudaDevice = null;
+
+    public SessionOptions? GetOptions()
+    {
+        if (CudaDevice is null or < 0)
+            return null;
+
+        return SessionOptions.MakeSessionOptionWithCudaProvider(CudaDevice.Value);
+    }
 }

@@ -21,8 +21,8 @@
     <PackageReference Include="MSTest.TestAdapter" Version="3.0.2" />
     <PackageReference Include="MSTest.TestFramework" Version="3.0.2" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
-    <PackageReference Include="System.IO.Abstractions" Version="19.2.18" />
-    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="19.2.18" />
+    <PackageReference Include="System.IO.Abstractions" Version="19.2.22" />
+    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="19.2.22" />
     <PackageReference Include="System.ServiceModel.Syndication" Version="7.0.0" />
   </ItemGroup>
 

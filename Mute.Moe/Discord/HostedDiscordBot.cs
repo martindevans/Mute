@@ -150,7 +150,7 @@ public class HostedDiscordBot
         var hasPrefix = message.HasCharPrefix(_config.PrefixCharacter, ref prefixPos);
 
         // Create a context for this message
-        var context = new MuteCommandContext(Client, message, _services);
+        await using var context = new MuteCommandContext(Client, message, _services);
 
         // Apply generic message preproccessor
         var preprocessors = _services.GetServices<IMessagePreprocessor>().ToList();

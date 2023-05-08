@@ -64,7 +64,7 @@ public class TicTacToe
         }
 
         //Check if player made a winning move
-        if (result.Value == GameState.OWins || result.Value == GameState.XWins)
+        if (result.Value is GameState.OWins or GameState.XWins)
         {
             await ReplyAsync(win);
             return false;

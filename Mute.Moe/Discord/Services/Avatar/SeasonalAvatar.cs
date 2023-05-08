@@ -33,7 +33,7 @@ public class SeasonalAvatar
         _config = config.Avatar.Avatars;
     }
 
-    public async Task<SeasonalAvatarPickResult> PickDaily()
+    public async Task<SeasonalAvatarPickResult> PickAvatar()
     {
         var now = DateTime.UtcNow.Date.DayOfYear;
 
@@ -65,7 +65,7 @@ public class SeasonalAvatar
             return;
 
         _cts = new CancellationTokenSource();
-        var _ = _cron.Interval(TimeSpan.FromHours(12), PickDaily, int.MaxValue, _cts.Token);
+        var _ = _cron.Interval(TimeSpan.FromHours(12), PickAvatar, int.MaxValue, _cts.Token);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

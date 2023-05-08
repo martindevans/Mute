@@ -101,7 +101,7 @@ public class Administration
     [ThinkingReply]
     public async Task RepickAvatar()
     {
-        var result = await _avatar.PickDaily();
+        var result = await _avatar.PickAvatar();
 
         if (result.Choice == null)
             await Context.Channel.SendMessageAsync($"Failed to choose an avatar from `{result.Options.Count}` options");

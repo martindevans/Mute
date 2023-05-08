@@ -55,6 +55,9 @@ public static class EmojiLookup
     public const string BlueBook = "📘";
     public const string OrangeBook = "📙";
 
+    public const string SpeechBalloon = "💬";
+    public const string SpeechBubble = "🗨";
+
     public const string CatFace = "🐱";
     public const string ScreamingCatFace = "🙀";
 }
