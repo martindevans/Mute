@@ -18,9 +18,9 @@ public class Administration
 {
     private readonly DiscordSocketClient _client;
     private readonly ConversationalResponseService _conversations;
-    private readonly SeasonalAvatar _avatar;
+    private readonly IAvatarPicker _avatar;
 
-    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, SeasonalAvatar avatar)
+    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar)
     {
         _client = client;
         _conversations = conversations;
@@ -101,7 +101,7 @@ public class Administration
     [ThinkingReply]
     public async Task RepickAvatar()
     {
-        var result = await _avatar.PickAvatar();
+        var result = await _avatar.PickAvatarNow();
 
         if (result.Choice == null)
             await Context.Channel.SendMessageAsync($"Failed to choose an avatar from `{result.Options.Count}` options");

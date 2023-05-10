@@ -94,18 +94,16 @@ public class Startup
         services.AddHostedService<IRssNotificationsSender, DatabaseRssNotificationsSender>();
         services.AddSingleton<ICron, InMemoryCron>();
         services.AddSingleton<IUserService, DiscordUserService>();
+        services.AddHostedService<IAvatarPicker, SeasonalAvatar>();
 
         services.AddSingleton(s => new EnigmaResponse(s.GetRequiredService<ILargeLanguageModel>()));
         services.AddSingleton<IConversationPreprocessor>(s => s.GetRequiredService<EnigmaResponse>());
 
         services.AddSingleton<IMessagePreprocessor, MobileAudioMessageTranscriptionPreprocessor>();
 
-        //Eventually these should all become interface -> concrete type bindings
         services.AddSingleton<Status>();
-        services
-            .AddSingleton<GameService>()
-            .AddSingleton<ConversationalResponseService>()
-            .AddSingleton<SeasonalAvatar>();
+        services.AddSingleton<ConversationalResponseService>();
+        services.AddHostedService<GameService>();
     }
 
     public void ConfigureServices(IServiceCollection services)

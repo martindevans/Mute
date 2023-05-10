@@ -8,12 +8,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Mute.Moe.Services.Host;
 
 namespace Mute.Moe.Discord.Services.Avatar;
 
 public class SeasonalAvatar
-    : IHostedService
+    : IAvatarPicker
 {
     private readonly ICron _cron;
     private readonly DiscordSocketClient _discord;
@@ -33,7 +32,7 @@ public class SeasonalAvatar
         _config = config.Avatar.Avatars;
     }
 
-    public async Task<SeasonalAvatarPickResult> PickAvatar()
+    public async Task<AvatarPickResult> PickAvatarNow()
     {
         var now = DateTime.UtcNow.Date.DayOfYear;
 
@@ -55,7 +54,7 @@ public class SeasonalAvatar
             await _discord.CurrentUser.ModifyAsync(self => self.Avatar = image);
         }
 
-        return new SeasonalAvatarPickResult(avatars, avatar);
+        return new AvatarPickResult(avatars, avatar);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -65,23 +64,11 @@ public class SeasonalAvatar
             return;
 
         _cts = new CancellationTokenSource();
-        var _ = _cron.Interval(TimeSpan.FromHours(12), PickAvatar, int.MaxValue, _cts.Token);
+        var _ = _cron.Interval(TimeSpan.FromHours(7), PickAvatarNow, int.MaxValue, _cts.Token);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         _cts?.Cancel();
-    }
-}
-
-public class SeasonalAvatarPickResult
-{
-    public IReadOnlyList<string> Options { get; }
-    public string? Choice { get; }
-
-    public SeasonalAvatarPickResult( IReadOnlyList<string> options, string? choice)
-    {
-        Options = options;
-        Choice = choice;
     }
 }
