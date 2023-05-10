@@ -1,22 +1,16 @@
 ﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Introspection.Uptime;
 
 public class UtcDifferenceUptime
     : IUptime
 {
-    public DateTime StartTimeUtc { get; private set; }
+    private DateTime CreationTimeUtc { get; }
 
-    public TimeSpan Uptime => DateTime.UtcNow - StartTimeUtc;
+    public TimeSpan Uptime => DateTime.UtcNow - CreationTimeUtc;
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public UtcDifferenceUptime()
     {
-        StartTimeUtc = DateTime.UtcNow;
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
+        CreationTimeUtc = DateTime.UtcNow;
     }
 }

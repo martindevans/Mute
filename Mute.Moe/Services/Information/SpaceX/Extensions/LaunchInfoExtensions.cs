@@ -101,6 +101,9 @@ public static class LaunchInfoExtensions
     public static string Summary(this LaunchInfo launch)
     {
         var date = DateString(launch.DateUtc, launch.DatePrecision);
+        if (launch.DateUtc < DateTime.UtcNow)
+            date = "";
+
         var num = launch.FlightNumber;
         var site = launch.Launchpad.Value.FullName;
         var name = launch.Name;

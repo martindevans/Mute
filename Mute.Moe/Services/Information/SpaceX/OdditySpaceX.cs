@@ -56,9 +56,13 @@ public class OdditySpaceX
              : result.Data.Single();
     }
 
-    public async Task<IReadOnlyList<LaunchInfo>> Upcoming()
+    public async Task<IReadOnlyList<LaunchInfo>> Upcoming(int limit)
     {
-        return await _oddity.LaunchesEndpoint.GetUpcoming().ExecuteAsync();
+        var launches = await _oddity.LaunchesEndpoint.GetUpcoming().ExecuteAsync();
+        while (launches.Count > limit)
+            launches.RemoveAt(launches.Count - 1);
+
+        return launches;
     }
 
     public async Task<RoadsterInfo> Roadster()

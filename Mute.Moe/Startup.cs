@@ -7,8 +7,6 @@ using Mute.Moe.Discord.Services.Games;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Groups;
-using Mute.Moe.Services.Images.Cats;
-using Mute.Moe.Services.Images.Dogs;
 using Mute.Moe.Services.Information.Anime;
 using Mute.Moe.Services.Information.Cryptocurrency;
 using Mute.Moe.Services.Information.Forex;
@@ -28,7 +26,6 @@ using Mute.Moe.Services.Notifications.RSS;
 using Mute.Moe.Services.Notifications.SpaceX;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Speech;
-using Mute.Moe.Services.Words;
 using System.Net.Http;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Context.Preprocessing;
@@ -71,15 +68,13 @@ public class Startup
         services.AddSingleton<HttpClient, HttpClient>();
         services.AddSingleton<IDatabaseService, SqliteDatabase>();
         services.AddHostedService<ISentimentEvaluator, NullSentiment>();
-        services.AddSingleton<ICatPictureProvider, CataasPictures>();
-        services.AddSingleton<IDogPictureService, DogceoPictures>();
         services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
         services.AddSingleton<IMangaInfo, MikibotAnilistMangaSearch>();
         services.AddSingleton<ICharacterInfo, MikibotAnilistCharacterSearch>();
         services.AddSingleton<ITransactions, DatabaseTransactions>();
         services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
         services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
-        services.AddHostedService<IUptime, UtcDifferenceUptime>();
+        services.AddSingleton<IUptime, UtcDifferenceUptime>();
         services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
         services.AddSingleton<IForexInfo, AlphaVantageForex>();
         services.AddSingleton<IStockSearch, AlphaVantageStockSearch>();
@@ -87,7 +82,6 @@ public class Startup
         services.AddSingleton<IReminders, DatabaseReminders>();
         services.AddHostedService<IReminderSender, AsyncReminderSender>();
         services.AddSingleton<IWikipedia, WikipediaApi>();
-        services.AddSingleton<IWords, HttpWordVectors>();
         services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
         services.AddHostedService<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
         services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
@@ -111,7 +105,6 @@ public class Startup
         services
             .AddSingleton<GameService>()
             .AddSingleton<ConversationalResponseService>()
-            .AddSingleton<WordsService>()
             .AddSingleton<SeasonalAvatar>();
     }
 

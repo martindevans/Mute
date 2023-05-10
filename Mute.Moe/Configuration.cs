@@ -11,17 +11,13 @@ public class Configuration
     [UsedImplicitly] public AlphaAdvantageConfig? AlphaAdvantage;
     [UsedImplicitly] public CoinMarketCapConfig? CoinMarketCap;
     [UsedImplicitly] public DatabaseConfig? Database;
-    [UsedImplicitly] public ElizaConfig? ElizaConfig;
     [UsedImplicitly] public SteamConfig? Steam;
-    [UsedImplicitly] public SoundEffectConfig? SoundEffects;
     [UsedImplicitly] public DictionaryConfig? Dictionary;
     [UsedImplicitly] public SentimentReactionConfig? SentimentReactions;
-    [UsedImplicitly] public WordVectorsConfig? WordVectors;
     [UsedImplicitly] public UrbanDictionaryConfig? UrbanDictionary;
     [UsedImplicitly] public TTSConfig? TTS;
     [UsedImplicitly] public STTConfig? STT;
     [UsedImplicitly] public MusicLibraryConfig? MusicLibrary;
-    [UsedImplicitly] public OpenAIConfig? OpenAI;
     [UsedImplicitly] public LLMConfig? LLM;
     [UsedImplicitly] public ONNXConfig? ONNX;
 
@@ -71,19 +67,9 @@ public class DatabaseConfig
     [UsedImplicitly] public string? ConnectionString;
 }
 
-public class ElizaConfig
-{
-    [UsedImplicitly] public string? Script;
-}
-
 public class SteamConfig
 {
     [UsedImplicitly] public string? WebApiKey;
-}
-
-public class SoundEffectConfig
-{
-    [UsedImplicitly] public string? SfxFolder;
 }
 
 public class DictionaryConfig
@@ -98,14 +84,6 @@ public class SentimentReactionConfig
     [UsedImplicitly] public double MentionReactionChance = 0.25;
 }
 
-public class WordVectorsConfig
-{
-    [UsedImplicitly] public string? WordVectorsBaseUrl;
-    [UsedImplicitly] public uint CacheSize;
-    [UsedImplicitly] public uint CacheMinTimeSeconds;
-    [UsedImplicitly] public uint CacheMaxTimeSeconds;
-}
-
 public class UrbanDictionaryConfig
 {
     [UsedImplicitly] public uint CacheSize;
@@ -115,25 +93,10 @@ public class UrbanDictionaryConfig
 
 public class TTSConfig
 {
-    public class MsCognitiveConfig
-    {
-        [UsedImplicitly] public string? Region;
-        [UsedImplicitly] public string? Key;
-        [UsedImplicitly] public string? Language;
-        [UsedImplicitly] public string? Voice;
-    }
-
-    public MsCognitiveConfig? MsCognitive; 
 }
 
 public class STTConfig
 {
-    public class MsCognitiveConfig
-    {
-        [UsedImplicitly] public string? Region;
-        [UsedImplicitly] public string? Key;
-    }
-
     public class WhisperConfig
     {
         [UsedImplicitly] public string? ModelPath;
@@ -146,11 +109,6 @@ public class STTConfig
 public class MusicLibraryConfig
 {
     [UsedImplicitly] public string? MusicFolder;
-}
-
-public class OpenAIConfig
-{
-    [UsedImplicitly] public string? ApiKey;
 }
 
 public class LLMConfig

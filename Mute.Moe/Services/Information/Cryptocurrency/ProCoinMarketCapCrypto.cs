@@ -30,7 +30,7 @@ public class ProCoinMarketCapCrypto
     private readonly HttpClient _http;
     private readonly string _key;
 
-    public ProCoinMarketCapCrypto( Configuration config,  IHttpClientFactory http)
+    public ProCoinMarketCapCrypto(Configuration config, IHttpClientFactory http)
     {
         if (config.CoinMarketCap == null)
             throw new ArgumentNullException(nameof(config.CoinMarketCap));

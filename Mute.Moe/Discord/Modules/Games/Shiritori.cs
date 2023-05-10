@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
@@ -7,7 +8,6 @@ using JetBrains.Annotations;
 using MoreLinq;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
-using Mute.Moe.Services.Words;
 
 namespace Mute.Moe.Discord.Modules.Games;
 
@@ -17,12 +17,17 @@ namespace Mute.Moe.Discord.Modules.Games;
 public class Shiritori
     : BaseModule
 {
-    private readonly WordsService _words;
+    private readonly HashSet<string> _words;
     private readonly Random _random;
 
-    public Shiritori(WordsService words, Random random)
+    public Shiritori(Configuration config, Random random)
     {
-        _words = words;
+        if (config.Dictionary == null)
+            throw new ArgumentNullException(nameof(config.Dictionary));
+        if (config.Dictionary.WordListPath == null)
+            throw new ArgumentNullException(nameof(config.Dictionary.WordListPath));
+
+        _words = new(File.ReadAllLines(config.Dictionary.WordListPath));
         _random = random;
     }
 
@@ -114,7 +119,7 @@ public class Shiritori
                 return;
             }
 
-            //Check that this word is in the dictionary or if it's not, check if it's got a valid word vector
+            //Check that this word is in the dictionary
             if (!_words.Contains(theirWord))
             {
                 await TypingReplyAsync("That's not a real word! I win :D");
@@ -133,7 +138,7 @@ public class Shiritori
     {
         //Pick a random starting word
         if (previous == null)
-            return _words.Words.Where(a => a.Length >= 4).Random(_random);
+            return _words.Where(a => a.Length >= 4).Random(_random);
 
         //Even in hard mode occasionally default back to normal mode, just to mix it up a bit
         if (_random.NextDouble() < values.RevertToNormalChance)
@@ -146,7 +151,6 @@ public class Shiritori
         //Get set of all valid words
         var targetChar = previous.Last();
         var nextWords = _words
-            .Words
             .Where(a => a.Length >= values.MinWordLength && a.Length <= values.MaxWordLength && _random.NextDouble() > values.PerWordSkipChance)
             .Where(a => a[0] == targetChar)
             .Where(a => !played.Contains(a));
@@ -154,7 +158,6 @@ public class Shiritori
         switch (mode)
         {
             //Pick a random valid word.
-            //This uses almost the same set of words every time (only changing when a word is used) to improve cache hits in the word vector similarity lookup.
             case Mode.Easy:
             case Mode.Normal: {
                 return SelectWord(nextWords.Take(350));

@@ -14,7 +14,7 @@ public interface ISpacexInfo
 
     Task<CoreInfo?> Core(string id);
 
-    Task<IReadOnlyList<LaunchInfo>> Upcoming();
+    Task<IReadOnlyList<LaunchInfo>> Upcoming(int limit);
 
     Task<RoadsterInfo> Roadster();
 }

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-
 namespace Mute.Moe.Extensions;
 
 public static class StringExtensions
@@ -57,9 +56,7 @@ public static class StringExtensions
     public static string SHA256(this string str)
     {
         var result = new StringBuilder();
-
-        using var hash = System.Security.Cryptography.SHA256.Create();
-        var bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(str));
+        var bytes = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(str));
 
         foreach (var b in bytes)
             result.Append(b.ToString("x2"));

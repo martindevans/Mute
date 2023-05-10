@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 
-
 namespace Mute.Moe.Extensions;
 
 public static class IReadonlyListExtensions

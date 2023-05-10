@@ -69,7 +69,7 @@ public class SpaceX
         }
         else
         {
-            var launches = (await _spacex.Upcoming()).Where(a => a.DateUtc.HasValue).OrderBy(a => a.FlightNumber).Take(count).ToArray();
+            var launches = (await _spacex.Upcoming(count)).Where(a => a.DateUtc.HasValue).OrderBy(a => a.FlightNumber).Take(count).ToArray();
             await DisplayItemList(
                 launches,
                 () => "There are no upcoming SpaceX launches!",

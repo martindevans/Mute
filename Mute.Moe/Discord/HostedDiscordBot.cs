@@ -129,7 +129,7 @@ public class HostedDiscordBot
         await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken = default)
+    public async Task StopAsync()
     {
         await Client.LogoutAsync();
         await Client.StopAsync();

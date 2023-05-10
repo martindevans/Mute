@@ -17,10 +17,10 @@ internal class DiscordUserService
     public DiscordUserService(DiscordSocketClient client)
     {
         _client = client;
-        var cacheUsers = new FluidCache<IUser>(1024, TimeSpan.FromHours(1), TimeSpan.FromDays(7), () => DateTime.UtcNow);
+        var cacheUsers = new FluidCache<IUser>(128, TimeSpan.FromHours(1), TimeSpan.FromDays(1), () => DateTime.UtcNow);
         _itemById = cacheUsers.AddIndex("id", a => a.Id);
 
-        var cacheGuildUsers = new FluidCache<IGuildUser>(1024, TimeSpan.FromHours(1), TimeSpan.FromDays(7), () => DateTime.UtcNow);
+        var cacheGuildUsers = new FluidCache<IGuildUser>(128, TimeSpan.FromHours(1), TimeSpan.FromDays(1), () => DateTime.UtcNow);
         _itemByGuildAndId = cacheGuildUsers.AddIndex("guildAndId", a => (a.GuildId, a.Id));
     }
 
