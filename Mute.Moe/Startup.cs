@@ -33,7 +33,6 @@ using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses.Enigma;
 using Mute.Moe.Discord.Services.Users;
-using Oddity;
 using Mute.Moe.Services.Host;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.Speech.STT;
@@ -62,8 +61,7 @@ public class Startup
         services.AddTransient<ITextToSpeech, NullTextToSpeech>();
         services.AddTransient<ISpeechToText, WhisperSpeechToText>();
 
-        services.AddSingleton(new OddityCore());
-        services.AddTransient<ISpacexInfo, OdditySpaceX>();
+        services.AddTransient<ISpacexInfo, LL2SpaceX>();
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddSingleton<HttpClient, HttpClient>();
         services.AddSingleton<IDatabaseService, SqliteDatabase>();
@@ -83,7 +81,7 @@ public class Startup
         services.AddHostedService<IReminderSender, AsyncReminderSender>();
         services.AddSingleton<IWikipedia, WikipediaApi>();
         services.AddSingleton<ISpacexNotifications, DatabaseSpacexNotifications>();
-        services.AddHostedService<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
+        //todo:services.AddHostedService<ISpacexNotificationsSender, AsyncSpacexNotificationsSender>();
         services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
         services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();
         services.AddSingleton<IGuildVoiceCollection, InMemoryGuildVoiceCollection>();

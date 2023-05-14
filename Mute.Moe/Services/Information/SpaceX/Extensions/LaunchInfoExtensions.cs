@@ -1,22 +1,20 @@
 ﻿using System;
 using System.Globalization;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Humanizer;
 using Mute.Moe.Extensions;
-using Oddity.Models.Launches;
 
 namespace Mute.Moe.Services.Information.SpaceX.Extensions;
 
 public static class LaunchInfoExtensions
 {
-    public static async Task<EmbedBuilder> DiscordEmbed(this Task<LaunchInfo?> launch, Random rng)
+    public static async Task<EmbedBuilder> DiscordEmbed(this Task<ILaunchInfo?> launch, Random rng)
     {
         return (await launch).DiscordEmbed(rng);
     }
 
-    public static EmbedBuilder DiscordEmbed(this LaunchInfo? launch, Random rng)
+    public static EmbedBuilder DiscordEmbed(this ILaunchInfo? launch, Random rng)
     {
         var builder = new EmbedBuilder()
             .WithFooter("🚀 https://github.com/r-spacex/SpaceX-API");
@@ -27,45 +25,34 @@ public static class LaunchInfoExtensions
             return builder;
         }
 
-        var icon = launch.Links.Patch.Large ?? launch.Links.Patch.Small;
-        var url = launch.Links.Wikipedia ?? launch.Links.Reddit.Campaign ?? launch.Links.Reddit.Launch ?? launch.Links.Presskit;
-        var upcoming = launch.Upcoming.HasValue && launch.Upcoming.Value;
+        var upcoming = launch.Upcoming;
         var success = launch.Success.HasValue && launch.Success.Value;
 
         builder = builder
             .WithTitle(launch.Name)
-            .WithDescription(launch.Details)
-            .WithUrl(url)
-            .WithAuthor($"Flight {launch.FlightNumber}", icon, icon)
+            .WithDescription(launch.Description)
             .WithColor(upcoming ? Color.Blue : success ? Color.Green : Color.Red);
 
-        var img = launch.Links.Flickr.Original.Append(launch.Links.Patch.Large).Where(a => a != null).Random(rng);
+        var img = launch.Images.Random(rng);
         if (img != null)
             builder.WithImageUrl(img);
 
-        var crew = launch.Crew;
-        if (crew is {Count: > 0})
-            builder.AddField("Crew", string.Join(", ", crew.Select(a => a.Value.Name)), true);
-
-        var site = launch.Launchpad.Value.FullName ?? launch.Launchpad.Value.Name;
+        var site = launch.LaunchPad.Name;
         if (!string.IsNullOrWhiteSpace(site))
-            builder = builder.AddField("Launch Site", site);
+        {
+            if (launch.LaunchPad.MapUrl != null)
+                builder = builder.AddField("Launch Site", $"[{site}]({launch.LaunchPad.MapUrl})");
+            else
+                builder = builder.AddField("Launch Site", site);
+        }
 
         if (launch.DateUtc.HasValue)
         {
             var date = launch.DateUtc.Value.ToString("HH\\:mm UTC dd-MMM-yyyy");
 
-            if (!(launch.Upcoming ?? true))
+            if (!launch.Upcoming)
             {
                 builder.AddField("Launch Date", date);
-            }
-            else if (launch.NotEarlierThan ?? false)
-            {
-                builder.AddField("Launch Date", $"NET {date}");
-            }
-            else if (launch.DatePrecision is > DatePrecision.Hour)
-            {
-                builder.AddField("Launch Date", $"Uncertain  - scheduled for {date} ± 1 {launch.DatePrecision}");
             }
             else
             {
@@ -74,41 +61,19 @@ public static class LaunchInfoExtensions
             }
         }
 
-        if (launch.Cores.Any(a => a.Landpad.Value != null))
-            builder.AddField("Landing Pad", string.Join(",", launch.Cores.Where(a => a.Landpad.Value != null).Select(a => a.Landpad.Value.Name)), true);
-
-        if (launch.Cores.Any(a => a.Core.Value != null))
-            builder.AddField("Vehicle", string.Join(",", launch.Cores.Where(a => a.Core.Value != null).Select(a => $"{a.Core.Value.Serial}")), true);
-
-        // Definition of "re-use" depends upon if the launch has happened yet. If it's a past launch count how many missions the core had done before this one.
-        if (launch.Upcoming.HasValue)
-        {
-            if (launch.Upcoming.Value)
-            {
-                if (launch.Cores.Any(a => a.Core.Value != null))
-                    builder.AddField("Previous Flights", string.Join(",", launch.Cores.Where(a => a.Core.Value != null).Select(a => a.Core.Value.ReuseCount).Where(a => a.HasValue)));
-            }
-            else if (launch.DateUnix.HasValue)
-            {
-                var previous = launch.Cores.Select(a => a.Core.Value.Launches.Where(l => l.Value.DateUnix.HasValue).Count(l => l.Value.DateUnix < launch.DateUnix));
-                builder.AddField("Previous Flights", string.Join(",", previous));
-            }
-        }
-
         return builder;
     }
 
-    public static string Summary(this LaunchInfo launch)
+    public static string Summary(this ILaunchInfo launch)
     {
         var date = DateString(launch.DateUtc, launch.DatePrecision);
         if (launch.DateUtc < DateTime.UtcNow)
             date = "";
 
-        var num = launch.FlightNumber;
-        var site = launch.Launchpad.Value.FullName;
+        var site = launch.LaunchPad.Name;
         var name = launch.Name;
-        var type = launch.Rocket.Value.Name;
-        return $"Flight {num}: `{name}` from `{site}` on a {type} rocket {date}";
+        var type = launch.Vehicle.Name;
+        return $"- `{name}` from `{site}` on a {type} rocket {date}";
     }
 
     private static string DateString(DateTime? date, DatePrecision? precision)
@@ -116,7 +81,7 @@ public static class LaunchInfoExtensions
         if (!date.HasValue)
             return "";
 
-        if (!precision.HasValue)
+        if (!precision.HasValue || precision.Value <= DatePrecision.Minute)
             return date.Value.Humanize();
 
         switch (precision.Value)
@@ -143,7 +108,7 @@ public static class LaunchInfoExtensions
 
             case DatePrecision.Unknown:
             default:
-                throw new NotSupportedException($"Unknown tenatative date time `{precision.Value}`");
+                throw new NotSupportedException($"Tenatative date time `{precision.Value}`, unknown precision");
         }
     }
 }

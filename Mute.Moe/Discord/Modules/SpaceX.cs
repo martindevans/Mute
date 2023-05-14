@@ -26,39 +26,18 @@ public class SpaceX
         _rng = rng;
     }
 
-    [Command("core"), Alias("booster"), Summary("I will tell you about a specific SpaceX vehicle")]
-    public async Task CoreDetails(string id)
-    {
-        var details = await _spacex.Core(id)
-                      ?? await _spacex.Core($"B{id}");
-        if (details == null)
-        {
-            await TypingReplyAsync("There doesn't seem to be a core by that ID");
-            return;
-        }
+    //[Command("details"), Alias("flight-no", "flight-num", "mission", "flight"), Summary("I will tell you about a specific spacex launch")]
+    //public async Task LaunchDetails(uint id)
+    //{
+    //    var launch = await _spacex.Launch(id);
+    //    if (launch == null)
+    //    {
+    //        await TypingReplyAsync("There doesn't seem to be a flight by that ID");
+    //        return;
+    //    }
 
-        var embed = await details.DiscordEmbed();
-        var msg = await ReplyAsync(embed);
-
-        if (details.Launches is {Count: > 1})
-        {
-            var embed2 = await details.AugmentDiscordEmbed(embed);
-            await msg.ModifyAsync(p => p.Embed = embed2.Build());
-        }
-    }
-
-    [Command("details"), Alias("flight-no", "flight-num", "mission", "flight"), Summary("I will tell you about a specific spacex launch")]
-    public async Task LaunchDetails(uint id)
-    {
-        var launch = await _spacex.Launch(id);
-        if (launch == null)
-        {
-            await TypingReplyAsync("There doesn't seem to be a flight by that ID");
-            return;
-        }
-
-        await ReplyAsync(launch.DiscordEmbed(_rng));
-    }
+    //    await ReplyAsync(launch.DiscordEmbed(_rng));
+    //}
 
     [Command("next"), Alias("upcoming"), Summary("I will tell you about the next spacex launch(es)")]
     public async Task NextLaunches(int count = 1)
@@ -69,7 +48,7 @@ public class SpaceX
         }
         else
         {
-            var launches = (await _spacex.Upcoming(count)).Where(a => a.DateUtc.HasValue).OrderBy(a => a.FlightNumber).Take(count).ToArray();
+            var launches = (await _spacex.Upcoming(count)).Where(a => a.DateUtc.HasValue).OrderBy(a => a.MissionNumber).Take(count).ToArray();
             await DisplayItemList(
                 launches,
                 () => "There are no upcoming SpaceX launches!",
@@ -77,12 +56,6 @@ public class SpaceX
                 (l, _) => l.Summary()
             );
         }
-    }
-
-    [Command("roadster"), Summary("I will tell you about the spacex roadster")]
-    public async Task Roadster()
-    {
-        await ReplyAsync(await _spacex.Roadster().DiscordEmbed(_rng));
     }
 
     [Command("subscribe"), RequireOwner]
