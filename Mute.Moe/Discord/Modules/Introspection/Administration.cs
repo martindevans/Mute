@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -6,6 +7,7 @@ using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
+using Mute.Moe.Discord.Services.ComponentActions;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
 
@@ -19,12 +21,14 @@ public class Administration
     private readonly DiscordSocketClient _client;
     private readonly ConversationalResponseService _conversations;
     private readonly IAvatarPicker _avatar;
+    private readonly ComponentActionService _actions;
 
-    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar)
+    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar, ComponentActionService actions)
     {
         _client = client;
         _conversations = conversations;
         _avatar = avatar;
+        _actions = actions;
     }
 
     [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -107,5 +111,65 @@ public class Administration
             await Context.Channel.SendMessageAsync($"Failed to choose an avatar from `{result.Options.Count}` options");
         else
             await Context.Channel.SendMessageAsync($"Chose `{result.Choice}` from `{result.Options.Count}` options");
+    }
+
+    [Command("DeleteThat")]
+    public async Task DeleteThat(string id)
+    {
+        var msg = await Context.Channel.GetMessageAsync(ulong.Parse(id));
+        await msg.DeleteAsync();
+    }
+
+    [Command("test-ui")]
+    public async Task TestUI()
+    {
+        var builder = new ComponentBuilder();
+
+        builder.AddRow(new ActionRowBuilder()
+                      .WithButton("Primary", style: ButtonStyle.Primary, customId: "a")
+                      .WithButton("Secondary", style: ButtonStyle.Secondary, customId: "b")
+                      .WithButton("Danger", style: ButtonStyle.Danger, customId: "c")
+        );
+
+        builder.AddRow(new ActionRowBuilder()
+                      .WithButton("Link", style: ButtonStyle.Link, url: "https://placeholder.software")
+                      .WithButton("Success", style: ButtonStyle.Success, customId: "d")
+        );
+
+        builder.AddRow(new ActionRowBuilder()
+           .WithSelectMenu("e", minValues: 1, maxValues: 3, options: new()
+            {
+                new SelectMenuOptionBuilder("Label A", "A"),
+                new SelectMenuOptionBuilder("Label B", "B"),
+                new SelectMenuOptionBuilder("Label C", "C"),
+            })
+        );
+
+        builder.AddRow(new ActionRowBuilder()
+           .WithSelectMenu("f", minValues: 1, maxValues: 3, type: ComponentType.UserSelect)
+        );
+
+        var result = await ReplyWithActionsAsync(builder, "Here are some buttons!");
+        await result.RespondAsync($"You clicked on: {result.Data.CustomId}");
+    }
+
+    async Task<SocketMessageComponent> ReplyWithActionsAsync(ComponentBuilder builder, string? message = null)
+    {
+        // Get a waiter for every action in the builder
+        var ids = builder.ActionRows.SelectMany(a => a.Components).Select(c => c.CustomId).Where(a => a != null).ToList();
+        var tasks = ids.Select(_actions.GetWaiter).ToList();
+
+        // Send the message
+        var msg = await ReplyAsync(message, components: builder.Build());
+
+        // Wait for something to come back
+        var finished = await Task.WhenAny(tasks);
+
+        // Destroy the original
+        foreach (var id in ids)
+            _actions.DestroyWaiter(id);
+        await msg.DeleteAsync();
+
+        return await finished;
     }
 }

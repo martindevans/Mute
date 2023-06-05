@@ -37,6 +37,10 @@ using Mute.Moe.Services.Host;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
+using Mute.Moe.Discord.Services.ComponentActions;
+using Mute.Moe.Discord.Services.ComponentActions.Responses;
+using Mute.Moe.Services.ImageGen;
+using Mute.Moe.Services.RateLimit;
 
 namespace Mute.Moe;
 
@@ -61,6 +65,8 @@ public class Startup
         services.AddTransient<ITextToSpeech, NullTextToSpeech>();
         services.AddTransient<ISpeechToText, WhisperSpeechToText>();
 
+        services.AddTransient<IImageGenerator, Automatic1111>();
+        services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddTransient<ISpacexInfo, LL2SpaceX>();
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddSingleton<HttpClient, HttpClient>();
@@ -102,6 +108,9 @@ public class Startup
         services.AddSingleton<Status>();
         services.AddSingleton<ConversationalResponseService>();
         services.AddHostedService<GameService>();
+        services.AddSingleton<ComponentActionService>();
+
+        services.AddSingleton<TimeResponder>();
     }
 
     public void ConfigureServices(IServiceCollection services)

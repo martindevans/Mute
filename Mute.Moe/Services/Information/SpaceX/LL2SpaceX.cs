@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.SpaceX;
@@ -14,9 +14,9 @@ public class LL2SpaceX
     private readonly string BaseUrl = "https://ll.thespacedevs.com";
     private readonly HttpClient _http;
 
-    public LL2SpaceX(IHttpClientFactory httpFactory)
+    public LL2SpaceX(IHttpClientFactory http)
     {
-        _http = httpFactory.CreateClient();
+        _http = http.CreateClient();
 
         if (Debugger.IsAttached)
             BaseUrl = "https://lldev.thespacedevs.com";
@@ -24,28 +24,8 @@ public class LL2SpaceX
 
     public async Task<ILaunchInfo?> NextLaunch()
     {
-        var json = await _http.GetStringAsync($"{BaseUrl}/2.2.0/launch/upcoming?search=SpaceX");
-        var model = JsonConvert.DeserializeObject<LaunchCollectionModel>(json);
-        if (model == null)
-            return null;
-
-        var now = DateTime.UtcNow;
-        await foreach (var item in model.Enumerate(_http).Take(25))
-        {
-            if (!item.Upcoming)
-                continue;
-
-            if (item.DateUtc.HasValue && item.DateUtc.Value > now)
-                return item;
-
-            if (!Enum.TryParse<DatePrecision>(item.NetPrecision?.Name ?? "", out var netPrecision))
-                continue;
-
-            if (item.DateUtc > now && netPrecision != DatePrecision.Unknown && netPrecision <= DatePrecision.Day)
-                return item;
-        }
-
-        return null;
+        var launches = await Upcoming(1);
+        return launches.Count > 0 ? launches[0] : null;
     }
 
     public async Task<IReadOnlyList<ILaunchInfo>> Upcoming(int limit)
@@ -76,14 +56,13 @@ public class LL2SpaceX
         return results;
     }
 
+    #region model
     private class LaunchCollectionModel
     {
-        public int Count;
-
-        public string? Next;
-        public string? Previous;
-
-        public List<LaunchModel?>? Results;
+        [JsonProperty("count")] private int _count;
+        [JsonProperty("next")] private string? _next;
+        [JsonProperty("previous")] private string? _previous;
+        [JsonProperty("results")] private List<LaunchModel?>? _results;
 
         public async IAsyncEnumerable<LaunchModel> Enumerate(HttpClient http)
         {
@@ -91,14 +70,14 @@ public class LL2SpaceX
 
             while (page != null)
             {
-                if (Results != null)
-                    foreach (var item in Results)
+                if (_results != null)
+                    foreach (var item in _results)
                         if (item != null)
                             yield return item;
 
-                if (page.Next != null)
+                if (page._next != null)
                 {
-                    var json = await http.GetStringAsync(page.Next);
+                    var json = await http.GetStringAsync(page._next);
                     page = JsonConvert.DeserializeObject<LaunchCollectionModel>(json);
                 }
                 else
@@ -111,19 +90,19 @@ public class LL2SpaceX
         : ILaunchInfo
     {
         [JsonProperty("id")] private string _id = null!;
+        [JsonProperty("url")] private string _url = null!;
         [JsonProperty("name")] private string? _name;
         [JsonProperty("image")] private string? _image;
-        [JsonProperty("pad")] private LaunchPad _pad = null!;
-        [JsonProperty("rocket")] private Vehicle _vehicle = null!;
+        [JsonProperty("pad")] private LaunchPadInfo _pad = null!;
+        [JsonProperty("rocket")] private VehicleInfo _vehicle = null!;
         [JsonProperty("net")] private DateTime? _net;
-        [JsonProperty("net_precision")] public NetPrecision? NetPrecision = null!;
+        [JsonProperty("net_precision")] public NetPrecision? NetPrecision;
+        [JsonProperty("mission")] private MissionInfo? _mission;
+        [JsonProperty("status")] private StatusContainer _status = null!;
 
         public string ID => _id;
-        public string Name => Mission?.Name ?? _name ?? "";
-
-        public long MissionNumber => Mission?.ID ?? 0;
-
-        public string Url = null!;
+        public string Name => _mission?.Name ?? _name ?? "";
+        public long MissionNumber => _mission?.ID ?? 0;
 
         public IEnumerable<string> Images
         {
@@ -134,13 +113,8 @@ public class LL2SpaceX
             }
         }
 
-        public MissionInfo Mission = null!;
-
-        public StatusContainer Status = null!;
-
-
-        public bool Upcoming => Status.Id is LaunchStatus.TBD or LaunchStatus.GoForLaunch;
-        public bool? Success => Upcoming ? null : Status.Id == LaunchStatus.Successful;
+        public bool Upcoming => _status.Status is LaunchStatus.TBD or LaunchStatus.GoForLaunch;
+        public bool? Success => Upcoming ? null : _status.Status == LaunchStatus.Successful;
 
         public DateTime? DateUtc => _net;
 
@@ -154,27 +128,38 @@ public class LL2SpaceX
             }
         }
 
-        public string Description => Mission?.Description ?? "";
+        public string Description => _mission?.Description ?? "";
 
         public ILaunchPadInfo LaunchPad => _pad;
         public IVehicleInfo Vehicle => _vehicle;
     }
 
+    [UsedImplicitly]
     private class NetPrecision
     {
-        public string? Name;
+        [JsonProperty("name")] private string? _name;
+
+        public string? Name => _name;
     }
 
+    [UsedImplicitly]
     private class MissionInfo
     {
-        public long ID;
-        public string Name = null!;
-        public string? Description;
+        [JsonProperty("id")] private long _id;
+        [JsonProperty("name")] private string _name = null!;
+        [JsonProperty("description")] private string? _description;
+
+        public long ID => _id;
+        public string Name => _name;
+        public string? Description => _description;
     }
 
+    [UsedImplicitly]
     private class StatusContainer
     {
-        public LaunchStatus Id;
+        [JsonProperty("id")] private LaunchStatus _status;
+
+        public LaunchStatus Status => _status;
     }
 
     private enum LaunchStatus
@@ -185,7 +170,7 @@ public class LL2SpaceX
         Failed = 4,
     }
 
-    private class LaunchPad
+    private class LaunchPadInfo
         : ILaunchPadInfo
     {
         [JsonProperty("id")] private long _id;
@@ -199,7 +184,7 @@ public class LL2SpaceX
         public double Latitude => _latitude;
     }
 
-    private class Vehicle
+    private class VehicleInfo
         : IVehicleInfo
     {
         [JsonProperty("id")] private long _id;
@@ -219,4 +204,5 @@ public class LL2SpaceX
         public string Family => _family ?? "";
         public string Url => _url ?? "";
     }
+    #endregion
 }

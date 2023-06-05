@@ -60,4 +60,6 @@ public static class EmojiLookup
 
     public const string CatFace = "🐱";
     public const string ScreamingCatFace = "🙀";
+
+    public const string ArtistPalette = "🎨";
 }

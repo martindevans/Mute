@@ -20,6 +20,7 @@ public class Configuration
     [UsedImplicitly] public MusicLibraryConfig? MusicLibrary;
     [UsedImplicitly] public LLMConfig? LLM;
     [UsedImplicitly] public ONNXConfig? ONNX;
+    [UsedImplicitly] public Automatic1111Config? Automatic1111;
 
     [UsedImplicitly] public bool ProcessMessagesFromSelf;
     [UsedImplicitly] public char PrefixCharacter = '!';
@@ -130,4 +131,9 @@ public class ONNXConfig
 
         return SessionOptions.MakeSessionOptionWithCudaProvider(CudaDevice.Value);
     }
+}
+
+public class Automatic1111Config
+{
+    public string Url = null!;
 }
