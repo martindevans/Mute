@@ -1,6 +1,8 @@
-﻿using Autofocus;
+﻿using System;
+using Autofocus;
 using System.IO;
 using System.Threading.Tasks;
+using static Mute.Moe.Services.ImageGen.IImageGenerator;
 
 namespace Mute.Moe.Services.ImageGen
 {
@@ -14,12 +16,12 @@ namespace Mute.Moe.Services.ImageGen
             _api = new StableDiffusion(config.Automatic1111?.Url);
         }
 
-        public async Task<Stream> GenerateImage(int seed, string positive, string negative)
+        public async Task<Stream> GenerateImage(int seed, string positive, string negative, Func<ProgressReport, Task>? progressReporter = null)
         {
             var model = await _api.StableDiffusionModel("cardosAnime_v20");
             var sampler = await _api.Sampler("DPM++ SDE");
 
-            var result = await _api.TextToImage(
+            var resultTask = _api.TextToImage(
                 new()
                 {
                     Seed = new() { Seed = seed },
@@ -44,6 +46,21 @@ namespace Mute.Moe.Services.ImageGen
                 }
             );
 
+            if (progressReporter != null)
+            {
+                while (!resultTask.IsCompleted)
+                {
+                    var progress = await _api.Progress();
+                    await progressReporter(new ProgressReport(
+                        (float)progress.Progress,
+                        progress.CurrentImage == null ? null : new MemoryStream(progress.CurrentImage.Data.ToArray())
+                    ));
+
+                    await Task.Delay(250);
+                }
+            }
+
+            var result = await resultTask;
             return new MemoryStream(result.Images[0].Data.ToArray());
         }
     }
