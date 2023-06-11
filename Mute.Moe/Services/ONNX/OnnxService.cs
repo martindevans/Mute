@@ -1,6 +1,4 @@
-﻿using Microsoft.ML.OnnxRuntime;
-
-namespace Mute.Moe.Services.ONNX;
+﻿namespace Mute.Moe.Services.ONNX;
 
 //internal class OnnxService
 //{

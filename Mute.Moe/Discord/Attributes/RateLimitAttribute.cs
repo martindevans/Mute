@@ -5,6 +5,9 @@ using Mute.Moe.Services.RateLimit;
 
 namespace Mute.Moe.Discord.Attributes;
 
+/// <summary>
+/// Prevent a command from being used more often than a certain cooldown
+/// </summary>
 public class RateLimitAttribute
     : PreconditionAttribute
 {

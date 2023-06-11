@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Services.Information.SpaceX;
 using Mute.Moe.Services.Information.SpaceX.Extensions;
-using Mute.Moe.Services.Notifications.SpaceX;
 
 namespace Mute.Moe.Discord.Modules;
 
@@ -16,13 +14,11 @@ public class SpaceX
     : BaseModule
 {
     private readonly ISpacexInfo _spacex;
-    private readonly ISpacexNotifications _notifications;
     private readonly Random _rng;
 
-    public SpaceX(ISpacexInfo spacex, ISpacexNotifications notifications, Random rng)
+    public SpaceX(ISpacexInfo spacex, Random rng)
     {
         _spacex = spacex;
-        _notifications = notifications;
         _rng = rng;
     }
 
@@ -56,12 +52,5 @@ public class SpaceX
                 (l, _) => l.Summary()
             );
         }
-    }
-
-    [Command("subscribe"), RequireOwner]
-    public async Task Subscribe(IRole? role = null)
-    {
-        await _notifications.Subscribe(Context.Channel.Id, role?.Id);
-        await TypingReplyAsync("Subscribed to receive SpaceX mission updates");
     }
 }

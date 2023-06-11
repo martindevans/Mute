@@ -233,7 +233,6 @@ public class HostedDiscordBot
         services.AddSingleton<BaseDiscordClient>(client);
         services.AddSingleton<IDiscordClient>(client);
 
-        services.AddTransient<IUnsuccessfulCommandPostprocessor, EnhanceYourChill>();
         services.AddTransient<IUnsuccessfulCommandPostprocessor, DisplayCommandError>();
     }
 }

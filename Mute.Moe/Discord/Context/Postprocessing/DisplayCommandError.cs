@@ -37,21 +37,21 @@ public class DisplayCommandError
 
             inputCmd = inputCmd.TrimStart(_config.PrefixCharacter);
 
-            //Take a random command from the group of commands which are closest
+            // Take a random command from the group of commands which are closest
             var closest = _commands.Commands
                 .Select(c => new { c, d = c.Aliases.Append(c.Name).Min(n => n.Levenshtein(inputCmd)) })
                 .GroupBy(a => a.d)
                 .MinBy(a => a.Key)
                 .Random(_random);
 
-            //If we can't find a command, or the one we found has too many differences to be considered, just exit out
+            // If we can't find a command, or the one we found has too many differences to be considered, just exit out
             if (closest == null || closest.d >= inputCmd.Length * 0.5)
             {
                 await context.Channel.SendMessageAsync("I don't know that command :confused:");
                 return false;
             }
 
-            //Suggest a potential matched command
+            // Suggest a potential matched command
             await context.Channel.TypingReplyAsync("I don't know that command, did you mean:", embed: Help.FormatCommandDetails(context, _prefix, new[] { closest.c }).Build());
         }
         else

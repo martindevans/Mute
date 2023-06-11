@@ -179,7 +179,7 @@ public static class FuzzyParsing
                 if (!DateTime.TryParse(value, out var moment))
                     return null;
 
-                moment += ApplyTimezone(resolutionValues);
+                moment = DateTime.SpecifyKind(moment + ApplyTimezone(resolutionValues), DateTimeKind.Utc);
                 return new MomentExtraction { IsValid = true, Value = moment };
             }
 

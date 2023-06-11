@@ -37,12 +37,6 @@ public class Time
         return $"I'm not sure what timezone you mean, assuming UTC it's {FormatTime(DateTime.UtcNow)}";
     }
 
-    [Command("time")]
-    public async Task Time2()
-    {
-
-    }
-
     [Command("time2")]
     public async Task TestUI()
     {

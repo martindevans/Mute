@@ -5,6 +5,9 @@ using Discord.WebSocket;
 
 namespace Mute.Moe.Discord.Services.ComponentActions
 {
+    /// <summary>
+    /// Provides a system for waiting on component responses (buttons, dropdowns etc) embedded in messages
+    /// </summary>
     public class ComponentActionService
     {
         private readonly ConcurrentDictionary<string, ButtonWaiter> _waiters = new();

@@ -30,7 +30,7 @@ public class Program
         await bot.StartAsync();
 
         // Get information about a guild, when this completes it means the bot is in a sensible state to start other services
-        await bot.Client.Rest.GetGuildAsync(415655090842763265);
+        await bot.Client.Rest.GetGuildAsync(537765528991825920);
         await Task.Delay(1000);
         await provider.GetRequiredService<ServiceHost>().StartAsync(default);
 
@@ -38,7 +38,6 @@ public class Program
         var interactions = provider.GetRequiredService<InteractionService>();
 #if DEBUG
         await interactions.RegisterCommandsToGuildAsync(537765528991825920); // Nadeko Test
-        await interactions.RegisterCommandsToGuildAsync(415655090842763265); // Lightbulb Appreciation Society
 #else
         await interactions.RegisterCommandsGloballyAsync(true);
 #endif

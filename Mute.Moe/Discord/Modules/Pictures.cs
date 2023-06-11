@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.Rest;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.ImageGen;
@@ -62,7 +61,7 @@ public class Pictures
         );
 
         // Do the generation
-        var reporter = new ImageProgressReporter(reply, prompt);
+        var reporter = new ImageProgressReporter(reply);
         var result = await _generator.GenerateImage(_random.Next(), prompt, negative, reporter.ReportAsync);
 
         // Send a final result
@@ -114,12 +113,10 @@ public class Pictures
     private class ImageProgressReporter
     {
         private readonly IUserMessage _message;
-        private readonly string _prompt;
 
-        public ImageProgressReporter(IUserMessage message, string prompt)
+        public ImageProgressReporter(IUserMessage message)
         {
             _message = message;
-            _prompt = prompt;
         }
 
         public async Task ReportAsync(IImageGenerator.ProgressReport value)

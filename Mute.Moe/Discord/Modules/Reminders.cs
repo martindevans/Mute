@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,8 +9,11 @@ using Discord.Commands;
 using Humanizer;
 using Humanizer.Localisation;
 using JetBrains.Annotations;
+using Mute.Moe.Discord.Commands;
+using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Utilities;
+using static Mute.Moe.Services.Reminders.DatabaseReminders;
 
 namespace Mute.Moe.Discord.Modules;
 
@@ -42,7 +46,7 @@ public class Reminders
     }
 
     [Command("reminders"), Summary("I will give you a list of all pending reminders for a user"), RequireOwner]
-    public async Task ListReminders( IUser user)
+    public async Task ListReminders(IUser user)
     {
         var items = await _reminders.Get(user.Id).ToArrayAsync();
 
@@ -58,7 +62,7 @@ public class Reminders
         );
     }
 
-    private async Task DisplayReminder( IReminder reminder)
+    private async Task DisplayReminder(IReminder reminder)
     {
         var embed = new EmbedBuilder()
             .WithColor(Color)
@@ -88,29 +92,12 @@ public class Reminders
 
     private async Task<string> CreateReminder(ICommandContext context, string message)
     {
-        DateTime triggerMoment;
+        var maybeTriggerMoment = message.TryParseReminderMoment();
 
-        // Parse a moment from message
-        var exactTimeResult = FuzzyParsing.Moment(message);
-        if (exactTimeResult.IsValid)
-        {
-            if (exactTimeResult.Value < DateTime.UtcNow)
-                return PastValueErrorMessage.Replace("$moment$", exactTimeResult.Value.ToString(CultureInfo.InvariantCulture));
-
-            triggerMoment = exactTimeResult.Value;
-        }
-        else
-        {
-            // Attempt to parse a time range instead of an exact time (e.g. `next week`)
-            var rangeTimeResult = FuzzyParsing.MomentRange(message);
-            if (!rangeTimeResult.IsValid)
-                return "That doesn't seem to be a valid moment.";
-
-            // Send the reminder just after the start of the range
-            triggerMoment = rangeTimeResult.Value.Item1 + (rangeTimeResult.Value.Item2 - rangeTimeResult.Value.Item1) * 0.05f;
-        }
-
-        var duration = triggerMoment - DateTime.UtcNow;
+        if (maybeTriggerMoment is not DateTime triggerMoment)
+            return "That doesn't seem to be a valid moment.";
+        if (triggerMoment < DateTime.UtcNow )
+            return PastValueErrorMessage.Replace("$moment$", triggerMoment.ToString(CultureInfo.InvariantCulture));
 
         // Add some context to the message
         var prelude = $"{context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerMoment, culture: CultureInfo.GetCultureInfo("en-gn"))}...";
@@ -119,7 +106,48 @@ public class Reminders
         // Save to database
         var n = await _reminders.Create(triggerMoment, prelude, msg, context.Message.Channel.Id, context.User.Id);
 
+        var duration = triggerMoment - DateTime.UtcNow;
         var friendlyId = new BalderHash32(n.ID);
         return $"I will remind you in {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} (id: `{friendlyId}`)";
+    }
+}
+
+public class RemindersCommandWord
+    : ICommandWordHandler
+{
+    private readonly IReminders _reminders;
+
+    public IReadOnlyList<string> Triggers { get; } = new[]
+    {
+        "remind", "Remind", "reminder", "Reminder"
+    };
+
+    public RemindersCommandWord(IReminders reminders)
+    {
+        _reminders = reminders;
+    }
+
+    public async Task<bool> Invoke(MuteCommandContext context, string message)
+    {
+        var maybeTriggerMoment = message.TryParseReminderMoment();
+
+        if (maybeTriggerMoment is not DateTime triggerMoment)
+            return false;
+        if (triggerMoment < DateTime.UtcNow)
+            return false;
+
+        // Add some context to the message
+        var prelude = $"{context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerMoment)}...";
+        var msg = $"remind me {message}";
+
+        // Save to database
+        var n = await _reminders.Create(triggerMoment, prelude, msg, context.Message.Channel.Id, context.User.Id);
+
+        // Send a response right now acknowledging it
+        var duration = triggerMoment - DateTime.UtcNow;
+        var friendlyId = new BalderHash32(n.ID);
+        await context.Channel.SendMessageAsync($"Created a reminder {duration.Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second, toWords: true)} from now. (id: `{friendlyId}`)");
+
+        return true;
     }
 }
