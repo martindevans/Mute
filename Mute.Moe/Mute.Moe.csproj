@@ -36,6 +36,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Services\DiceLang\DiceLangParser.peg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Autofocus" Version="1.3.0" />
     <PackageReference Include="BalderHash" Version="1.0.0" />
     <PackageReference Include="Betalgo.OpenAI" Version="7.0.0" />
@@ -56,6 +60,7 @@
     <PackageReference Include="Miki.Anilist" Version="0.6.3" />
     <PackageReference Include="morelinq" Version="3.4.2" />
     <PackageReference Include="NAudio" Version="2.1.0" />
+    <PackageReference Include="Pegasus" Version="4.1.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" />
     <PackageReference Include="SteamWebAPI2" Version="4.4.1" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
@@ -82,6 +87,10 @@
   <ItemGroup>
     <Folder Include="Properties\PublishProfiles\" />
     <Folder Include="Services\Notifications\SpaceX\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PegGrammar Include="Services\DiceLang\DiceLangParser.peg" />
   </ItemGroup>
 
 </Project>

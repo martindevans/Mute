@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
+using Mute.Moe.Services.DiceLang;
 using Mute.Moe.Services.Randomness;
+using Pegasus.Common;
 
 namespace Mute.Moe.Discord.Modules.Games;
 
@@ -58,6 +62,29 @@ public class Dice
         // Try to parse the command as `XdY`. e.g. 3d7
         if (!await TryParseRolls(command))
             await TypingReplyAsync("Sorry I'm not sure what you mean, use something like 3d7 (max 255 dice with 255 sides)");
+    }
+
+    [Command("roll2")]
+    private async Task Roll2([Remainder] string command)
+    {
+        try
+        {
+            var parser = new DiceLangParser { DiceRoller = _dice };
+            var result = parser.Parse(command);
+            await TypingReplyAsync(result.ToString(CultureInfo.InvariantCulture));
+        }
+        catch (FormatException e)
+        {
+            var c = (Cursor)e.Data["cursor"]!;
+            var m = e.Message;
+
+            var spaces = new string(' ', Math.Max(0, c.Column - 2));
+            var err = $"{c.Subject}\n"
+                    + $"{spaces}^ {m} (Ln{c.Line}, Col{c.Column - 1})\n";
+            await TypingReplyAsync(err);
+
+            await TypingReplyAsync("Sorry but that doesn't seem to be a valid dice command, use something like `3d7`");
+        }
     }
 
     private async Task<bool> TryParseRolls(string command)

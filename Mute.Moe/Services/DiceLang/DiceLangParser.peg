@@ -1,0 +1,51 @@
+﻿@namespace Mute.Moe.Services.DiceLang
+@classname DiceLangParser
+@using System.Globalization 
+@using Mute.Moe.Services.Randomness;
+
+@members
+{
+    public required IDiceRoller DiceRoller { get; init; }
+}
+
+start <double>
+    = _ value:additive _ EOF { value }
+
+additive <double> -memoize
+    = left:additive _ "+" _ right:multiplicative { left + right }
+    / left:additive _ "-" _ right:multiplicative { left - right }
+    / multiplicative
+
+multiplicative <double> -memoize
+    = left:multiplicative _ "*" _ right:power { left * right }
+    / left:multiplicative _ "/" _ right:power { left / right }
+    / power
+
+power <double>
+    = left:primary _ "^" _ right:power { Math.Pow(left, right) }
+    / primary
+
+primary <double> -memoize
+    = decimal
+    / "-" _ primary:primary { -primary }
+    / "(" _ additive:additive _ ")" { additive }
+
+decimal <double>
+    = e:dice_explode { (double)e }
+    / d:dice { (double)d }
+    / i:integer { (double)i }
+
+dice_explode <ulong>
+    = a:integer "d" b:integer "E" c:integer { DiceRoller.Roll(a, b, c) }
+
+dice <ulong>
+    = a:integer "d" b:integer { DiceRoller.Roll(a, b) }
+
+integer <uint> -memoize
+    = value:([0-9]+) { uint.Parse(string.Join("", value), CultureInfo.InvariantCulture) }
+
+_ = [ \t\r\n]*
+
+EOF
+    = !.
+    / unexpected:. #error{ "Unexpected character '" + unexpected + "'." }
