@@ -64,7 +64,7 @@ public class Dice
             await TypingReplyAsync("Sorry I'm not sure what you mean, use something like 3d7 (max 255 dice with 255 sides)");
     }
 
-    [Command("roll2")]
+    [Command("roll2"), Summary("I will roll a dice, allowing use of complex mathematical expressions")]
     private async Task Roll2([Remainder] string command)
     {
         try
