@@ -1,0 +1,50 @@
+﻿@namespace Mute.Moe.Services.DiceLang
+@classname DiceLangParser2
+@using System.Globalization 
+@using Mute.Moe.Services.Randomness;
+@using Mute.Moe.Services.DiceLang.AST;
+
+start <IAstNode>
+    = _ value:additive _ EOF { value }
+
+additive <IAstNode> -memoize
+    = left:additive _ "+" _ right:multiplicative { new Add(left, right) }
+    / left:additive _ "-" _ right:multiplicative { new Subtract(left, right) }
+    / multiplicative
+
+multiplicative <IAstNode> -memoize
+    = left:multiplicative _ "*" _ right:power { new Multiply(left, right) }
+    / left:multiplicative _ "/" _ right:power { new Divide(left, right) }
+    / power
+
+power <IAstNode>
+    = left:primary _ "^" _ right:power { new Exponent(left, right) }
+    / primary
+
+primary <IAstNode> -memoize
+    = number
+    / "-" _ primary:primary { new Negate(primary) }
+    / "(" _ additive:additive _ ")" { new Parens(additive) }
+
+number <IAstNode>
+    = e:dice_explode { e }
+    / d:dice { d }
+    / d:decimal { d }
+
+dice_explode <DiceRollValue>
+    = a:integer "d" b:integer "E" c:integer { new DiceRollValue(a, b, c) }
+
+dice <DiceRollValue>
+    = a:integer "d" b:integer { new DiceRollValue(a, b, null) }
+
+decimal <ConstantValue> -memoize
+    = value:([0-9]+ ("." [0-9]+)?) { new ConstantValue(double.Parse(string.Join("", value), CultureInfo.InvariantCulture)) }
+
+integer <uint> -memoize
+    = value:([0-9]+) { uint.Parse(string.Join("", value), CultureInfo.InvariantCulture) }
+
+_ = [ \t\r\n]*
+
+EOF
+    = !.
+    / unexpected:. #error{ "Unexpected character '" + unexpected + "'." }

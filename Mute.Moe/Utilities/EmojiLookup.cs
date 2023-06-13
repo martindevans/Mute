@@ -29,7 +29,7 @@ public static class EmojiLookup
     public const string Skull = "💀";
     public const string Coffin = "⚰️";
     public const string CrystalBall = "🔮";
-        
+
     public const string Shuffle = "🔀";
     public const string Play = "▶";
     public const string Pause = "⏸";
@@ -62,4 +62,14 @@ public static class EmojiLookup
     public const string ScreamingCatFace = "🙀";
 
     public const string ArtistPalette = "🎨";
+
+    public const string Explosion = "💥";
+    public const string Dice1 = "⚀";
+    public const string Dice2 = "⚁";
+    public const string Dice3 = "⚂";
+    public const string Dice4 = "⚃";
+    public const string Dice5 = "⚄";
+    public const string Dice6 = "⚅";
+    public static readonly string[] Dice = { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6 };
+
 }

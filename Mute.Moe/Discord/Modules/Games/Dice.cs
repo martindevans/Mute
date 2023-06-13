@@ -69,9 +69,12 @@ public class Dice
     {
         try
         {
-            var parser = new DiceLangParser { DiceRoller = _dice };
+            var parser = new DiceLangParser2();
             var result = parser.Parse(command);
-            await TypingReplyAsync(result.ToString(CultureInfo.InvariantCulture));
+            var value = result.Evaluate(_dice);
+            var description = result.ToString();
+
+            await TypingReplyAsync($"{value.ToString(CultureInfo.InvariantCulture)} = {description}");
         }
         catch (FormatException e)
         {

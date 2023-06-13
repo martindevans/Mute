@@ -26,9 +26,9 @@ public static class IDiceRollerExtensions
 
         ulong RollSingle()
         {
-            var value = roller.Roll(dice, sides);
+            var value = roller.Roll(1, sides);
             if (value >= explode)
-                value += roller.Roll(dice, sides);
+                value += roller.Roll(1, sides);
             return value;
         }
     }
