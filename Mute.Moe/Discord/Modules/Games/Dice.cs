@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
@@ -47,25 +46,25 @@ public class Dice
         _dice = dice;
     }
 
-    [Command("roll"), Alias("dice"), Summary("I will roll a dice")]
-    public async Task RollCmd([Remainder] string command)
-    {
-        command = command.ToLowerInvariant();
+    //[Command("roll"), Alias("dice"), Summary("I will roll a dice")]
+    //public async Task RollCmd([Remainder] string command)
+    //{
+    //    command = command.ToLowerInvariant();
 
-        // Try to parse the command as a number, if that succeeds roll a D(Number)
-        if (ulong.TryParse(command, out var sides))
-        {
-            await TypingReplyAsync(Roll(1, sides));
-            return;
-        }
+    //    // Try to parse the command as a number, if that succeeds roll a D(Number)
+    //    if (ulong.TryParse(command, out var sides))
+    //    {
+    //        await TypingReplyAsync(Roll(1, sides));
+    //        return;
+    //    }
 
-        // Try to parse the command as `XdY`. e.g. 3d7
-        if (!await TryParseRolls(command))
-            await TypingReplyAsync("Sorry I'm not sure what you mean, use something like 3d7 (max 255 dice with 255 sides)");
-    }
+    //    // Try to parse the command as `XdY`. e.g. 3d7
+    //    if (!await TryParseRolls(command))
+    //        await TypingReplyAsync("Sorry I'm not sure what you mean, use something like 3d7 (max 255 dice with 255 sides)");
+    //}
 
-    [Command("roll2"), Summary("I will roll a dice, allowing use of complex mathematical expressions")]
-    private async Task Roll2([Remainder] string command)
+    [Command("roll"), Summary("I will roll a dice, allowing use of complex mathematical expressions")]
+    private async Task Roll([Remainder] string command)
     {
         try
         {
@@ -90,26 +89,26 @@ public class Dice
         }
     }
 
-    private async Task<bool> TryParseRolls(string command)
-    {
-        if (!command.Contains('d'))
-            return false;
+    //private async Task<bool> TryParseRolls(string command)
+    //{
+    //    if (!command.Contains('d'))
+    //        return false;
         
-        var parts = command.Split('d');
-        if (parts.Length != 2)
-            return false;
+    //    var parts = command.Split('d');
+    //    if (parts.Length != 2)
+    //        return false;
         
-        var count = (ushort)1;
-        if (!string.IsNullOrWhiteSpace(parts[0]))
-            if (!ushort.TryParse(parts[0], out count))
-                return false;
+    //    var count = (ushort)1;
+    //    if (!string.IsNullOrWhiteSpace(parts[0]))
+    //        if (!ushort.TryParse(parts[0], out count))
+    //            return false;
 
-        if (!ulong.TryParse(parts[1], out var max))
-            return false;
+    //    if (!ulong.TryParse(parts[1], out var max))
+    //        return false;
 
-        await TypingReplyAsync(Roll(count, max));
-        return true;
-    }
+    //    await TypingReplyAsync(Roll(count, max));
+    //    return true;
+    //}
 
     [Command("flip"), Summary("I will flip a coin")]
     public async Task FlipCmd()
@@ -134,15 +133,15 @@ public class Dice
         return _dice.Flip() ? "Heads" : "Tails";
     }
 
-    private string Roll(ushort dice, ulong sides)
-    {
-        var results = Enumerable.Range(0, dice).Select(_ => _dice.Roll(sides)).ToArray();
-        var total = results.Select(a => (int)a).Sum();
+    //private string Roll(ushort dice, ulong sides)
+    //{
+    //    var results = Enumerable.Range(0, dice).Select(_ => _dice.Roll(sides)).ToArray();
+    //    var total = results.Select(a => (int)a).Sum();
 
-        return dice == 1
-             ? total.ToString()
-             : $"{string.Join('+', results)} = {total}";
-    }
+    //    return dice == 1
+    //         ? total.ToString()
+    //         : $"{string.Join('+', results)} = {total}";
+    //}
 
     private string Magic8Ball()
     {

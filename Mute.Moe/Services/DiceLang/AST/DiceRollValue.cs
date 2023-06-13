@@ -11,7 +11,7 @@ namespace Mute.Moe.Services.DiceLang.AST;
 public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
     : IAstNode
 {
-    private bool _initialised = false;
+    private bool _initialised;
     private readonly List<DiceRollResult> _values = new();
 
     public double Evaluate(IDiceRoller roller)
@@ -23,7 +23,6 @@ public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
         for (var i = 0u; i < Count; i++)
             total += RollSingle();
 
-        //rolls.Add(new RollResult(basics, ExplodeThreshold, explosions));
         return total;
 
         ulong RollSingle()
@@ -34,7 +33,7 @@ public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
             if (value >= ExplodeThreshold)
             {
                 var explosion = roller.Roll(1, Sides);
-                _values.Add(new DiceRollResult(value, true));
+                _values.Add(new DiceRollResult(explosion, true));
                 value += explosion;
             }
 
@@ -51,23 +50,22 @@ public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
             return $"{Count}d{Sides}";
         }
 
-        var parts = _values.Select(DiceToString);
-        return $"({string.Join(",", parts)})";
+        var builder = new StringBuilder();
 
-        string DiceToString(DiceRollResult result)
+        var start = true;
+        foreach (var result in _values)
         {
-            var builder = new StringBuilder();
-
             if (result.Explosion)
                 builder.Append(EmojiLookup.Explosion);
+            else if (!start)
+                builder.Append(',');
 
-            if (Sides <= 6)
-                builder.Append(EmojiLookup.Dice[result.Value - 1]);
-            else
-                builder.Append(result.Value);
+            builder.Append(result.Value);
 
-            return builder.ToString();
+            start = false;
         }
+
+        return builder.ToString();
     }
 }
 
