@@ -101,7 +101,6 @@ public class Macro
         try
         {
             var def = new DiceLangParser().ParseMacroDefinition(expression);
-            await TypingReplyAsync(def.ToString());
 
             var macro = await _macros.Find(def.Namespace, def.Name);
             if (macro != null)
@@ -111,7 +110,7 @@ public class Macro
             }
 
             await _macros.Create(def);
-            await TypingReplyAsync($"Create new macro: `{def}`");
+            await TypingReplyAsync($"Created new macro: `{def}`");
         }
         catch (FormatException e)
         {

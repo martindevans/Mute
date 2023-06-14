@@ -63,7 +63,7 @@
     <PackageReference Include="Pegasus" Version="4.1.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" />
     <PackageReference Include="SteamWebAPI2" Version="4.4.1" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
     <PackageReference Include="System.IO.Abstractions" Version="19.2.29" />
     <PackageReference Include="System.Linq.LevenshteinDistance" Version="0.99.0-beta" />
     <PackageReference Include="System.Numerics.Tensors" Version="0.1.0" />

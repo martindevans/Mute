@@ -12,6 +12,7 @@ public class SqliteDatabase
 
     public SqliteDatabase(Configuration config)
     {
+        Console.WriteLine($"Connection String: `{config.Database?.ConnectionString}`");
         _dbConnection = new SQLiteConnection(config.Database?.ConnectionString ?? throw new ArgumentNullException(nameof(config.Database.ConnectionString)));
         _dbConnection.Open();
     }
