@@ -1,14 +1,15 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.DiceLang.AST;
 
 public record MacroInvoke(string? Namespace, string Name, IReadOnlyList<IAstNode> Arguments)
     : IAstNode
 {
-    public double Evaluate(IAstNode.Context context)
+    public async Task<double> Evaluate(IAstNode.Context context)
     {
         // Get the macro
-        var macro = context.MacroResolver.Find(Namespace, Name) 
+        var macro = await context.MacroResolver.Find(Namespace, Name) 
                  ?? throw new MacroNotFoundException(Namespace, Name);
 
         // Sanity check arg count
@@ -22,12 +23,7 @@ public record MacroInvoke(string? Namespace, string Name, IReadOnlyList<IAstNode
 
         // Evaluate the macro AST with the bound parameters
         var ctx = context with { NamedArgs = parameters };
-        return macro.Root.Evaluate(ctx);
-    }
-
-    public IAstNode Reduce()
-    {
-        return this;
+        return await macro.Root.Evaluate(ctx);
     }
 
     public override string ToString()
@@ -40,25 +36,17 @@ public record MacroInvoke(string? Namespace, string Name, IReadOnlyList<IAstNode
 
 public interface IMacroResolver
 {
-    MacroDefinition? Find(string? ns, string name);
+    Task<MacroDefinition?> Find(string? ns, string name);
 }
 
-public record MacroDefinition(IReadOnlyList<string> ParameterNames, IAstNode Root);
-
-public class NullMacroResolver
-    : IMacroResolver
+public record MacroDefinition(string Namespace, string Name, IReadOnlyList<string> ParameterNames, IAstNode Root)
 {
-    public MacroDefinition? Find(string? ns, string name)
+    public override string ToString()
     {
-        return null;
-
-        // Test definition which adds 2 parameters
-        return new MacroDefinition(
-            new[] { "x", "y" },
-            new Add(new Parameter("x"), new Parameter("y"))
-        );
+        return $"`{Namespace}::{Name}({string.Join(", ", ParameterNames)}) = {Root}`";
     }
 }
+
 
 
 public class MacroNotFoundException

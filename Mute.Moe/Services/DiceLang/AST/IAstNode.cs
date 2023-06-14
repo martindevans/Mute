@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Mute.Moe.Services.Randomness;
 
 namespace Mute.Moe.Services.DiceLang.AST;
@@ -17,7 +18,7 @@ namespace Mute.Moe.Services.DiceLang.AST;
 [JsonDerivedType(typeof(Subtract), typeDiscriminator: "Subtract")]
 public interface IAstNode
 {
-    public double Evaluate(IDiceRoller roller, IMacroResolver resolver)
+    public Task<double> Evaluate(IDiceRoller roller, IMacroResolver resolver)
     {
         return Evaluate(new Context
         {
@@ -27,22 +28,7 @@ public interface IAstNode
         });
     }
 
-    public double Evaluate(Context context);
-
-    public IAstNode Reduce();
-
-    protected static IAstNode BinaryReduce(IAstNode left, IAstNode right, Func<IAstNode, IAstNode, IAstNode> cons)
-    {
-        var l = left.Reduce();
-        var r = right.Reduce();
-
-        var node = cons(l, r);
-
-        if (l is ConstantValue && r is ConstantValue)
-            return new ConstantValue(node.Evaluate(default));
-
-        return node;
-    }
+    public Task<double> Evaluate(Context context);
 
     readonly record struct Context(IDiceRoller Roller, IMacroResolver MacroResolver, IReadOnlyDictionary<string, IAstNode> NamedArgs);
 }

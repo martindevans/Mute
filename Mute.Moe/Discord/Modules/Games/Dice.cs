@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Globalization;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.DiceLang;
 using Mute.Moe.Services.DiceLang.AST;
+using Mute.Moe.Services.DiceLang.Macros;
 using Mute.Moe.Services.Randomness;
 using Pegasus.Common;
 
@@ -17,33 +19,12 @@ public class Dice
     : BaseModule
 {
     private readonly IDiceRoller _dice;
+    private readonly IMacroResolver _macros;
 
-    private static readonly IReadOnlyList<string> Ball8Replies = new[] {
-        "It is certain.",
-        "It is decidedly so.",
-        "Without a doubt.",
-        "Yes - definitely.",
-        "You may rely on it.",
-        "As I see it, yes.",
-        "Most likely.",
-        "Outlook good.",
-        "Yes.",
-        "Signs point to yes.",
-        "Reply hazy, try again",
-        "Ask again later.",
-        "Better not tell you now.",
-        "Cannot predict now.",
-        "Concentrate and ask again.",
-        "Don't count on it.",
-        "My reply is no.",
-        "My sources say no",
-        "Outlook not so good.",
-        "Very doubtful.",
-    };
-
-    public Dice(IDiceRoller dice)
+    public Dice(IDiceRoller dice, IMacroResolver macros)
     {
         _dice = dice;
+        _macros = macros;
     }
 
     [Command("roll"), Summary("I will roll a dice, allowing use of complex mathematical expressions")]
@@ -53,7 +34,7 @@ public class Dice
         {
             var parser = new DiceLangParser();
             var result = parser.Parse(command);
-            var value = result.Evaluate(_dice, new NullMacroResolver());
+            var value = await result.Evaluate(_dice, _macros);
             var description = result.ToString();
 
             await TypingReplyAsync($"{value.ToString(CultureInfo.InvariantCulture)} = {description}");
@@ -78,25 +59,76 @@ public class Dice
             await TypingReplyAsync($"I'm sorry but macro `{e.Namespace}::{e.Name}` expects {e.Expected} parameters, you supplied {e.Actual}");
         }
     }
+}
 
-    [Command("flip"), Summary("I will flip a coin")]
-    public async Task FlipCmd()
+[UsedImplicitly]
+[Group("macro")]
+public class Macro
+    : BaseModule
+{
+    private readonly IMacroStorage _macros;
+
+    public Macro(IMacroStorage macros)
     {
-        await TypingReplyAsync(_dice.Flip() ? "Heads" : "Tails");
+        _macros = macros;
     }
 
-    [Command("8ball"), Summary("I will reach into the hazy mists of the future to determine the truth")]
-    public async Task Magic8Ball([Remainder] string question)
+    [Command("find")]
+    public async Task FindMacros(string name)
     {
-        if (string.IsNullOrWhiteSpace(question))
+        // Get all results, matching search string with both name and namespace
+        var results1 = await _macros.FindAll(null, name).ToListAsync();
+        var results2 = await _macros.FindAll(name, null).ToListAsync();
+        var results = results1.Concat(results2).DistinctBy(a => a.Namespace + a.Name)
+                              .GroupBy(a => a.Namespace)
+                              .Select(a => a.OrderBy(a => a.Name).ToArray())
+                              .SelectMany(a => a)
+                              .ToList();
+
+        // Display all results
+        await DisplayItemList(
+            results,
+            () => "Found no matching macros",
+            item => TypingReplyAsync(item.ToString()),
+            items => $"There are {items.Count} matching macros:",
+            (item, _) => item.ToString()
+        );
+    }
+
+    [Command("create")]
+    public async Task CreateMacro([Remainder] string expression)
+    {
+        try
         {
-            await TypingReplyAsync("You must ask a question");
-            return;
+            var def = new DiceLangParser().ParseMacroDefinition(expression);
+            await TypingReplyAsync(def.ToString());
+
+            var macro = await _macros.Find(def.Namespace, def.Name);
+            if (macro != null)
+            {
+                await TypingReplyAsync("Sorry but that macro already exists!");
+                return;
+            }
+
+            await _macros.Create(def);
+            await TypingReplyAsync($"Create new macro: `{def}`");
         }
+        catch (FormatException e)
+        {
+            var c = (Cursor)e.Data["cursor"]!;
+            var m = e.Message;
 
-        var index = (int)_dice.Roll((ulong)Ball8Replies.Count) - 1;
-        var reply = Ball8Replies[index];
+            var spaces = new string(' ', Math.Max(0, c.Column - 2));
+            var err = $"```{c.Subject}\n{spaces}^ {m}```";
+            await TypingReplyAsync(err);
+        }
+    }
 
-        await TypingReplyAsync(reply);
+    [Command("delete")]
+    [RequireOwner]
+    public async Task DeleteMacro(string ns, string name)
+    {
+        await _macros.Delete(ns, name);
+        await TypingReplyAsync("It is done.");
     }
 }

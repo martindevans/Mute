@@ -42,6 +42,8 @@ using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.RateLimit;
 using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Modules;
+using Mute.Moe.Services.DiceLang.AST;
+using Mute.Moe.Services.DiceLang.Macros;
 
 namespace Mute.Moe;
 
@@ -98,6 +100,8 @@ public class Startup
         services.AddSingleton<ICron, InMemoryCron>();
         services.AddSingleton<IUserService, DiscordUserService>();
         services.AddHostedService<IAvatarPicker, SeasonalAvatar>();
+        services.AddSingleton<IMacroResolver>(x => x.GetRequiredService<IMacroStorage>());
+        services.AddSingleton<IMacroStorage, DatabaseMacroStorage>();
 
         services.AddSingleton(s => new EnigmaResponse(s.GetRequiredService<ILargeLanguageModel>()));
         services.AddSingleton<IConversationPreprocessor>(s => s.GetRequiredService<EnigmaResponse>());

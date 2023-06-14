@@ -94,9 +94,6 @@ namespace Mute.Tests
 
             var j1 = JsonSerializer.Serialize(add);
             Console.WriteLine(j1);
-
-            var j2 = JsonSerializer.Serialize(add.Reduce());
-            Console.WriteLine(j2);
         }
     }
 }

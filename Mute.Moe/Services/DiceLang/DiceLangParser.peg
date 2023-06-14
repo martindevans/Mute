@@ -5,8 +5,9 @@
 @using System.Linq;
 @using Mute.Moe.Services.Randomness;
 @using Mute.Moe.Services.DiceLang.AST;
+@start main_expr
 
-start <IAstNode>
+main_expr <IAstNode>
     = _ value:additive _ EOF { value }
 
 additive <IAstNode> -memoize
@@ -33,6 +34,7 @@ number <IAstNode>
     / d:dice { d }
     / d:decimal { d }
     / m:macro_invocation { m }
+    / i:identifier { new Parameter(i) }
 
 dice_explode <DiceRollValue>
     = a:integer "d" b:integer "E" c:integer { new DiceRollValue(a, b, c) }
@@ -53,10 +55,18 @@ macro_invocation <MacroInvoke> -memoize
 macro_args <IReadOnlyList<IAstNode>> -memoize
     = i:additive<0,,","_> { i.ToArray() }
 
+
+
+MacroDefinition <MacroDefinition> -public
+    = _ ns:identifier "::" n:identifier "(" a:identifier<0,,","_> ")" _ "=" _ e:additive _ EOF { new MacroDefinition(ns, n, a.ToArray(), e) }
+
+
+
 identifier <string>
     = s:([a-zA-Z_][a-zA-Z0-9_]<0,>) { s }
 
-_ = [ \t\r\n]*
+_
+    = [ \t\r\n]*
 
 EOF
     = !.

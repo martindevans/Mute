@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Threading.Tasks;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.DiceLang.AST;
@@ -9,7 +10,7 @@ public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
     private bool _initialised;
     private readonly List<DiceRollResult> _values = new();
 
-    public double Evaluate(IAstNode.Context context)
+    public async Task<double> Evaluate(IAstNode.Context context)
     {
         _initialised = true;
         _values.Clear();

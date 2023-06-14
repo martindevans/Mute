@@ -1,17 +1,14 @@
-﻿namespace Mute.Moe.Services.DiceLang.AST;
+﻿using System.Threading.Tasks;
+
+namespace Mute.Moe.Services.DiceLang.AST;
 
 public record Parameter(string Name)
     : IAstNode
 {
-    public double Evaluate(IAstNode.Context context)
+    public async Task<double> Evaluate(IAstNode.Context context)
     {
         var arg = context.NamedArgs[Name];
-        return arg.Evaluate(context);
-    }
-
-    public IAstNode Reduce()
-    {
-        return this;
+        return await arg.Evaluate(context);
     }
 
     public override string ToString()
