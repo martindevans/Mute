@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using JetBrains.Annotations;
 using Microsoft.Recognizers.Text.DateTime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe.Extensions;
+using Mute.Moe.Services.DiceLang.AST;
 using Mute.Moe.Utilities;
-using Newtonsoft.Json;
 
 namespace Mute.Tests
 {
@@ -73,13 +75,28 @@ namespace Mute.Tests
         public void DateTimeRange()
         {
             var r1 = DateTimeRecognizer.RecognizeDateTime("next week", "en-gb");
-            Console.WriteLine(JsonConvert.SerializeObject(r1));
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(r1));
 
             var r2 = FuzzyParsing.MomentRange("next week");
-            Console.WriteLine(JsonConvert.SerializeObject(r2));
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(r2));
 
             var r3 = FuzzyParsing.Moment("monday");
-            Console.WriteLine(JsonConvert.SerializeObject(r3));
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(r3));
+        }
+
+        [TestMethod]
+        public void JsonRecord()
+        {
+            var add = new Add(
+                new MacroInvoke("ns", "name", new IAstNode[] { new ConstantValue(1) }),
+                new Negate(new ConstantValue(2))
+            );
+
+            var j1 = JsonSerializer.Serialize(add);
+            Console.WriteLine(j1);
+
+            var j2 = JsonSerializer.Serialize(add.Reduce());
+            Console.WriteLine(j2);
         }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Mute.Moe.Discord.Context.Preprocessing;
 using System.Threading.Tasks;
 using Mute.Moe.Discord.Context;

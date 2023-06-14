@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Discord;
-using Mute.Moe.Services.Randomness;
+﻿using System.Text;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.DiceLang.AST;
@@ -14,7 +9,7 @@ public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
     private bool _initialised;
     private readonly List<DiceRollResult> _values = new();
 
-    public double Evaluate(IDiceRoller roller)
+    public double Evaluate(IAstNode.Context context)
     {
         _initialised = true;
         _values.Clear();
@@ -27,18 +22,23 @@ public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
 
         ulong RollSingle()
         {
-            var value = roller.Roll(1, Sides);
+            var value = context.Roller.Roll(Sides);
             _values.Add(new DiceRollResult(value, false));
 
             if (value >= ExplodeThreshold)
             {
-                var explosion = roller.Roll(1, Sides);
+                var explosion = context.Roller.Roll(Sides);
                 _values.Add(new DiceRollResult(explosion, true));
                 value += explosion;
             }
 
             return value;
         }
+    }
+
+    public IAstNode Reduce()
+    {
+        return this;
     }
 
     public override string ToString()
@@ -58,7 +58,7 @@ public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
             if (result.Explosion)
                 builder.Append(EmojiLookup.Explosion);
             else if (!start)
-                builder.Append(',');
+                builder.Append('+');
 
             builder.Append(result.Value);
 

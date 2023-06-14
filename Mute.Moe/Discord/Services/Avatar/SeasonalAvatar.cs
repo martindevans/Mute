@@ -3,9 +3,7 @@ using Discord.WebSocket;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Notifications.Cron;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 

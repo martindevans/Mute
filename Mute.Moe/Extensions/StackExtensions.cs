@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-
-
-namespace Mute.Moe.Extensions;
+﻿namespace Mute.Moe.Extensions;
 
 public static class StackExtensions
 {

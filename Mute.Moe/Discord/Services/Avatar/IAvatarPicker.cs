@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Mute.Moe.Services.Host;
 
 namespace Mute.Moe.Discord.Services.Avatar;

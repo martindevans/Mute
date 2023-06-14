@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Mute.Moe.Services.Information.Stocks;
+﻿namespace Mute.Moe.Services.Information.Stocks;
 
 public interface IStockSearch
 {

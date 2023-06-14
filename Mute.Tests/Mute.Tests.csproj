@@ -20,7 +20,7 @@
     <PackageReference Include="Microsoft.Recognizers.Text.NumberWithUnit" Version="1.8.8" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.0.4" />
     <PackageReference Include="MSTest.TestFramework" Version="3.0.4" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
     <PackageReference Include="System.IO.Abstractions" Version="19.2.29" />
     <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="19.2.29" />
     <PackageReference Include="System.ServiceModel.Syndication" Version="7.0.0" />

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Linq;
 using Mute.Moe.Services.Audio.Mixing.Extensions;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;

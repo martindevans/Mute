@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.DiceLang;
+using Mute.Moe.Services.DiceLang.AST;
 using Mute.Moe.Services.Randomness;
 using Pegasus.Common;
 
@@ -46,31 +46,14 @@ public class Dice
         _dice = dice;
     }
 
-    //[Command("roll"), Alias("dice"), Summary("I will roll a dice")]
-    //public async Task RollCmd([Remainder] string command)
-    //{
-    //    command = command.ToLowerInvariant();
-
-    //    // Try to parse the command as a number, if that succeeds roll a D(Number)
-    //    if (ulong.TryParse(command, out var sides))
-    //    {
-    //        await TypingReplyAsync(Roll(1, sides));
-    //        return;
-    //    }
-
-    //    // Try to parse the command as `XdY`. e.g. 3d7
-    //    if (!await TryParseRolls(command))
-    //        await TypingReplyAsync("Sorry I'm not sure what you mean, use something like 3d7 (max 255 dice with 255 sides)");
-    //}
-
     [Command("roll"), Summary("I will roll a dice, allowing use of complex mathematical expressions")]
-    private async Task Roll([Remainder] string command)
+    public async Task Roll([Remainder] string command)
     {
         try
         {
-            var parser = new DiceLangParser2();
+            var parser = new DiceLangParser();
             var result = parser.Parse(command);
-            var value = result.Evaluate(_dice);
+            var value = result.Evaluate(_dice, new NullMacroResolver());
             var description = result.ToString();
 
             await TypingReplyAsync($"{value.ToString(CultureInfo.InvariantCulture)} = {description}");
@@ -81,39 +64,25 @@ public class Dice
             var m = e.Message;
 
             var spaces = new string(' ', Math.Max(0, c.Column - 2));
-            var err = $"{c.Subject}\n"
-                    + $"{spaces}^ {m} (Ln{c.Line}, Col{c.Column - 1})\n";
+            var err = $"```{c.Subject}\n{spaces}^ {m}```";
             await TypingReplyAsync(err);
 
             await TypingReplyAsync("Sorry but that doesn't seem to be a valid dice command, use something like `3d7`");
         }
+        catch (MacroNotFoundException e)
+        {
+            await TypingReplyAsync($"I'm sorry, I couldn't find the macro `{e.Namespace}::{e.Name}` which you tried to use");
+        }
+        catch (MacroIncorrectArgumentCount e)
+        {
+            await TypingReplyAsync($"I'm sorry but macro `{e.Namespace}::{e.Name}` expects {e.Expected} parameters, you supplied {e.Actual}");
+        }
     }
-
-    //private async Task<bool> TryParseRolls(string command)
-    //{
-    //    if (!command.Contains('d'))
-    //        return false;
-        
-    //    var parts = command.Split('d');
-    //    if (parts.Length != 2)
-    //        return false;
-        
-    //    var count = (ushort)1;
-    //    if (!string.IsNullOrWhiteSpace(parts[0]))
-    //        if (!ushort.TryParse(parts[0], out count))
-    //            return false;
-
-    //    if (!ulong.TryParse(parts[1], out var max))
-    //        return false;
-
-    //    await TypingReplyAsync(Roll(count, max));
-    //    return true;
-    //}
 
     [Command("flip"), Summary("I will flip a coin")]
     public async Task FlipCmd()
     {
-        await TypingReplyAsync(Flip());
+        await TypingReplyAsync(_dice.Flip() ? "Heads" : "Tails");
     }
 
     [Command("8ball"), Summary("I will reach into the hazy mists of the future to determine the truth")]
@@ -125,27 +94,9 @@ public class Dice
             return;
         }
 
-        await TypingReplyAsync(Magic8Ball());
-    }
-
-    private string Flip()
-    {
-        return _dice.Flip() ? "Heads" : "Tails";
-    }
-
-    //private string Roll(ushort dice, ulong sides)
-    //{
-    //    var results = Enumerable.Range(0, dice).Select(_ => _dice.Roll(sides)).ToArray();
-    //    var total = results.Select(a => (int)a).Sum();
-
-    //    return dice == 1
-    //         ? total.ToString()
-    //         : $"{string.Join('+', results)} = {total}";
-    //}
-
-    private string Magic8Ball()
-    {
         var index = (int)_dice.Roll((ulong)Ball8Replies.Count) - 1;
-        return Ball8Replies[index];
+        var reply = Ball8Replies[index];
+
+        await TypingReplyAsync(reply);
     }
 }

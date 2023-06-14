@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using NAudio.Wave;
 
 namespace Mute.Moe.Services.Speech.STT;

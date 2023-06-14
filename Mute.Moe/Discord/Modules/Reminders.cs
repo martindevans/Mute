@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Threading.Tasks;
 using BalderHash;
 using Discord;
@@ -12,8 +10,6 @@ using JetBrains.Annotations;
 using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.Reminders;
-using Mute.Moe.Utilities;
-using static Mute.Moe.Services.Reminders.DatabaseReminders;
 
 namespace Mute.Moe.Discord.Modules;
 
