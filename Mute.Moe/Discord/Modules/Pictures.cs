@@ -45,25 +45,32 @@ public class Pictures
         {
             if (_bannedWords.Any(word => prompt.Contains(word, StringComparison.InvariantCultureIgnoreCase)))
             {
-                await ReplyAsync("Sorry, I can't generate that image");
+                await ReplyAsync("Sorry, I can't generate that image (use a DM channel to disable filters).");
                 return;
             }
 
             negative += ", (nsfw:1.5)";
         }
-
+        
         var reply = await ReplyAsync(
             "Starting image generation...",
             allowedMentions: AllowedMentions.All,
             messageReference: new MessageReference(Context.Message.Id)
         );
 
-        // Do the generation
-        var reporter = new ImageProgressReporter(reply);
-        var result = await _generator.GenerateImage(_random.Next(), prompt, negative, reporter.ReportAsync);
+        try
+        {
+            // Do the generation
+            var reporter = new ImageProgressReporter(reply);
+            var result = await _generator.GenerateImage(_random.Next(), prompt, negative, reporter.ReportAsync);
 
-        // Send a final result
-        await reporter.FinalImage(result);
+            // Send a final result
+            await reporter.FinalImage(result);
+        }
+        catch (Exception ex)
+        {
+            await reply.ModifyAsync(msg => msg.Content = $"Image generation failed!\n{ex.Message}");
+        }
     }
 
     [Command("img-metadata"), Alias("img-parameters")]
@@ -119,18 +126,18 @@ public class Pictures
 
         public async Task ReportAsync(IImageGenerator.ProgressReport value)
         {
-            if (value.Intermediate != null)
-            {
-                await _message.ModifyAsync(props =>
-                {
-                    props.Attachments = new Optional<IEnumerable<FileAttachment>>(new[]
-                    {
-                        new FileAttachment(value.Intermediate, "WIP.png")
-                    });
-                });
+            //if (value.Intermediate != null)
+            //{
+            //    await _message.ModifyAsync(props =>
+            //    {
+            //        props.Attachments = new Optional<IEnumerable<FileAttachment>>(new[]
+            //        {
+            //            new FileAttachment(value.Intermediate, "WIP.png")
+            //        });
+            //    });
 
-            }
-            else
+            //}
+            //else
             {
                 await _message.ModifyAsync(props =>
                 {

@@ -1,7 +1,9 @@
 ﻿using System;
 using Autofocus;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
+using MoreLinq;
 using static Mute.Moe.Services.ImageGen.IImageGenerator;
 
 namespace Mute.Moe.Services.ImageGen
@@ -9,19 +11,48 @@ namespace Mute.Moe.Services.ImageGen
     public class Automatic1111
         : IImageGenerator
     {
-        private readonly StableDiffusion _api;
+        private readonly string[]? _urls;
 
         public Automatic1111(Configuration config)
         {
-            _api = new StableDiffusion(config.Automatic1111?.Url);
+            _urls = config.Automatic1111?.Urls;
+        }
+
+        private async Task<StableDiffusion?> GetBackend()
+        {
+            if (_urls == null || _urls.Length == 0)
+                return null;
+
+            foreach (var url in _urls.Shuffle())
+            {
+                var api = new StableDiffusion(url);
+
+                try
+                {
+                    // Ping this backend to see if it's accessable
+                    await api.Progress();
+                    return api;
+                }
+                catch (HttpRequestException)
+                {
+                    // Suppress these exceptions, they mean that the backend is inaccessible and we
+                    // just want to skip it.
+                }
+            }
+
+            return null;
         }
 
         public async Task<Stream> GenerateImage(int seed, string positive, string negative, Func<ProgressReport, Task>? progressReporter = null)
         {
-            var model = await _api.StableDiffusionModel("cardosAnime_v20");
-            var sampler = await _api.Sampler("DPM++ SDE");
+            var backend = await GetBackend();
+            if (backend == null)
+                throw new InvalidOperationException("No image generation backends accessible");
 
-            var resultTask = _api.TextToImage(
+            var model = await backend.StableDiffusionModel("cardosAnime_v20");
+            var sampler = await backend.Sampler("DPM++ SDE");
+
+            var resultTask = backend.TextToImage(
                 new()
                 {
                     Seed = new() { Seed = seed },
@@ -50,7 +81,7 @@ namespace Mute.Moe.Services.ImageGen
             {
                 while (!resultTask.IsCompleted)
                 {
-                    var progress = await _api.Progress();
+                    var progress = await backend.Progress();
                     await progressReporter(new ProgressReport(
                         (float)progress.Progress,
                         progress.CurrentImage == null ? null : new MemoryStream(progress.CurrentImage.Data.ToArray())

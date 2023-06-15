@@ -135,5 +135,5 @@ public class ONNXConfig
 
 public class Automatic1111Config
 {
-    public string Url = null!;
+    public string[] Urls = null!;
 }
