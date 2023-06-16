@@ -9,7 +9,7 @@ using static Mute.Moe.Services.ImageGen.IImageGenerator;
 namespace Mute.Moe.Services.ImageGen
 {
     public class Automatic1111
-        : IImageGenerator
+        : IImageGenerator, IImageAnalyser
     {
         private readonly string[]? _urls;
 
@@ -45,9 +45,8 @@ namespace Mute.Moe.Services.ImageGen
 
         public async Task<Stream> GenerateImage(int seed, string positive, string negative, Func<ProgressReport, Task>? progressReporter = null)
         {
-            var backend = await GetBackend();
-            if (backend == null)
-                throw new InvalidOperationException("No image generation backends accessible");
+            var backend = await GetBackend()
+                       ?? throw new InvalidOperationException("No image generation backends accessible");
 
             var model = await backend.StableDiffusionModel("cardosAnime_v20");
             var sampler = await backend.Sampler("DPM++ SDE");
@@ -81,18 +80,27 @@ namespace Mute.Moe.Services.ImageGen
             {
                 while (!resultTask.IsCompleted)
                 {
-                    var progress = await backend.Progress();
-                    await progressReporter(new ProgressReport(
-                        (float)progress.Progress,
-                        progress.CurrentImage == null ? null : new MemoryStream(progress.CurrentImage.Data.ToArray())
-                    ));
-
+                    var progress = await backend.Progress(true);
+                    await progressReporter(new ProgressReport((float)progress.Progress, null));
                     await Task.Delay(250);
                 }
             }
 
             var result = await resultTask;
             return new MemoryStream(result.Images[0].Data.ToArray());
+        }
+
+        public async Task<string> GetImageDescription(Stream image)
+        {
+            var backend = await GetBackend()
+                       ?? throw new InvalidOperationException("No image analysis backends accessible");
+
+            var mem = new MemoryStream();
+            await image.CopyToAsync(mem);
+            var buffer = mem.ToArray();
+
+            var analysis = await backend.Interrogate(new Base64EncodedImage(buffer));
+            return analysis.Caption;
         }
     }
 }

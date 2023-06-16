@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -9,15 +10,19 @@ using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Utilities;
 using SixLabors.ImageSharp;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Discord.Modules;
 
 [UsedImplicitly]
+[Group("image")]
+[ThinkingReply(EmojiLookup.ArtistPalette)]
 public class Pictures
     : BaseModule
 {
     private readonly Random _random;
     private readonly IImageGenerator _generator;
+    private readonly IImageAnalyser _analyser;
     private readonly HttpClient _http;
 
     private readonly string[] _bannedWords =
@@ -26,15 +31,15 @@ public class Pictures
         "spider", "arachnid", "tarantula",
     };
 
-    public Pictures(Random random, IImageGenerator generator, HttpClient http)
+    public Pictures(Random random, IImageGenerator generator, IImageAnalyser analyser, HttpClient http)
     {
         _random = random;
         _generator = generator;
+        _analyser = analyser;
         _http = http;
     }
 
-    [Command("diffusion"), Summary("I will generate a picture")]
-    [ThinkingReply(EmojiLookup.ArtistPalette)]
+    [Command("generate"), Summary("I will generate a picture")]
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 15, "Please wait a bit before generating more images")]
     public async Task Generate([Remainder] string prompt)
     {
@@ -73,7 +78,7 @@ public class Pictures
         }
     }
 
-    [Command("img-metadata"), Alias("img-parameters")]
+    [Command("metadata"), Alias("parameters")]
     [RateLimit("2E3E6C68-1862-4573-858A-B478000B8154", 5, "Please wait a bit")]
     public async Task Metadata()
     {
@@ -108,11 +113,66 @@ public class Pictures
                 await ReplyAsync(parameters.Value);
             }
 
-            await Task.Delay(100);
+            await Task.Delay(250);
         }
 
         if (!success)
             await ReplyAsync("I couldn't find any metadata in any of those images");
+    }
+
+    [Command("analyse"), Alias("interrogate", "clip")]
+    [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 15, "Please wait a bit")]
+    public async Task Analyse()
+    {
+        if (Context.Message.ReferencedMessage == null)
+        {
+            await ReplyAsync("Please use this command in a message which replies to another message");
+            return;
+        }
+
+        if (Context.Message.ReferencedMessage.Attachments.Count == 0)
+        {
+            await ReplyAsync("That message doesn't seem to have any attachments");
+            return;
+        }
+
+        var images = Context.Message.ReferencedMessage.Attachments.Where(a => a.ContentType.StartsWith("image/")).ToList();
+        if (images.Count == 0)
+        {
+            await ReplyAsync("That message doesn't seem to have any image attachments");
+            return;
+        }
+
+        var pngs = images.Select(GetPngStream);
+
+        var success = false;
+        foreach (var png in pngs)
+        {
+            var stream = await png;
+            var description = await _analyser.GetImageDescription(stream);
+            success = true;
+
+            await ReplyAsync(description);
+            await Task.Delay(250);
+        }
+
+        if (!success)
+            await ReplyAsync("I couldn't find any metadata in any of those images");
+    }
+
+    private async Task<Stream> GetPngStream(IAttachment attachment)
+    {
+        var input = await _http.GetStreamAsync(attachment.Url);
+        if (attachment.ContentType == "image/png")
+            return input;
+
+        var image = await Image.LoadAsync(input);
+
+        var output = new MemoryStream();
+        await image.SaveAsPngAsync(output);
+
+        output.Position = 0;
+        return output;
     }
 
     private class ImageProgressReporter

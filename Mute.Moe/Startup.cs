@@ -69,6 +69,7 @@ public class Startup
         services.AddTransient<ISpeechToText, WhisperSpeechToText>();
 
         services.AddTransient<IImageGenerator, Automatic1111>();
+        services.AddTransient<IImageAnalyser, Automatic1111>();
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddTransient<ISpacexInfo, LL2SpaceX>();
         services.AddSingleton<IFileSystem, FileSystem>();

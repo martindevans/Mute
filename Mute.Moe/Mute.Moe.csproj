@@ -40,7 +40,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofocus" Version="1.7.0" />
+    <PackageReference Include="Autofocus" Version="3.0.0" />
+    <PackageReference Include="Autofocus.Scripts.UltimateUpscaler" Version="1.0.0" />
     <PackageReference Include="BalderHash" Version="1.0.0" />
     <PackageReference Include="Betalgo.OpenAI" Version="7.0.0" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
