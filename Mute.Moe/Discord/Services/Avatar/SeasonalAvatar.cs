@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using MoreLinq;
 
 namespace Mute.Moe.Discord.Services.Avatar;
 
@@ -40,8 +41,8 @@ public class SeasonalAvatar
             .Where(a => a.Path != null && Directory.Exists(a.Path))
             .SelectMany(a => exts.SelectMany(e => Directory.GetFiles(a.Path!, e)))
             .Distinct()
+            .Shuffle()
             .ToArray();
-        Console.WriteLine($"Found {avatars.Length} options: " + string.Join("\n", avatars));
 
         var avatar = avatars.Random(_rng);
 

@@ -1,10 +1,10 @@
-﻿using System.IO;
+﻿using Autofocus.Config;
+using System.IO;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.ImageGen
+namespace Mute.Moe.Services.ImageGen;
+
+public interface IImageAnalyser
 {
-    public interface IImageAnalyser
-    {
-        public Task<string> GetImageDescription(Stream image);
-    }
+    public Task<string> GetImageDescription(Stream image, InterrogateModel model);
 }

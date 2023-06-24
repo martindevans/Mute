@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Management;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -9,6 +11,7 @@ using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.ComponentActions;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
+using static OpenAI.ObjectModels.SharedModels.IOpenAiModels;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 

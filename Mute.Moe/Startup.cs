@@ -68,6 +68,7 @@ public class Startup
         services.AddTransient<ITextToSpeech, NullTextToSpeech>();
         services.AddTransient<ISpeechToText, WhisperSpeechToText>();
 
+        services.AddTransient<IImageGeneratorBannedWords, HardcodedBannedWords>();
         services.AddTransient<IImageGenerator, Automatic1111>();
         services.AddTransient<IImageAnalyser, Automatic1111>();
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
