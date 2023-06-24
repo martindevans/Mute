@@ -1,5 +1,4 @@
 ﻿using Mute.Moe.Utilities;
-using System;
 
 namespace Mute.Moe.Services.Reminders;
 

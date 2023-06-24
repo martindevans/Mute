@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Mute.Moe.Services.Music;
+﻿namespace Mute.Moe.Services.Music;
 
 public interface ITrack
 {

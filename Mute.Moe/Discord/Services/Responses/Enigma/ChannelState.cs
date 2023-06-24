@@ -1,5 +1,4 @@
-﻿using System;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
 using Humanizer;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Extensions;

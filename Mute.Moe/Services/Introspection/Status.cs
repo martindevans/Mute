@@ -1,5 +1,4 @@
-﻿using System;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
 
 namespace Mute.Moe.Services.Introspection;
 

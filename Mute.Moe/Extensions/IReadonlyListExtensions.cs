@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Mute.Moe.Extensions;
+﻿namespace Mute.Moe.Extensions;
 
 public static class IReadonlyListExtensions
 {

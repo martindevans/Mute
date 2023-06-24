@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Mute.Moe.Discord.Modules.Payment;
 using Mute.Moe.Discord.Services.Users;
 

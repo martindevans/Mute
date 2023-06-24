@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Mute.Moe.Discord.Attributes;
+﻿namespace Mute.Moe.Discord.Attributes;
 
 /// <summary>
 /// Group for all commands in this module to be shown in help

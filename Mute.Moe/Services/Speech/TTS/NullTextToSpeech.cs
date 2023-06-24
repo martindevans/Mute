@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Mute.Moe.Services.Audio.Clips;
 
 namespace Mute.Moe.Services.Speech.TTS

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Mute.Moe.Discord.Attributes;
+﻿namespace Mute.Moe.Discord.Attributes;
 
 /// <summary>
 /// Hide a command from help

@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using Mute.Moe.Services.Audio.Mixing.Extensions;
 using NAudio.Wave;

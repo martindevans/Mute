@@ -1,5 +1,4 @@
-﻿using System;
-using Discord.Audio.Streams;
+﻿using Discord.Audio.Streams;
 using NAudio.Wave;
 
 namespace Mute.Moe.Services.Audio.Mixing.Extensions;

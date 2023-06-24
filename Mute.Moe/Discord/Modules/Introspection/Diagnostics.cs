@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.Intrinsics.X86;
+﻿using System.Runtime.Intrinsics.X86;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;

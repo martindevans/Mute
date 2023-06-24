@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Attributes;

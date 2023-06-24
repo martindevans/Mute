@@ -1,5 +1,4 @@
-﻿using System;
-using Mute.Moe.Discord.Context.Preprocessing;
+﻿using Mute.Moe.Discord.Context.Preprocessing;
 using System.Threading.Tasks;
 using Mute.Moe.Discord.Context;
 using System.Reflection;

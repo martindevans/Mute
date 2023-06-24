@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Mute.Moe.Services.ImageGen
+﻿namespace Mute.Moe.Services.ImageGen
 {
     public interface IImageGeneratorBannedWords
     {

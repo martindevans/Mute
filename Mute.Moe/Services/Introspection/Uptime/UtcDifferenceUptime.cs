@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Mute.Moe.Services.Introspection.Uptime;
+﻿namespace Mute.Moe.Services.Introspection.Uptime;
 
 public class UtcDifferenceUptime
     : IUptime

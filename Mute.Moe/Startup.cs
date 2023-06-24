@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO.Abstractions;
+﻿using System.IO.Abstractions;
 using Discord.Addons.Interactive;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
