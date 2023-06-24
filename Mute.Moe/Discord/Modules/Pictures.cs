@@ -11,8 +11,6 @@ using Mute.Moe.Extensions;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Utilities;
 using SixLabors.ImageSharp;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Net.WebRequestMethods;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Discord.Modules;
