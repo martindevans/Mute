@@ -1,4 +1,5 @@
-﻿using Autofocus;
+﻿using System.Collections.Concurrent;
+using Autofocus;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ public class Automatic1111
         _checkpoint = config.Automatic1111?.Checkpoint ?? "cardosAnime_v20";
         _t2iSampler = config.Automatic1111?.Text2ImageSampler ?? "UniPC";
         _i2iSampler = config.Automatic1111?.Image2ImageSampler ?? "DDIM";
-        _samplerSteps = config.Automatic1111?.SamplerSteps ?? 12;
+        _samplerSteps = config.Automatic1111?.SamplerSteps ?? 18;
         _width = config.Automatic1111?.Width ?? 512;
         _height = config.Automatic1111?.Height ?? 768;
     }
@@ -40,24 +41,28 @@ public class Automatic1111
         if (_urls == null || _urls.Length == 0)
             return null;
 
-        foreach (var url in _urls.Shuffle())
+        // Ping all endpoints in parallel to find responsive endpoints
+        var successful = new ConcurrentBag<StableDiffusion>();
+        await Parallel.ForEachAsync(_urls, async (url, _) =>
         {
-            var api = new StableDiffusion(url);
-
             try
             {
+                var api = new StableDiffusion(url);
+
                 // Ping this backend to see if it's accessable
                 await api.Progress();
-                return api;
+
+                successful.Add(api);
             }
             catch (HttpRequestException)
             {
                 // Suppress these exceptions, they mean that the backend is inaccessible and we
                 // just want to skip it.
             }
-        }
+        });
 
-        return null;
+        // Pick a random endpoint
+        return successful.Shuffle().FirstOrDefault();
     }
 
     public async Task<Stream> Text2Image(int seed, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)

@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofocus" Version="3.2.0" />
+    <PackageReference Include="Autofocus" Version="3.3.0" />
     <PackageReference Include="Autofocus.ImageSharp" Version="1.0.1" />
     <PackageReference Include="Autofocus.Scripts.UltimateUpscaler" Version="1.0.1" />
     <PackageReference Include="BalderHash" Version="1.0.0" />
