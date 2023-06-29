@@ -1,14 +1,18 @@
 ﻿using Discord;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
+using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Services.ImageGen;
 
 public interface IImageGenerator
 {
-    Task<Stream> GenerateImage(int seed, string positive, string negative, Func<ProgressReport, Task>? progress = null);
+    Task<Stream> Text2Image(int seed, string positive, string negative, Func<ProgressReport, Task>? progress = null);
+
+    Task<Stream> Image2Image(int seed, Stream imageStream, string positive, string negative, Func<ProgressReport, Task>? progress = null);
 
     public record struct ProgressReport(float Progress, MemoryStream? Intermediate);
 }
@@ -17,6 +21,9 @@ public static class IImageGeneratorExtensions
 {
     public static async Task EasyGenerate(this IImageGenerator generator, MuteCommandContext context, string prompt)
     {
+        var http = context.Services.GetRequiredService<HttpClient>();
+        var random = context.Services.GetRequiredService<Random>();
+
         var negative = "easynegative, badhandv4, logo, Watermark, username, signature, jpeg artifacts";
 
         // If it's a public channel apply extra precautions
@@ -38,12 +45,14 @@ public static class IImageGeneratorExtensions
             messageReference: new MessageReference(context.Message.Id)
         );
 
-        var rng = context.Services.GetRequiredService<Random>();
+        var images = await context.Message.GetMessageImages(http);
         try
         {
             // Do the generation
             var reporter = new ImageProgressReporter(reply);
-            var result = await generator.GenerateImage(rng.Next(), prompt, negative, reporter.ReportAsync);
+            var result = images.Count > 0
+                ? await generator.Image2Image(random.Next(), images.Random(random), prompt, negative, reporter.ReportAsync)
+                : await generator.Text2Image(random.Next(), prompt, negative, reporter.ReportAsync);
 
             // Send a final result
             await reporter.FinalImage(result);

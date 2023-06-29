@@ -4,7 +4,9 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Autofocus.Config;
 using MoreLinq;
-using static Mute.Moe.Services.ImageGen.IImageGenerator;
+using SixLabors.ImageSharp.Processing;
+using Autofocus.ImageSharp.Extensions;
+using SixLabors.ImageSharp;
 
 namespace Mute.Moe.Services.ImageGen;
 
@@ -14,7 +16,8 @@ public class Automatic1111
     private readonly string[]? _urls;
 
     private readonly string _checkpoint;
-    private readonly string _sampler;
+    private readonly string _t2iSampler;
+    private readonly string _i2iSampler;
     private readonly int _samplerSteps;
     private readonly uint _width;
     private readonly uint _height;
@@ -24,7 +27,8 @@ public class Automatic1111
         _urls = config.Automatic1111?.Urls;
 
         _checkpoint = config.Automatic1111?.Checkpoint ?? "cardosAnime_v20";
-        _sampler = config.Automatic1111?.Sampler ?? "UniPC";
+        _t2iSampler = config.Automatic1111?.Text2ImageSampler ?? "UniPC";
+        _i2iSampler = config.Automatic1111?.Image2ImageSampler ?? "DDIM";
         _samplerSteps = config.Automatic1111?.SamplerSteps ?? 12;
         _width = config.Automatic1111?.Width ?? 512;
         _height = config.Automatic1111?.Height ?? 768;
@@ -55,13 +59,13 @@ public class Automatic1111
         return null;
     }
 
-    public async Task<Stream> GenerateImage(int seed, string positive, string negative, Func<ProgressReport, Task>? progressReporter = null)
+    public async Task<Stream> Text2Image(int seed, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
     {
         var backend = await GetBackend()
                    ?? throw new InvalidOperationException("No image generation backends accessible");
 
         var model = await backend.StableDiffusionModel(_checkpoint);
-        var sampler = await backend.Sampler(_sampler);
+        var sampler = await backend.Sampler(_t2iSampler);
 
         var resultTask = backend.TextToImage(
             new()
@@ -93,7 +97,69 @@ public class Automatic1111
             while (!resultTask.IsCompleted)
             {
                 var progress = await backend.Progress(true);
-                await progressReporter(new ProgressReport((float)progress.Progress, null));
+                await progressReporter(new IImageGenerator.ProgressReport((float)progress.Progress, null));
+                await Task.Delay(250);
+            }
+        }
+
+        var result = await resultTask;
+        return new MemoryStream(result.Images[0].Data.ToArray());
+    }
+
+    public async Task<Stream> Image2Image(int seed, Stream imageStream, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
+    {
+        var backend = await GetBackend()
+                   ?? throw new InvalidOperationException("No image generation backends accessible");
+
+        var model = await backend.StableDiffusionModel(_checkpoint);
+        var sampler = await backend.Sampler(_i2iSampler);
+
+        // Load imagesharp image
+        var image = await Image.LoadAsync(imageStream);
+
+        // Scale down to the correct width
+        image.Mutate(a => a.Resize(new Size((int)_width, 0)));
+
+        // Scale down height if necessary
+        if (image.Height > _height)
+            image.Mutate(a => a.Resize(new Size(0, (int)_height)));
+
+        var resultTask = backend.Image2Image(
+            new()
+            {
+                Images =
+                {
+                    image.ToAutofocusImage()
+                },
+
+                Seed = new() { Seed = seed },
+
+                Prompt = new()
+                {
+                    Positive = positive,
+                    Negative = negative,
+                },
+
+                Sampler = new()
+                {
+                    Sampler = sampler,
+                    SamplingSteps = _samplerSteps,
+                },
+
+                Model = model,
+                BatchSize = 1,
+                Batches = 1,
+                Width = (uint)image.Width,
+                Height = (uint)image.Height,
+            }
+        );
+
+        if (progressReporter != null)
+        {
+            while (!resultTask.IsCompleted)
+            {
+                var progress = await backend.Progress(true);
+                await progressReporter(new IImageGenerator.ProgressReport((float)progress.Progress, null));
                 await Task.Delay(250);
             }
         }

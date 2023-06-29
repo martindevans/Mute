@@ -2,7 +2,6 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using Autofocus.Config;
-using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using JetBrains.Annotations;
@@ -21,14 +20,12 @@ namespace Mute.Moe.Discord.Modules;
 public class Pictures
     : BaseModule
 {
-    private readonly Random _random;
     private readonly IImageGenerator _generator;
     private readonly IImageAnalyser _analyser;
     private readonly HttpClient _http;
 
     public Pictures(Random random, IImageGenerator generator, IImageAnalyser analyser, HttpClient http)
     {
-        _random = random;
         _generator = generator;
         _analyser = analyser;
         _http = http;
@@ -90,19 +87,9 @@ public class Pictures
             await ReplyAsync("I couldn't find any metadata in any of those images");
     }
     
-    private async Task<IReadOnlyList<Stream>?> GetMessageImages(SocketUserMessage message, bool convertToPng = true)
+    private async Task<IReadOnlyList<Stream>?> GetMessageImages(SocketUserMessage message)
     {
-        var attachments = message.Attachments.ToList<IAttachment>();
-        attachments.AddRange(message.ReferencedMessage?.Attachments ?? Array.Empty<IAttachment>());
-
-        var result = await attachments
-            .ToAsyncEnumerable()
-            .Where(a => a.ContentType.StartsWith("image/"))
-            .SelectAwait(async a => await a.GetPngStream(_http, convertToPng))
-            .Where(a => a != null)
-            .Select(a => a!)
-            .ToListAsync();
-
+        var result = await message.GetMessageImages(_http);
         if (result.Count == 0)
         {
             await TypingReplyAsync("Please include some image attachments or reply to another message with image attachments!");

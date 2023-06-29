@@ -135,7 +135,8 @@ public class ONNXConfig
 public class Automatic1111Config
 {
     public string[] Urls = null!;
-    public string? Sampler = null;
+    public string? Text2ImageSampler = null;
+    public string? Image2ImageSampler = null;
     public int? SamplerSteps = null;
     public string? Checkpoint = null;
     public uint? Width = null;
