@@ -24,7 +24,7 @@ public static class IImageGeneratorExtensions
         var http = context.Services.GetRequiredService<HttpClient>();
         var random = context.Services.GetRequiredService<Random>();
 
-        var negative = "easynegative, badhandv4, logo, Watermark, username, signature, jpeg artifacts";
+        var negative = "easynegative, badhandv4, bad-hands-5, logo, Watermark, username, signature, jpeg artifacts";
 
         // If it's a public channel apply extra precautions
         if (!context.IsPrivate)
