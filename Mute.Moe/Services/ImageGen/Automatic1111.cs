@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Autofocus.Config;
+using Autofocus.CtrlNet;
 using MoreLinq;
 using SixLabors.ImageSharp.Processing;
 using Autofocus.ImageSharp.Extensions;
@@ -124,12 +125,36 @@ public class Automatic1111
         if (image.Height > _height)
             image.Mutate(a => a.Resize(new Size(0, (int)_height)));
 
+        var autofocusInputImage = await image.ToAutofocusImageAsync();
+
+        // Add a weak controlnet constraint if available
+        ControlNetConfig? cnetConfig = null;
+        var cnet = await backend.TryGetControlNet();
+        if (cnet != null)
+        {
+            var preprocessed = await cnet.Preprocess(new ControlNetPreprocessConfig
+            {
+                Images = { autofocusInputImage },
+                Module = await cnet.Module("lineart_anime_denoise"),
+            });
+
+            cnetConfig = new ControlNetConfig
+            {
+                Image = preprocessed.Images[0],
+                Model = await cnet.Model("control_v11p_sd15s2_lineart_anime [3825e83e]"),
+                GuidanceStart = 0.1,
+                GuidanceEnd = 0.5,
+                ControlMode = ControlMode.PromptImportant,
+                Weight = 0.45
+            };
+        }
+
         var resultTask = backend.Image2Image(
             new()
             {
                 Images =
                 {
-                    image.ToAutofocusImage()
+                    autofocusInputImage
                 },
 
                 Seed = new() { Seed = seed },
@@ -145,12 +170,18 @@ public class Automatic1111
                     Sampler = sampler,
                     SamplingSteps = _samplerSteps,
                 },
+                DenoisingStrength = 0.75,
 
                 Model = model,
                 BatchSize = 1,
                 Batches = 1,
                 Width = (uint)image.Width,
                 Height = (uint)image.Height,
+
+                AdditionalScripts =
+                {
+                    cnetConfig
+                }
             }
         );
 
