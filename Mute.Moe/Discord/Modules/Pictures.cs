@@ -23,12 +23,28 @@ public class Pictures
     private readonly IImageGenerator _generator;
     private readonly IImageAnalyser _analyser;
     private readonly HttpClient _http;
+    private readonly StableDiffusionBackendCache _backends;
 
-    public Pictures(IImageGenerator generator, IImageAnalyser analyser, HttpClient http)
+    public Pictures(IImageGenerator generator, IImageAnalyser analyser, HttpClient http, StableDiffusionBackendCache backends)
     {
         _generator = generator;
         _analyser = analyser;
         _http = http;
+        _backends = backends;
+    }
+
+    [Command("backend-status"), Summary("I will show the status of image generation backends")]
+    [RequireOwner]
+    public async Task Backends(bool check = false)
+    {
+        var backends = await _backends.GetBackends(check);
+
+        await DisplayItemList(
+            backends,
+            () => "No backends available",
+            null,
+            (item, index) => $"{index + 1}. `{item.Item1}` ({(item.Item2 ? "Ok" : "Unresponsive")})"
+        );
     }
 
     [Command("generate"), Alias("diffusion", "imagine"), Summary("I will generate a picture")]

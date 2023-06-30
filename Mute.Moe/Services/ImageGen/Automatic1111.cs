@@ -1,11 +1,8 @@
-﻿using System.Collections.Concurrent;
-using Autofocus;
+﻿using Autofocus;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Autofocus.Config;
 using Autofocus.CtrlNet;
-using MoreLinq;
 using SixLabors.ImageSharp.Processing;
 using Autofocus.ImageSharp.Extensions;
 using Autofocus.Scripts.UltimateUpscaler;
@@ -18,7 +15,7 @@ namespace Mute.Moe.Services.ImageGen;
 public class Automatic1111
     : IImageGenerator, IImageAnalyser, IImageUpscaler
 {
-    private readonly string[]? _urls;
+    private readonly StableDiffusionBackendCache _backends;
 
     private readonly string _checkpoint;
     private readonly string _t2iSampler;
@@ -28,9 +25,9 @@ public class Automatic1111
     private readonly uint _height;
     private readonly string _upscaler;
 
-    public Automatic1111(Configuration config)
+    public Automatic1111(Configuration config, StableDiffusionBackendCache backends)
     {
-        _urls = config.Automatic1111?.Urls;
+        _backends = backends;
 
         _checkpoint = config.Automatic1111?.Checkpoint ?? "cardosAnime_v20";
         _t2iSampler = config.Automatic1111?.Text2ImageSampler ?? "UniPC";
@@ -41,33 +38,9 @@ public class Automatic1111
         _upscaler = config.Automatic1111?.Upscaler ?? "Lanczos";
     }
 
-    private async Task<StableDiffusion?> GetBackend()
+    private Task<StableDiffusion?> GetBackend()
     {
-        if (_urls == null || _urls.Length == 0)
-            return null;
-
-        // Ping all endpoints in parallel to find responsive endpoints
-        var successful = new ConcurrentBag<StableDiffusion>();
-        await Parallel.ForEachAsync(_urls, async (url, _) =>
-        {
-            try
-            {
-                var api = new StableDiffusion(url);
-
-                // Ping this backend to see if it's accessable
-                await api.Progress();
-
-                successful.Add(api);
-            }
-            catch (HttpRequestException)
-            {
-                // Suppress these exceptions, they mean that the backend is inaccessible and we
-                // just want to skip it.
-            }
-        });
-
-        // Pick a random endpoint
-        return successful.Shuffle().FirstOrDefault();
+        return _backends.GetBackend();
     }
 
     public async Task<IReadOnlyCollection<Image>> Text2Image(int? seed, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
@@ -204,7 +177,7 @@ public class Automatic1111
 
         var result = await resultTask;
         return await result.Images
-            .Take(result.Images.Count - (cnetConfig == null ? 0 : 1))
+            .Take(result.Images.Count - (cnetConfig == null ? 0 : 1)) // Skip the last image if cnet is used, to remove the guidance image which is added to the end
             .ToAsyncEnumerable()
             .SelectAwait(async a => await a.ToImageSharpAsync())
             .ToListAsync();
