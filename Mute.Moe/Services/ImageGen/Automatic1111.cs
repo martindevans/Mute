@@ -204,7 +204,7 @@ public class Automatic1111
 
         var result = await resultTask;
         return await result.Images
-            .Take(result.Images.Count - 1)
+            .Take(result.Images.Count - (cnetConfig == null ? 0 : 1))
             .ToAsyncEnumerable()
             .SelectAwait(async a => await a.ToImageSharpAsync())
             .ToListAsync();

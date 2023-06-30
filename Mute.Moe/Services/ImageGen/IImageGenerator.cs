@@ -68,7 +68,7 @@ public static class IImageGeneratorExtensions
             .ToReadOnlyListAsync();
 
         await context.GenerateImage(
-            positive, batchSize, async (p, n, r) =>
+            positive, async (p, n, r) =>
             {
                 if (images.Count == 0)
                     return await generator.Text2Image(seed, p, n, r, batchSize);
@@ -79,7 +79,7 @@ public static class IImageGeneratorExtensions
         );
     }
 
-    public static async Task GenerateImage(this MuteCommandContext context, string positive, int batchSize, ImageGenerate generate)
+    public static async Task GenerateImage(this MuteCommandContext context, string positive, ImageGenerate generate)
     {
         var prompt = await SetupPrompt(context, positive);
         if (prompt == null)

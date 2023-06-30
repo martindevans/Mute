@@ -90,19 +90,21 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
         private async Task Regenerate((string, string) prompt, SocketMessageComponent args)
         {
             var ctx = new MuteCommandContext(_client, args.Message, _services);
-            await ctx.GenerateImage(prompt.Item1, 1, async (p, n, r) => await _generator.Text2Image(null, prompt.Item1, prompt.Item2, r, _batchSize));
+            await ctx.GenerateImage(prompt.Item1, async (_, _, r) => await _generator.Text2Image(null, prompt.Item1, prompt.Item2, r, _batchSize));
+
+            //todo: the original image may have been image2image, take that into account when regenerating
         }
 
         private async Task GenerateVariant(Image original, (string, string) prompt, SocketMessageComponent args)
         {
             var ctx = new MuteCommandContext(_client, args.Message, _services);
-            await ctx.GenerateImage(prompt.Item1, 1, async (p, n, r) => await _generator.Image2Image(null, original, prompt.Item1, prompt.Item2, r, _batchSize));
+            await ctx.GenerateImage(prompt.Item1, async (p, n, r) => await _generator.Image2Image(null, original, prompt.Item1, prompt.Item2, r, _batchSize));
         }
 
         private async Task GenerateUpscale(Image original, SocketMessageComponent args)
         {
             var ctx = new MuteCommandContext(_client, args.Message, _services);
-            await ctx.GenerateImage("", 1, async (_, _, r) =>
+            await ctx.GenerateImage("", async (_, _, r) =>
             {
                 var img = await _upscaler.UpscaleImage(original, (uint)original.Width * 2, (uint)original.Height * 2, r);
                 return new[] { img };
