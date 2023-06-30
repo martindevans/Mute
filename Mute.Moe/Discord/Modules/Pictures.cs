@@ -43,7 +43,7 @@ public class Pictures
             backends,
             () => "No backends available",
             null,
-            (item, index) => $"{index + 1}. `{item.Item1}` ({(item.Item2 ? "Ok" : "Unresponsive")})"
+            (item, index) => $"{index + 1}. `{item.Item1}` has been used {item.Item2} times, ({(item.Item3 ? "Ok" : "Unresponsive")})"
         );
     }
 
@@ -51,7 +51,12 @@ public class Pictures
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 15, "Please wait a bit before generating more images")]
     public async Task Generate([Remainder] string prompt)
     {
-        await Context.GenerateImage(_generator, prompt, batchSize: 2);
+        var split = prompt.ToLowerInvariant().Split(" not ", StringSplitOptions.RemoveEmptyEntries);
+
+        var positive = split[0];
+        var negative = string.Join(", ", split.Skip(1));
+
+        await Context.GenerateImage(_generator, positive, negative, 2);
     }
 
     [Command("metadata"), Alias("parameters"), Summary("I will try to extract stable diffusion generation data from the image")]

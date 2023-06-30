@@ -24,9 +24,10 @@ public static class IImageGeneratorExtensions
 {
     private const string BaseNegative = "easynegative, badhandv4, bad-hands-5, logo, Watermark, username, signature, jpeg artifacts";
 
-    private static async Task<(string, string)?> SetupPrompt(MuteCommandContext context, string prompt)
+    private static async Task<(string, string)?> SetupPrompt(MuteCommandContext context, string prompt, string negative)
     {
-        var negative = BaseNegative;
+        if (!negative.Contains(BaseNegative))
+            negative = BaseNegative + ", " + negative;
 
         // If it's a public channel apply extra precautions
         if (!context.IsPrivate)
@@ -51,9 +52,10 @@ public static class IImageGeneratorExtensions
     /// <param name="context"></param>
     /// <param name="generator"></param>
     /// <param name="positive"></param>
+    /// <param name="negative"></param>
     /// <param name="batchSize"></param>
     /// <returns></returns>
-    public static async Task GenerateImage(this MuteCommandContext context, IImageGenerator generator, string positive, int batchSize)
+    public static async Task GenerateImage(this MuteCommandContext context, IImageGenerator generator, string positive, string negative, int batchSize)
     {
         var http = context.Services.GetRequiredService<HttpClient>();
         var random = context.Services.GetRequiredService<Random>();
@@ -68,7 +70,8 @@ public static class IImageGeneratorExtensions
             .ToReadOnlyListAsync();
 
         await context.GenerateImage(
-            positive, async (p, n, r) =>
+            positive, negative,
+            async (p, n, r) =>
             {
                 if (images.Count == 0)
                     return await generator.Text2Image(seed, p, n, r, batchSize);
@@ -79,12 +82,12 @@ public static class IImageGeneratorExtensions
         );
     }
 
-    public static async Task GenerateImage(this MuteCommandContext context, string positive, ImageGenerate generate)
+    public static async Task GenerateImage(this MuteCommandContext context, string positive, string negative, ImageGenerate generate)
     {
-        var prompt = await SetupPrompt(context, positive);
+        var prompt = await SetupPrompt(context, positive, negative);
         if (prompt == null)
             return;
-        (positive, var negative) = prompt.Value;
+        (positive, negative) = prompt.Value;
 
         var reply = await context.Channel.SendMessageAsync(
             "Starting image generation...",

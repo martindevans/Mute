@@ -34,7 +34,7 @@ namespace Mute.Moe.Services.ImageGen
                 {
                     await item.BeginStatusCheck();
                     if (item.IsResponsive)
-                        return item.Backend;
+                        return item.Backend();
                 }
             }
 
@@ -46,36 +46,37 @@ namespace Mute.Moe.Services.ImageGen
 
                 var responsive = _backends.Where(a => a.IsResponsive).Shuffle().FirstOrDefault();
                 if (responsive != null)
-                    return responsive.Backend;
+                    return responsive.Backend();
             }
 
             // No hope
             return null;
         }
 
-        public async Task<IReadOnlyList<(string, bool)>> GetBackends(bool check)
+        public async Task<IReadOnlyList<(string, uint, bool)>> GetBackends(bool check)
         {
             if (check)
                 await Task.WhenAll(_backends.Select(a => a.BeginStatusCheck()));
 
-            var results = new List<(string, bool)>();
+            var results = new List<(string, uint, bool)>();
             foreach (var backend in _backends)
-                results.Add((backend.Name, backend.IsResponsive));
+                results.Add((backend.Name, backend.UsedCount, backend.IsResponsive));
             return results;
         }
 
         private class BackendStatus
         {
-            public StableDiffusion Backend { get; }
-
             public bool IsResponsive { get; private set; }
             public DateTime LastCheck { get; private set; }
+            public uint UsedCount { get; private set; }
 
             public string Name { get; private set; }
 
+            private readonly StableDiffusion _backend;
+
             public BackendStatus(string url)
             {
-                Backend = new StableDiffusion(url);
+                _backend = new StableDiffusion(url);
 
                 LastCheck = DateTime.MinValue;
                 IsResponsive = false;
@@ -91,7 +92,7 @@ namespace Mute.Moe.Services.ImageGen
                 {
                     try
                     {
-                        await Backend.Ping();
+                        await _backend.Ping();
                         IsResponsive = true;
                     }
                     catch
@@ -99,6 +100,12 @@ namespace Mute.Moe.Services.ImageGen
                         IsResponsive = false;
                     }
                 });
+            }
+
+            public StableDiffusion Backend()
+            {
+                UsedCount++;
+                return _backend;
             }
         }
     }
