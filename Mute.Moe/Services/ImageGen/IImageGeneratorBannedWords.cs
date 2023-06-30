@@ -10,7 +10,7 @@
     {
         private static readonly string[] _bannedWords =
         {
-            "nsfw", "porn", "erotic", "fuck", "naked", "nude",
+            "nsfw", "porn", "erotic", "fuck", "naked", "nude", "hentai",
             "spider", "arachnid", "tarantula",
         };
 

@@ -41,6 +41,7 @@ using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.RateLimit;
 using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Modules;
+using Mute.Moe.Discord.Services.ImageGeneration;
 using Mute.Moe.Services.DiceLang.AST;
 using Mute.Moe.Services.DiceLang.Macros;
 
@@ -70,6 +71,8 @@ public class Startup
         services.AddTransient<IImageGeneratorBannedWords, HardcodedBannedWords>();
         services.AddTransient<IImageGenerator, Automatic1111>();
         services.AddTransient<IImageAnalyser, Automatic1111>();
+        services.AddTransient<IImageUpscaler, Automatic1111>();
+        services.AddHostedService<MidjourneyStyleImageGenerationResponses>();
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddTransient<ISpacexInfo, LL2SpaceX>();
         services.AddSingleton<IFileSystem, FileSystem>();

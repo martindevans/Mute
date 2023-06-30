@@ -41,7 +41,6 @@ public class AuthConfig
 {
     [UsedImplicitly] public string? Token;
     [UsedImplicitly] public string? ClientId;
-    [UsedImplicitly] public string? ClientSecret;
 }
 
 public class AlphaAdvantageConfig
@@ -141,4 +140,5 @@ public class Automatic1111Config
     public string? Checkpoint = null;
     public uint? Width = null;
     public uint? Height = null;
+    public string? Upscaler = null;
 }

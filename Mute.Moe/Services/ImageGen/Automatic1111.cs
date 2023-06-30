@@ -8,12 +8,15 @@ using Autofocus.CtrlNet;
 using MoreLinq;
 using SixLabors.ImageSharp.Processing;
 using Autofocus.ImageSharp.Extensions;
+using Autofocus.Scripts.UltimateUpscaler;
+using Mute.Moe.Extensions;
 using SixLabors.ImageSharp;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen;
 
 public class Automatic1111
-    : IImageGenerator, IImageAnalyser
+    : IImageGenerator, IImageAnalyser, IImageUpscaler
 {
     private readonly string[]? _urls;
 
@@ -23,6 +26,7 @@ public class Automatic1111
     private readonly int _samplerSteps;
     private readonly uint _width;
     private readonly uint _height;
+    private readonly string _upscaler;
 
     public Automatic1111(Configuration config)
     {
@@ -34,6 +38,7 @@ public class Automatic1111
         _samplerSteps = config.Automatic1111?.SamplerSteps ?? 18;
         _width = config.Automatic1111?.Width ?? 512;
         _height = config.Automatic1111?.Height ?? 768;
+        _upscaler = config.Automatic1111?.Upscaler ?? "Lanczos";
     }
 
     private async Task<StableDiffusion?> GetBackend()
@@ -65,10 +70,9 @@ public class Automatic1111
         return successful.Shuffle().FirstOrDefault();
     }
 
-    public async Task<Stream> Text2Image(int seed, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
+    public async Task<IReadOnlyCollection<Image>> Text2Image(int? seed, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
-        var backend = await GetBackend()
-                   ?? throw new InvalidOperationException("No image generation backends accessible");
+        var backend = await GetBackend() ?? throw new InvalidOperationException("No image generation backends accessible");
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_t2iSampler);
@@ -91,7 +95,7 @@ public class Automatic1111
                 },
 
                 Model = model,
-                BatchSize = 1,
+                BatchSize = batch,
                 Batches = 1,
                 Width = _width,
                 Height = _height,
@@ -108,20 +112,18 @@ public class Automatic1111
             }
         }
 
-        var result = await resultTask;
-        return new MemoryStream(result.Images[0].Data.ToArray());
+        var results = new List<Image>();
+        foreach (var item in (await resultTask).Images)
+            results.Add(await item.ToImageSharpAsync());
+        return results;
     }
 
-    public async Task<Stream> Image2Image(int seed, Stream imageStream, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
+    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image image, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
-        var backend = await GetBackend()
-                   ?? throw new InvalidOperationException("No image generation backends accessible");
+        var backend = await GetBackend() ?? throw new InvalidOperationException("No image generation backends accessible");
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
-
-        // Load imagesharp image
-        var image = await Image.LoadAsync(imageStream);
 
         // Scale down to the correct width
         image.Mutate(a => a.Resize(new Size((int)_width, 0)));
@@ -150,7 +152,7 @@ public class Automatic1111
                 GuidanceStart = 0.1,
                 GuidanceEnd = 0.5,
                 ControlMode = ControlMode.PromptImportant,
-                Weight = 0.45
+                Weight = 0.25
             };
         }
 
@@ -178,7 +180,7 @@ public class Automatic1111
                 DenoisingStrength = 0.75,
 
                 Model = model,
-                BatchSize = 1,
+                BatchSize = batch,
                 Batches = 1,
                 Width = (uint)image.Width,
                 Height = (uint)image.Height,
@@ -201,13 +203,16 @@ public class Automatic1111
         }
 
         var result = await resultTask;
-        return new MemoryStream(result.Images[0].Data.ToArray());
+        return await result.Images
+            .Take(result.Images.Count - 1)
+            .ToAsyncEnumerable()
+            .SelectAwait(async a => await a.ToImageSharpAsync())
+            .ToListAsync();
     }
 
     public async Task<string> GetImageDescription(Stream image, InterrogateModel model)
     {
-        var backend = await GetBackend()
-                   ?? throw new InvalidOperationException("No image analysis backends accessible");
+        var backend = await GetBackend() ?? throw new InvalidOperationException("No image analysis backends accessible");
 
         var mem = new MemoryStream();
         await image.CopyToAsync(mem);
@@ -215,5 +220,72 @@ public class Automatic1111
 
         var analysis = await backend.Interrogate(new Base64EncodedImage(buffer), model);
         return analysis.Caption;
+    }
+
+    public async Task<Image?> UpscaleImage(Image inputImage, uint width, uint height, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
+    {
+        var backend = await GetBackend() ?? throw new InvalidOperationException("No image analysis backends accessible");
+
+        var model = await backend.StableDiffusionModel(_checkpoint);
+        var sampler = await backend.Sampler(_i2iSampler);
+        var upscaler = await backend.Upscaler(_upscaler);
+
+        // Try to get the generation prompt that was originally used for this image
+        var prompt = inputImage.GetGenerationPrompt();
+        if (prompt == null)
+        {
+            prompt = (
+                "detailed, <lora:add_detail:0.5>",
+                "easynegative, nsfw, badhandv4"
+            );
+        }
+
+        var upscaleTask = backend.Image2Image(
+            new()
+            {
+                Images = {
+                    await inputImage.ToAutofocusImageAsync(),
+                },
+
+                Model = model,
+
+                Prompt = new()
+                {
+                    Positive = prompt.Value.Item1,
+                    Negative = prompt.Value.Item2,
+                },
+
+                Seed = new(),
+
+                Sampler = new()
+                {
+                    Sampler = sampler,
+                    SamplingSteps = _samplerSteps,
+                },
+
+                Width = width,
+                Height = height,
+                DenoisingStrength = 0.22,
+                Script = new UltimateUpscale
+                {
+                    RedrawMode = RedrawMode.Chess,
+                    Upscaler = upscaler
+                }
+            }
+        );
+
+        if (progressReporter != null)
+        {
+            while (!upscaleTask.IsCompleted)
+            {
+                var progress = await backend.Progress(true);
+                await progressReporter(new IImageGenerator.ProgressReport((float)progress.Progress, null));
+                await Task.Delay(250);
+            }
+        }
+
+        foreach (var item in (await upscaleTask).Images)
+            return await item.ToImageSharpAsync();
+        return null;
     }
 }

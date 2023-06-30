@@ -46,8 +46,6 @@ public class HostedDiscordBot
             throw new InvalidOperationException("Cannot start bot: `Auth.Token` in config is null");
         if (_config.Auth.ClientId == null)
             throw new InvalidOperationException("Cannot start bot: `Auth.ClientId` in config is null");
-        if (_config.Auth.ClientSecret == null)
-            throw new InvalidOperationException("Cannot start bot: `Auth.ClientSecret` in config is null");
 
         // Discover all of the commands in this assembly and load them.
         try

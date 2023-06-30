@@ -1,7 +1,6 @@
 ﻿@namespace Mute.Moe.Services.DiceLang
 @classname DiceLangParser
 @using System.Globalization 
-@using System.Collections.Generic;
 @using System.Linq;
 @using Mute.Moe.Services.Randomness;
 @using Mute.Moe.Services.DiceLang.AST;

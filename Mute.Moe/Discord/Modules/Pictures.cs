@@ -24,7 +24,7 @@ public class Pictures
     private readonly IImageAnalyser _analyser;
     private readonly HttpClient _http;
 
-    public Pictures(Random random, IImageGenerator generator, IImageAnalyser analyser, HttpClient http)
+    public Pictures(IImageGenerator generator, IImageAnalyser analyser, HttpClient http)
     {
         _generator = generator;
         _analyser = analyser;
@@ -35,7 +35,7 @@ public class Pictures
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 15, "Please wait a bit before generating more images")]
     public async Task Generate([Remainder] string prompt)
     {
-        await _generator.EasyGenerate(Context, prompt);
+        await Context.GenerateImage(_generator, prompt, batchSize: 2);
     }
 
     [Command("metadata"), Alias("parameters"), Summary("I will try to extract stable diffusion generation data from the image")]
@@ -51,11 +51,12 @@ public class Pictures
         {
             var img = await Image.IdentifyAsync(stream);
             var meta = img.Metadata.GetPngMetadata();
-            var parameters = meta.TextData.FirstOrDefault(a => a.Keyword == "parameters");
-            if (parameters.Value != null)
+            var parameters = meta.GetGenerationMetadata();
+
+            if (parameters != null)
             {
                 success = true;
-                await ReplyAsync(parameters.Value);
+                await ReplyAsync(parameters);
             }
 
             await Task.Delay(250);
