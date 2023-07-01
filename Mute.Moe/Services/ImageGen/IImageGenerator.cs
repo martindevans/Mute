@@ -45,6 +45,17 @@ public static class IImageGeneratorExtensions
         return (prompt, negative);
     }
 
+    public static async Task<IReadOnlyList<Stream>> GetMessageContextImages(this IUserMessage context, HttpClient http)
+    {
+        var images = await context
+            .GetMessageImages(http)
+            .ToAsyncEnumerable()
+            .SelectMany(a => a.ToAsyncEnumerable())
+            .ToReadOnlyListAsync();
+
+        return images;
+    }
+
     /// <summary>
     /// Runs either text2image or image2image, depending upon if the context supplies any images.
     /// Images will be retrieved from this message, or the image it refers to.
@@ -61,13 +72,7 @@ public static class IImageGeneratorExtensions
         var random = context.Services.GetRequiredService<Random>();
         var seed = random.Next();
 
-        // Load all of the source images we can find in the message
-        var images = await context
-            .Message
-            .GetMessageImages(http)
-            .ToAsyncEnumerable()
-            .SelectMany(a => a.ToAsyncEnumerable())
-            .ToReadOnlyListAsync();
+        var images = await context.Message.GetMessageContextImages(http);
 
         await context.GenerateImage(
             positive, negative,
@@ -78,11 +83,12 @@ public static class IImageGeneratorExtensions
 
                 using var image = await Image.LoadAsync(images.Random(random));
                 return await generator.Image2Image(seed, image, p, n, r, batchSize);
-            }
+            },
+            false
         );
     }
 
-    public static async Task GenerateImage(this MuteCommandContext context, string positive, string negative, ImageGenerate generate)
+    public static async Task GenerateImage(this MuteCommandContext context, string positive, string negative, ImageGenerate generate, bool isRedo)
     {
         var prompt = await SetupPrompt(context, positive, negative);
         if (prompt == null)
@@ -98,7 +104,7 @@ public static class IImageGeneratorExtensions
         // Do the generation
         try
         {
-            var reporter = new ImageProgressReporter(reply, positive, negative);
+            var reporter = new ImageProgressReporter(reply, positive, negative, isRedo);
             var result = await generate(positive, negative, reporter.ReportAsync);
 
             // Send a final result
@@ -118,14 +124,16 @@ public static class IImageGeneratorExtensions
 
         private readonly string _positive;
         private readonly string _negative;
+        private readonly bool _isRedo;
 
         private float _latestProgress = -1;
 
-        public ImageProgressReporter(IUserMessage message, string positive, string negative)
+        public ImageProgressReporter(IUserMessage message, string positive, string negative, bool isRedo)
         {
             _message = message;
             _positive = positive;
             _negative = negative;
+            _isRedo = isRedo;
         }
 
         public async Task ReportAsync(IImageGenerator.ProgressReport value)
@@ -155,8 +163,8 @@ public static class IImageGeneratorExtensions
             await _message.ModifyAsync(props =>
             {
                 props.Attachments = new Optional<IEnumerable<FileAttachment>>(attachments);
-                props.Content = _positive;
-                props.Components = MidjourneyStyleImageGenerationResponses.CreateButtons(attachments.Count).Build();
+                props.Content = _positive + " **NOT** " + _negative;
+                props.Components = MidjourneyStyleImageGenerationResponses.CreateButtons(attachments.Count, _isRedo).Build();
             });
         }
     }

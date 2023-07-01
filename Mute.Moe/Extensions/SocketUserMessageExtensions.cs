@@ -8,7 +8,7 @@ namespace Mute.Moe.Extensions
 {
     public static class SocketUserMessageExtensions
     {
-        public static async Task<IReadOnlyList<Stream>> GetMessageImages(this SocketUserMessage message, HttpClient http)
+        public static async Task<IReadOnlyList<Stream>> GetMessageImages(this IUserMessage message, HttpClient http)
         {
             var attachments = message.Attachments.ToList<IAttachment>();
             attachments.AddRange(message.ReferencedMessage?.Attachments ?? Array.Empty<IAttachment>());

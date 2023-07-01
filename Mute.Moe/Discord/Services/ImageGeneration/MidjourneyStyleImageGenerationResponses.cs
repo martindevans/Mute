@@ -20,6 +20,8 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
         private const string UpscaleButtonId = MidjourneyStylePrefix + "UpscaleButtonId_";
         private const string RedoButtonId = MidjourneyStylePrefix + "RedoButtonId";
 
+        private const string RedoRecursionMarker = "RedoRecursion";
+
         private readonly IImageGenerator _generator;
         private readonly IImageUpscaler _upscaler;
         private readonly HttpClient _http;
@@ -63,7 +65,7 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
         private async Task OnExecuted(SocketMessageComponent args)
         {
             // Tell discord that we're working on it. Without this Discord times out within 3 seconds.
-            await args.DeferLoadingAsync();
+            await args.DeferLoadingAsync(true);
 
             // Take the lock, only one generation at a time
             using var locked = await _lock.LockAsync();
@@ -83,22 +85,21 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
                 await GenerateVariant(attachment, prompt.Value, args);
             else if (args.Data.CustomId.StartsWith(UpscaleButtonId))
                 await GenerateUpscale(attachment, args);
-
-            await args.DeleteOriginalResponseAsync();
         }
         
         private async Task Regenerate((string, string) prompt, SocketMessageComponent args)
         {
             var ctx = new MuteCommandContext(_client, args.Message, _services);
-            await ctx.GenerateImage(prompt.Item1, prompt.Item2, async (_, _, r) => await _generator.Text2Image(null, prompt.Item1, prompt.Item2, r, _batchSize));
+            await ctx.GenerateImage(prompt.Item1, prompt.Item2, async (_, _, r) => await _generator.Text2Image(null, prompt.Item1, prompt.Item2, r, _batchSize), true);
 
             //todo: the original image may have been image2image, take that into account when regenerating
+            //todo: walk back up the string of reference images, looking at the button IDs to see if they were redos as well
         }
 
         private async Task GenerateVariant(Image original, (string, string) prompt, SocketMessageComponent args)
         {
             var ctx = new MuteCommandContext(_client, args.Message, _services);
-            await ctx.GenerateImage(prompt.Item1, prompt.Item2, async (_, _, r) => await _generator.Image2Image(null, original, prompt.Item1, prompt.Item2, r, _batchSize));
+            await ctx.GenerateImage(prompt.Item1, prompt.Item2, async (_, _, r) => await _generator.Image2Image(null, original, prompt.Item1, prompt.Item2, r, _batchSize), false);
         }
 
         private async Task GenerateUpscale(Image original, SocketMessageComponent args)
@@ -108,7 +109,8 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
             {
                 var img = await _upscaler.UpscaleImage(original, (uint)original.Width * 2, (uint)original.Height * 2, r);
                 return new[] { img };
-            });
+            },
+            false);
         }
 
         #region helpers
@@ -173,7 +175,7 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
         #endregion
 
         #region send message with images
-        public static ComponentBuilder CreateButtons(int count)
+        public static ComponentBuilder CreateButtons(int count, bool isRedo)
         {
             var upscaleRow = new ActionRowBuilder();
             var variantRow = new ActionRowBuilder();
@@ -183,7 +185,7 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
                 variantRow.AddComponent(ButtonBuilder.CreateSuccessButton($"V{i + 1}", GetVariantButtonId(i)).Build());
             }
 
-            upscaleRow.AddComponent(ButtonBuilder.CreateSecondaryButton("♻️", GetRedoButtonId()).Build());
+            upscaleRow.AddComponent(ButtonBuilder.CreateSecondaryButton("♻️", GetRedoButtonId(isRedo)).Build());
 
             var components = new ComponentBuilder();
             components.AddRow(upscaleRow);
@@ -204,9 +206,9 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
             return UpscaleButtonId + index;
         }
 
-        private static string GetRedoButtonId()
+        private static string GetRedoButtonId(bool isRedo)
         {
-            return RedoButtonId;
+            return RedoButtonId + (isRedo ? RedoRecursionMarker : "");
         }
         #endregion
 
