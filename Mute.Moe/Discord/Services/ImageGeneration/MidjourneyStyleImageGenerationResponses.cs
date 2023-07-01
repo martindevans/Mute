@@ -185,7 +185,7 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
                 variantRow.AddComponent(ButtonBuilder.CreateSuccessButton($"V{i + 1}", GetVariantButtonId(i)).Build());
             }
 
-            upscaleRow.AddComponent(ButtonBuilder.CreateSecondaryButton("♻️", GetRedoButtonId(isRedo)).Build());
+            //upscaleRow.AddComponent(ButtonBuilder.CreateSecondaryButton("♻️", GetRedoButtonId(isRedo)).Build());
 
             var components = new ComponentBuilder();
             components.AddRow(upscaleRow);
