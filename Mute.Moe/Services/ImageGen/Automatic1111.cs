@@ -195,7 +195,7 @@ public class Automatic1111
         return analysis.Caption;
     }
 
-    public async Task<Image?> UpscaleImage(Image inputImage, uint width, uint height, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
+    public async Task<Image> UpscaleImage(Image inputImage, uint width, uint height, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
     {
         var backend = await GetBackend() ?? throw new InvalidOperationException("No image analysis backends accessible");
 
@@ -257,8 +257,6 @@ public class Automatic1111
             }
         }
 
-        foreach (var item in (await upscaleTask).Images)
-            return await item.ToImageSharpAsync();
-        return null;
+        return await (await upscaleTask).Images[0].ToImageSharpAsync();
     }
 }

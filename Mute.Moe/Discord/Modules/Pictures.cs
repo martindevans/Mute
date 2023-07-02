@@ -2,12 +2,13 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using Autofocus.Config;
+using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.ImageGen;
+using Mute.Moe.Services.ImageGen.Contexts;
 using Mute.Moe.Utilities;
 using SixLabors.ImageSharp;
 using Image = SixLabors.ImageSharp.Image;
@@ -60,11 +61,7 @@ public class Pictures
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 15, "Please wait a bit before generating more images")]
     public async Task Generate([Remainder] string prompt)
     {
-        var split = prompt.ToLowerInvariant().Split(" not ", StringSplitOptions.RemoveEmptyEntries);
-        var positive = split[0];
-        var negative = string.Join(", ", split.Skip(1));
-
-        await Context.GenerateImage(_generator, positive, negative, 2);
+        await Context.GenerateImage(prompt);
     }
 
     [Command("metadata"), Alias("parameters"), Summary("I will try to extract stable diffusion generation data from the image")]
@@ -117,7 +114,7 @@ public class Pictures
             await ReplyAsync("I couldn't find any metadata in any of those images");
     }
     
-    private async Task<IReadOnlyList<Stream>?> GetMessageImages(SocketUserMessage message)
+    private async Task<IReadOnlyList<Stream>?> GetMessageImages(IUserMessage message)
     {
         var result = await message.GetMessageImages(_http);
         if (result.Count == 0)

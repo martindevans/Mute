@@ -20,6 +20,7 @@ public class Configuration
     [UsedImplicitly] public LLMConfig? LLM;
     [UsedImplicitly] public ONNXConfig? ONNX;
     [UsedImplicitly] public Automatic1111Config? Automatic1111;
+    [UsedImplicitly] public GlobalImageGenerationConfig? ImageGeneration;
 
     [UsedImplicitly] public bool ProcessMessagesFromSelf;
     [UsedImplicitly] public char PrefixCharacter = '!';
@@ -141,4 +142,9 @@ public class Automatic1111Config
     public uint? Width = null;
     public uint? Height = null;
     public string? Upscaler = null;
+}
+
+public class GlobalImageGenerationConfig
+{
+    public int? BatchSize;
 }

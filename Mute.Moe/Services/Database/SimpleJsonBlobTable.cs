@@ -14,6 +14,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
 {
     private readonly string _putSql;
     private readonly string _getSql;
+    private readonly string _deleteSql;
     private readonly string _countSql;
 
     private readonly IDatabaseService _database;
@@ -21,8 +22,9 @@ public abstract class SimpleJsonBlobTable<TBlob>
     protected SimpleJsonBlobTable(string tableName, IDatabaseService database)
     {
         _database = database;
-        _putSql = $"INSERT into {tableName} (ID, Json) values(@ID, @Json)";
+        _putSql = $"INSERT OR REPLACE into {tableName} (ID, Json) values(@ID, @Json)";
         _getSql = $"SELECT Json FROM {tableName} WHERE ID = @ID";
+        _deleteSql = $"DELETE Json FROM {tableName} WHERE ID = @ID";
         _countSql = $"SELECT COUNT(*) FROM {tableName}";
 
 
@@ -86,7 +88,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
         {
             await using (var cmd = _database.CreateCommand())
             {
-                cmd.CommandText = _getSql;
+                cmd.CommandText = _deleteSql;
                 cmd.Parameters.Add(new SQLiteParameter("@ID", System.Data.DbType.String) { Value = id.ToString() });
                 var count = await cmd.ExecuteNonQueryAsync();
                 return count > 0;
