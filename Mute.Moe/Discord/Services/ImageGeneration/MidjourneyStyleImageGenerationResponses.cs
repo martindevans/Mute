@@ -3,6 +3,7 @@ using System.Threading;
 using Discord.WebSocket;
 using System.Threading.Tasks;
 using Discord;
+using Mute.Moe.Extensions;
 using Mute.Moe.Services.Host;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Utilities;
@@ -99,14 +100,28 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
             await new SocketMessageComponentGenerationContext(config, _generator, _upscaler, _http, args).Run();
         }
 
-        private static async Task<ImageGenerationConfig> LegacyConfig(SocketMessageComponent args)
+        private async Task<ImageGenerationConfig> LegacyConfig(SocketMessageComponent args)
         {
+            // Lets just assume the message is the prompt
+            var positive = args.Message.Content;
+            var negative = "(nsfw), (spider)";
+
+            // Try to extract the prompt from the image attachments
+            var firstImage = args.Message.Attachments.FirstOrDefault(a => a.ContentType.StartsWith("image/"));
+            if (firstImage != null)
+            {
+                var image = await SixLabors.ImageSharp.Image.LoadAsync(await _http.GetStreamAsync(firstImage.Url));
+                var prompt = image.GetGenerationPrompt();
+                if (prompt != null)
+                    (positive, negative) = prompt.Value;
+            }
+
             return new ImageGenerationConfig
             {
                 BatchSize = 2,
                 IsPrivate = args.IsDMInteraction,
-                Positive = args.Message.Content,
-                Negative = "",
+                Positive = positive,
+                Negative = negative,
                 ReferenceImageUrl = null,
                 Type = ImageGenerationType.Generate
             };
