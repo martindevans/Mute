@@ -1,10 +1,5 @@
-﻿using Discord;
-using System.IO;
-using System.Net.Http;
+﻿using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Mute.Moe.Discord.Context;
-using Mute.Moe.Extensions;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen;

@@ -206,7 +206,7 @@ public static class MuteCommandContextImageGenerationExtensions
     private static (string, string) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist)
     {
         // Add in all the help negatives
-        var negativeBuilder = new StringBuilder(negative);
+        var negativeBuilder = new StringBuilder();
         foreach (var item in BaseNegative)
         {
             if (!negative.Contains(item, StringComparison.OrdinalIgnoreCase))

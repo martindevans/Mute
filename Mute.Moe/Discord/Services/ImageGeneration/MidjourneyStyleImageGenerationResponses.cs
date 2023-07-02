@@ -8,7 +8,6 @@ using Mute.Moe.Services.Host;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Utilities;
 using Mute.Moe.Services.ImageGen.Contexts;
-using NAudio.SoundFont;
 
 namespace Mute.Moe.Discord.Services.ImageGeneration
 {
@@ -65,9 +64,6 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
             // Tell discord that we're working on it. Without this Discord times out within 3 seconds.
             await args.DeferLoadingAsync();
 
-            // Take the lock, only one generation at a time
-            using var locked = await _lock.LockAsync();
-
             // Get the config that was used to generate this.
             var config = await _storage.Get(args.Message.Id);
 
@@ -95,6 +91,9 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
 
             // Save the new config
             await _storage.Put(newConfigId, config);
+
+            // Take the lock, only one generation at a time
+            using var locked = await _lock.LockAsync();
 
             // Do the actual generation!
             await new SocketMessageComponentGenerationContext(config, _generator, _upscaler, _http, args).Run();

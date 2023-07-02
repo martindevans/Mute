@@ -58,7 +58,7 @@ public class Pictures
     }
 
     [Command("generate"), Alias("diffusion", "imagine"), Summary("I will generate a picture")]
-    [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 15, "Please wait a bit before generating more images")]
+    [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 10, "Please wait a bit before generating more images")]
     public async Task Generate([Remainder] string prompt)
     {
         await Context.GenerateImage(prompt);
@@ -93,7 +93,7 @@ public class Pictures
     }
 
     [Command("analyse"), Alias("interrogate", "describe"), Summary("I will try to describe the image")]
-    [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 15, "Please wait a bit")]
+    [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 30, "Please wait a bit")]
     public async Task Analyse(InterrogateModel model = InterrogateModel.DeepDanbooru)
     {
         var images = await GetMessageImages(Context.Message);
