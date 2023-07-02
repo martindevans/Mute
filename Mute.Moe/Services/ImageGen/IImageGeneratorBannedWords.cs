@@ -1,22 +1,21 @@
-﻿namespace Mute.Moe.Services.ImageGen
+﻿namespace Mute.Moe.Services.ImageGen;
+
+public interface IImageGeneratorBannedWords
 {
-    public interface IImageGeneratorBannedWords
-    {
-        bool IsBanned(string prompt);
-    }
+    bool IsBanned(string prompt);
+}
 
-    public class HardcodedBannedWords
-        : IImageGeneratorBannedWords
+public class HardcodedBannedWords
+    : IImageGeneratorBannedWords
+{
+    private static readonly string[] _bannedWords =
     {
-        private static readonly string[] _bannedWords =
-        {
-            "nsfw", "porn", "erotic", "fuck", "naked", "nude", "hentai",
-            "spider", "arachnid", "tarantula",
-        };
+        "nsfw", "porn", "erotic", "fuck", "naked", "nude", "hentai", "tits", "sex", "penis",
+        "spider", "arachnid", "tarantula",
+    };
 
-        public bool IsBanned(string prompt)
-        {
-            return _bannedWords.Any(word => prompt.Contains(word, StringComparison.InvariantCultureIgnoreCase));
-        }
+    public bool IsBanned(string prompt)
+    {
+        return _bannedWords.Any(word => prompt.Contains(word, StringComparison.InvariantCultureIgnoreCase));
     }
 }

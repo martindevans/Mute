@@ -33,10 +33,19 @@ public class Pictures
         _backends = backends;
     }
 
-    [Command("backend-status"), Summary("I will show the status of image generation backends")]
-    [RequireOwner]
-    public async Task Backends(bool check = false)
+    [Command("backends"), Alias("status"), Summary("I will show the status of image generation backends")]
+    public async Task Backends()
     {
+        await BackendsCheck(false);
+    }
+
+    [Command("backends"), Alias("status"), Summary("I will show the status of image generation backends")]
+    [RequireOwner]
+    public async Task BackendsCheck(bool check = false)
+    {
+        if (!check)
+            await _backends.GetBackend();
+
         var backends = await _backends.GetBackends(check);
 
         await DisplayItemList(
@@ -52,7 +61,6 @@ public class Pictures
     public async Task Generate([Remainder] string prompt)
     {
         var split = prompt.ToLowerInvariant().Split(" not ", StringSplitOptions.RemoveEmptyEntries);
-
         var positive = split[0];
         var negative = string.Join(", ", split.Skip(1));
 
@@ -80,16 +88,16 @@ public class Pictures
                 await ReplyAsync(parameters);
             }
 
-            await Task.Delay(250);
+            await Task.Delay(450);
         }
 
         if (!success)
             await ReplyAsync("I couldn't find any metadata in any of those images");
     }
 
-    [Command("analyse"), Alias("interrogate", "clip", "describe"), Summary("I will try to describe the image")]
+    [Command("analyse"), Alias("interrogate", "describe"), Summary("I will try to describe the image")]
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 15, "Please wait a bit")]
-    public async Task Analyse(InterrogateModel model = InterrogateModel.CLIP)
+    public async Task Analyse(InterrogateModel model = InterrogateModel.DeepDanbooru)
     {
         var images = await GetMessageImages(Context.Message);
         if (images == null)

@@ -39,7 +39,7 @@ public static class IImageGeneratorExtensions
                 return null;
             }
 
-            negative += ", (nsfw:1.4)";
+            negative += ", (nsfw:1.4), (spider:1.4)";
         }
 
         return (prompt, negative);

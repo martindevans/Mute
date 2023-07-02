@@ -90,7 +90,6 @@
 
   <ItemGroup>
     <Folder Include="Properties\PublishProfiles\" />
-    <Folder Include="Services\Notifications\SpaceX\" />
   </ItemGroup>
 
   <ItemGroup>

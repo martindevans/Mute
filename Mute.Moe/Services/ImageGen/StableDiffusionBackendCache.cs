@@ -2,111 +2,112 @@
 using Autofocus;
 using MoreLinq;
 
-namespace Mute.Moe.Services.ImageGen
+namespace Mute.Moe.Services.ImageGen;
+
+public class StableDiffusionBackendCache
 {
-    public class StableDiffusionBackendCache
+    private readonly IReadOnlyList<BackendStatus> _backends;
+
+    public StableDiffusionBackendCache(Configuration config)
     {
-        private readonly IReadOnlyList<BackendStatus> _backends;
+        var urls = config.Automatic1111?.Urls ?? Array.Empty<string>();
+        _backends = urls.Select(a => new BackendStatus(a)).ToArray();
+    }
 
-        public StableDiffusionBackendCache(Configuration config)
+    public async Task<StableDiffusion?> GetBackend()
+    {
+        var initialResponsive = _backends.Where(a => a.IsResponsive).ToList();
+        var initialDead = _backends.Where(a => !a.IsResponsive).ToList();
+
+        // Kick off tasks to check all non-responsive backends if enough time has elapsed
+        var checks = new List<Task>();
+        foreach (var item in initialDead)
         {
-            var urls = config.Automatic1111?.Urls ?? Array.Empty<string>();
-            _backends = urls.Select(a => new BackendStatus(a)).ToArray();
+            if (initialResponsive.Count == 0 || DateTime.UtcNow - item.LastCheck > TimeSpan.FromMinutes(5))
+                checks.Add(item.BeginStatusCheck());
         }
 
-        public async Task<StableDiffusion?> GetBackend()
+        // Pick a random responsive backend
+        if (initialResponsive.Count > 0)
         {
-            var initialResponsive = _backends.Where(a => a.IsResponsive).ToList();
-            var initialDead = _backends.Where(a => !a.IsResponsive).ToList();
-
-            // Kick off tasks to check all non-responsive backends if enough time has elapsed
-            var checks = new List<Task>();
-            foreach (var item in initialDead)
+            foreach (var item in initialResponsive.Shuffle())
             {
-                if (initialResponsive.Count == 0 || DateTime.UtcNow - item.LastCheck > TimeSpan.FromMinutes(5))
-                    checks.Add(item.BeginStatusCheck());
+                await item.BeginStatusCheck();
+                if (item.IsResponsive)
+                    return item.Backend();
             }
+        }
 
-            // Pick a random responsive backend
-            if (initialResponsive.Count > 0)
+        // There were no responsive backends! Wait for checks to finish
+        while (checks.Count > 0)
+        {
+            await Task.WhenAny(checks);
+            checks.RemoveAll(a => a.IsCompleted);
+
+            var responsive = _backends.Where(a => a.IsResponsive).Shuffle().FirstOrDefault();
+            if (responsive != null)
+                return responsive.Backend();
+        }
+
+        // No hope
+        return null;
+    }
+
+    public async Task<IReadOnlyList<(string, uint, bool)>> GetBackends(bool check)
+    {
+        if (check)
+            await Task.WhenAll(_backends.Select(a => a.BeginStatusCheck()));
+
+        var results = new List<(string, uint, bool)>();
+        foreach (var backend in _backends)
+            results.Add((backend.Name, backend.UsedCount, backend.IsResponsive));
+        return results;
+    }
+
+    private class BackendStatus
+    {
+        public bool IsResponsive { get; private set; }
+        public DateTime LastCheck { get; private set; }
+        public uint UsedCount { get; private set; }
+
+        public string Name { get; private set; }
+
+        private readonly StableDiffusion _backend;
+        private readonly StableDiffusion _pingBackend;
+
+        public BackendStatus(string url)
+        {
+            _backend = new StableDiffusion(url);
+            _pingBackend = new StableDiffusion(url) { Timeout = TimeSpan.FromSeconds(10) };
+
+            LastCheck = DateTime.MinValue;
+            IsResponsive = false;
+
+            Name = new Uri(url).Host;
+        }
+
+        public Task BeginStatusCheck()
+        {
+            LastCheck = DateTime.UtcNow;
+
+            return Task.Run(async () =>
             {
-                foreach (var item in initialResponsive.Shuffle())
+                try
                 {
-                    await item.BeginStatusCheck();
-                    if (item.IsResponsive)
-                        return item.Backend();
+                    await _pingBackend.Ping();
+                    IsResponsive = true;
                 }
-            }
-
-            // There were no responsive backends! Wait for checks to finish
-            while (checks.Count > 0)
-            {
-                await Task.WhenAny(checks);
-                checks.RemoveAll(a => a.IsCompleted);
-
-                var responsive = _backends.Where(a => a.IsResponsive).Shuffle().FirstOrDefault();
-                if (responsive != null)
-                    return responsive.Backend();
-            }
-
-            // No hope
-            return null;
-        }
-
-        public async Task<IReadOnlyList<(string, uint, bool)>> GetBackends(bool check)
-        {
-            if (check)
-                await Task.WhenAll(_backends.Select(a => a.BeginStatusCheck()));
-
-            var results = new List<(string, uint, bool)>();
-            foreach (var backend in _backends)
-                results.Add((backend.Name, backend.UsedCount, backend.IsResponsive));
-            return results;
-        }
-
-        private class BackendStatus
-        {
-            public bool IsResponsive { get; private set; }
-            public DateTime LastCheck { get; private set; }
-            public uint UsedCount { get; private set; }
-
-            public string Name { get; private set; }
-
-            private readonly StableDiffusion _backend;
-
-            public BackendStatus(string url)
-            {
-                _backend = new StableDiffusion(url);
-
-                LastCheck = DateTime.MinValue;
-                IsResponsive = false;
-
-                Name = new Uri(url).Host;
-            }
-
-            public Task BeginStatusCheck()
-            {
-                LastCheck = DateTime.UtcNow;
-
-                return Task.Run(async () =>
+                catch
                 {
-                    try
-                    {
-                        await _backend.Ping();
-                        IsResponsive = true;
-                    }
-                    catch
-                    {
-                        IsResponsive = false;
-                    }
-                });
-            }
+                    IsResponsive = false;
+                }
+            });
+        }
 
-            public StableDiffusion Backend()
-            {
-                UsedCount++;
-                return _backend;
-            }
+        public StableDiffusion Backend()
+        {
+            UsedCount++;
+            return _backend;
         }
     }
 }
