@@ -7,6 +7,7 @@ using Mute.Moe.Services.Host;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Utilities;
 using Mute.Moe.Services.ImageGen.Contexts;
+using NAudio.SoundFont;
 
 namespace Mute.Moe.Discord.Services.ImageGeneration
 {
@@ -66,13 +67,12 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
             // Take the lock, only one generation at a time
             using var locked = await _lock.LockAsync();
 
-            // Get the config that was used to generate this
+            // Get the config that was used to generate this.
             var config = await _storage.Get(args.Message.Id);
+
+            // If it's null it's probably because a legacy style button was pressed.Try to make up a best-guess config.
             if (config == null)
-            {
-                await args.ModifyOriginalResponseAsync(props => props.Content = "I'm sorry, I can't find the image generation config for that message");
-                return;
-            }
+                config = await LegacyConfig(args);
 
             var newConfigId = (await args.GetOriginalResponseAsync()).Id;
 
@@ -92,16 +92,27 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
                     : ImageGenerationType.Upscale;
             }
 
-            await RunConfig(newConfigId, config, args);
-        }
+            // Save the new config
+            await _storage.Put(newConfigId, config);
 
-        #region helpers
-        private async Task RunConfig(ulong id, ImageGenerationConfig config, SocketMessageComponent args)
-        {
-            await _storage.Put(id, config);
+            // Do the actual generation!
             await new SocketMessageComponentGenerationContext(config, _generator, _upscaler, _http, args).Run();
         }
 
+        private static async Task<ImageGenerationConfig> LegacyConfig(SocketMessageComponent args)
+        {
+            return new ImageGenerationConfig
+            {
+                BatchSize = 2,
+                IsPrivate = args.IsDMInteraction,
+                Positive = args.Message.Content,
+                Negative = "",
+                ReferenceImageUrl = null,
+                Type = ImageGenerationType.Generate
+            };
+        }
+
+        #region helpers
         private static ulong ParseNumberFromEnd(string customId)
         {
             if (customId == RedoButtonId)
