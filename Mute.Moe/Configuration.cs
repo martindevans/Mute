@@ -143,6 +143,7 @@ public class Automatic1111Config
     public uint? Height = null;
     public string? Upscaler = null;
     public int? GenerationTimeOutSeconds = null;
+    public int? FastTimeOutSeconds = null;
 }
 
 public class GlobalImageGenerationConfig

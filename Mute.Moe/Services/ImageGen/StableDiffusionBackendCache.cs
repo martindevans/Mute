@@ -11,8 +11,11 @@ public class StableDiffusionBackendCache
     public StableDiffusionBackendCache(Configuration config)
     {
         var urls = config.Automatic1111?.Urls ?? Array.Empty<string>();
-        var timeout = TimeSpan.FromSeconds(config.Automatic1111?.GenerationTimeOutSeconds ?? 120);
-        _backends = urls.Select(a => new BackendStatus(a, timeout)).ToArray();
+
+        var timeoutSlow = TimeSpan.FromSeconds(config.Automatic1111?.GenerationTimeOutSeconds ?? 120);
+        var timeoutFast = TimeSpan.FromSeconds(config.Automatic1111?.FastTimeOutSeconds ?? 7);
+
+        _backends = urls.Select(a => new BackendStatus(a, timeoutSlow, timeoutFast)).ToArray();
     }
 
     public async Task<StableDiffusion?> GetBackend()
@@ -75,11 +78,12 @@ public class StableDiffusionBackendCache
 
         private readonly StableDiffusion _backend;
 
-        public BackendStatus(string url, TimeSpan timeout)
+        public BackendStatus(string url, TimeSpan slow, TimeSpan fast)
         {
             _backend = new StableDiffusion(url)
             {
-                TimeoutSlow = timeout
+                TimeoutSlow = slow,
+                TimeoutFast = fast
             };
 
             LastCheck = DateTime.MinValue;
