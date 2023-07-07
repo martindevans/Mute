@@ -12,5 +12,7 @@ namespace Mute.Moe.Services.Database
         public Task<bool> Delete(ulong id);
 
         public Task<int> Count();
+
+        public Task<TValue?> Random();
     }
 }

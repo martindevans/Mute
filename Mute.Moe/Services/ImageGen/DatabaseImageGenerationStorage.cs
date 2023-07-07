@@ -31,6 +31,11 @@ public enum ImageGenerationType
     /// Reference image will be upscaled.
     /// </summary>
     Upscale,
+
+    /// <summary>
+    /// Image will be outpainted (expanded out in all directions)
+    /// </summary>
+    Outpaint
 }
 
 public class DatabaseImageGenerationStorage

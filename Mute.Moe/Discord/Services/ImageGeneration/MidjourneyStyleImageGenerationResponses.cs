@@ -16,21 +16,24 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
     {
         private const string MidjourneyStylePrefix = "MJButton";
         private const string VariantButtonId = MidjourneyStylePrefix + "VariantButtonId_";
+        private const string OutpaintButtonId = MidjourneyStylePrefix + "OutpaintButtonId_";
         private const string UpscaleButtonId = MidjourneyStylePrefix + "UpscaleButtonId_";
         private const string RedoButtonId = MidjourneyStylePrefix + "RedoButtonId";
 
         private readonly IImageGenerator _generator;
         private readonly IImageUpscaler _upscaler;
+        private readonly IImageOutpainter _outpainter;
         private readonly HttpClient _http;
         private readonly DiscordSocketClient _client;
         private readonly IImageGenerationConfigStorage _storage;
 
         private readonly AsyncLock _lock = new();
 
-        public MidjourneyStyleImageGenerationResponses(IImageGenerator generator, IImageUpscaler upscaler, HttpClient http, DiscordSocketClient client, IImageGenerationConfigStorage storage)
+        public MidjourneyStyleImageGenerationResponses(IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http, DiscordSocketClient client, IImageGenerationConfigStorage storage)
         {
             _generator = generator;
             _upscaler = upscaler;
+            _outpainter = outpainter;
             _http = http;
             _client = client;
             _storage = storage;
@@ -84,9 +87,15 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
                 config.ReferenceImageUrl = (await GetAttachment(args))?.Url;
 
                 // Pick generation type
-                config.Type = args.Data.CustomId.StartsWith(VariantButtonId)
-                    ? ImageGenerationType.Generate
-                    : ImageGenerationType.Upscale;
+                var id = args.Data.CustomId;
+                if (id.StartsWith(VariantButtonId))
+                    config.Type = ImageGenerationType.Generate;
+                else if (id.StartsWith(UpscaleButtonId))
+                    config.Type = ImageGenerationType.Upscale;
+                else if (id.StartsWith(OutpaintButtonId))
+                    config.Type = ImageGenerationType.Outpaint;
+                else
+                    throw new InvalidOperationException($"Unknown button ID: {id}");
             }
 
             // Save the new config
@@ -96,7 +105,7 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
             using var locked = await _lock.LockAsync();
 
             // Do the actual generation!
-            await new SocketMessageComponentGenerationContext(config, _generator, _upscaler, _http, args).Run();
+            await new SocketMessageComponentGenerationContext(config, _generator, _upscaler, _outpainter, _http, args).Run();
         }
 
         private async Task<ImageGenerationConfig> LegacyConfig(SocketMessageComponent args)
@@ -176,6 +185,11 @@ namespace Mute.Moe.Discord.Services.ImageGeneration
         #endregion
 
         #region static button IDs
+        public static string GetOutpaintButtonId(int index)
+        {
+            return OutpaintButtonId + index;
+        }
+
         public static string GetVariantButtonId(int index)
         {
             return VariantButtonId + index;

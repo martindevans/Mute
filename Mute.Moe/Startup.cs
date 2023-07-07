@@ -72,6 +72,7 @@ public class Startup
         services.AddTransient<IImageGenerator, Automatic1111>();
         services.AddTransient<IImageAnalyser, Automatic1111>();
         services.AddTransient<IImageUpscaler, Automatic1111>();
+        services.AddTransient<IImageOutpainter, Automatic1111>();
         services.AddSingleton<StableDiffusionBackendCache>();
         services.AddHostedService<MidjourneyStyleImageGenerationResponses>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();

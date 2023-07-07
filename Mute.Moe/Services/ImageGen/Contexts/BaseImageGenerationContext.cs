@@ -5,11 +5,11 @@ using Discord;
 using Microsoft.Extensions.DependencyInjection;
 using MoreLinq;
 using Mute.Moe.Extensions;
-using Image = SixLabors.ImageSharp.Image;
 using SixLabors.ImageSharp;
 using System.IO;
 using System.Net.Http;
 using Mute.Moe.Discord.Services.ImageGeneration;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen.Contexts;
 
@@ -19,16 +19,18 @@ public abstract class BaseImageGenerationContext
 
     private readonly IImageGenerator _generator;
     private readonly IImageUpscaler _upscaler;
+    private readonly IImageOutpainter _outpainter;
     private readonly HttpClient _http;
 
     private float _latestProgress;
 
-    protected BaseImageGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, HttpClient http)
+    protected BaseImageGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http)
     {
         _config = config;
         _generator = generator;
         _upscaler = upscaler;
         _http = http;
+        _outpainter = outpainter;
     }
 
     public async Task Run()
@@ -107,6 +109,7 @@ public abstract class BaseImageGenerationContext
             {
                 ImageGenerationType.Generate => await GenerateImage2Image(referenceImage),
                 ImageGenerationType.Upscale => new[] { await GenerateUpscale(referenceImage) },
+                ImageGenerationType.Outpaint => await GenerateOutpaint(referenceImage),
                 _ => throw new ArgumentOutOfRangeException()
             };
         }
@@ -126,6 +129,11 @@ public abstract class BaseImageGenerationContext
     {
         return _generator.Text2Image(null, _config.Positive, _config.Negative, OnReportProgress, _config.BatchSize);
     }
+
+    private Task<IReadOnlyCollection<Image>> GenerateOutpaint(Image referenceImage)
+    {
+        return _outpainter.Outpaint(referenceImage, _config.Positive, _config.Negative, OnReportProgress);
+    }
     #endregion
 
     #region send message with images
@@ -133,10 +141,12 @@ public abstract class BaseImageGenerationContext
     {
         var upscaleRow = new ActionRowBuilder();
         var variantRow = new ActionRowBuilder();
+        var outpaintRow = new ActionRowBuilder();
         for (var i = 0; i < count; i++)
         {
             upscaleRow.AddComponent(ButtonBuilder.CreatePrimaryButton($"U{i + 1}", MidjourneyStyleImageGenerationResponses.GetUpscaleButtonId(i)).Build());
             variantRow.AddComponent(ButtonBuilder.CreateSuccessButton($"V{i + 1}", MidjourneyStyleImageGenerationResponses.GetVariantButtonId(i)).Build());
+            outpaintRow.AddComponent(ButtonBuilder.CreateDangerButton($"O{i + 1}", MidjourneyStyleImageGenerationResponses.GetOutpaintButtonId(i)).Build());
         }
 
         upscaleRow.AddComponent(ButtonBuilder.CreateSecondaryButton("♻️", MidjourneyStyleImageGenerationResponses.GetRedoButtonId()).Build());
@@ -144,7 +154,7 @@ public abstract class BaseImageGenerationContext
         var components = new ComponentBuilder();
         components.AddRow(upscaleRow);
         components.AddRow(variantRow);
-
+        components.AddRow(outpaintRow);
         return components;
     }
     #endregion
@@ -159,6 +169,7 @@ public static class MuteCommandContextImageGenerationExtensions
         var blacklist = context.Services.GetRequiredService<IImageGeneratorBannedWords>();
         var generator = context.Services.GetRequiredService<IImageGenerator>();
         var upscaler = context.Services.GetRequiredService<IImageUpscaler>();
+        var outpainter = context.Services.GetRequiredService<IImageOutpainter>();
         var http = context.Services.GetRequiredService<HttpClient>();
         var muteConfig = context.Services.GetRequiredService<Configuration>();
 
@@ -196,7 +207,7 @@ public static class MuteCommandContextImageGenerationExtensions
         await storage.Put(reply.Id, config);
 
         // Do the actual work
-        var ctx = new MuteCommandContextGenerationContext(config, generator, upscaler, http, reply);
+        var ctx = new MuteCommandContextGenerationContext(config, generator, upscaler, outpainter, http, reply);
         await ctx.Run();
     }
 

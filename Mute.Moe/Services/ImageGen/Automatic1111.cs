@@ -9,11 +9,13 @@ using Autofocus.Scripts.UltimateUpscaler;
 using Mute.Moe.Extensions;
 using SixLabors.ImageSharp;
 using Image = SixLabors.ImageSharp.Image;
+using Mute.Moe.Services.ImageGen.Outpaint;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Mute.Moe.Services.ImageGen;
 
 public class Automatic1111
-    : IImageGenerator, IImageAnalyser, IImageUpscaler
+    : IImageGenerator, IImageAnalyser, IImageUpscaler, IImageOutpainter
 {
     private readonly StableDiffusionBackendCache _backends;
 
@@ -91,12 +93,15 @@ public class Automatic1111
         return results;
     }
 
-    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image image, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
+    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image inputImage, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         var backend = await GetBackend() ?? throw new InvalidOperationException("No image generation backends accessible");
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
+
+        // Clone input image before mutation
+        using var image = inputImage.CloneAs<Rgba32>();
 
         // Scale down to the correct width
         image.Mutate(a => a.Resize(new Size((int)_width, 0)));
@@ -258,5 +263,37 @@ public class Automatic1111
         }
 
         return await (await upscaleTask).Images[0].ToImageSharpAsync();
+    }
+
+    public async Task<IReadOnlyCollection<Image>> Outpaint(Image inputImage, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
+    {
+        var backend = await GetBackend() ?? throw new InvalidOperationException("No image analysis backends accessible");
+        var model = await backend.StableDiffusionModel(_checkpoint);
+        var sampler = await backend.Sampler(_i2iSampler);
+        var outpainter = new TwoStepOutpainter(backend, model, sampler, 2, 2, 75);
+
+        // Clone input image before mutation
+        using var image = inputImage.CloneAs<Rgba32>();
+
+        // Scale down to the correct width
+        image.Mutate(a => a.Resize(new Size((int)_width, 0)));
+
+        // Scale down height if necessary
+        if (image.Height > _height)
+            image.Mutate(a => a.Resize(new Size(0, (int)_height)));
+
+        // Do the actual outpainting
+        var result = await outpainter.Outpaint(new PromptConfig { Positive = positive, Negative = negative, }, image, Progess);
+
+        // Decode all images
+        var results = new List<Image>();
+        foreach (var item in result)
+            results.Add(await item.ToImageSharpAsync());
+        return results;
+
+        void Progess(float p)
+        {
+            progressReporter?.Invoke(new IImageGenerator.ProgressReport(p, null));
+        }
     }
 }

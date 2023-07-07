@@ -106,7 +106,7 @@ public class Pictures
             var description = await _analyser.GetImageDescription(stream, model);
             success = true;
 
-            await ReplyAsync(description);
+            await ReplyAsync($"```{description}```");
             await Task.Delay(250);
         }
 

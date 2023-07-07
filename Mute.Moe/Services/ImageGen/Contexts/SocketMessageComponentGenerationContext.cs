@@ -10,8 +10,8 @@ public class SocketMessageComponentGenerationContext
 {
     private readonly SocketMessageComponent _component;
 
-    public SocketMessageComponentGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, HttpClient http, SocketMessageComponent component)
-        : base(config, generator, upscaler, http)
+    public SocketMessageComponentGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http, SocketMessageComponent component)
+        : base(config, generator, upscaler, outpainter, http)
     {
         _component = component;
     }

@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using System.Data.Common;
+using System.Data.SQLite;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -16,6 +17,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
     private readonly string _getSql;
     private readonly string _deleteSql;
     private readonly string _countSql;
+    private readonly string _randomSql;
 
     private readonly IDatabaseService _database;
 
@@ -26,7 +28,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
         _getSql = $"SELECT Json FROM {tableName} WHERE ID = @ID";
         _deleteSql = $"DELETE Json FROM {tableName} WHERE ID = @ID";
         _countSql = $"SELECT COUNT(*) FROM {tableName}";
-
+        _randomSql = $"SELECT * FROM {tableName} ORDER BY RANDOM() LIMIT 1;";
 
         try
         {
@@ -68,11 +70,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
             {
                 cmd.CommandText = _getSql;
                 cmd.Parameters.Add(new SQLiteParameter("@ID", System.Data.DbType.String) { Value = id.ToString() });
-                var json = (string?)await cmd.ExecuteScalarAsync();
-
-                if (json == null)
-                    return null;
-                return JsonSerializer.Deserialize<TBlob>(json);
+                return await Read(cmd);
             }
         }
         catch (Exception e)
@@ -117,5 +115,31 @@ public abstract class SimpleJsonBlobTable<TBlob>
             Console.WriteLine(e);
             throw;
         }
+    }
+
+    public async Task<TBlob?> Random()
+    {
+        try
+        {
+            await using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = _randomSql;
+                return await Read(cmd);
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    private static async Task<TBlob?> Read(DbCommand cmd)
+    {
+        var json = (string?)await cmd.ExecuteScalarAsync();
+
+        if (json == null)
+            return null;
+        return JsonSerializer.Deserialize<TBlob>(json);
     }
 }
