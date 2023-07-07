@@ -45,18 +45,18 @@ namespace Mute.Moe.Services.ImageGen.Outpaint
             var average = input.AverageColor();
             progress(0.01f);
 
+            var drawingOptions = new GraphicsOptions
+            {
+                Antialias = true,
+                ColorBlendingMode = PixelColorBlendingMode.Normal,
+            };
+
             // Create an image expanded outwards by 128 in all directions
             using var inputImage = new Image<Rgba32>(input.Width + 256, input.Height + 256);
             inputImage.Mutate(ctx =>
             {
-                var gfxOptions = new GraphicsOptions
-                {
-                    Antialias = true,
-                    ColorBlendingMode = PixelColorBlendingMode.Normal,
-                };
-
                 ctx.Fill(average);
-                ctx.DrawImage(input, new Point(128, 128), gfxOptions);
+                ctx.DrawImage(input, new Point(128, 128), drawingOptions);
             });
             inputImage.Bleed(new Rectangle(128, 128, input.Width - 1, input.Height - 1), 128, null, 1);
             progress(0.05f);
@@ -75,6 +75,11 @@ namespace Mute.Moe.Services.ImageGen.Outpaint
             });
             progress(0.1f);
 
+            // Shrink inputs down to the size of the original input for the first step
+            inputImage.Mutate(ctx => ctx.Resize(input.Size));
+            inputMask.Mutate(ctx => ctx.Resize(input.Size));
+
+            // Run img2img over the entire image. The mask protects most of the original content from being changed at all.
             var result1 = await Pump(0.1f, 0.5f, progress,
                 _api.Image2Image(new ImageToImageConfig
                 {
@@ -105,15 +110,28 @@ namespace Mute.Moe.Services.ImageGen.Outpaint
                     },
                 })
             );
-
+            progress(0.5f);
+            
             var progPerBatch = 0.5f / result1.Images.Count;
             var baseProgress = 0.5f;
             var results = new List<Base64EncodedImage>();
-            foreach (var image in result1.Images)
+            foreach (var item in result1.Images)
             {
                 progress(baseProgress);
                 {
-                    var inner = await Redraw(image, (uint)inputMask.Width, (uint)inputMask.Height, prompt, -1);
+                    // Expand image back up to proper size and draw the most of the original input into the middle. This fixes the loss from when we scaled down previously.
+                    using var image = await item.ToImageSharpAsync();
+                    image.Mutate(ctx =>
+                    {
+                        ctx.Resize(input.Size + new Size(256, 256));
+
+                        const int margin = 8;
+                        ctx.DrawImage(input, new Point(128 + margin, 128 + margin), new Rectangle(margin, margin, input.Width - margin * 2, input.Height - margin * 2), drawingOptions);
+                    });
+
+                    // Redraw the entire image at the full scale. This step has a very low number of steps and low denoising, so it shouldn't change the composition
+                    // of the overall image too much. But it should fix up the seams that we just made much worse by painting the original image back in!
+                    var inner = await Redraw(image, prompt, -1);
                     results.AddRange(inner);
                 }
                 baseProgress += progPerBatch;
@@ -122,13 +140,13 @@ namespace Mute.Moe.Services.ImageGen.Outpaint
             return results;
         }
 
-        private async Task<IReadOnlyCollection<Base64EncodedImage>> Redraw(Base64EncodedImage input, uint width, uint height, PromptConfig prompt, SeedConfig seed)
+        private async Task<IReadOnlyCollection<Base64EncodedImage>> Redraw(Image input, PromptConfig prompt, SeedConfig seed)
         {
             var result2 = await _api.Image2Image(new ImageToImageConfig
             {
                 Images =
-                {
-                    input,
+                { 
+                    await input.ToAutofocusImageAsync(),
                 },
 
                 Model = _model,
@@ -136,8 +154,8 @@ namespace Mute.Moe.Services.ImageGen.Outpaint
 
                 BatchSize = _batchSize2,
 
-                Width = width,
-                Height = height,
+                Width = (uint)input.Width,
+                Height = (uint)input.Height,
 
                 Prompt = prompt,
                 Seed = seed,
