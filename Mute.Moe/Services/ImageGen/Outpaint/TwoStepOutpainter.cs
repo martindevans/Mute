@@ -175,11 +175,22 @@ namespace Mute.Moe.Services.ImageGen.Outpaint
         {
             while (!task.IsCompleted)
             {
-                var value = await _api.Progress(true);
-                progress(min + (max - min) * (float)value.Progress);
-                await Task.Delay(350);
+                try
+                {
+                    var value = await _api.Progress(true);
+                    progress(min + (max - min) * (float)value.Progress);
+                }
+                catch (TimeoutException)
+                {
+
+                }
+                finally
+                {
+                    await Task.Delay(350);
+                }
             }
 
+            progress(max);
             return await task;
         }
     }

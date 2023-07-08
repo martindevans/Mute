@@ -52,7 +52,7 @@ public class Automatic1111
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_t2iSampler);
 
-        var resultTask = backend.TextToImage(
+        var rawResults = await PumpProgress(backend, backend.TextToImage(
             new()
             {
                 Seed = new() { Seed = seed },
@@ -75,20 +75,10 @@ public class Automatic1111
                 Width = _width,
                 Height = _height,
             }
-        );
-
-        if (progressReporter != null)
-        {
-            while (!resultTask.IsCompleted)
-            {
-                var progress = await backend.Progress(true);
-                await progressReporter(new IImageGenerator.ProgressReport((float)progress.Progress, null));
-                await Task.Delay(250);
-            }
-        }
+        ), progressReporter);
 
         var results = new List<Image>();
-        foreach (var item in (await resultTask).Images)
+        foreach (var item in rawResults.Images)
             results.Add(await item.ToImageSharpAsync());
         return results;
     }
@@ -134,7 +124,7 @@ public class Automatic1111
             };
         }
 
-        var resultTask = backend.Image2Image(
+        var result = await PumpProgress(backend, backend.Image2Image(
             new()
             {
                 Images =
@@ -168,19 +158,8 @@ public class Automatic1111
                     cnetConfig
                 }
             }
-        );
-
-        if (progressReporter != null)
-        {
-            while (!resultTask.IsCompleted)
-            {
-                var progress = await backend.Progress(true);
-                await progressReporter(new IImageGenerator.ProgressReport((float)progress.Progress, null));
-                await Task.Delay(250);
-            }
-        }
-
-        var result = await resultTask;
+        ), progressReporter);
+        
         return await result.Images
             .Take(result.Images.Count - (cnetConfig == null ? 0 : 1)) // Skip the last image if cnet is used, to remove the guidance image which is added to the end
             .ToAsyncEnumerable()
@@ -218,10 +197,11 @@ public class Automatic1111
             );
         }
 
-        var upscaleTask = backend.Image2Image(
+        var upscaleResult = await PumpProgress(backend, backend.Image2Image(
             new()
             {
-                Images = {
+                Images =
+                {
                     await inputImage.ToAutofocusImageAsync(),
                 },
 
@@ -250,19 +230,9 @@ public class Automatic1111
                     Upscaler = upscaler
                 }
             }
-        );
+        ), progressReporter);
 
-        if (progressReporter != null)
-        {
-            while (!upscaleTask.IsCompleted)
-            {
-                var progress = await backend.Progress(true);
-                await progressReporter(new IImageGenerator.ProgressReport((float)progress.Progress, null));
-                await Task.Delay(250);
-            }
-        }
-
-        return await (await upscaleTask).Images[0].ToImageSharpAsync();
+        return await upscaleResult.Images[0].ToImageSharpAsync();
     }
 
     public async Task<IReadOnlyCollection<Image>> Outpaint(Image inputImage, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
@@ -295,5 +265,30 @@ public class Automatic1111
         {
             progressReporter?.Invoke(new IImageGenerator.ProgressReport(p, null));
         }
+    }
+
+    private static async Task<T> PumpProgress<T>(IStableDiffusion backend, Task<T> task, Func<IImageGenerator.ProgressReport, Task>? progressReporter)
+    {
+        while (!task.IsCompleted)
+        {
+            try
+            {
+                if (progressReporter != null)
+                {
+                    var progress = await backend.Progress(true);
+                    await progressReporter(new IImageGenerator.ProgressReport((float)progress.Progress, null));
+                }
+            }
+            catch (TimeoutException)
+            {
+
+            }
+            finally
+            {
+                await Task.Delay(350);
+            }
+        }
+
+        return await task;
     }
 }

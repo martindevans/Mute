@@ -11,7 +11,7 @@ public class HardcodedBannedWords
     private static readonly string[] _bannedWords =
     {
         "nsfw", "porn", "erotic", "fuck", "naked", "nude", "hentai", "tits", "sex", "penis",
-        "spider", "arachnid", "tarantula",
+        "spider", "arachnid", "tarantula", "arachnophobia",
     };
 
     public bool IsBanned(string prompt)
