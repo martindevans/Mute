@@ -142,8 +142,12 @@ public class Automatic1111Config
     public uint? Width = null;
     public uint? Height = null;
     public string? Upscaler = null;
+
     public int? GenerationTimeOutSeconds = null;
     public int? FastTimeOutSeconds = null;
+
+    public uint? Image2ImageClipSkip = null;
+    public uint? Text2ImageClipSkip = null;
 }
 
 public class GlobalImageGenerationConfig

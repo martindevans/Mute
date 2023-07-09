@@ -27,6 +27,9 @@ public class Automatic1111
     private readonly uint _height;
     private readonly string _upscaler;
 
+    private readonly uint _img2imgClipSkip;
+    private readonly uint _txt2imgClipSkip;
+
     public Automatic1111(Configuration config, StableDiffusionBackendCache backends)
     {
         _backends = backends;
@@ -38,6 +41,9 @@ public class Automatic1111
         _width = config.Automatic1111?.Width ?? 512;
         _height = config.Automatic1111?.Height ?? 768;
         _upscaler = config.Automatic1111?.Upscaler ?? "Lanczos";
+
+        _img2imgClipSkip = config.Automatic1111?.Image2ImageClipSkip ?? 2;
+        _txt2imgClipSkip = config.Automatic1111?.Text2ImageClipSkip ?? 2;
     }
 
     private Task<StableDiffusion?> GetBackend()
@@ -75,7 +81,7 @@ public class Automatic1111
                 Width = _width,
                 Height = _height,
 
-                ClipSkip = 1,
+                ClipSkip = _img2imgClipSkip,
             }
         ), progressReporter);
 
@@ -155,7 +161,7 @@ public class Automatic1111
                 Width = (uint)image.Width,
                 Height = (uint)image.Height,
 
-                ClipSkip = 2,
+                ClipSkip = _img2imgClipSkip,
 
                 AdditionalScripts =
                 {
