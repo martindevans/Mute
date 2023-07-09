@@ -174,7 +174,10 @@ public static class MuteCommandContextImageGenerationExtensions
         var muteConfig = context.Services.GetRequiredService<Configuration>();
 
         // Parse the prompt
-        var split = prompt.ToLowerInvariant().Split(" not ", StringSplitOptions.RemoveEmptyEntries);
+        var split = prompt
+            .Replace(" not ", " not ", StringComparison.OrdinalIgnoreCase)
+            .Split(" not ", StringSplitOptions.RemoveEmptyEntries);
+
         var positive = split[0];
         var negative = string.Join(", ", split.Skip(1));
 

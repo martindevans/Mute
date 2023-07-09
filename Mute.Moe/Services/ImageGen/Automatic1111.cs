@@ -74,6 +74,8 @@ public class Automatic1111
                 Batches = 1,
                 Width = _width,
                 Height = _height,
+
+                ClipSkip = 1,
             }
         ), progressReporter);
 
@@ -153,6 +155,8 @@ public class Automatic1111
                 Width = (uint)image.Width,
                 Height = (uint)image.Height,
 
+                ClipSkip = 2,
+
                 AdditionalScripts =
                 {
                     cnetConfig
@@ -188,14 +192,10 @@ public class Automatic1111
         var upscaler = await backend.Upscaler(_upscaler);
 
         // Try to get the generation prompt that was originally used for this image
-        var prompt = inputImage.GetGenerationPrompt();
-        if (prompt == null)
-        {
-            prompt = (
-                "detailed, <lora:add_detail:0.5>",
-                "easynegative, nsfw, badhandv4"
-            );
-        }
+        var prompt = inputImage.GetGenerationPrompt() ?? (
+            "detailed, <lora:add_detail:0.5>",
+            "easynegative, nsfw, badhandv4"
+        );
 
         var upscaleResult = await PumpProgress(backend, backend.Image2Image(
             new()
@@ -209,8 +209,8 @@ public class Automatic1111
 
                 Prompt = new()
                 {
-                    Positive = prompt.Value.Item1,
-                    Negative = prompt.Value.Item2,
+                    Positive = prompt.Item1,
+                    Negative = prompt.Item2,
                 },
 
                 Seed = new(),

@@ -3,6 +3,7 @@ using Autofocus;
 using Autofocus.Config;
 using Autofocus.ImageSharp.Extensions;
 using Autofocus.Models;
+using Mute.Moe.Extensions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -101,6 +102,8 @@ namespace Mute.Moe.Services.ImageGen.Outpaint
                     Prompt = prompt,
 
                     Seed = -1,
+
+                    ClipSkip = 2,
 
                     Sampler = new()
                     {
