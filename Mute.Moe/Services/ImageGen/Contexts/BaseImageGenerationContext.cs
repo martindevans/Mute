@@ -89,16 +89,34 @@ public abstract class BaseImageGenerationContext
             props.Attachments = new Optional<IEnumerable<FileAttachment>>(attachments);
             props.Components = CreateButtons(attachments.Count).Build();
 
-            props.Content = prompt.Positive + " **NOT** " + prompt.Negative;
+            props.Content = Join(prompt.Positive, prompt.Negative);
 
-            if (prompt.FaceEnhancementPositive != null || prompt.FaceEnhancementNegative != null)
-                props.Content += $"\n**face**: {prompt.FaceEnhancementPositive} **NOT** {prompt.FaceEnhancementNegative}";
-            if (prompt.EyeEnhancementPositive != null || prompt.EyeEnhancementNegative != null)
-                props.Content += $"\n**eyes**: {prompt.EyeEnhancementPositive} **NOT** {prompt.EyeEnhancementNegative}";
-            if (prompt.HandEnhancementPositive != null || prompt.HandEnhancementNegative != null)
-                props.Content += $"\n**hands**: {prompt.HandEnhancementPositive} **NOT** {prompt.HandEnhancementNegative}";
-            
+            var f = Join(prompt.FaceEnhancementPositive, prompt.FaceEnhancementNegative);
+            if (f != null)
+                props.Content += $"\n**face**: {f}";
+
+            var e = Join(prompt.EyeEnhancementPositive, prompt.EyeEnhancementNegative);
+            if (e != null)
+                props.Content += $"\n**eyes**: {e}";
+
+            var h = Join(prompt.HandEnhancementPositive, prompt.HandEnhancementNegative);
+            if (h != null)
+                props.Content += $"\n**hands**: {h}";
         });
+
+        static string? Join(string? left, string? right)
+        {
+            var ln = string.IsNullOrWhiteSpace(left);
+            var rn = string.IsNullOrWhiteSpace(right);
+
+            return (ln, rn) switch
+            {
+                (false, false) => $"{left} **NOT** {right}",
+                (true, false) => $"**NOT** {right}",
+                (false, true) => left,
+                (true, true) => null,
+            };
+        }
     }
     #endregion
 
@@ -247,12 +265,12 @@ public static class MuteCommandContextImageGenerationExtensions
 
             var positive = split[0];
             var negative = string.Join(", ", split.Skip(1));
-            (positive, negative) = PreprocessPrompt(positive, negative, isPrivate, blacklist);
+            (positive, negative) = PreprocessPrompt(positive, negative, isPrivate, blacklist, index > 0);
 
             if (index == 0)
             {
                 result.Positive = positive;
-                result.Negative = negative;
+                result.Negative = negative ?? "";
             }
             else
             {
@@ -277,7 +295,7 @@ public static class MuteCommandContextImageGenerationExtensions
         return result;
     }
 
-    private static (string, string) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist)
+    private static (string, string?) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist, bool skipEmptyNegative = false)
     {
         // Add in all the help negatives
         var negativeBuilder = new StringBuilder();
@@ -299,6 +317,9 @@ public static class MuteCommandContextImageGenerationExtensions
 
             negativeBuilder.Append(", (nsfw:1.4), (spider:1.4)");
         }
+
+        if (skipEmptyNegative && string.IsNullOrWhiteSpace(negative))
+            return (positive, null);
 
         return (positive, negativeBuilder.Replace(",,", ",").ToString());
     }
