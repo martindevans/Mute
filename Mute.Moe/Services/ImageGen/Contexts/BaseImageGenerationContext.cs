@@ -300,7 +300,7 @@ public static class MuteCommandContextImageGenerationExtensions
             negativeBuilder.Append(", (nsfw:1.4), (spider:1.4)");
         }
 
-        return (positive, negativeBuilder.ToString());
+        return (positive, negativeBuilder.Replace(",,", ",").ToString());
     }
     #endregion
 }
