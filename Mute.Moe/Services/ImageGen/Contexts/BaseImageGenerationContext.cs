@@ -39,7 +39,7 @@ public abstract class BaseImageGenerationContext
         {
             await OnStartingGeneration();
             var result = await Generate();
-            await OnCompleted(_config.Positive, _config.Negative, result);
+            await OnCompleted(_config.Prompt(), result);
         }
         catch (Exception ex)
         {
@@ -70,7 +70,7 @@ public abstract class BaseImageGenerationContext
         await ModifyReply(msg => msg.Content = $"Image generation failed!\n{exception.Message}");
     }
 
-    private async Task OnCompleted(string positive, string negative, IReadOnlyCollection<Image?> images)
+    private async Task OnCompleted(Prompt prompt, IReadOnlyCollection<Image?> images)
     {
         var attachments = new List<FileAttachment>();
         foreach (var image in images)
@@ -87,8 +87,17 @@ public abstract class BaseImageGenerationContext
         await ModifyReply(props => 
         {
             props.Attachments = new Optional<IEnumerable<FileAttachment>>(attachments);
-            props.Content = positive + " **NOT** " + negative;
             props.Components = CreateButtons(attachments.Count).Build();
+
+            props.Content = prompt.Positive + " **NOT** " + prompt.Negative;
+
+            if (prompt.FaceEnhancementPositive != null || prompt.FaceEnhancementNegative != null)
+                props.Content += $"\n**face**: {prompt.FaceEnhancementPositive} **NOT** {prompt.FaceEnhancementNegative}";
+            if (prompt.EyeEnhancementPositive != null || prompt.EyeEnhancementNegative != null)
+                props.Content += $"\n**eyes**: {prompt.EyeEnhancementPositive} **NOT** {prompt.EyeEnhancementNegative}";
+            if (prompt.HandEnhancementPositive != null || prompt.HandEnhancementNegative != null)
+                props.Content += $"\n**hands**: {prompt.HandEnhancementPositive} **NOT** {prompt.HandEnhancementNegative}";
+            
         });
     }
     #endregion
@@ -216,7 +225,7 @@ public static class MuteCommandContextImageGenerationExtensions
     }
 
     #region prompt filtering
-    private static readonly IReadOnlyList<string> BaseNegative = new[] { "easynegative, badhandv4, bad-hands-5, logo, Watermark, username, signature, jpeg artifacts" };
+    private static readonly IReadOnlyList<string> BaseNegative = new[] { "easynegative, badhandv4, bad-hands-5, logo, watermark, signature" };
 
     private static Prompt Parse(string input, bool isPrivate, IImageGeneratorBannedWords blacklist)
     {
