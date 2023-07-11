@@ -191,14 +191,8 @@ public class Automatic1111
                 new()
                 {
                     Model = "face_yolov8n.pt",
-                    PositivePrompt = prompt.FaceEnhancementPositive,
-                    NegativePrompt = prompt.FaceEnhancementNegative,
-                },
-                new()
-                {
-                    Model = "mediapipe_face_mesh_eyes_only",
-                    PositivePrompt = prompt.EyeEnhancementPositive,
-                    NegativePrompt = prompt.EyeEnhancementNegative,
+                    PositivePrompt = Join(prompt.FaceEnhancementPositive, prompt.EyeEnhancementPositive),
+                    NegativePrompt = Join(prompt.FaceEnhancementNegative, prompt.EyeEnhancementNegative),
                 },
                 new()
                 {
@@ -208,6 +202,17 @@ public class Automatic1111
                 }
             }
         };
+
+        string? Join(string? left, string? right)
+        {
+            return (string.IsNullOrWhiteSpace(left), string.IsNullOrWhiteSpace(right)) switch
+            {
+                (true, true) => null,
+                (true, false) => right,
+                (false, true) => left,
+                (false, false) => $"{left}, {right}",
+            };
+        }
     }
 
     public async Task<string> GetImageDescription(Stream image, InterrogateModel model)
