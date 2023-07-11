@@ -122,12 +122,14 @@ public abstract class BaseImageGenerationContext
 
     private Task<IReadOnlyCollection<Image>> GenerateImage2Image(Image referenceImage)
     {
-        return _generator.Image2Image(null, referenceImage, _config.Positive, _config.Negative, OnReportProgress, _config.BatchSize);
+        var prompt = _config.Prompt();
+        return _generator.Image2Image(null, referenceImage, prompt, OnReportProgress, _config.BatchSize);
     }
 
     private Task<IReadOnlyCollection<Image>> GenerateText2Image()
     {
-        return _generator.Text2Image(null, _config.Positive, _config.Negative, OnReportProgress, _config.BatchSize);
+        var prompt = _config.Prompt();
+        return _generator.Text2Image(null, prompt, OnReportProgress, _config.BatchSize);
     }
 
     private Task<IReadOnlyCollection<Image>> GenerateOutpaint(Image referenceImage)
@@ -174,15 +176,7 @@ public static class MuteCommandContextImageGenerationExtensions
         var muteConfig = context.Services.GetRequiredService<Configuration>();
 
         // Parse the prompt
-        var split = prompt
-            .Replace(" not ", " not ", StringComparison.OrdinalIgnoreCase)
-            .Split(" not ", StringSplitOptions.RemoveEmptyEntries);
-
-        var positive = split[0];
-        var negative = string.Join(", ", split.Skip(1));
-
-        // Filter the prompt
-        (positive, negative) = PreprocessPrompt(positive, negative, context.IsPrivate, blacklist);
+        var parsedPrompt = Parse(prompt, context.IsPrivate, blacklist);
 
         // Find any images in the reference
         var images = context.Message.GetMessageImageAttachments();
@@ -200,8 +194,15 @@ public static class MuteCommandContextImageGenerationExtensions
         // Save the config into the DB
         var config = new ImageGenerationConfig
         {
-            Positive = positive,
-            Negative = negative,
+            Positive = parsedPrompt.Positive,
+            Negative = parsedPrompt.Negative,
+            EyePositive = parsedPrompt.EyeEnhancementPositive,
+            EyeNegative = parsedPrompt.EyeEnhancementNegative,
+            HandPositive = parsedPrompt.HandEnhancementPositive,
+            HandNegative = parsedPrompt.HandEnhancementNegative,
+            FacePositive = parsedPrompt.FaceEnhancementPositive,
+            FaceNegative = parsedPrompt.FaceEnhancementNegative,
+
             ReferenceImageUrl = referenceUrl,
             IsPrivate = context.IsPrivate,
             Type = ImageGenerationType.Generate,
@@ -216,6 +217,56 @@ public static class MuteCommandContextImageGenerationExtensions
 
     #region prompt filtering
     private static readonly IReadOnlyList<string> BaseNegative = new[] { "easynegative, badhandv4, bad-hands-5, logo, Watermark, username, signature, jpeg artifacts" };
+
+    private static Prompt Parse(string input, bool isPrivate, IImageGeneratorBannedWords blacklist)
+    {
+        var result = new Prompt
+        {
+            Positive = "",
+            Negative = "",
+        };
+
+        var lines = input.Split('\n').ToList();
+        if (lines.Count == 0)
+            return result;
+
+        foreach (var (line, index) in lines.Select((a, i) => (a, i)))
+        {
+            var split = line
+                .Replace(" not ", " not ", StringComparison.OrdinalIgnoreCase)
+                .Split(" not ", StringSplitOptions.RemoveEmptyEntries);
+
+            var positive = split[0];
+            var negative = string.Join(", ", split.Skip(1));
+            (positive, negative) = PreprocessPrompt(positive, negative, isPrivate, blacklist);
+
+            if (index == 0)
+            {
+                result.Positive = positive;
+                result.Negative = negative;
+            }
+            else
+            {
+                if (line.StartsWith("hands: "))
+                {
+                    result.HandEnhancementPositive = positive[7..];
+                    result.HandEnhancementNegative = negative;
+                }
+                else if (line.StartsWith("face: "))
+                {
+                    result.FaceEnhancementPositive = positive[6..];
+                    result.FaceEnhancementNegative = negative;
+                }
+                else if (line.StartsWith("eyes: "))
+                {
+                    result.EyeEnhancementPositive = positive[6..];
+                    result.EyeEnhancementNegative = negative;
+                }
+            }
+        }
+
+        return result;
+    }
 
     private static (string, string) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist)
     {

@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Autofocus.Config;
 using Autofocus.CtrlNet;
+using Autofocus.Extensions.AfterDetailer;
 using SixLabors.ImageSharp.Processing;
 using Autofocus.ImageSharp.Extensions;
 using Autofocus.Scripts.UltimateUpscaler;
@@ -51,7 +52,7 @@ public class Automatic1111
         return _backends.GetBackend();
     }
 
-    public async Task<IReadOnlyCollection<Image>> Text2Image(int? seed, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
+    public async Task<IReadOnlyCollection<Image>> Text2Image(int? seed, Prompt prompt, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         var backend = await GetBackend() ?? throw new InvalidOperationException("No image generation backends accessible");
 
@@ -65,8 +66,8 @@ public class Automatic1111
 
                 Prompt = new()
                 {
-                    Positive = positive,
-                    Negative = negative,
+                    Positive = prompt.Positive,
+                    Negative = prompt.Negative,
                 },
 
                 Sampler = new()
@@ -81,8 +82,12 @@ public class Automatic1111
                 Width = _width,
                 Height = _height,
 
-                ClipSkip = _img2imgClipSkip,
-            }
+                ClipSkip = _txt2imgClipSkip,
+
+                AdditionalScripts = {
+                    GetAfterDetailer(prompt)
+                },
+    }
         ), progressReporter);
 
         var results = new List<Image>();
@@ -91,7 +96,7 @@ public class Automatic1111
         return results;
     }
 
-    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image inputImage, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
+    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image inputImage, Prompt prompt, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         var backend = await GetBackend() ?? throw new InvalidOperationException("No image generation backends accessible");
 
@@ -144,8 +149,8 @@ public class Automatic1111
 
                 Prompt = new()
                 {
-                    Positive = positive,
-                    Negative = negative,
+                    Positive = prompt.Positive,
+                    Negative = prompt.Negative,
                 },
 
                 Sampler = new()
@@ -165,7 +170,8 @@ public class Automatic1111
 
                 AdditionalScripts =
                 {
-                    cnetConfig
+                    cnetConfig,
+                    GetAfterDetailer(prompt)
                 }
             }
         ), progressReporter);
@@ -175,6 +181,33 @@ public class Automatic1111
             .ToAsyncEnumerable()
             .SelectAwait(async a => await a.ToImageSharpAsync())
             .ToListAsync();
+    }
+
+    private static AfterDetailer GetAfterDetailer(Prompt prompt)
+    {
+        return new AfterDetailer
+        {
+            Steps = {
+                new()
+                {
+                    Model = "face_yolov8n.pt",
+                    PositivePrompt = prompt.FaceEnhancementPositive,
+                    NegativePrompt = prompt.FaceEnhancementNegative,
+                },
+                new()
+                {
+                    Model = "mediapipe_face_mesh_eyes_only",
+                    PositivePrompt = prompt.EyeEnhancementPositive,
+                    NegativePrompt = prompt.EyeEnhancementNegative,
+                },
+                new()
+                {
+                    Model = "hand_yolov8n.pt",
+                    PositivePrompt = prompt.HandEnhancementPositive,
+                    NegativePrompt = prompt.HandEnhancementNegative,
+                }
+            }
+        };
     }
 
     public async Task<string> GetImageDescription(Stream image, InterrogateModel model)

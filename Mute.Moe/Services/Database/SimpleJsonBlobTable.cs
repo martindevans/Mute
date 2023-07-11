@@ -134,7 +134,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
         }
     }
 
-    private static async Task<TBlob?> Read(DbCommand cmd)
+    protected virtual async Task<TBlob?> Read(DbCommand cmd)
     {
         var json = (string?)await cmd.ExecuteScalarAsync();
 
