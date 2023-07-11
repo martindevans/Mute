@@ -194,6 +194,12 @@ public class Automatic1111
                     PositivePrompt = Join(prompt.FaceEnhancementPositive, prompt.EyeEnhancementPositive),
                     NegativePrompt = Join(prompt.FaceEnhancementNegative, prompt.EyeEnhancementNegative),
                 },
+                //new()
+                //{
+                //    Model = "mediapipe_face_mesh_eyes_only",
+                //    PositivePrompt = prompt.EyeEnhancementPositive,
+                //    NegativePrompt = prompt.EyeEnhancementNegative,
+                //},
                 new()
                 {
                     Model = "hand_yolov8n.pt",
