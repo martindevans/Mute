@@ -268,12 +268,12 @@ public class Automatic1111
                 Sampler = new()
                 {
                     Sampler = sampler,
-                    SamplingSteps = _samplerSteps,
+                    SamplingSteps = _samplerSteps * 2,
                 },
 
                 Width = width,
                 Height = height,
-                DenoisingStrength = 0.22,
+                DenoisingStrength = 0.25,
                 Script = new UltimateUpscale
                 {
                     RedrawMode = RedrawMode.Chess,
