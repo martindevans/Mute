@@ -98,8 +98,12 @@ public class MobileAudioMessageTranscriptionPreprocessor
             if (packet == null)
                 continue;
 
-            foreach (var sample in packet)
+            samples.EnsureCapacity(samples.Count + packet.Length);
+            for (var i = 0; i < packet.Length; i++)
+            {
+                var sample = packet[i];
                 samples.Add(sample * (1f / 32768f));
+            }
         }
 
         return new AudioBuffer(samples, new WaveFormat(48000, 1));

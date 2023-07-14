@@ -151,7 +151,7 @@ public class Administration
         await result.RespondAsync($"You clicked on: {result.Data.CustomId}");
     }
 
-    async Task<SocketMessageComponent> ReplyWithActionsAsync(ComponentBuilder builder, string? message = null)
+    private async Task<SocketMessageComponent> ReplyWithActionsAsync(ComponentBuilder builder, string? message = null)
     {
         // Get a waiter for every action in the builder
         var ids = builder.ActionRows.SelectMany(a => a.Components).Select(c => c.CustomId).Where(a => a != null).ToList();

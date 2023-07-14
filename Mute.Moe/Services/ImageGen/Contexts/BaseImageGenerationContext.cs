@@ -70,7 +70,7 @@ public abstract class BaseImageGenerationContext
         await ModifyReply(msg => msg.Content = $"Image generation failed!\n{exception.Message}");
     }
 
-    private async Task OnCompleted(Prompt prompt, IReadOnlyCollection<Image?> images)
+    private async Task OnCompleted(Prompt prompt, IEnumerable<Image?> images)
     {
         var attachments = new List<FileAttachment>();
         foreach (var image in images)

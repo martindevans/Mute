@@ -21,14 +21,12 @@ namespace Mute.Moe.Discord.Modules;
 public class Pictures
     : BaseModule
 {
-    private readonly IImageGenerator _generator;
     private readonly IImageAnalyser _analyser;
     private readonly HttpClient _http;
     private readonly StableDiffusionBackendCache _backends;
 
-    public Pictures(IImageGenerator generator, IImageAnalyser analyser, HttpClient http, StableDiffusionBackendCache backends)
+    public Pictures(IImageAnalyser analyser, HttpClient http, StableDiffusionBackendCache backends)
     {
-        _generator = generator;
         _analyser = analyser;
         _http = http;
         _backends = backends;
@@ -37,7 +35,7 @@ public class Pictures
     [Command("backends"), Alias("status"), Summary("I will show the status of image generation backends")]
     public async Task Backends()
     {
-        await BackendsCheck(false);
+        await BackendsCheck();
     }
 
     [Command("backends"), Alias("status"), Summary("I will show the status of image generation backends")]

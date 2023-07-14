@@ -91,6 +91,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Discord\Services\ComponentActions\Responses\" />
     <Folder Include="Properties\PublishProfiles\" />
   </ItemGroup>
 

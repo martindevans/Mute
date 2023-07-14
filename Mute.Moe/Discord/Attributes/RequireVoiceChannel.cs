@@ -2,7 +2,6 @@
 using Discord;
 using Discord.Commands;
 
-
 namespace Mute.Moe.Discord.Attributes;
 
 /// <summary>

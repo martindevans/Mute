@@ -79,7 +79,7 @@ public class Macro
         var results2 = await _macros.FindAll(name, null).ToListAsync();
         var results = results1.Concat(results2).DistinctBy(a => a.Namespace + a.Name)
                               .GroupBy(a => a.Namespace)
-                              .Select(a => a.OrderBy(a => a.Name).ToArray())
+                              .Select(grp => grp.OrderBy(b => b.Name).ToArray())
                               .SelectMany(a => a)
                               .ToList();
 

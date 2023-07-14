@@ -47,7 +47,7 @@ public interface ILaunchPadInfo
 
     double Longitude { get; }
     double Latitude { get; }
-    string? MapUrl => $"https://www.google.com/maps?q={Latitude},{Longitude}";
+    string MapUrl => $"https://www.google.com/maps?q={Latitude},{Longitude}";
 }
 
 public interface IVehicleInfo

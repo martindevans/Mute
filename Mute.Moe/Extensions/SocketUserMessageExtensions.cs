@@ -28,6 +28,7 @@ public static class SocketUserMessageExtensions
     /// Get all image attachments from this message or the message it references
     /// </summary>
     /// <param name="message"></param>
+    /// <param name="http"></param>
     /// <returns></returns>
     public static async Task<IReadOnlyList<Stream>> GetMessageImages(this IUserMessage message, HttpClient http)
     {

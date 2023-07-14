@@ -57,9 +57,9 @@ public class LL2SpaceX
     #region model
     private class LaunchCollectionModel
     {
-        [JsonProperty("count")] private int _count;
+        //[JsonProperty("count")] private int _count;
         [JsonProperty("next")] private string? _next;
-        [JsonProperty("previous")] private string? _previous;
+        //[JsonProperty("previous")] private string? _previous;
         [JsonProperty("results")] private List<LaunchModel?>? _results;
 
         public async IAsyncEnumerable<LaunchModel> Enumerate(HttpClient http)
@@ -88,7 +88,7 @@ public class LL2SpaceX
         : ILaunchInfo
     {
         [JsonProperty("id")] private string _id = null!;
-        [JsonProperty("url")] private string _url = null!;
+        //[JsonProperty("url")] private string _url = null!;
         [JsonProperty("name")] private string? _name;
         [JsonProperty("image")] private string? _image;
         [JsonProperty("pad")] private LaunchPadInfo _pad = null!;

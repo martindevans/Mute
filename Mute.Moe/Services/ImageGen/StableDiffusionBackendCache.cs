@@ -57,15 +57,14 @@ public class StableDiffusionBackendCache
         return null;
     }
 
-    public async Task<IReadOnlyList<(string, uint, bool)>> GetBackends(bool check)
+    public async Task<IReadOnlyList<(string name, uint useCount, bool available)>> GetBackends(bool check)
     {
         if (check)
             await Task.WhenAll(_backends.Select(a => a.BeginStatusCheck()));
 
-        var results = new List<(string, uint, bool)>();
-        foreach (var backend in _backends)
-            results.Add((backend.Name, backend.UsedCount, backend.IsResponsive));
-        return results;
+        return _backends
+              .Select(backend => (backend.Name, backend.UsedCount, backend.IsResponsive))
+              .ToList();
     }
 
     private class BackendStatus
@@ -74,7 +73,7 @@ public class StableDiffusionBackendCache
         public DateTime LastCheck { get; private set; }
         public uint UsedCount { get; private set; }
 
-        public string Name { get; private set; }
+        public string Name { get; }
 
         private readonly StableDiffusion _backend;
 

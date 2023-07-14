@@ -303,7 +303,7 @@ public class Automatic1111
             image.Mutate(a => a.Resize(new Size(0, (int)_height)));
 
         // Do the actual outpainting
-        var result = await outpainter.Outpaint(new PromptConfig { Positive = positive, Negative = negative, }, image, Progess);
+        var result = await outpainter.Outpaint(new PromptConfig { Positive = positive, Negative = negative }, image, Progess);
 
         // Decode all images
         var results = new List<Image>();

@@ -20,7 +20,6 @@ using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Information.RSS;
 using Mute.Moe.Services.Information.UrbanDictionary;
 using Mute.Moe.Services.Information.Wikipedia;
-using Mute.Moe.Services.Music;
 using Mute.Moe.Services.Notifications.RSS;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Speech;
@@ -36,7 +35,6 @@ using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Discord.Services.ComponentActions;
-using Mute.Moe.Discord.Services.ComponentActions.Responses;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.RateLimit;
 using Mute.Moe.Discord.Commands;
@@ -98,9 +96,7 @@ public class Startup
         services.AddHostedService<IReminderSender, AsyncReminderSender>();
         services.AddSingleton<IWikipedia, WikipediaApi>();
         services.AddSingleton<IUrbanDictionary, UrbanDictionaryApi>();
-        services.AddSingleton<IMusicLibrary, DatabaseMusicLibrary>();
         services.AddSingleton<IGuildVoiceCollection, InMemoryGuildVoiceCollection>();
-        services.AddSingleton<IGuildMusicQueueCollection, InMemoryGuildMusicQueueCollection>();
         services.AddSingleton<IGuildSpeechQueueCollection, InMemoryGuildSpeechQueueCollection>();
         services.AddSingleton<IRss, HttpRss>();
         services.AddSingleton<IRssNotifications, DatabaseRssNotifications>();
@@ -120,8 +116,6 @@ public class Startup
         services.AddSingleton<ConversationalResponseService>();
         services.AddHostedService<GameService>();
         services.AddSingleton<ComponentActionService>();
-
-        services.AddSingleton<TimeResponder>();
 
         services.AddTransient<IConversationPreprocessor, CommandWordService>();
         services.AddTransient<ICommandWordHandler, RemindersCommandWord>();

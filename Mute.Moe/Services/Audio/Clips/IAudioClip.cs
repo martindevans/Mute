@@ -1,13 +1,9 @@
 ﻿using System.Threading.Tasks;
 
-using Mute.Moe.Services.Music;
-
 namespace Mute.Moe.Services.Audio.Clips;
 
 public interface IAudioClip
 {
-    Task<ITrack?> Track { get; }
-
     /// <summary>
     /// Get the name of this clip
     /// </summary>
