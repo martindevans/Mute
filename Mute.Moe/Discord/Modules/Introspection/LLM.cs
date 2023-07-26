@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 namespace Mute.Moe.Discord.Modules.Introspection;
 
 [UsedImplicitly]
-[RequireOwner]
 [Group("llm")]
+[RequireOwner]
 public class LLM
     : BaseModule
 {

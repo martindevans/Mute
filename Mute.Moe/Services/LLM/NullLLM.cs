@@ -10,7 +10,7 @@ internal class NullLLM
         return "NullLLM";
     }
 
-    public async IAsyncEnumerable<string> Generate(string prompt, LargeLanguageModelGenerationOptions? options = null)
+    public async IAsyncEnumerable<string> Generate(string prompt)
     {
         yield break;
     }

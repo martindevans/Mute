@@ -31,6 +31,9 @@ public class Automatic1111
     private readonly uint _img2imgClipSkip;
     private readonly uint _txt2imgClipSkip;
 
+    private readonly float _afterDetailHandMinSize;
+    private readonly float _afterDetailFaceMinSize;
+
     public Automatic1111(Configuration config, StableDiffusionBackendCache backends)
     {
         _backends = backends;
@@ -45,6 +48,9 @@ public class Automatic1111
 
         _img2imgClipSkip = config.Automatic1111?.Image2ImageClipSkip ?? 2;
         _txt2imgClipSkip = config.Automatic1111?.Text2ImageClipSkip ?? 2;
+
+        _afterDetailHandMinSize = config.Automatic1111?.AfterDetail?.HandMinSize ?? 0.05f;
+        _afterDetailFaceMinSize = config.Automatic1111?.AfterDetail?.FaceMinSize ?? 0.05f;
     }
 
     private Task<StableDiffusion?> GetBackend()
@@ -183,7 +189,7 @@ public class Automatic1111
             .ToListAsync();
     }
 
-    private static AfterDetailer GetAfterDetailer(Prompt prompt)
+    private AfterDetailer GetAfterDetailer(Prompt prompt)
     {
         return new AfterDetailer
         {
@@ -193,6 +199,9 @@ public class Automatic1111
                     Model = "face_yolov8n.pt",
                     PositivePrompt = Join(prompt.FaceEnhancementPositive, prompt.EyeEnhancementPositive),
                     NegativePrompt = Join(prompt.FaceEnhancementNegative, prompt.EyeEnhancementNegative),
+
+                    SamplerSteps = _samplerSteps,
+                    MaskMinRatio = _afterDetailFaceMinSize,
                 },
                 //new()
                 //{
@@ -205,11 +214,15 @@ public class Automatic1111
                     Model = "hand_yolov8n.pt",
                     PositivePrompt = prompt.HandEnhancementPositive,
                     NegativePrompt = prompt.HandEnhancementNegative,
+
+                    SamplerSteps = _samplerSteps,
+                    InpaintSize = (448, 448),
+                    MaskMinRatio = _afterDetailHandMinSize,
                 }
             }
         };
 
-        string? Join(string? left, string? right)
+        static string? Join(string? left, string? right)
         {
             return (string.IsNullOrWhiteSpace(left), string.IsNullOrWhiteSpace(right)) switch
             {

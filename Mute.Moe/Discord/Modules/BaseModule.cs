@@ -361,7 +361,7 @@ public class BaseModule
     /// <param name="initialMs">How long to wait before sending the initial message</param>
     /// <param name="waitBetweenEdits">How long to wait between edits to the message</param>
     /// <returns></returns>
-    protected async Task TypingReplyAsync(IAsyncEnumerable<string> message, MessageReference? messageReference = null, bool initialPing = false, int initialMs = 6250, int waitBetweenEdits = 2750)
+    protected async Task TypingReplyAsync(IAsyncEnumerable<string> message, MessageReference? messageReference = null, bool initialPing = false, int initialMs = 3250, int waitBetweenEdits = 1250)
     {
         using var typing = Context.Channel.EnterTypingState();
 

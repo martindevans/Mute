@@ -1,5 +1,4 @@
 ﻿using JetBrains.Annotations;
-using Microsoft.ML.OnnxRuntime;
 
 namespace Mute.Moe;
 
@@ -16,9 +15,7 @@ public class Configuration
     [UsedImplicitly] public UrbanDictionaryConfig? UrbanDictionary;
     [UsedImplicitly] public TTSConfig? TTS;
     [UsedImplicitly] public STTConfig? STT;
-    [UsedImplicitly] public MusicLibraryConfig? MusicLibrary;
     [UsedImplicitly] public LLMConfig? LLM;
-    [UsedImplicitly] public ONNXConfig? ONNX;
     [UsedImplicitly] public Automatic1111Config? Automatic1111;
     [UsedImplicitly] public GlobalImageGenerationConfig? ImageGeneration;
 
@@ -106,30 +103,10 @@ public class STTConfig
     public WhisperConfig? Whisper;
 }
 
-public class MusicLibraryConfig
-{
-    [UsedImplicitly] public string? MusicFolder;
-}
-
 public class LLMConfig
 {
-    [UsedImplicitly] public int? MaxTokens;
-    [UsedImplicitly] public float? TopP;
-    [UsedImplicitly] public float? Temperature;
-    [UsedImplicitly] public float? TopK;
-}
-
-public class ONNXConfig
-{
-    public int? CudaDevice = null;
-
-    public SessionOptions? GetOptions()
-    {
-        if (CudaDevice is null or < 0)
-            return null;
-
-        return SessionOptions.MakeSessionOptionWithCudaProvider(CudaDevice.Value);
-    }
+    [UsedImplicitly] public string? ModelPath;
+    [UsedImplicitly] public int? ModelContextSize;
 }
 
 public class Automatic1111Config
@@ -148,6 +125,15 @@ public class Automatic1111Config
 
     public uint? Image2ImageClipSkip = null;
     public uint? Text2ImageClipSkip = null;
+    public int? RecheckDeadBackendTime = null;
+
+    public ADetailer? AfterDetail = null;
+
+    public class ADetailer
+    {
+        public float? HandMinSize;
+        public float? FaceMinSize;
+    }
 }
 
 public class GlobalImageGenerationConfig

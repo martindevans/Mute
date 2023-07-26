@@ -133,9 +133,6 @@ public class Startup
         if (Configuration.Auth == null)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
-        services.AddSingleton<ILargeLanguageModel, NullLLM>();
-        //services.AddOpenAIService(settings => { settings.ApiKey = Configuration.OpenAI?.ApiKey ?? ""; });
-        //services.AddSingleton<ILargeLanguageModel, OpenAIChatCompletion>();
-        services.AddSingleton<LargeLanguageModelGenerationOptions>();
+        services.AddSingleton<ILargeLanguageModel, LlamaSharpLLM>();
     }
 }

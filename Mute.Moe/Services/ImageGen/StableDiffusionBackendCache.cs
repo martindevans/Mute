@@ -8,12 +8,15 @@ public class StableDiffusionBackendCache
 {
     private readonly IReadOnlyList<BackendStatus> _backends;
 
+    private readonly TimeSpan RecheckDeadBackendTime;
+
     public StableDiffusionBackendCache(Configuration config)
     {
         var urls = config.Automatic1111?.Urls ?? Array.Empty<string>();
 
         var timeoutSlow = TimeSpan.FromSeconds(config.Automatic1111?.GenerationTimeOutSeconds ?? 120);
         var timeoutFast = TimeSpan.FromSeconds(config.Automatic1111?.FastTimeOutSeconds ?? 7);
+        RecheckDeadBackendTime = TimeSpan.FromSeconds(config.Automatic1111?.RecheckDeadBackendTime ?? 120);
 
         _backends = urls.Select(a => new BackendStatus(a, timeoutSlow, timeoutFast)).ToArray();
     }
@@ -27,7 +30,7 @@ public class StableDiffusionBackendCache
         var checks = new List<Task>();
         foreach (var item in initialDead)
         {
-            if (initialResponsive.Count == 0 || DateTime.UtcNow - item.LastCheck > TimeSpan.FromMinutes(5))
+            if (initialResponsive.Count == 0 || DateTime.UtcNow - item.LastCheck > RecheckDeadBackendTime)
                 checks.Add(item.BeginStatusCheck());
         }
 
@@ -109,9 +112,10 @@ public class StableDiffusionBackendCache
             });
         }
 
-        public StableDiffusion Backend()
+        public StableDiffusion Backend(bool doNotIncrement = false)
         {
-            UsedCount++;
+            if (!doNotIncrement)
+                UsedCount++;
             return _backend;
         }
     }
