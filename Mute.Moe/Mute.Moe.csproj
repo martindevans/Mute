@@ -43,7 +43,7 @@
     <PackageReference Include="Autofocus" Version="4.4.1" />
     <PackageReference Include="Autofocus.Extensions.AfterDetailer" Version="1.2.0" />
     <PackageReference Include="Autofocus.ImageSharp" Version="1.0.1" />
-    <PackageReference Include="Autofocus.Scripts.UltimateUpscaler" Version="1.0.1" />
+    <PackageReference Include="Autofocus.Scripts.UltimateUpscaler" Version="1.0.2" />
     <PackageReference Include="BalderHash" Version="1.0.0" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Concentus.OggFile" Version="1.0.4" />
