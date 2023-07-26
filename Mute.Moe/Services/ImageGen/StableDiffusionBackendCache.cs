@@ -23,33 +23,44 @@ public class StableDiffusionBackendCache
 
     public async Task<StableDiffusion?> GetBackend()
     {
-        var initialResponsive = _backends.Where(a => a.IsResponsive).ToList();
-        var initialDead = _backends.Where(a => !a.IsResponsive).ToList();
+        var probablyLive = _backends.Where(a => a.IsResponsive).ToList();
+        var probablyDead = _backends.Where(a => !a.IsResponsive).ToList();
 
-        // Kick off tasks to check all non-responsive backends if enough time has elapsed
-        var checks = new List<Task>();
-        foreach (var item in initialDead)
+        // Kick off tasks to check all dead backends if enough time has elapsed or if there are no known live backends
+        var deadChecks = new List<Task>();
+        foreach (var item in probablyDead)
         {
-            if (initialResponsive.Count == 0 || DateTime.UtcNow - item.LastCheck > RecheckDeadBackendTime)
-                checks.Add(item.BeginStatusCheck());
+            if (probablyLive.Count == 0 || DateTime.UtcNow - item.LastCheck > RecheckDeadBackendTime)
+                deadChecks.Add(item.BeginStatusCheck());
         }
 
-        // Pick a random responsive backend
-        if (initialResponsive.Count > 0)
+        // From all the backends that are probably live find the one with the shortest queue. If `GetQueueLength` does
+        // not return a value (because the backend isn't really live) the backend will be marked as unresponsive.
+        if (probablyLive.Count > 0)
         {
-            foreach (var item in initialResponsive.Shuffle())
+            var bestScore = float.MaxValue;
+            BackendStatus? bestBackend = null;
+            foreach (var item in probablyLive.Shuffle())
             {
-                await item.BeginStatusCheck();
-                if (item.IsResponsive)
-                    return item.Backend();
+                var eta = await item.QueueETA();
+                if (eta < bestScore)
+                {
+                    bestScore = eta.Value;
+                    bestBackend = item;
+
+                    if (bestScore == 0)
+                        return bestBackend.Backend();
+                }
             }
+            if (bestBackend != null)
+                return bestBackend.Backend();
         }
 
         // There were no responsive backends! Wait for checks to finish
-        while (checks.Count > 0)
+        while (deadChecks.Count > 0)
         {
-            await Task.WhenAny(checks);
-            checks.RemoveAll(a => a.IsCompleted);
+            await Task.WhenAny(deadChecks);
+            deadChecks.RemoveAll(a => a.IsCompleted);
 
             var responsive = _backends.Where(a => a.IsResponsive).Shuffle().FirstOrDefault();
             if (responsive != null)
@@ -117,6 +128,21 @@ public class StableDiffusionBackendCache
             if (!doNotIncrement)
                 UsedCount++;
             return _backend;
+        }
+
+        public async Task<float?> QueueETA()
+        {
+            try
+            {
+                var progress = await _backend.Progress(true);
+                return (float)progress.ETARelative.TotalSeconds;
+            }
+            catch (Exception)
+            {
+                LastCheck = DateTime.UtcNow;
+                IsResponsive = false;
+                return null;
+            }
         }
     }
 }

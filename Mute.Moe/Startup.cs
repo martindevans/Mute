@@ -75,6 +75,9 @@ public class Startup
         services.AddHostedService<MidjourneyStyleImageGenerationResponses>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
 
+        //services.AddSingleton<ILargeLanguageModel, LlamaSharpLLM>();
+        services.AddSingleton<ILargeLanguageModel, NullLLM>();
+
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddTransient<ISpacexInfo, LL2SpaceX>();
         services.AddSingleton<IFileSystem, FileSystem>();
@@ -132,7 +135,5 @@ public class Startup
 
         if (Configuration.Auth == null)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
-
-        services.AddSingleton<ILargeLanguageModel, LlamaSharpLLM>();
     }
 }
