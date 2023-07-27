@@ -425,6 +425,11 @@ public class BaseModule
     {
         return await ReplyAsync("", false, embed.Build(), options);
     }
+
+    protected Task<IReadOnlyList<IUserMessage>> LongReplyAsync(string message)
+    {
+        return Context.Channel.SendLongMessageAsync(message);
+    }
     #endregion
 
     protected override void BeforeExecute(CommandInfo command)

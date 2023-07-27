@@ -35,14 +35,51 @@ public static class IMessageChannelExtensions
 
 
 
-    public static async Task SendLongMessageAsync(this IMessageChannel channel, string message)
+    public static async Task<IReadOnlyList<IUserMessage>> SendLongMessageAsync(this IMessageChannel channel, string content)
     {
-        var strings = message.Batch(1900).Select(a => new string(a.ToArray())).ToArray();
+        var messages = new List<IUserMessage>();
 
+        if (content.Length < 2000)
+        {
+            messages.Add(await channel.SendMessageAsync(content));
+            return messages;
+        }
+
+        var strings = SplitOnSpaces(content).ToList();
         foreach (var item in strings)
         {
-            await channel.SendMessageAsync(item);
+            messages.Add(await channel.SendMessageAsync(item));
             await Task.Delay(200);
+        }
+
+        return messages;
+    }
+
+    private static IEnumerable<string> SplitOnSpaces(string content, int maxLength = 1950)
+    {
+        if (content.Length <= maxLength)
+        {
+            yield return content;
+            yield break;
+        }
+
+        var remainder = content.AsMemory();
+        while (remainder.Length > 0)
+        {
+            if (remainder.Length <= maxLength)
+            {
+                yield return new string(remainder.Span);
+                yield break;
+            }
+
+            var idx = content[..maxLength].LastIndexOf(' ');
+            if (idx < 0)
+                idx = maxLength;
+            
+            var slice = remainder[..idx];
+            remainder = remainder[idx..];
+
+            yield return new string(slice.Span);
         }
     }
 }

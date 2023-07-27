@@ -243,7 +243,7 @@ public static class MuteCommandContextImageGenerationExtensions
     }
 
     #region prompt filtering
-    private static readonly IReadOnlyList<string> BaseNegative = new[] { "easynegative, badhandv4, bad-hands-5, logo, watermark, signature" };
+    private static readonly IReadOnlyList<string> BaseNegative = new[] { "easynegative, badhandv4, bad-hands-5" };
 
     private static Prompt Parse(string input, bool isPrivate, IImageGeneratorBannedWords blacklist)
     {

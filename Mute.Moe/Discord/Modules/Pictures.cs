@@ -55,12 +55,14 @@ public class Pictures
         );
     }
 
+
     [Command("generate"), Alias("diffusion", "imagine"), Summary("I will generate a picture")]
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 10, "Please wait a bit before generating more images")]
     public async Task Generate([Remainder] string prompt)
     {
         await Context.GenerateImage(prompt);
     }
+
 
     [Command("metadata"), Alias("parameters"), Summary("I will try to extract stable diffusion generation data from the image")]
     [RateLimit("2E3E6C68-1862-4573-858A-B478000B8154", 5, "Please wait a bit")]
@@ -71,6 +73,7 @@ public class Pictures
             return;
 
         var success = false;
+        var count = 1;
         foreach (var stream in images)
         {
             var img = await Image.IdentifyAsync(stream);
@@ -79,8 +82,9 @@ public class Pictures
 
             if (parameters != null)
             {
+                parameters = $"**Image {count++}**\n{parameters}\n";
                 success = true;
-                await ReplyAsync(parameters);
+                await LongReplyAsync(parameters);
             }
 
             await Task.Delay(450);
@@ -89,6 +93,7 @@ public class Pictures
         if (!success)
             await ReplyAsync("I couldn't find any metadata in any of those images");
     }
+
 
     [Command("analyse"), Alias("interrogate", "describe"), Summary("I will try to describe the image")]
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 30, "Please wait a bit")]
@@ -112,6 +117,7 @@ public class Pictures
             await ReplyAsync("I couldn't find any metadata in any of those images");
     }
     
+
     private async Task<IReadOnlyList<Stream>?> GetMessageImages(IUserMessage message)
     {
         var result = await message.GetMessageImages(_http);
