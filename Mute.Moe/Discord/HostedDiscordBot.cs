@@ -100,7 +100,7 @@ public class HostedDiscordBot
         // Set presence
         if (Debugger.IsAttached)
         {
-            await Client.SetActivityAsync(new Game("Debug Mode"));
+            await Client.SetActivityAsync(new CustomStatusGame("Debug Mode"));
             await Client.SetStatusAsync(UserStatus.DoNotDisturb);
         }
         else

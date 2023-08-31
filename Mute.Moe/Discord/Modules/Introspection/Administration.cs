@@ -62,12 +62,17 @@ public class Administration
     [Command("presence"), Summary("I will set my presence")]
     public async Task SetPresence(ActivityType activity, [Remainder] string? presence)
     {
-        if (!string.IsNullOrEmpty(presence))
+        if (string.IsNullOrEmpty(presence))
+            return;
+
+        if (activity == ActivityType.CustomStatus)
+            await _client.SetActivityAsync(new CustomStatusGame(presence));
+        else
             await _client.SetActivityAsync(new Game(presence, activity));
     }
 
     [Command("status"), Summary("I will set my status")]
-    public async Task SetPresence(UserStatus status)
+    public async Task SetStatus(UserStatus status)
     {
         await _client.SetStatusAsync(status);
     }
