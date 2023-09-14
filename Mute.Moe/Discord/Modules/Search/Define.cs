@@ -35,6 +35,16 @@ public class Define
         //Get definitions from wikipedia
         var definitions = await _wikipedia.Define(thing, sentences: sentences);
 
+        //Display the item(s)
+        await DisplayItemList(
+            definitions,
+            () => "I don't know anything about that, sorry",
+            SingleDefinition,
+            items => $"I have found {items.Count} possible items, could you be more specific?",
+            (item, index) => $"{index + 1}. `{item.Title}` - `{item.Definition}`"
+        );
+        return;
+
         //Define a method to display a single definition in an embed
         Task SingleDefinition(IDefinition def)
         {
@@ -47,15 +57,6 @@ public class Define
 
             return ReplyAsync(embed: embed.Build());
         }
-
-        //Display the item(s)
-        await DisplayItemList(
-            definitions,
-            () => "I don't know anything about that, sorry",
-            SingleDefinition,
-            items => $"I have found {items.Count} possible items, could you be more specific?",
-            (item, index) => $"{index + 1}. `{item.Title}` - `{item.Definition}`"
-        );
     }
 
     [Command("urbandefine"), Summary("I will briefly define a word according to urban dictionary")]

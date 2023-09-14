@@ -100,10 +100,7 @@ public class DatabaseRssNotificationsSender
 
     private async Task<bool> HasBeenPublished(string channelId, string feedUrl, string uniqueId)
     {
-        static int ParseSubscription(DbDataReader reader)
-        {
-            return 0;
-        }
+        return await new SqlAsyncResult<int>(_database, PrepareQuery, ParseSubscription).AnyAsync();
 
         DbCommand PrepareQuery(IDatabaseService db)
         {
@@ -115,7 +112,10 @@ public class DatabaseRssNotificationsSender
             return cmd;
         }
 
-        return await new SqlAsyncResult<int>(_database, PrepareQuery, ParseSubscription).AnyAsync();
+        static int ParseSubscription(DbDataReader reader)
+        {
+            return 0;
+        }
     }
 
     private async Task Publish(IRssSubscription feed, SyndicationItem item)

@@ -54,27 +54,24 @@ public class TicTacToe
     {
         var result = board.Play(position.Item1, position.Item2, player);
 
-        //Check if player turn was illegal
-        if (!result.HasValue)
+        switch (result)
         {
-            await ReplyAsync(illegal);
-            return false;
-        }
+            // Check if player turn was illegal
+            case null:
+                await ReplyAsync(illegal);
+                return false;
 
-        //Check if player made a winning move
-        if (result.Value is GameState.OWins or GameState.XWins)
-        {
-            await ReplyAsync(win);
-            return false;
-        }
+            case GameState.OWins or GameState.XWins:
+                await ReplyAsync(win);
+                return false;
 
-        if (result.Value == GameState.Draw)
-        {
-            await ReplyAsync(draw);
-            return false;
-        }
+            case GameState.Draw:
+                await ReplyAsync(draw);
+                return false;
 
-        return true;
+            default:
+                return true;
+        }
     }
 
     private static async Task<(byte, byte)> GetAiPlay(GameBoard board, Random rng)

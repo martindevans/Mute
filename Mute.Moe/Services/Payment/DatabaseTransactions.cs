@@ -51,17 +51,7 @@ public class DatabaseTransactions
 
     public IAsyncEnumerable<ITransaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
-        static ITransaction ParseTransaction(DbDataReader reader)
-        {
-            return new Transaction(
-                ulong.Parse((string)reader["FromId"]),
-                ulong.Parse((string)reader["ToId"]),
-                decimal.Parse(reader["Amount"].ToString()!),
-                (string)reader["Unit"],
-                (string)reader["Note"],
-                ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp()
-            );
-        }
+        return new SqlAsyncResult<ITransaction>(_database, PrepareQuery, ParseTransaction);
 
         DbCommand PrepareQuery(IDatabaseService db)
         {
@@ -75,6 +65,16 @@ public class DatabaseTransactions
             return cmd;
         }
 
-        return new SqlAsyncResult<ITransaction>(_database, PrepareQuery, ParseTransaction);
+        static ITransaction ParseTransaction(DbDataReader reader)
+        {
+            return new Transaction(
+                ulong.Parse((string)reader["FromId"]),
+                ulong.Parse((string)reader["ToId"]),
+                decimal.Parse(reader["Amount"].ToString()!),
+                (string)reader["Unit"],
+                (string)reader["Note"],
+                ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp()
+            );
+        }
     }
 }

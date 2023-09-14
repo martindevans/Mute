@@ -10,8 +10,6 @@ namespace Mute.Moe.Services.Speech.STT;
 public class WhisperSpeechToText
     : ISpeechToText
 {
-    private static readonly WaveFormat Format = new(WHISPER_SAMPLE_RATE, 16, 1);
-
     private readonly whisper_context _context;
     private readonly uint _threads;
 

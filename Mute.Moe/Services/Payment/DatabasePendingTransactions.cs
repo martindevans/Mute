@@ -88,19 +88,7 @@ public class DatabasePendingTransactions
 
     public IAsyncEnumerable<IPendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
-        static IPendingTransaction ParsePendingTransaction(DbDataReader reader)
-        {
-            return new PendingTransaction(
-                ulong.Parse((string)reader["FromId"]),
-                ulong.Parse((string)reader["ToId"]),
-                decimal.Parse(reader["Amount"].ToString()!),
-                (string)reader["Unit"],
-                (string)reader["Note"],
-                ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
-                Enum.Parse<PendingState>(reader["Pending"].ToString()!),
-                uint.Parse(reader["rowid"].ToString()!)
-            );
-        }
+        return new SqlAsyncResult<IPendingTransaction>(_database, PrepareQuery, ParsePendingTransaction);
 
         DbCommand PrepareQuery(IDatabaseService db)
         {
@@ -116,15 +104,30 @@ public class DatabasePendingTransactions
             return cmd;
         }
 
-        return new SqlAsyncResult<IPendingTransaction>(_database, PrepareQuery, ParsePendingTransaction);
+        static IPendingTransaction ParsePendingTransaction(DbDataReader reader)
+        {
+            return new PendingTransaction(
+                ulong.Parse((string)reader["FromId"]),
+                ulong.Parse((string)reader["ToId"]),
+                decimal.Parse(reader["Amount"].ToString()!),
+                (string)reader["Unit"],
+                (string)reader["Note"],
+                ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
+                Enum.Parse<PendingState>(reader["Pending"].ToString()!),
+                uint.Parse(reader["rowid"].ToString()!)
+            );
+        }
     }
 
     private async Task<PendingState?> UpdatePending(uint id, string sql)
     {
-        static PendingState ParseResult(DbDataReader reader)
-        {
-            return Enum.Parse<PendingState>(reader["Pending"].ToString()!);
-        }
+        var results = await new SqlAsyncResult<PendingState>(_database, PrepareQuery, ParseResult).ToArrayAsync();
+
+        return results.Length switch {
+            > 1 => throw new InvalidOperationException($"Modified more than 1 payment at once! ID:{id}"),
+            0 => null,
+            _ => results[0],
+        };
 
         DbCommand PrepareQuery(IDatabaseService db)
         {
@@ -134,13 +137,10 @@ public class DatabasePendingTransactions
             return cmd;
         }
 
-        var results = await new SqlAsyncResult<PendingState>(_database, PrepareQuery, ParseResult).ToArrayAsync();
-
-        return results.Length switch {
-            > 1 => throw new InvalidOperationException($"Modified more than 1 payment at once! ID:{id}"),
-            0 => null,
-            _ => results[0],
-        };
+        static PendingState ParseResult(DbDataReader reader)
+        {
+            return Enum.Parse<PendingState>(reader["Pending"].ToString()!);
+        }
     }
 
     public async Task<ConfirmResult> ConfirmPending(uint debtId)

@@ -148,6 +148,8 @@ public class ProCoinMarketCapCrypto
 
     public async Task<ITicker?> GetTicker(ICurrency currency, string? quote = null)
     {
+        return await GetOrDownload<string, ITicker, CmcTickerResponse>(currency.Symbol, _tickerCache, _tickerBySymbol, Download, r => r.Data.Values);
+
         async Task<HttpResponseMessage> Download(string sym)
         {
             //An API access costs 1 access token on the billing per 100 items queried, rounded up. We're only asking for 1 item here which is a huge waste.
@@ -176,8 +178,6 @@ public class ProCoinMarketCapCrypto
 
             return await _http.GetAsync(uri);
         }
-
-        return await GetOrDownload<string, ITicker, CmcTickerResponse>(currency.Symbol, _tickerCache, _tickerBySymbol, Download, r => r.Data.Values);
     }
 
     #region model

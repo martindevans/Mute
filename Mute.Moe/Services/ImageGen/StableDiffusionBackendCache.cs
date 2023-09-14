@@ -27,12 +27,10 @@ public class StableDiffusionBackendCache
         var probablyDead = _backends.Where(a => !a.IsResponsive).ToList();
 
         // Kick off tasks to check all dead backends if enough time has elapsed or if there are no known live backends
-        var deadChecks = new List<Task>();
-        foreach (var item in probablyDead)
-        {
-            if (probablyLive.Count == 0 || DateTime.UtcNow - item.LastCheck > RecheckDeadBackendTime)
-                deadChecks.Add(item.BeginStatusCheck());
-        }
+        var deadChecks = (from item in probablyDead
+                          where probablyLive.Count == 0 || DateTime.UtcNow - item.LastCheck > RecheckDeadBackendTime
+                          select item.BeginStatusCheck()
+                         ).ToList();
 
         // From all the backends that are probably live find the one with the shortest queue. If `GetQueueLength` does
         // not return a value (because the backend isn't really live) the backend will be marked as unresponsive.

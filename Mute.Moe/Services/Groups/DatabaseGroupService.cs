@@ -48,10 +48,10 @@ public class DatabaseGroupService
 
     public IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
     {
-        IRole? ParseRole(DbDataReader reader)
-        {
-            return guild.GetRole(ulong.Parse((string)reader["RoleId"]));
-        }
+        return new SqlAsyncResult<IRole?>(_database, PrepareQuery, ParseRole)
+              .Where(a => a != null)
+              .Select(a => a!)
+              .OrderBy(a => a.Name);
 
         DbCommand PrepareQuery(IDatabaseService db)
         {
@@ -61,10 +61,10 @@ public class DatabaseGroupService
             return cmd;
         }
 
-        return new SqlAsyncResult<IRole?>(_database, PrepareQuery, ParseRole)
-            .Where(a => a != null)
-            .Select(a => a!)
-            .OrderBy(a => a.Name);
+        IRole? ParseRole(DbDataReader reader)
+        {
+            return guild.GetRole(ulong.Parse((string)reader["RoleId"]));
+        }
     }
 
     public async Task Unlock(IRole grp)

@@ -15,23 +15,6 @@ public static class ITransactionsExtensions
         //user in this case is always the secondary user (the other is implicitly the primary user)
         var accumulator = new Dictionary<ulong, Dictionary<string, decimal>>();
 
-        Dictionary<string, decimal> GetInner(ulong user)
-        {
-            if (!accumulator.TryGetValue(user, out var lookup))
-            {
-                lookup = new Dictionary<string, decimal>();
-                accumulator[user] = lookup;
-            }
-
-            return lookup;
-        }
-
-        static void Add(IDictionary<string, decimal> lookup, string unit, decimal add)
-        {
-            lookup.TryGetValue(unit, out var amount);
-            lookup[unit] = amount + add;
-        }
-
         await foreach (var transaction in transactions)
         {
             Dictionary<string, decimal> inner;
@@ -59,6 +42,23 @@ public static class ITransactionsExtensions
         results.Sort((a, b) => a.Amount.CompareTo(b.Amount));
 
         return results;
+
+        static void Add(IDictionary<string, decimal> lookup, string unit, decimal add)
+        {
+            lookup.TryGetValue(unit, out var amount);
+            lookup[unit] = amount + add;
+        }
+
+        Dictionary<string, decimal> GetInner(ulong user)
+        {
+            if (!accumulator.TryGetValue(user, out var lookup))
+            {
+                lookup = new Dictionary<string, decimal>();
+                accumulator[user] = lookup;
+            }
+
+            return lookup;
+        }
     }
 
     /// <summary>

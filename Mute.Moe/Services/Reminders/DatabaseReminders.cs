@@ -84,6 +84,8 @@ public class DatabaseReminders
 
     public IOrderedAsyncEnumerable<IReminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
     {
+        return new SqlAsyncResult<IReminder>(_database, PrepareQuery, Reminder.Parse).OrderBy(a => a.TriggerTime);
+
         DbCommand PrepareQuery(IDatabaseService db)
         {
             var cmd = db.CreateCommand();
@@ -95,8 +97,6 @@ public class DatabaseReminders
             cmd.Parameters.Add(new SQLiteParameter("@Limit", System.Data.DbType.UInt32) { Value = count ?? uint.MaxValue });
             return cmd;
         }
-
-        return new SqlAsyncResult<IReminder>(_database, PrepareQuery, Reminder.Parse).OrderBy(a => a.TriggerTime);
     }
 
     public class Reminder

@@ -20,10 +20,10 @@ public class Time
         var extract = FuzzyParsing.TimeOffset(tz ?? "");
         var offset = extract.IsValid ? extract.UtcOffset : TimeSpan.Zero;
 
-        static string FormatTime(DateTime dt) => dt.ToString("HH:mm:ss tt");
+        return extract.IsValid || tz == null
+            ? $"The time is {FormatTime(DateTime.UtcNow + offset)} UTC{offset.Hours:+00;-00;+00}:{offset.Minutes:00}"
+            : $"I'm not sure what timezone you mean, assuming UTC it's {FormatTime(DateTime.UtcNow)}";
 
-        if (extract.IsValid || tz == null)
-            return $"The time is {FormatTime(DateTime.UtcNow + offset)} UTC{offset.Hours:+00;-00;+00}:{offset.Minutes:00}";
-        return $"I'm not sure what timezone you mean, assuming UTC it's {FormatTime(DateTime.UtcNow)}";
+        static string FormatTime(DateTime dt) => dt.ToString("HH:mm:ss tt");
     }
 }

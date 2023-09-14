@@ -41,6 +41,15 @@ public class DatabaseRssNotifications
 
     public IAsyncEnumerable<IRssSubscription> GetSubscriptions()
     {
+        return new SqlAsyncResult<IRssSubscription>(_database, PrepareQuery, ParseSubscription);
+
+        static DbCommand PrepareQuery(IDatabaseService db)
+        {
+            var cmd = db.CreateCommand();
+            cmd.CommandText = GetSubscriptionsSql;
+            return cmd;
+        }
+
         static IRssSubscription ParseSubscription(DbDataReader reader)
         {
             var mention = reader["MentionGroup"];
@@ -50,15 +59,6 @@ public class DatabaseRssNotifications
                 mention is DBNull ? null : ulong.Parse(mention.ToString()!)
             );
         }
-
-        static DbCommand PrepareQuery(IDatabaseService db)
-        {
-            var cmd = db.CreateCommand();
-            cmd.CommandText = GetSubscriptionsSql;
-            return cmd;
-        }
-
-        return new SqlAsyncResult<IRssSubscription>(_database, PrepareQuery, ParseSubscription);
     }
 
     private class RssSubscription

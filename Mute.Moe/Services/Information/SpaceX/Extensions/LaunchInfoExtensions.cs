@@ -77,11 +77,14 @@ public static class LaunchInfoExtensions
         if (!date.HasValue)
             return "";
 
-        if (precision is not > DatePrecision.Minute)
-            return date.Value.Humanize();
-
-        switch (precision.Value)
+        switch (precision)
         {
+            case null:
+                return date.Value.Humanize();
+
+            case DatePrecision.Minute:
+                return date.Value.Humanize();
+
             case DatePrecision.Hour:
                 return date.Value - DateTime.UtcNow > TimeSpan.FromDays(1)
                      ? date.Value.Humanize()

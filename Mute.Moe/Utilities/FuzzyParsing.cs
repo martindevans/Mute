@@ -9,16 +9,13 @@ public static class FuzzyParsing
 {
     public static MomentRangeExtraction MomentRange(string userInput, string culture = Culture.EnglishOthers)
     {
-        static TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
-        {
-            if (values.TryGetValue("utcOffsetMins", out var utcOff))
-            {
-                var offset = int.Parse(utcOff);
-                return -TimeSpan.FromMinutes(offset);
-            }
-
-            return TimeSpan.Zero;
-        }
+        return Extract(userInput)
+            ?? new MomentRangeExtraction
+               {
+                   IsValid = false,
+                   Value = (DateTime.MinValue, DateTime.MaxValue),
+                   ErrorMessage = "That doesn't seem to be a valid time range.",
+               };
 
         MomentRangeExtraction? Extract(string input)
         {
@@ -72,13 +69,16 @@ public static class FuzzyParsing
             return null;
         }
 
-        return Extract(userInput)
-               ?? new MomentRangeExtraction
-               {
-                   IsValid = false,
-                   Value = (DateTime.MinValue, DateTime.MaxValue),
-                   ErrorMessage = "That doesn't seem to be a valid time range.",
-               };
+        static TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
+        {
+            if (values.TryGetValue("utcOffsetMins", out var utcOff))
+            {
+                var offset = int.Parse(utcOff);
+                return -TimeSpan.FromMinutes(offset);
+            }
+
+            return TimeSpan.Zero;
+        }
     }
 
     public class MomentRangeExtraction
@@ -99,31 +99,14 @@ public static class FuzzyParsing
     /// <returns></returns>
     public static MomentExtraction Moment(string userInput, string culture = Culture.EnglishOthers, bool biasNext = true)
     {
-        static TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
-        {
-            // If there is set then there's a timezone, but it's ambiguous
-            if (values.TryGetValue("timezone", out var tz) && tz == "UTC+XX:XX")
-            {
-                // Try to fix up some special cases
-                if (values.TryGetValue("timezoneText", out var tztext))
-                {
-                    return tztext switch {
-                        "bst" => TimeSpan.FromHours(-1),
-                        _ => TimeSpan.Zero,
-                    };
-                }
-
-                return TimeSpan.Zero;
-            }
-
-            if (values.TryGetValue("utcOffsetMins", out var utcOff))
-            {
-                var offset = int.Parse(utcOff);
-                return -TimeSpan.FromMinutes(offset);
-            }
-
-            return TimeSpan.Zero;
-        }
+        return Extract(userInput)
+            ?? Extract($"in {userInput}")
+            ?? new MomentExtraction
+               {
+                   IsValid = false,
+                   Value = DateTime.MinValue,
+                   ErrorMessage = "That doesn't seem to be a valid moment.",
+               };
 
         MomentExtraction? Extract(string input)
         {
@@ -150,10 +133,10 @@ public static class FuzzyParsing
             if (biasNext)
             {
                 var r = (from v in values
-                    let date = DateTime.Parse(v["value"])
-                    where date > DateTime.UtcNow
-                    orderby date
-                    select v).FirstOrDefault();
+                         let date = DateTime.Parse(v["value"])
+                         where date > DateTime.UtcNow
+                         orderby date
+                         select v).FirstOrDefault();
 
                 if (r == null)
                     return null;
@@ -183,14 +166,31 @@ public static class FuzzyParsing
             return null;
         }
 
-        return Extract(userInput)
-               ?? Extract($"in {userInput}")
-               ?? new MomentExtraction
-               {
-                   IsValid = false,
-                   Value = DateTime.MinValue,
-                   ErrorMessage = "That doesn't seem to be a valid moment.",
-               };
+        static TimeSpan ApplyTimezone(IReadOnlyDictionary<string, string> values)
+        {
+            // If there is set then there's a timezone, but it's ambiguous
+            if (values.TryGetValue("timezone", out var tz) && tz == "UTC+XX:XX")
+            {
+                // Try to fix up some special cases
+                if (values.TryGetValue("timezoneText", out var tztext))
+                {
+                    return tztext switch {
+                        "bst" => TimeSpan.FromHours(-1),
+                        _ => TimeSpan.Zero,
+                    };
+                }
+
+                return TimeSpan.Zero;
+            }
+
+            if (values.TryGetValue("utcOffsetMins", out var utcOff))
+            {
+                var offset = int.Parse(utcOff);
+                return -TimeSpan.FromMinutes(offset);
+            }
+
+            return TimeSpan.Zero;
+        }
     }
 
     public class MomentExtraction
@@ -204,6 +204,13 @@ public static class FuzzyParsing
 
     public static TimeOffsetExtraction TimeOffset(string input, string culture = Culture.EnglishOthers)
     {
+        return Extract() ?? new TimeOffsetExtraction
+        {
+            IsValid = false,
+            UtcOffset = TimeSpan.Zero,
+            ErrorMessage = "I'm sorry, that doesn't seem to be a valid timezone",
+        };
+
         TimeOffsetExtraction? Extract()
         {
             var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview);
@@ -237,13 +244,6 @@ public static class FuzzyParsing
 
             return null;
         }
-
-        return Extract() ?? new TimeOffsetExtraction
-        {
-            IsValid = false,
-            UtcOffset = TimeSpan.Zero,
-            ErrorMessage = "I'm sorry, that doesn't seem to be a valid timezone",
-        };
     }
 
     public class TimeOffsetExtraction
@@ -303,6 +303,8 @@ public static class FuzzyParsing
 
     public static Extraction CurrencyAndAmount(string input, string culture = Culture.EnglishOthers)
     {
+        return Extract() ?? new Extraction("value,unit");
+
         Extraction? Extract()
         {
             var results = NumberWithUnitRecognizer.RecognizeCurrency(input, culture);
@@ -325,8 +327,6 @@ public static class FuzzyParsing
 
             return new Extraction(unit, deci);
         }
-
-        return Extract() ?? new Extraction("value,unit");
     }
 
     public class Extraction

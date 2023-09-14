@@ -38,6 +38,8 @@ public class DatabaseMacroStorage
 
         const string FindMacros = "SELECT * FROM DiceMacros WHERE (Name = @Name OR @Name is NULL) AND (Namespace = @Namespace OR @Namespace is NULL)";
 
+        return new SqlAsyncResult<MacroDefinition>(_database, PrepareQuery, ParseMacroDefinition);
+
         DbCommand PrepareQuery(IDatabaseService db)
         {
             var cmd = db.CreateCommand();
@@ -46,8 +48,6 @@ public class DatabaseMacroStorage
             cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) { Value = name });
             return cmd;
         }
-
-        return new SqlAsyncResult<MacroDefinition>(_database, PrepareQuery, ParseMacroDefinition);
     }
 
     public async Task Create(MacroDefinition definition)

@@ -29,7 +29,13 @@ public class MikibotAnilistCharacterSearch
 
     protected override uint Distance(ICharacterSearchResult item, string search)
     {
-        uint D(string nm)
+        var fld = Dist(item.FirstName + " " + item.LastName);
+        var lfd = Dist(item.LastName + " " + item.FirstName);
+
+        //Take the min distance to either English style name (Martin Evans) or Japanese style name (Evans Martin)
+        return Math.Min(fld, lfd);
+
+        uint Dist(string nm)
         {
             if (nm.Equals(search))
                 return 0;
@@ -37,12 +43,6 @@ public class MikibotAnilistCharacterSearch
                 return 1;
             return search.Levenshtein(search);
         }
-
-        var fld = D(item.FirstName + " " + item.LastName);
-        var lfd = D(item.LastName + " " + item.FirstName);
-
-        //Take the min distance to either English style name (Martin Evans) or Japanese style name (Evans Martin)
-        return Math.Min(fld, lfd);
     }
 
     protected override string ExtractId(ICharacterSearchResult item)

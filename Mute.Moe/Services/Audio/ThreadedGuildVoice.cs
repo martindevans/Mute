@@ -104,26 +104,6 @@ public class ThreadedGuildVoice
 
         private async Task ThreadEntry()
         {
-            static async Task WriteOutput(IWaveProvider waveSource, Stream waveSink, int sampleCount, byte[] buffer)
-            {
-                while (sampleCount > 0)
-                {
-                    //Read output from mixer
-                    var mixed = waveSource.Read(buffer, 0, buffer.Length);
-                    sampleCount -= mixed;
-
-                    //Send the mixed audio buffer to discord
-                    await waveSink.WriteAsync(buffer, 0, mixed);
-                
-                    //If no audio was mixed early exit, this probably indicates the end of the stream
-                    if (mixed == 0)
-                    {
-                        await waveSink.FlushAsync();
-                        return;
-                    }
-                }
-            }
-
             var audioCopyBuffer = new byte[_mixer.WaveFormat.AverageBytesPerSecond / 10];
 
             try
@@ -171,6 +151,28 @@ public class ThreadedGuildVoice
             {
                 Console.WriteLine(e);
                 throw;
+            }
+
+            return;
+
+            static async Task WriteOutput(IWaveProvider waveSource, Stream waveSink, int sampleCount, byte[] buffer)
+            {
+                while (sampleCount > 0)
+                {
+                    //Read output from mixer
+                    var mixed = waveSource.Read(buffer, 0, buffer.Length);
+                    sampleCount -= mixed;
+
+                    //Send the mixed audio buffer to discord
+                    await waveSink.WriteAsync(buffer, 0, mixed);
+                
+                    //If no audio was mixed early exit, this probably indicates the end of the stream
+                    if (mixed == 0)
+                    {
+                        await waveSink.FlushAsync();
+                        return;
+                    }
+                }
             }
         }
     }
