@@ -32,11 +32,6 @@ public class Help
         //Find modules which have at least one permitted command
         var modules = await FindModules();
 
-        static string CommandsStr(IEnumerable<CommandInfo> cmds)
-        {
-            return string.Join(", ", cmds.Select(a => $"`{a.Name}`").Distinct());
-        }
-
         var pages = MoreLinq.Extensions.BatchExtension.Batch(modules.Select(m => $"**{m.Key.Name}**\n{CommandsStr(m.Value)}"), 10).Select(b => string.Join("\n", b)).ToArray();
 
         await PagedReplyAsync(new PaginatedMessage
@@ -45,6 +40,12 @@ public class Help
             Color = Color.Green,
             Title = $"Use `{_prefixCharacter}help name` to find out about a specific command or module",
         });
+        return;
+
+        static string CommandsStr(IEnumerable<CommandInfo> cmds)
+        {
+            return string.Join(", ", cmds.Select(a => $"`{a.Name}`").Distinct());
+        }
     }
 
     [Command("help"), Summary("I will tell you about commands or modules")]
@@ -162,6 +163,21 @@ public class Help
 
     public static EmbedBuilder FormatCommandDetails(ICommandContext context, char prefix, IEnumerable<CommandInfo> cmds)
     {
+        var cmdArr = cmds.ToArray();
+        return cmdArr.Length == 1
+            ? SingleCommandDetails(cmdArr[0])
+            : MultiCommandDetails(cmdArr);
+
+        EmbedBuilder MultiCommandDetails(IReadOnlyCollection<CommandInfo> multi)
+        {
+            var embed = CreateEmbed(context, prefix, $"{multi.Count} commands", "description");
+
+            foreach (var item in multi)
+                embed.AddField(FormatCommandName(item, prefix), item.Summary ?? item.Remarks ?? $"No description {EmojiLookup.Confused}");
+
+            return embed;
+        }
+
         EmbedBuilder SingleCommandDetails(CommandInfo cmd)
         {
             var embed = CreateEmbed(context, prefix, FormatCommandName(cmd, prefix), cmd.Summary ?? cmd.Remarks);
@@ -205,21 +221,6 @@ public class Help
 
             return embed;
         }
-
-        EmbedBuilder MultiCommandDetails(IReadOnlyCollection<CommandInfo> multi)
-        {
-            var embed = CreateEmbed(context, prefix, $"{multi.Count} commands", "description");
-
-            foreach (var item in multi)
-                embed.AddField(FormatCommandName(item, prefix), item.Summary ?? item.Remarks ?? $"No description {EmojiLookup.Confused}");
-
-            return embed;
-        }
-
-        var cmdArr = cmds.ToArray();
-        return cmdArr.Length == 1
-            ? SingleCommandDetails(cmdArr[0])
-            : MultiCommandDetails(cmdArr);
     }
 
     private static EmbedBuilder FormatModuleDetails(ICommandContext context, char prefix, ModuleInfo module)

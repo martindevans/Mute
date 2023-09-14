@@ -75,8 +75,8 @@ public class Startup
         services.AddHostedService<MidjourneyStyleImageGenerationResponses>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
 
-        //services.AddSingleton<ILargeLanguageModel, LlamaSharpLLM>();
-        services.AddSingleton<ILargeLanguageModel, NullLLM>();
+        services.AddSingleton<ILargeLanguageModel, LlamaSharpLLM>();
+        //services.AddSingleton<ILargeLanguageModel, NullLLM>();
 
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddTransient<ISpacexInfo, LL2SpaceX>();

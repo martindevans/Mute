@@ -39,10 +39,7 @@ public static class LaunchInfoExtensions
         var site = launch.LaunchPad.Name;
         if (!string.IsNullOrWhiteSpace(site))
         {
-            if (launch.LaunchPad.MapUrl != null)
-                builder = builder.AddField("Launch Site", $"[{site}]({launch.LaunchPad.MapUrl})");
-            else
-                builder = builder.AddField("Launch Site", site);
+            builder = builder.AddField("Launch Site", $"[{site}]({launch.LaunchPad.MapUrl})");
         }
 
         if (launch.DateUtc.HasValue)
@@ -80,7 +77,7 @@ public static class LaunchInfoExtensions
         if (!date.HasValue)
             return "";
 
-        if (!precision.HasValue || precision.Value <= DatePrecision.Minute)
+        if (precision is not > DatePrecision.Minute)
             return date.Value.Humanize();
 
         switch (precision.Value)

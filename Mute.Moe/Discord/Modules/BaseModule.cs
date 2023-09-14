@@ -399,6 +399,9 @@ public class BaseModule
 
         async Task UpdateMessage(bool final = false)
         {
+            if (contents.Length == 0)
+                return;
+
             var c = contents.ToString();
             if (!final)
                 c += "...";

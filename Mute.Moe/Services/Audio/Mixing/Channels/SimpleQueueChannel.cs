@@ -24,7 +24,7 @@ public interface ISimpleQueueChannel<TMetadata>
 public class SimpleQueueChannel<T>
     : ISimpleQueueChannel<T>
 {
-    public WaveFormat WaveFormat { get; }
+    public WaveFormat WaveFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
 
     private readonly ConcurrentQueue<QueueClip> _queue = new();
     private QueueClip? _playing;
@@ -35,11 +35,6 @@ public class SimpleQueueChannel<T>
     public (T Metadata, Task Completion)? Playing => _playing.HasValue ? (_playing.Value.Metadata, _playing.Value.Completion) : default;
 
     public IEnumerable<T> Queue => _queue.Select(a => a.Metadata).ToArray();
-
-    public SimpleQueueChannel()
-    {
-        WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
-    }
 
     public Task<Task> Enqueue<TAudio>(T metadata, TAudio audio)
         where TAudio : ISampleProvider, IDisposable

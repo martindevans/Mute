@@ -69,9 +69,8 @@ public class LL2SpaceX
             while (page != null)
             {
                 if (_results != null)
-                    foreach (var item in _results)
-                        if (item != null)
-                            yield return item;
+                    foreach (var item in _results.Where(item => item != null))
+                        yield return item!;
 
                 if (page._next != null)
                 {

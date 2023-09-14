@@ -62,7 +62,7 @@ public class SeasonalAvatar
             return;
 
         _cts = new CancellationTokenSource();
-        var _ = _cron.Interval(TimeSpan.FromHours(7), PickAvatarNow, int.MaxValue, _cts.Token);
+        _ = _cron.Interval(TimeSpan.FromHours(7), PickAvatarNow, int.MaxValue, _cts.Token);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

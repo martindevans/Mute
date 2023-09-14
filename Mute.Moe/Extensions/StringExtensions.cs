@@ -110,7 +110,7 @@ public static class StringExtensions
 
     private static IEnumerable<ulong> FindMentions(this string str, char prefix)
     {
-        var r = new Regex($"\\<{prefix}(!?)(?<id>[0-9]+)\\>");
+        var r = new Regex($@"\<{prefix}(!?)(?<id>[0-9]+)\>");
 
         var matches = r.Matches(str);
 

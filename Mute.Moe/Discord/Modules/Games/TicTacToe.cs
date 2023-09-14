@@ -132,19 +132,19 @@ public class TicTacToe
 
         public override string ToString()
         {
+            return $"{C(0, 0)}|{C(1, 0)}|{C(2, 0)}\n"
+                +  "-----\n"
+                 + $"{C(0, 1)}|{C(1, 1)}|{C(2, 1)}\n"
+                +  "-----\n"
+                 + $"{C(0, 2)}|{C(1, 2)}|{C(2, 2)}\n";
+
             string C(int x, int y)
             {
                 var state = _state[x, y];
                 return state != CellState.None
-                     ? state.ToString()
-                     : "abcdefghi"[x + y * 3].ToString();
+                    ? state.ToString()
+                    : "abcdefghi"[x + y * 3].ToString();
             }
-
-            return $"{C(0, 0)}|{C(1, 0)}|{C(2, 0)}\n"
-                   +  "-----\n"
-                   + $"{C(0, 1)}|{C(1, 1)}|{C(2, 1)}\n"
-                   +  "-----\n"
-                   + $"{C(0, 2)}|{C(1, 2)}|{C(2, 2)}\n";
         }
 
         public CellState Cell(byte x, byte y)
@@ -169,16 +169,6 @@ public class TicTacToe
 
         private GameState State()
         {
-            static GameState Winner(CellState cell)
-            {
-                return cell switch {
-                    CellState.X => GameState.XWins,
-                    CellState.O => GameState.OWins,
-                    CellState.None => throw new ArgumentOutOfRangeException(nameof(cell), cell, null),
-                    _ => throw new ArgumentOutOfRangeException(nameof(cell), cell, null),
-                };
-            }
-
             //Check horizontal lines
             for (byte i = 0; i < 3; i++)
             {
@@ -215,6 +205,16 @@ public class TicTacToe
             return count == 0
                  ? GameState.Draw
                  : GameState.InPlay;
+
+            static GameState Winner(CellState cell)
+            {
+                return cell switch {
+                    CellState.X => GameState.XWins,
+                    CellState.O => GameState.OWins,
+                    CellState.None => throw new ArgumentOutOfRangeException(nameof(cell), cell, null),
+                    _ => throw new ArgumentOutOfRangeException(nameof(cell), cell, null),
+                };
+            }
         }
     }
 }

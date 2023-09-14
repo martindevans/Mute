@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Discord;
-using MoreLinq;
 
 namespace Mute.Moe.Extensions;
 

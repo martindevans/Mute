@@ -45,24 +45,6 @@ public class Iou
 
     private async Task DisplayBalances(IReadOnlyCollection<IBalance> balances)
     {
-        async Task DebtTotalsPerUnit()
-        {
-            if (balances.Count > 1)
-            {
-                var totals = balances.GroupBy(a => a.Unit)
-                    .Select(a => (a.Key, a.Sum(o => o.Amount)))
-                    .OrderByDescending(a => a.Item2)
-                    .ToArray();
-
-                var r = new StringBuilder("```\nTotals:\n");
-                foreach (var (key, amount) in totals)
-                    r.AppendLine($" => {TransactionFormatting.FormatCurrency(amount, key)}");
-                r.AppendLine("```");
-
-                await ReplyAsync(r.ToString());
-            }
-        }
-
         var balancesList = new List<string>(balances.Count);
         foreach (var balance in balances)
             balancesList.Add(await balance.Format(_users));
@@ -75,6 +57,25 @@ public class Iou
             await PagedReplyAsync(new PaginatedMessage { Pages = balancesList.Batch(7).Select(d => string.Join("\n", d)) });
 
         await DebtTotalsPerUnit();
+        return;
+
+        async Task DebtTotalsPerUnit()
+        {
+            if (balances.Count > 1)
+            {
+                var totals = balances.GroupBy(a => a.Unit)
+                                     .Select(a => (a.Key, a.Sum(o => o.Amount)))
+                                     .OrderByDescending(a => a.Item2)
+                                     .ToArray();
+
+                var r = new StringBuilder("```\nTotals:\n");
+                foreach (var (key, amount) in totals)
+                    r.AppendLine($" => {TransactionFormatting.FormatCurrency(amount, key)}");
+                r.AppendLine("```");
+
+                await ReplyAsync(r.ToString());
+            }
+        }
     }
     #endregion
 

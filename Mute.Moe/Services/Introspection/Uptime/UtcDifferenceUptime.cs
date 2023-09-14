@@ -3,12 +3,7 @@
 public class UtcDifferenceUptime
     : IUptime
 {
-    private DateTime CreationTimeUtc { get; }
+    private DateTime CreationTimeUtc { get; } = DateTime.UtcNow;
 
     public TimeSpan Uptime => DateTime.UtcNow - CreationTimeUtc;
-
-    public UtcDifferenceUptime()
-    {
-        CreationTimeUtc = DateTime.UtcNow;
-    }
 }

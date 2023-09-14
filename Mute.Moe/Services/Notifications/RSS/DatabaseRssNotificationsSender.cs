@@ -48,7 +48,7 @@ public class DatabaseRssNotificationsSender
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _cts = new CancellationTokenSource();
-        var _ = Task.Run(() => ThreadEntry(_cts.Token), _cts.Token);
+        _ = Task.Run(() => ThreadEntry(_cts.Token), _cts.Token);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
