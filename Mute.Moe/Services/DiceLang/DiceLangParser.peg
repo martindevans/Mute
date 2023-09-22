@@ -44,8 +44,9 @@ dice <DiceRollValue>
 decimal <ConstantValue> -memoize
     = value:([0-9]+ ("." [0-9]+)?) { new ConstantValue(double.Parse(string.Join("", value), CultureInfo.InvariantCulture)) }
 
-integer <uint> -memoize
-    = value:([0-9]+) { uint.Parse(string.Join("", value), CultureInfo.InvariantCulture) }
+integer <IAstNode> -memoize
+    = "(" n:number ")" { n }
+    / value:([0-9]+) { new ConstantValue(uint.Parse(string.Join("", value), CultureInfo.InvariantCulture)) }
 
 macro_invocation <MacroInvoke> -memoize
      = ns:identifier "::" n:identifier "(" a:macro_args ")" { new MacroInvoke(ns, n, a) }

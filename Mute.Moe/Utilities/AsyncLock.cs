@@ -22,8 +22,7 @@ public class AsyncLock
             }
 
             var completion = new TaskCompletionSource<IDisposable>();
-            // ReSharper disable once MethodSupportsCancellation
-            cancellationToken.Register(() => { completion.SetCanceled(); });
+            cancellationToken.Register(completion.SetCanceled);
             _waiting.Enqueue(completion);
 
             return completion.Task;

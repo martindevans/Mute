@@ -243,7 +243,10 @@ public class Automatic1111
         var buffer = mem.ToArray();
 
         var analysis = await backend.Interrogate(new Base64EncodedImage(buffer), model);
-        return analysis.Caption;
+
+        return analysis.Caption
+                       .Replace("\\(", "(")
+                       .Replace("\\)", ")");
     }
 
     public async Task<Image> UpscaleImage(Image inputImage, uint width, uint height, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)

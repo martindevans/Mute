@@ -72,8 +72,6 @@ public class MidjourneyStyleImageGenerationResponses
         var config = await _storage.Get(args.Message.Id)
                   ?? await LegacyConfig(args);
 
-        var newConfigId = (await args.GetOriginalResponseAsync()).Id;
-
         // Parse out the redo ID
         if (args.Data.CustomId.StartsWith(RedoButtonId))
         {
@@ -96,14 +94,11 @@ public class MidjourneyStyleImageGenerationResponses
                 throw new InvalidOperationException($"Unknown button ID: {id}");
         }
 
-        // Save the new config
-        await _storage.Put(newConfigId, config);
-
         // Take the lock, only one generation at a time
         using var locked = await _lock.LockAsync();
 
         // Do the actual generation!
-        await new SocketMessageComponentGenerationContext(config, _generator, _upscaler, _outpainter, _http, args).Run();
+        await new SocketMessageComponentGenerationContext(config, _generator, _upscaler, _outpainter, _http, args, _storage).Run();
     }
 
     private async Task<ImageGenerationConfig> LegacyConfig(SocketMessageComponent args)

@@ -4,7 +4,7 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.DiceLang.AST;
 
-public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
+public record DiceRollValue(IAstNode Count, IAstNode Sides, IAstNode? ExplodeThreshold)
     : IAstNode
 {
     private bool _initialised;
@@ -15,20 +15,25 @@ public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
         _initialised = true;
         _values.Clear();
 
+        var count = (ulong)await Count.Evaluate(context);
+        var sides = (ulong)await Sides.Evaluate(context);
+        var explodeTask = ExplodeThreshold?.Evaluate(context);
+        var explode = (ulong?)(explodeTask == null ? default(double?) : await explodeTask);
+
         var total = 0ul;
-        for (var i = 0u; i < Count; i++)
+        for (var i = 0u; i < count; i++)
             total += RollSingle();
 
         return total;
 
         ulong RollSingle()
         {
-            var value = context.Roller.Roll(Sides);
+            var value = context.Roller.Roll(sides);
             _values.Add(new DiceRollResult(value, false));
 
-            if (value >= ExplodeThreshold)
+            if (value >= explode)
             {
-                var explosion = context.Roller.Roll(Sides);
+                var explosion = context.Roller.Roll(sides);
                 _values.Add(new DiceRollResult(explosion, true));
                 value += explosion;
             }
@@ -37,17 +42,12 @@ public record DiceRollValue(uint Count, uint Sides, uint? ExplodeThreshold)
         }
     }
 
-    public IAstNode Reduce()
-    {
-        return this;
-    }
-
     public override string ToString()
     {
         if (!_initialised)
         {
-            if (ExplodeThreshold.HasValue)
-                return $"{Count}d{Sides}E{ExplodeThreshold.Value}";
+            if (ExplodeThreshold != null)
+                return $"{Count}d{Sides}E{ExplodeThreshold}";
             return $"{Count}d{Sides}";
         }
 

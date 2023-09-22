@@ -9,8 +9,10 @@ public class MuteCommandContextGenerationContext
 {
     private readonly IUserMessage _reply;
 
-    public MuteCommandContextGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http, IUserMessage reply)
-        : base(config, generator, upscaler, outpainter, http)
+    protected override ulong ID => _reply.Id;
+
+    public MuteCommandContextGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http, IUserMessage reply, IImageGenerationConfigStorage storage)
+        : base(config, storage, generator, upscaler, outpainter, http)
     {
         _reply = reply;
     }

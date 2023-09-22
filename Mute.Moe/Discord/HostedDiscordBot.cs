@@ -76,7 +76,7 @@ public class HostedDiscordBot
         _commands.CommandExecuted += CommandExecuted;
 
         // Hook up interactions
-        Client.SlashCommandExecuted += a => _interactions.ExecuteCommandAsync(new InteractionContext(Client, a, a.Channel), _services);
+        Client.SlashCommandExecuted += SlashCommandExecuted;
         Client.InteractionCreated += async x =>
         {
             var ctx = new SocketInteractionContext(Client, x);
@@ -113,9 +113,28 @@ public class HostedDiscordBot
         await tcs.Task;
     }
 
+    private async Task SlashCommandExecuted(SocketSlashCommand cmd)
+    {
+        var ctx = new InteractionContext(Client, cmd, cmd.Channel);
+        try
+        {
+            var result = await _interactions.ExecuteCommandAsync(ctx, _services);
+
+            // Only pay attention to commands which fail due to an exception
+            if (result.IsSuccess || result.Error is not InteractionCommandError.Exception)
+                return;
+
+            await ctx.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
+        }
+        catch (Exception ex)
+        {
+            await ctx.Channel.SendMessageAsync("Command Exception! " + ex.Message);
+        }
+    }
+
     private static async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context,  IResult result)
     {
-        //Only pay attention to commands which fail due to an exception
+        // Only pay attention to commands which fail due to an exception
         if (result.IsSuccess || result.Error is not CommandError.Exception)
             return;
 

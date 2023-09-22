@@ -10,8 +10,10 @@ public class SocketMessageComponentGenerationContext
 {
     private readonly SocketMessageComponent _component;
 
-    public SocketMessageComponentGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http, SocketMessageComponent component)
-        : base(config, generator, upscaler, outpainter, http)
+    protected override ulong ID => _component.Id;
+
+    public SocketMessageComponentGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http, SocketMessageComponent component, IImageGenerationConfigStorage storage)
+        : base(config, storage, generator, upscaler, outpainter, http)
     {
         _component = component;
     }

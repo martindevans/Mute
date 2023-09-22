@@ -25,7 +25,7 @@ public class ImageGenerationConfig
     [JsonPropertyName("type")] public required ImageGenerationType Type { get; set; }
     [JsonPropertyName("bat")] public required int BatchSize { get; set; }
 
-    public Prompt Prompt()
+    public Prompt ToPrompt()
     {
         return new Prompt
         {
@@ -37,6 +37,26 @@ public class ImageGenerationConfig
             FaceEnhancementNegative = FaceNegative,
             HandEnhancementPositive = HandPositive,
             HandEnhancementNegative = HandNegative,
+        };
+    }
+
+    public static ImageGenerationConfig FromPrompt(Prompt prompt, string? referenceUrl, bool isPrivate, int batchSize, ImageGenerationType type)
+    {
+        return new ImageGenerationConfig
+        {
+            Positive = prompt.Positive,
+            Negative = prompt.Negative,
+            EyePositive = prompt.EyeEnhancementPositive,
+            EyeNegative = prompt.EyeEnhancementNegative,
+            HandPositive = prompt.HandEnhancementPositive,
+            HandNegative = prompt.HandEnhancementNegative,
+            FacePositive = prompt.FaceEnhancementPositive,
+            FaceNegative = prompt.FaceEnhancementNegative,
+
+            ReferenceImageUrl = referenceUrl,
+            IsPrivate = isPrivate,
+            Type = type,
+            BatchSize = batchSize,
         };
     }
 }

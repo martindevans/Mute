@@ -16,6 +16,7 @@ namespace Mute.Moe.Services.ImageGen.Contexts;
 public abstract class BaseImageGenerationContext
 {
     private readonly ImageGenerationConfig _config;
+    private readonly IImageGenerationConfigStorage _storage;
 
     private readonly IImageGenerator _generator;
     private readonly IImageUpscaler _upscaler;
@@ -24,9 +25,12 @@ public abstract class BaseImageGenerationContext
 
     private float _latestProgress;
 
-    protected BaseImageGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http)
+    protected abstract ulong ID { get; }
+
+    protected BaseImageGenerationContext(ImageGenerationConfig config, IImageGenerationConfigStorage storage, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http)
     {
         _config = config;
+        _storage = storage;
         _generator = generator;
         _upscaler = upscaler;
         _http = http;
@@ -37,9 +41,11 @@ public abstract class BaseImageGenerationContext
     {
         try
         {
+            await _storage.Put(ID, _config);
+
             await OnStartingGeneration();
             var result = await Generate();
-            await OnCompleted(_config.Prompt(), result);
+            await OnCompleted(_config.ToPrompt(), result);
         }
         catch (Exception ex)
         {
@@ -149,13 +155,13 @@ public abstract class BaseImageGenerationContext
 
     private Task<IReadOnlyCollection<Image>> GenerateImage2Image(Image referenceImage)
     {
-        var prompt = _config.Prompt();
+        var prompt = _config.ToPrompt();
         return _generator.Image2Image(null, referenceImage, prompt, OnReportProgress, _config.BatchSize);
     }
 
     private Task<IReadOnlyCollection<Image>> GenerateText2Image()
     {
-        var prompt = _config.Prompt();
+        var prompt = _config.ToPrompt();
         return _generator.Text2Image(null, prompt, OnReportProgress, _config.BatchSize);
     }
 
@@ -189,7 +195,7 @@ public abstract class BaseImageGenerationContext
     #endregion
 }
 
-public static class MuteCommandContextImageGenerationExtensions
+public static class ContextImageGenerationExtensions
 {
     public static async Task GenerateImage(this MuteCommandContext context, string prompt)
     {
@@ -218,27 +224,9 @@ public static class MuteCommandContextImageGenerationExtensions
             messageReference: new MessageReference(context.Message.Id)
         );
 
-        // Save the config into the DB
-        var config = new ImageGenerationConfig
-        {
-            Positive = parsedPrompt.Positive,
-            Negative = parsedPrompt.Negative,
-            EyePositive = parsedPrompt.EyeEnhancementPositive,
-            EyeNegative = parsedPrompt.EyeEnhancementNegative,
-            HandPositive = parsedPrompt.HandEnhancementPositive,
-            HandNegative = parsedPrompt.HandEnhancementNegative,
-            FacePositive = parsedPrompt.FaceEnhancementPositive,
-            FaceNegative = parsedPrompt.FaceEnhancementNegative,
-
-            ReferenceImageUrl = referenceUrl,
-            IsPrivate = context.IsPrivate,
-            Type = ImageGenerationType.Generate,
-            BatchSize = muteConfig.ImageGeneration?.BatchSize ?? 2,
-        };
-        await storage.Put(reply.Id, config);
-
         // Do the actual work
-        var ctx = new MuteCommandContextGenerationContext(config, generator, upscaler, outpainter, http, reply);
+        var config = ImageGenerationConfig.FromPrompt(parsedPrompt, referenceUrl, context.IsPrivate, muteConfig.ImageGeneration?.BatchSize ?? 2, ImageGenerationType.Generate);
+        var ctx = new MuteCommandContextGenerationContext(config, generator, upscaler, outpainter, http, reply, storage);
         await ctx.Run();
     }
 
