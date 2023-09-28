@@ -7,7 +7,7 @@ public class MidjourneyStyleImageGenerationButtons
     private const string VariantButtonFullId = IdPrefix + VariantButtonId + "_";
     private const string OutpaintButtonFullId = IdPrefix + OutpaintButtonId + "_";
     private const string UpscaleButtonFullId = IdPrefix + UpscaleButtonId + "_";
-    public const string RedoButtonFullId = IdPrefix + RedoButtonId + "_";
+    public const string RedoButtonFullId = IdPrefix + RedoButtonId;
 
     public const string VariantButtonId = "VariantButtonId";
     public const string OutpaintButtonId = "OutpaintButtonId";
