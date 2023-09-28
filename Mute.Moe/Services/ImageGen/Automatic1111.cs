@@ -53,14 +53,17 @@ public class Automatic1111
         _afterDetailFaceMinSize = config.Automatic1111?.AfterDetail?.FaceMinSize ?? 0.05f;
     }
 
-    private Task<StableDiffusion?> GetBackend()
+    private async Task<StableDiffusionBackendCache.IBackendAccessor> GetBackend()
     {
-        return _backends.GetBackend();
+        return await _backends.GetBackend()
+            ?? throw new InvalidOperationException("No image generation backends accessible");
     }
 
     public async Task<IReadOnlyCollection<Image>> Text2Image(int? seed, Prompt prompt, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
-        var backend = await GetBackend() ?? throw new InvalidOperationException("No image generation backends accessible");
+        // Get the backend and lock it for the duration of this operation
+        using var scope = await (await GetBackend()).Lock(default);
+        var backend = scope.Backend;
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_t2iSampler);
@@ -104,7 +107,9 @@ public class Automatic1111
 
     public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image inputImage, Prompt prompt, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
-        var backend = await GetBackend() ?? throw new InvalidOperationException("No image generation backends accessible");
+        // Get the backend and lock it for the duration of this operation
+        using var scope = await (await GetBackend()).Lock(default);
+        var backend = scope.Backend;
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
@@ -236,7 +241,9 @@ public class Automatic1111
 
     public async Task<string> GetImageDescription(Stream image, InterrogateModel model)
     {
-        var backend = await GetBackend() ?? throw new InvalidOperationException("No image analysis backends accessible");
+        // Get the backend and lock it for the duration of this operation
+        using var scope = await (await GetBackend()).Lock(default);
+        var backend = scope.Backend;
 
         var mem = new MemoryStream();
         await image.CopyToAsync(mem);
@@ -251,7 +258,9 @@ public class Automatic1111
 
     public async Task<Image> UpscaleImage(Image inputImage, uint width, uint height, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
     {
-        var backend = await GetBackend() ?? throw new InvalidOperationException("No image analysis backends accessible");
+        // Get the backend and lock it for the duration of this operation
+        using var scope = await (await GetBackend()).Lock(default);
+        var backend = scope.Backend;
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
@@ -303,7 +312,10 @@ public class Automatic1111
 
     public async Task<IReadOnlyCollection<Image>> Outpaint(Image inputImage, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
     {
-        var backend = await GetBackend() ?? throw new InvalidOperationException("No image analysis backends accessible");
+        // Get the backend and lock it for the duration of this operation
+        using var scope = await (await GetBackend()).Lock(default);
+        var backend = scope.Backend;
+
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
         var outpainter = new TwoStepOutpainter(backend, model, sampler, 2, 2, 75);

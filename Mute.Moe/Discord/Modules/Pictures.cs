@@ -32,30 +32,6 @@ public class Pictures
         _backends = backends;
     }
 
-    [Command("backends"), Alias("status"), Summary("I will show the status of image generation backends")]
-    public async Task Backends()
-    {
-        await BackendsCheck();
-    }
-
-    [Command("backends"), Alias("status"), Summary("I will show the status of image generation backends")]
-    [RequireOwner]
-    public async Task BackendsCheck(bool check = false)
-    {
-        if (!check)
-            await _backends.GetBackend();
-
-        var backends = await _backends.GetBackends(check);
-
-        await DisplayItemList(
-            backends,
-            () => "No backends available",
-            null,
-            (item, index) => $"{index + 1}. `{item.Item1}` has been used {item.Item2} times, ({(item.Item3 ? "Ok" : "Unresponsive")})"
-        );
-    }
-
-
     [Command("generate"), Alias("diffusion", "imagine"), Summary("I will generate a picture")]
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 10, "Please wait a bit before generating more images")]
     public async Task Generate([Remainder] string prompt)

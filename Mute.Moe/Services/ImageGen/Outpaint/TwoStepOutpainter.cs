@@ -13,7 +13,7 @@ namespace Mute.Moe.Services.ImageGen.Outpaint;
 
 internal class TwoStepOutpainter
 {
-    private readonly StableDiffusion _api;
+    private readonly IStableDiffusion _api;
     private readonly IStableDiffusionModel _model;
     private readonly ISampler _sampler;
 
@@ -22,7 +22,7 @@ internal class TwoStepOutpainter
     private readonly int _steps1;
     private readonly int _steps2;
 
-    public TwoStepOutpainter(StableDiffusion api, IStableDiffusionModel model, ISampler sampler, int batchSize1, int batchSize2, int steps)
+    public TwoStepOutpainter(IStableDiffusion api, IStableDiffusionModel model, ISampler sampler, int batchSize1, int batchSize2, int steps)
     {
         _api = api;
         _model = model;

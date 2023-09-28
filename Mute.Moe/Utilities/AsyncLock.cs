@@ -10,6 +10,8 @@ public class AsyncLock
     private bool _taken;
     private readonly Queue<TaskCompletionSource<IDisposable>> _waiting = new();
 
+    public bool IsLocked => _taken;
+
     public Task<IDisposable> LockAsync(CancellationToken cancellationToken = default)
     {
         lock (_mutex)

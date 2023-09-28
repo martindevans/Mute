@@ -1,6 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Autofocus;
 using MoreLinq;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.ImageGen;
 
@@ -21,7 +23,7 @@ public class StableDiffusionBackendCache
         _backends = urls.Select(a => new BackendStatus(a, timeoutSlow, timeoutFast)).ToArray();
     }
 
-    public async Task<StableDiffusion?> GetBackend()
+    public async Task<IBackendAccessor?> GetBackend()
     {
         var probablyLive = _backends.Where(a => a.IsResponsive).ToList();
         var probablyDead = _backends.Where(a => !a.IsResponsive).ToList();
@@ -47,11 +49,11 @@ public class StableDiffusionBackendCache
                     bestBackend = item;
 
                     if (bestScore == 0)
-                        return bestBackend.Backend();
+                        return bestBackend;
                 }
             }
             if (bestBackend != null)
-                return bestBackend.Backend();
+                return bestBackend;
         }
 
         // There were no responsive backends! Wait for checks to finish
@@ -62,7 +64,7 @@ public class StableDiffusionBackendCache
 
             var responsive = _backends.Where(a => a.IsResponsive).Shuffle().FirstOrDefault();
             if (responsive != null)
-                return responsive.Backend();
+                return responsive;
         }
 
         // No hope
@@ -80,6 +82,7 @@ public class StableDiffusionBackendCache
     }
 
     private class BackendStatus
+        : IBackendAccessor
     {
         public bool IsResponsive { get; private set; }
         public DateTime LastCheck { get; private set; }
@@ -87,7 +90,8 @@ public class StableDiffusionBackendCache
 
         public string Name { get; }
 
-        private readonly StableDiffusion _backend;
+        private readonly AsyncLock _lock = new();
+        private readonly IStableDiffusion _backend;
 
         public BackendStatus(string url, TimeSpan slow, TimeSpan fast)
         {
@@ -121,19 +125,19 @@ public class StableDiffusionBackendCache
             });
         }
 
-        public StableDiffusion Backend(bool doNotIncrement = false)
-        {
-            if (!doNotIncrement)
-                UsedCount++;
-            return _backend;
-        }
-
         public async Task<float?> QueueETA()
         {
+            var islocked = _lock.IsLocked;
+
             try
             {
                 var progress = await _backend.Progress(true);
-                return (float)progress.ETARelative.TotalSeconds;
+                var time = (float)progress.ETARelative.TotalSeconds;
+
+                // Return a larger time is the lock is currently taken
+                if (islocked)
+                    return time * 4 + 8;
+                return time;
             }
             catch (Exception)
             {
@@ -141,6 +145,39 @@ public class StableDiffusionBackendCache
                 IsResponsive = false;
                 return null;
             }
+        }
+
+        public async Task<BackendScope> Lock(CancellationToken token)
+        {
+            UsedCount++;
+
+            return new BackendScope(
+                _backend,
+                await _lock.LockAsync(token)
+            );
+        }
+    }
+
+    public interface IBackendAccessor
+    {
+        public Task<BackendScope> Lock(CancellationToken token);
+    }
+
+    public readonly struct BackendScope
+        : IDisposable
+    {
+        public IStableDiffusion Backend { get; }
+        private readonly IDisposable _scope;
+
+        public BackendScope(IStableDiffusion backend, IDisposable scope)
+        {
+            Backend = backend;
+            _scope = scope;
+        }
+
+        public void Dispose()
+        {
+            _scope.Dispose();
         }
     }
 }

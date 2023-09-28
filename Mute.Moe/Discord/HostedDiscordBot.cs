@@ -80,7 +80,22 @@ public class HostedDiscordBot
         Client.InteractionCreated += async x =>
         {
             var ctx = new SocketInteractionContext(Client, x);
-            await _interactions.ExecuteCommandAsync(ctx, _services);
+            try
+            {
+                var result = await _interactions.ExecuteCommandAsync(ctx, _services);
+
+                // Only pay attention to commands which fail due to an exception
+                if (result.IsSuccess || result.Error is not InteractionCommandError.Exception)
+                    return;
+                throw new Exception(result.ErrorReason);
+            }
+            catch (Exception ex)
+            {
+                if (ctx.Interaction.HasResponded)
+                    await ctx.Interaction.ModifyOriginalResponseAsync(props => props.Content = ex.Message);
+                else
+                    await ctx.Interaction.RespondAsync(ex.Message);
+            }
         };
 
         var tcs = new TaskCompletionSource<bool>();
@@ -124,7 +139,7 @@ public class HostedDiscordBot
             if (result.IsSuccess || result.Error is not InteractionCommandError.Exception)
                 return;
 
-            await ctx.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
+            throw new Exception(result.ErrorReason);
         }
         catch (Exception ex)
         {

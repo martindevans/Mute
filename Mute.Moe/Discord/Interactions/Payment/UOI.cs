@@ -11,7 +11,7 @@
 
 //[UsedImplicitly]
 //public class UOI
-//    : InteractionModuleBase
+//    : MuteInteractionModuleBase
 //{
 //    private readonly IPendingTransactions _pending;
 //    private readonly IUserService _users;

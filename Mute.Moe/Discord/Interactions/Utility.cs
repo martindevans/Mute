@@ -6,7 +6,7 @@ namespace Mute.Moe.Discord.Interactions;
 
 [UsedImplicitly]
 public class Utility
-    : InteractionModuleBase
+    : MuteInteractionModuleBase
 {
     [SlashCommand("ping", "Check that I am awake")]
     public async Task Ping()

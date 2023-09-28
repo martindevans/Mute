@@ -12,7 +12,7 @@
 
 //[UsedImplicitly]
 //public class IOU
-//    : InteractionModuleBase
+//    : MuteInteractionModuleBase
 //{
 //    private readonly ITransactions _transactions;
 //    private readonly BaseSocketClient _client;

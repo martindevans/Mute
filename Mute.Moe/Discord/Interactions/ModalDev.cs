@@ -10,7 +10,7 @@
 
 //[UsedImplicitly]
 //public class ModalDev
-//    : InteractionModuleBase
+//    : MuteInteractionModuleBase
 //{
 //    // Registers a command that will respond with a modal.
 //    [SlashCommand("modal2", "Dev command for testing modal interactions.")]
@@ -62,11 +62,11 @@
 //        //// Respond to the modal.
 //        //await RespondAsync(message, allowedMentions: mentions, ephemeral: false);
 
-        
 
-        
 
-        
+
+
+
 
 //    }
 //}
