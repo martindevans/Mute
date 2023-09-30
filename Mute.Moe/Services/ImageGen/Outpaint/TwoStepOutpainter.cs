@@ -96,7 +96,6 @@ internal class TwoStepOutpainter
 
                 Model = _model,
                 DenoisingStrength = 0.9,
-                InpaintingFill = MaskFillMode.LatentNoise,
 
                 BatchSize = _batchSize1,
 
