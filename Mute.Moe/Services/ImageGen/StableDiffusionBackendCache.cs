@@ -28,7 +28,8 @@ public class StableDiffusionBackendCache
             var b = new BackendStatus(
                 backend.Url,
                 TimeSpan.FromSeconds(backend.GenerationTimeOutSeconds ?? timeoutSlow),
-                TimeSpan.FromSeconds(backend.FastTimeOutSeconds ?? timeoutFast)
+                TimeSpan.FromSeconds(backend.FastTimeOutSeconds ?? timeoutFast),
+                backend.StepsMultiplier ?? 1
             );
             backends.Add(b);
         }
@@ -95,7 +96,7 @@ public class StableDiffusionBackendCache
     private class BackendStatus
         : IBackendAccessor
     {
-        public float? StepsMultiplier { get; }
+        public float StepsMultiplier { get; }
 
         public bool IsResponsive { get; private set; }
         public DateTime LastCheck { get; private set; }
@@ -106,7 +107,7 @@ public class StableDiffusionBackendCache
         private readonly AsyncLock _lock = new();
         private readonly IStableDiffusion _backend;
 
-        public BackendStatus(string url, TimeSpan slow, TimeSpan fast, float? stepsMultiplier = 1)
+        public BackendStatus(string url, TimeSpan slow, TimeSpan fast, float stepsMultiplier)
         {
             StepsMultiplier = stepsMultiplier;
             _backend = new StableDiffusion(url)
@@ -184,9 +185,9 @@ public class StableDiffusionBackendCache
         public IStableDiffusion Backend { get; }
         private readonly IDisposable _scope;
 
-        public float? StepsMultiplier { get; }
+        public float StepsMultiplier { get; }
 
-        public BackendScope(IStableDiffusion backend, IDisposable scope, float? stepsMultiplier)
+        public BackendScope(IStableDiffusion backend, IDisposable scope, float stepsMultiplier)
         {
             Backend = backend;
             StepsMultiplier = stepsMultiplier;
@@ -200,10 +201,7 @@ public class StableDiffusionBackendCache
 
         public int Steps(int steps)
         {
-            if (StepsMultiplier == null)
-                return steps;
-
-            return (int)Math.Max(1, Math.Round(StepsMultiplier.Value * steps));
+            return (int)Math.Max(1, Math.Round(StepsMultiplier * steps));
         }
     }
 }

@@ -144,6 +144,7 @@ public class Automatic1111Config
 
         public int? GenerationTimeOutSeconds = null;
         public int? FastTimeOutSeconds = null;
+        public float? StepsMultiplier = null;
     }
 }
 
