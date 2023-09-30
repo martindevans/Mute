@@ -23,13 +23,11 @@ public class Pictures
 {
     private readonly IImageAnalyser _analyser;
     private readonly HttpClient _http;
-    private readonly StableDiffusionBackendCache _backends;
 
-    public Pictures(IImageAnalyser analyser, HttpClient http, StableDiffusionBackendCache backends)
+    public Pictures(IImageAnalyser analyser, HttpClient http)
     {
         _analyser = analyser;
         _http = http;
-        _backends = backends;
     }
 
     [Command("generate"), Alias("diffusion", "imagine"), Summary("I will generate a picture")]

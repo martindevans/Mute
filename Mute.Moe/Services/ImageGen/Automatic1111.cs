@@ -24,6 +24,7 @@ public class Automatic1111
     private readonly string _t2iSampler;
     private readonly string _i2iSampler;
     private readonly int _samplerSteps;
+    private readonly int _outpaintSteps;
     private readonly uint _width;
     private readonly uint _height;
     private readonly string _upscaler;
@@ -42,6 +43,7 @@ public class Automatic1111
         _t2iSampler = config.Automatic1111?.Text2ImageSampler ?? "UniPC";
         _i2iSampler = config.Automatic1111?.Image2ImageSampler ?? "DDIM";
         _samplerSteps = config.Automatic1111?.SamplerSteps ?? 18;
+        _outpaintSteps = config.Automatic1111?.OutpaintSteps ?? 75;
         _width = config.Automatic1111?.Width ?? 512;
         _height = config.Automatic1111?.Height ?? 768;
         _upscaler = config.Automatic1111?.Upscaler ?? "Lanczos";
@@ -82,7 +84,7 @@ public class Automatic1111
                 Sampler = new()
                 {
                     Sampler = sampler,
-                    SamplingSteps = _samplerSteps,
+                    SamplingSteps = scope.Steps(_samplerSteps),
                 },
 
                 Model = model,
@@ -167,7 +169,7 @@ public class Automatic1111
                 Sampler = new()
                 {
                     Sampler = sampler,
-                    SamplingSteps = _samplerSteps,
+                    SamplingSteps = scope.Steps(_samplerSteps),
                 },
                 DenoisingStrength = 0.75,
 
@@ -293,7 +295,7 @@ public class Automatic1111
                 Sampler = new()
                 {
                     Sampler = sampler,
-                    SamplingSteps = _samplerSteps * 2,
+                    SamplingSteps = scope.Steps(_samplerSteps * 2),
                 },
 
                 Width = width,
@@ -318,7 +320,7 @@ public class Automatic1111
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
-        var outpainter = new TwoStepOutpainter(backend, model, sampler, 2, 2, 75);
+        var outpainter = new TwoStepOutpainter(backend, model, sampler, 2, 2, scope.Steps(_outpaintSteps));
 
         // Clone input image before mutation
         using var image = inputImage.CloneAs<Rgba32>();

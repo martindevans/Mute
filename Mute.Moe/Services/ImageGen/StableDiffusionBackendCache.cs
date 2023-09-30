@@ -14,13 +14,24 @@ public class StableDiffusionBackendCache
 
     public StableDiffusionBackendCache(Configuration config)
     {
-        var urls = config.Automatic1111?.Urls ?? Array.Empty<string>();
-
-        var timeoutSlow = TimeSpan.FromSeconds(config.Automatic1111?.GenerationTimeOutSeconds ?? 120);
-        var timeoutFast = TimeSpan.FromSeconds(config.Automatic1111?.FastTimeOutSeconds ?? 7);
+        var timeoutSlow = config.Automatic1111?.GenerationTimeOutSeconds ?? 120;
+        var timeoutFast = config.Automatic1111?.FastTimeOutSeconds ?? 7;
         RecheckDeadBackendTime = TimeSpan.FromSeconds(config.Automatic1111?.RecheckDeadBackendTime ?? 120);
 
-        _backends = urls.Select(a => new BackendStatus(a, timeoutSlow, timeoutFast)).ToArray();
+        var backends = new List<BackendStatus>();
+        _backends = backends;
+        foreach (var backend in config.Automatic1111?.Backends ?? Array.Empty<Automatic1111Config.Backend>())
+        {
+            if (backend is not { Enabled: true, Url: not null })
+                continue;
+
+            var b = new BackendStatus(
+                backend.Url,
+                TimeSpan.FromSeconds(backend.GenerationTimeOutSeconds ?? timeoutSlow),
+                TimeSpan.FromSeconds(backend.FastTimeOutSeconds ?? timeoutFast)
+            );
+            backends.Add(b);
+        }
     }
 
     public async Task<IBackendAccessor?> GetBackend()
@@ -84,6 +95,8 @@ public class StableDiffusionBackendCache
     private class BackendStatus
         : IBackendAccessor
     {
+        public float? StepsMultiplier { get; }
+
         public bool IsResponsive { get; private set; }
         public DateTime LastCheck { get; private set; }
         public uint UsedCount { get; private set; }
@@ -93,8 +106,9 @@ public class StableDiffusionBackendCache
         private readonly AsyncLock _lock = new();
         private readonly IStableDiffusion _backend;
 
-        public BackendStatus(string url, TimeSpan slow, TimeSpan fast)
+        public BackendStatus(string url, TimeSpan slow, TimeSpan fast, float? stepsMultiplier = 1)
         {
+            StepsMultiplier = stepsMultiplier;
             _backend = new StableDiffusion(url)
             {
                 TimeoutSlow = slow,
@@ -153,7 +167,8 @@ public class StableDiffusionBackendCache
 
             return new BackendScope(
                 _backend,
-                await _lock.LockAsync(token)
+                await _lock.LockAsync(token),
+                StepsMultiplier
             );
         }
     }
@@ -169,15 +184,26 @@ public class StableDiffusionBackendCache
         public IStableDiffusion Backend { get; }
         private readonly IDisposable _scope;
 
-        public BackendScope(IStableDiffusion backend, IDisposable scope)
+        public float? StepsMultiplier { get; }
+
+        public BackendScope(IStableDiffusion backend, IDisposable scope, float? stepsMultiplier)
         {
             Backend = backend;
+            StepsMultiplier = stepsMultiplier;
             _scope = scope;
         }
 
         public void Dispose()
         {
             _scope.Dispose();
+        }
+
+        public int Steps(int steps)
+        {
+            if (StepsMultiplier == null)
+                return steps;
+
+            return (int)Math.Max(1, Math.Round(StepsMultiplier.Value * steps));
         }
     }
 }

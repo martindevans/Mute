@@ -111,10 +111,12 @@ public class LLMConfig
 
 public class Automatic1111Config
 {
-    public string[] Urls = null!;
+    public Backend[] Backends = null!;
+
     public string? Text2ImageSampler = null;
     public string? Image2ImageSampler = null;
     public int? SamplerSteps = null;
+    public int? OutpaintSteps = null;
     public string? Checkpoint = null;
     public uint? Width = null;
     public uint? Height = null;
@@ -133,6 +135,15 @@ public class Automatic1111Config
     {
         public float? HandMinSize;
         public float? FaceMinSize;
+    }
+
+    public class Backend
+    {
+        public bool Enabled;
+        public string? Url;
+
+        public int? GenerationTimeOutSeconds = null;
+        public int? FastTimeOutSeconds = null;
     }
 }
 
