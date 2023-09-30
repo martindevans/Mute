@@ -29,10 +29,10 @@ internal class TwoStepOutpainter
         _sampler = sampler;
 
         _batchSize1 = batchSize1;
-        _steps1 = (int)Math.Ceiling(steps * 0.7);
+        _steps1 = (int)Math.Ceiling(steps * 0.65);
 
         _batchSize2 = batchSize2;
-        _steps2 = (int)Math.Ceiling(steps * 0.3);
+        _steps2 = (int)Math.Ceiling(steps * 0.35);
     }
 
     public async Task<IReadOnlyCollection<Base64EncodedImage>> Outpaint(PromptConfig prompt, Image originalInput, Action<float> progress)
@@ -59,22 +59,25 @@ internal class TwoStepOutpainter
             ctx.Fill(average);
             ctx.DrawImage(input, new Point(128, 128), drawingOptions);
         });
-        inputImage.Bleed(new Rectangle(128, 128, input.Width - 1, input.Height - 1), 128, null, 1);
+        inputImage.Bleed(new Rectangle(128, 128, input.Width - 1, input.Height - 1), 256, null, 1);
+        inputImage.EdgeNoise(64);
         progress(0.05f);
 
         // Create a mask covering the noise with a smooth transition into the image
         using var inputMask = new Image<Rgba32>(inputImage.Width, inputImage.Height);
         inputMask.Mutate(ctx =>
         {
-            const int blur = 4;
-            var rect = new RectangleF(128 + blur, 128 + blur, input.Width - blur * 2, input.Width - blur * 2);
+            const int blur = 8;
+            var rect = new RectangleF(128 + blur, 128 + blur, input.Width - blur * 2, input.Height - blur * 2);
 
             ctx.Fill(Color.White)
                .Fill(Color.Black, rect)
-               .BoxBlur(blur)
-               .Fill(Color.Black, rect);
+               .BoxBlur(blur);
         });
         progress(0.1f);
+
+        //uncomment to show inputs to first stage
+        //return new[] { await inputMask.ToAutofocusImageAsync(), await inputImage.ToAutofocusImageAsync() };
 
         // Shrink inputs down to the size of the original input for the first step
         inputImage.Mutate(ctx => ctx.Resize(input.Size));
@@ -92,7 +95,8 @@ internal class TwoStepOutpainter
                 Mask = await inputMask.ToAutofocusImageAsync(),
 
                 Model = _model,
-                DenoisingStrength = 0.75,
+                DenoisingStrength = 0.9,
+                InpaintingFill = MaskFillMode.LatentNoise,
 
                 BatchSize = _batchSize1,
 

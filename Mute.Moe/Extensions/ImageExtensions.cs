@@ -6,6 +6,7 @@ using SixLabors.ImageSharp.Processing;
 using System.Numerics;
 using System.Security.Cryptography;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Mute.Moe.Extensions;
 
@@ -87,6 +88,52 @@ public static class ImageExtensions
                 if (distance < radius)
                     image[i, j] = new Rgba32(Vector4.Lerp(closestPixel, pixel, MathF.Pow(distance / radius, 1)));
             }
+        }
+    }
+
+    public static void EdgeNoise(this Image<Rgba32> image, int noiseWidth)
+    {
+        var rng = new Random(RandomNumberGenerator.GetInt32(int.MaxValue));
+        Span<byte> bytes = stackalloc byte[3];
+
+        for (var i = 0; i < image.Width; i++)
+        {
+            for (var j = 0; j < image.Height; j++)
+            {
+                var distance = Distance(image.Bounds, new Point(i, j)) / noiseWidth;
+                if (distance >= 1)
+                    continue;
+
+                if (rng.NextSingle() < distance)
+                    continue;
+
+                rng.NextBytes(bytes);
+                var pixel = new Rgba32(bytes[0], bytes[1], bytes[2], 255);
+
+                var original = image[i, j];
+                var blend = new Rgba32(original.ToVector4() * distance + pixel.ToVector4() * (1 - distance))
+                {
+                    A = original.A,
+                };
+                image[i, j] = blend;
+            }
+        }
+
+        return;
+
+        static float Distance(Rectangle rect, Point point)
+        {
+            if (!rect.Contains(point))
+                return 0;
+
+            if (point.X > 700 && point.Y > 700)
+            {
+
+            }
+
+            var x = Math.Min(point.X - rect.Left, rect.Right - point.X);
+            var y = Math.Min(point.Y - rect.Top, rect.Bottom - point.Y);
+            return Math.Min(x, y);
         }
     }
 
