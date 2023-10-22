@@ -6,11 +6,12 @@ using Autofocus.CtrlNet;
 using Autofocus.Extensions.AfterDetailer;
 using SixLabors.ImageSharp.Processing;
 using Autofocus.ImageSharp.Extensions;
+using Autofocus.Outpaint;
 using Autofocus.Scripts.UltimateUpscaler;
 using Mute.Moe.Extensions;
+using Mute.Moe.Services.ImageGen.Outpaint;
 using SixLabors.ImageSharp;
 using Image = SixLabors.ImageSharp.Image;
-using Mute.Moe.Services.ImageGen.Outpaint;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace Mute.Moe.Services.ImageGen;
@@ -61,7 +62,7 @@ public class Automatic1111
             ?? throw new InvalidOperationException("No image generation backends accessible");
     }
 
-    public async Task<IReadOnlyCollection<Image>> Text2Image(int? seed, Prompt prompt, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
+    public async Task<IReadOnlyCollection<Image>> Text2Image(int? seed, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         // Get the backend and lock it for the duration of this operation
         using var scope = await (await GetBackend()).Lock(default);
@@ -107,7 +108,7 @@ public class Automatic1111
         return results;
     }
 
-    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image inputImage, Prompt prompt, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null, int batch = 1)
+    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image inputImage, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         // Get the backend and lock it for the duration of this operation
         using var scope = await (await GetBackend()).Lock(default);
@@ -139,15 +140,19 @@ public class Automatic1111
                 Module = await cnet.Module("lineart_anime_denoise"),
             });
 
-            cnetConfig = new ControlNetConfig
+            var cnetModel = await cnet.Model("control_v11p_sd15s2_lineart_anime [3825e83e]");
+            if (cnetModel != null)
             {
-                Image = preprocessed.Images[0],
-                Model = await cnet.Model("control_v11p_sd15s2_lineart_anime [3825e83e]"),
-                GuidanceStart = 0.1,
-                GuidanceEnd = 0.5,
-                ControlMode = ControlMode.PromptImportant,
-                Weight = 0.25
-            };
+                cnetConfig = new ControlNetConfig
+                {
+                    Image = preprocessed.Images[0],
+                    Model = cnetModel,
+                    GuidanceStart = 0.1,
+                    GuidanceEnd = 0.5,
+                    ControlMode = ControlMode.PromptImportant,
+                    Weight = 0.25
+                };
+            }
         }
 
         var result = await PumpProgress(backend, backend.Image2Image(
@@ -258,7 +263,7 @@ public class Automatic1111
                        .Replace("\\)", ")");
     }
 
-    public async Task<Image> UpscaleImage(Image inputImage, uint width, uint height, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
+    public async Task<Image> UpscaleImage(Image inputImage, uint width, uint height, Func<ProgressReport, Task>? progressReporter = null)
     {
         // Get the backend and lock it for the duration of this operation
         using var scope = await (await GetBackend()).Lock(default);
@@ -312,7 +317,7 @@ public class Automatic1111
         return await upscaleResult.Images[0].ToImageSharpAsync();
     }
 
-    public async Task<IReadOnlyCollection<Image>> Outpaint(Image inputImage, string positive, string negative, Func<IImageGenerator.ProgressReport, Task>? progressReporter = null)
+    public async Task<IReadOnlyCollection<Image>> Outpaint(Image inputImage, string positive, string negative, Func<ProgressReport, Task>? progressReporter = null)
     {
         // Get the backend and lock it for the duration of this operation
         using var scope = await (await GetBackend()).Lock(default);
@@ -320,7 +325,7 @@ public class Automatic1111
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
-        var outpainter = new TwoStepOutpainter(backend, model, sampler, 2, 2, scope.Steps(_outpaintSteps));
+        var outpainter = new AutofocusTwoStepOutpainter(backend, model, sampler, 2, 2, scope.Steps(_outpaintSteps));
 
         // Clone input image before mutation
         using var image = inputImage.CloneAs<Rgba32>();
@@ -333,21 +338,10 @@ public class Automatic1111
             image.Mutate(a => a.Resize(new Size(0, (int)_height)));
 
         // Do the actual outpainting
-        var result = await outpainter.Outpaint(new PromptConfig { Positive = positive, Negative = negative }, image, Progess);
-
-        // Decode all images
-        var results = new List<Image>();
-        foreach (var item in result)
-            results.Add(await item.ToImageSharpAsync());
-        return results;
-
-        void Progess(float p)
-        {
-            progressReporter?.Invoke(new IImageGenerator.ProgressReport(p, null));
-        }
+        return await outpainter.Outpaint(image, positive, negative, progressReporter);
     }
 
-    private static async Task<T> PumpProgress<T>(IStableDiffusion backend, Task<T> task, Func<IImageGenerator.ProgressReport, Task>? progressReporter)
+    private static async Task<T> PumpProgress<T>(IStableDiffusion backend, Task<T> task, Func<ProgressReport, Task>? progressReporter)
     {
         while (!task.IsCompleted)
         {
@@ -356,7 +350,7 @@ public class Automatic1111
                 if (progressReporter != null)
                 {
                     var progress = await backend.Progress(true);
-                    await progressReporter(new IImageGenerator.ProgressReport((float)progress.Progress, null));
+                    await progressReporter(new ProgressReport((float)progress.Progress, null));
                 }
             }
             catch (TimeoutException)

@@ -6,7 +6,6 @@ using SixLabors.ImageSharp.Processing;
 using System.Numerics;
 using System.Security.Cryptography;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Mute.Moe.Extensions;
 
@@ -135,16 +134,5 @@ public static class ImageExtensions
             var y = Math.Min(point.Y - rect.Top, rect.Bottom - point.Y);
             return Math.Min(x, y);
         }
-    }
-
-    public static Rgba32 AverageColor(this Image image)
-    {
-        using var averageImg = image.CloneAs<Rgba32>();
-        averageImg.Mutate(ctx => ctx.Quantize(new OctreeQuantizer(new QuantizerOptions
-        {
-            Dither = null,
-            MaxColors = 1,
-        })));
-        return averageImg[0, 0];
     }
 }

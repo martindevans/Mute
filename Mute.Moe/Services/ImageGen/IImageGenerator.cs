@@ -1,5 +1,5 @@
-﻿using System.IO;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Autofocus.Outpaint;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen;
@@ -10,7 +10,7 @@ public interface IImageGenerator
 
     Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image image, Prompt prompt, Func<ProgressReport, Task>? progress = null, int batch = 1);
 
-    public record struct ProgressReport(float Progress, MemoryStream? Intermediate);
+    //public record struct ProgressReport(float Progress, MemoryStream? Intermediate);
 }
 
 public record Prompt

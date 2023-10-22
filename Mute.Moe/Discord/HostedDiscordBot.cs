@@ -52,18 +52,6 @@ public class HostedDiscordBot
         {
             await _commands.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
             await _interactions.AddModulesAsync(Assembly.GetExecutingAssembly(), _services);
-
-            var modals = from type in Assembly.GetExecutingAssembly().GetTypes()
-                         where type.GetCustomAttribute<InteractionModalAttribute>() != null
-                         select type;
-            foreach (var modal in modals)
-            {
-                _interactions
-                   .GetType()
-                   .GetMethod(nameof(InteractionService.AddModalInfo), BindingFlags.Instance | BindingFlags.Public, Array.Empty<Type>())!
-                   .MakeGenericMethod(modal)
-                   .Invoke(_interactions, null);
-            }
         }
         catch (Exception e)
         {
@@ -76,7 +64,6 @@ public class HostedDiscordBot
         _commands.CommandExecuted += CommandExecuted;
 
         // Hook up interactions
-        Client.SlashCommandExecuted += SlashCommandExecuted;
         Client.InteractionCreated += async x =>
         {
             var ctx = new SocketInteractionContext(Client, x);
@@ -126,25 +113,6 @@ public class HostedDiscordBot
 
         // Wait for ready
         await tcs.Task;
-    }
-
-    private async Task SlashCommandExecuted(SocketSlashCommand cmd)
-    {
-        var ctx = new InteractionContext(Client, cmd, cmd.Channel);
-        try
-        {
-            var result = await _interactions.ExecuteCommandAsync(ctx, _services);
-
-            // Only pay attention to commands which fail due to an exception
-            if (result.IsSuccess || result.Error is not InteractionCommandError.Exception)
-                return;
-
-            throw new Exception(result.ErrorReason);
-        }
-        catch (Exception ex)
-        {
-            await ctx.Channel.SendMessageAsync("Command Exception! " + ex.Message);
-        }
     }
 
     private static async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context,  IResult result)

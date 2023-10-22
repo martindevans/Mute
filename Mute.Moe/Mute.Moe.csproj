@@ -40,9 +40,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofocus" Version="4.6.1" />
-    <PackageReference Include="Autofocus.Extensions.AfterDetailer" Version="1.2.0" />
-    <PackageReference Include="Autofocus.ImageSharp" Version="1.0.1" />
+    <PackageReference Include="Autofocus" Version="5.0.0" />
+    <PackageReference Include="Autofocus.Extensions.AfterDetailer" Version="1.3.0" />
+    <PackageReference Include="Autofocus.ImageSharp" Version="1.1.0" />
+    <PackageReference Include="Autofocus.Outpaint" Version="1.3.0" />
     <PackageReference Include="Autofocus.Scripts.UltimateUpscaler" Version="1.0.2" />
     <PackageReference Include="BalderHash" Version="1.0.0" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
@@ -55,7 +56,7 @@
     <PackageReference Include="LLamaSharp" Version="0.5.1" />
     <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.5.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.16.1" />
     <PackageReference Include="Microsoft.Recognizers.Text" Version="1.8.8" />
     <PackageReference Include="Microsoft.Recognizers.Text.Choice" Version="1.8.8" />
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.8.8" />

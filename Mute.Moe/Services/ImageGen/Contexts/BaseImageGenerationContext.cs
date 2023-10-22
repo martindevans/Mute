@@ -8,6 +8,7 @@ using Mute.Moe.Extensions;
 using SixLabors.ImageSharp;
 using System.IO;
 using System.Net.Http;
+using Autofocus.Outpaint;
 using Mute.Moe.Discord.Services.ImageGeneration;
 using Image = SixLabors.ImageSharp.Image;
 
@@ -61,7 +62,7 @@ public abstract class BaseImageGenerationContext
         return Task.CompletedTask;
     }
 
-    private async Task OnReportProgress(IImageGenerator.ProgressReport progressReport)
+    private async Task OnReportProgress(ProgressReport progressReport)
     {
         _latestProgress = Math.Max(_latestProgress, progressReport.Progress);
 
