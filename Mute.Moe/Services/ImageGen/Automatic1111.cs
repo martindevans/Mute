@@ -325,7 +325,7 @@ public class Automatic1111
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
-        var outpainter = new AutofocusTwoStepOutpainter(backend, model, sampler, 2, 2, scope.Steps(_outpaintSteps));
+        var outpainter = new AutofocusTwoStepOutpainter(backend, model, sampler, 2, 1, scope.Steps(_outpaintSteps));
 
         // Clone input image before mutation
         using var image = inputImage.CloneAs<Rgba32>();

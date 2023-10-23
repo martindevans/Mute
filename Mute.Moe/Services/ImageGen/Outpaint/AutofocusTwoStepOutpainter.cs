@@ -19,7 +19,8 @@ public class AutofocusTwoStepOutpainter
         {
             BatchSize1 = batchSize1,
             BatchSize2 = batchSize2,
-            Steps = steps
+            Steps = steps,
+            UseControlNetTile = false
         };
     }
 
