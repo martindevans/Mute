@@ -30,6 +30,7 @@ public class AvatarConfig
         [UsedImplicitly] public int StartDay;
         [UsedImplicitly] public int EndDay;
         [UsedImplicitly] public string? Path;
+        [UsedImplicitly] public bool Exclusive;
     }
 
     [UsedImplicitly] public AvatarSet[]? Avatars;

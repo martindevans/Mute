@@ -34,9 +34,13 @@ public class SeasonalAvatar
     {
         var now = DateTime.UtcNow.Date.DayOfYear;
 
+        // Get all sets that apply, if any are exclusive remove all non exclusive sets
+        var allsets = _config!.Where(a => a.StartDay <= now && a.EndDay >= now).ToList();
+        var exclusive = allsets.Where(a => a.Exclusive).ToList();
+        var sets = exclusive.Count != 0 ? exclusive : allsets;
+
         var exts = new[] { "*.bmp", "*.png", "*.jpg", "*.jpeg" };
-        var avatars = _config!
-            .Where(a => a.StartDay <= now && a.EndDay >= now)
+        var avatars = sets
             .Where(a => a.Path != null && Directory.Exists(a.Path))
             .SelectMany(a => exts.SelectMany(e => Directory.GetFiles(a.Path!, e)))
             .Distinct()
