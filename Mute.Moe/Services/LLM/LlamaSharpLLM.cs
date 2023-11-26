@@ -13,10 +13,7 @@ public class LlamaSharpLLM
 
     public LlamaSharpLLM(Configuration config)
     {
-        _modelParams = new ModelParams(modelPath: config.LLM?.ModelPath ?? throw new InvalidOperationException("No LLM model supplied"))
-        {
-            ContextSize = config.LLM?.ModelContextSize ?? 2048
-        };
+        _modelParams = new ModelParams(modelPath: config.LLM?.ModelPath ?? throw new InvalidOperationException("No LLM model supplied"));
 
         _inferParams = new InferenceParams
         {
