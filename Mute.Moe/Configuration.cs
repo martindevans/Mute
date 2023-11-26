@@ -107,7 +107,6 @@ public class STTConfig
 public class LLMConfig
 {
     [UsedImplicitly] public string? ModelPath;
-    [UsedImplicitly] public int? ModelContextSize;
 }
 
 public class Automatic1111Config
