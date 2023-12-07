@@ -18,8 +18,8 @@ public class Rss
     }
 
     [Command("subscribe"), Summary("I will subscribe this channel to RSS updates")]
-    public async Task Subscribe(string url)
+    public Task Subscribe(string url)
     {
-        await _rss.Subscribe(url, Context.Channel.Id, null);
+        return _rss.Subscribe(url, Context.Channel.Id, null);
     }
 }

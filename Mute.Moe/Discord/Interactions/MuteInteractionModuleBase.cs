@@ -28,9 +28,9 @@ namespace Mute.Moe.Discord.Interactions
         /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
+        protected Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
         {
-            await DisplayItemList(
+            return DisplayItemList(
                 items,
                 nothing,
                 null,
@@ -47,9 +47,9 @@ namespace Mute.Moe.Discord.Interactions
         /// <param name="nothing">Generate a string for no items</param>
         /// <param name="displayItem">Convert a single item (of many) to a string</param>
         /// <returns></returns>
-        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<T, int, Task> displayItem)
+        protected Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<T, int, Task> displayItem)
         {
-            await DisplayItemList(
+            return DisplayItemList(
                 items,
                 nothing,
                 null,
@@ -93,9 +93,9 @@ namespace Mute.Moe.Discord.Interactions
             }
         }
 
-        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
+        protected Task DisplayItemList<T>(IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
         {
-            await DisplayItemList(
+            return DisplayItemList(
                 items,
                 nothing,
                 null,
@@ -156,9 +156,9 @@ namespace Mute.Moe.Discord.Interactions
             }
         }
 
-        protected async Task DisplayItemList<T>(IReadOnlyList<T> items, string nothing, Func<T, string>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
+        protected Task DisplayItemList<T>(IReadOnlyList<T> items, string nothing, Func<T, string>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
         {
-            await DisplayItemList(items, () => nothing, singleItem, manyPrelude, itemToString);
+            return DisplayItemList(items, () => nothing, singleItem, manyPrelude, itemToString);
         }
         #endregion
     }

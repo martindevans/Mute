@@ -44,7 +44,7 @@ public class Anime
 
     [Command("animes"), Alias("animus"), Summary("I will search for anime and display all matches")]
     [TypingReply]
-    public async Task FindAnimes([Remainder] string term)
+    public Task FindAnimes([Remainder] string term)
     {
         var nsfwOk = Context.Channel is not ITextChannel tc || tc.IsNsfw;
 
@@ -58,6 +58,6 @@ public class Anime
             .Buffer(12)
             .Select(a => string.Join("\n", a));
 
-        await DisplayLazyPaginatedReply($"Anime Search `{term}`", animes);
+        return DisplayLazyPaginatedReply($"Anime Search `{term}`", animes);
     }
 }

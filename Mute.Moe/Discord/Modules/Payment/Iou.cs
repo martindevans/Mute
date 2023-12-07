@@ -105,21 +105,21 @@ public class Iou
 
     #region balance query
     [Command("io"), Summary("I will tell you what you owe")]
-    public async Task ListDebtsByBorrower([Summary("Filter debts by this lender")] IUser? lender = null)
+    public Task ListDebtsByBorrower([Summary("Filter debts by this lender")] IUser? lender = null)
     {
-        await ShowBalances(lender, b => b.UserA == Context.User.Id ^ b.Amount > 0, "You are debt free");
+        return ShowBalances(lender, b => b.UserA == Context.User.Id ^ b.Amount > 0, "You are debt free");
     }
 
     [Command("oi"), Summary("I will tell you what you are owed")]
-    public async Task ListDebtsByLender([Summary("Filter debts by this borrower")] IUser? borrower = null)
+    public Task ListDebtsByLender([Summary("Filter debts by this borrower")] IUser? borrower = null)
     {
-        await ShowBalances(borrower, b => b.UserB == Context.User.Id ^ b.Amount > 0, "Nobody owes you anything");
+        return ShowBalances(borrower, b => b.UserB == Context.User.Id ^ b.Amount > 0, "Nobody owes you anything");
     }
 
     [Command("balance"), Summary("I will tell you your balance")]
-    public async Task ShowBalance([Summary("Filter only to transactions with this user")] IUser? other = null)
+    public Task ShowBalance([Summary("Filter only to transactions with this user")] IUser? other = null)
     {
-        await ShowBalances(other, _ => true, "No non-zero balances");
+        return ShowBalances(other, _ => true, "No non-zero balances");
     }
 
     private async Task ShowBalances(IUser? other, Func<IBalance, bool> filter, string none)

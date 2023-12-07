@@ -23,9 +23,9 @@ public class Define
 
     [Command("define"), Summary("I will briefly explain what a thing is")]
     [ThinkingReply]
-    public async Task DefineAsync([Remainder] string thing)
+    public Task DefineAsync([Remainder] string thing)
     {
-        await DefineAsync(3, thing);
+        return DefineAsync(3, thing);
     }
 
     [Command("define"), Summary("I will briefly explain what a thing is, within a specified number of sentences")]

@@ -2,10 +2,8 @@
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Metadata;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using System.Numerics;
 using System.Security.Cryptography;
-using SixLabors.ImageSharp.Processing.Processors.Quantization;
 
 namespace Mute.Moe.Extensions;
 
@@ -125,7 +123,7 @@ public static class ImageExtensions
             if (!rect.Contains(point))
                 return 0;
 
-            if (point.X > 700 && point.Y > 700)
+            if (point is { X: > 700, Y: > 700 })
             {
 
             }

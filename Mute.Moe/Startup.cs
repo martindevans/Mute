@@ -39,7 +39,6 @@ using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.RateLimit;
 using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Modules;
-using Mute.Moe.Discord.Services.ImageGeneration;
 using Mute.Moe.Services.DiceLang.AST;
 using Mute.Moe.Services.DiceLang.Macros;
 

@@ -7,19 +7,18 @@ public class AsyncLock
 {
     private readonly object _mutex = new();
 
-    private bool _taken;
     private readonly Queue<TaskCompletionSource<IDisposable>> _waiting = new();
 
-    public bool IsLocked => _taken;
+    public bool IsLocked { get; private set; }
 
     public Task<IDisposable> LockAsync(CancellationToken cancellationToken = default)
     {
         lock (_mutex)
         {
-            if (!_taken)
+            if (!IsLocked)
             {
                 // If the lock is available, take it immediately.
-                _taken = true;
+                IsLocked = true;
                 return Task.FromResult<IDisposable>(new LockLifetime(this));
             }
 
@@ -35,14 +34,14 @@ public class AsyncLock
     {
         lock (_mutex)
         {
-            _taken = false;
+            IsLocked = false;
             while (_waiting.Count > 0)
             {
                 var tcs = _waiting.Dequeue();
                 if (tcs.Task.IsCanceled)
                     continue;
 
-                _taken = true;
+                IsLocked = true;
                 tcs.SetResult(new LockLifetime(this));
                 return;
             }

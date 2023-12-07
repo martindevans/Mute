@@ -62,19 +62,19 @@ public abstract class BaseImageGenerationContext
         return Task.CompletedTask;
     }
 
-    private async Task OnReportProgress(ProgressReport progressReport)
+    private Task OnReportProgress(ProgressReport progressReport)
     {
         _latestProgress = Math.Max(_latestProgress, progressReport.Progress);
 
-        await ModifyReply(props =>
+        return ModifyReply(props =>
         {
             props.Content = $"Generating ({_latestProgress:P0})";
         });
     }
 
-    private async Task OnFailed(Exception exception)
+    private Task OnFailed(Exception exception)
     {
-        await ModifyReply(msg => msg.Content = $"Image generation failed!\n{exception.Message}");
+        return ModifyReply(msg => msg.Content = $"Image generation failed!\n{exception.Message}");
     }
 
     private async Task OnCompleted(Prompt prompt, IEnumerable<Image?> images)
@@ -253,13 +253,13 @@ public static class ContextImageGenerationExtensions
                 .Split(" not ", StringSplitOptions.RemoveEmptyEntries);
 
             var positive = split[0];
-            string? negative = string.Join(", ", split.Skip(1));
+            var negative = string.Join(", ", split.Skip(1));
             (positive, negative) = PreprocessPrompt(positive, negative, isPrivate, blacklist, index > 0);
 
             if (index == 0)
             {
                 result.Positive = positive;
-                result.Negative = negative ?? "";
+                result.Negative = negative;
             }
             else
             {
@@ -284,7 +284,7 @@ public static class ContextImageGenerationExtensions
         return result;
     }
 
-    private static (string, string?) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist, bool skipEmptyNegative = false)
+    private static (string, string) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist, bool skipEmptyNegative = false)
     {
         // Add in all the help negatives
         var negativeBuilder = new StringBuilder();
@@ -308,7 +308,7 @@ public static class ContextImageGenerationExtensions
         }
 
         if (skipEmptyNegative && string.IsNullOrWhiteSpace(negative))
-            return (positive, null);
+            return (positive, "");
 
         return (positive, negativeBuilder.Replace(",,", ",").ToString());
     }

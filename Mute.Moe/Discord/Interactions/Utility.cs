@@ -9,8 +9,8 @@ public class Utility
     : MuteInteractionModuleBase
 {
     [SlashCommand("ping", "Check that I am awake")]
-    public async Task Ping()
+    public Task Ping()
     {
-        await RespondAsync("pong");
+        return RespondAsync("pong");
     }
 }

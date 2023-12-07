@@ -69,7 +69,7 @@ public static class ITransactionsExtensions
     /// <param name="userB"></param>
     /// <param name="unit"></param>
     /// <returns>All non-zero balances in order of amount</returns>
-    public static async Task<IReadOnlyList<IBalance>> GetBalances( this ITransactions database, ulong userA, ulong? userB, string? unit = null)
+    public static Task<IReadOnlyList<IBalance>> GetBalances( this ITransactions database, ulong userA, ulong? userB, string? unit = null)
     {
         //e.g.
         //A -> B £2
@@ -84,7 +84,7 @@ public static class ITransactionsExtensions
         var ba = database.GetTransactions(userB, userA, unit);
 
         //Convert to balances
-        return await TransactionsToBalances(userA, ab.Concat(ba));
+        return TransactionsToBalances(userA, ab.Concat(ba));
     }
 
     /// <summary>

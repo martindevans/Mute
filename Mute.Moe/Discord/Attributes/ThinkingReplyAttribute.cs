@@ -20,7 +20,7 @@ public class ThinkingReplyAttribute(string emote = EmojiLookup.Thinking)
         return new EndExecute(context.Message, _emote, context.Client.CurrentUser);
     }
 
-    private class EndExecute(IUserMessage message, IEmote emote, IUser self)
+    private class EndExecute(IMessage message, IEmote emote, IUser self)
         : IEndExecute
     {
         Task IEndExecute.EndExecute()

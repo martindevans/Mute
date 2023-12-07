@@ -22,7 +22,5 @@ public class WarnSlashComandMigrationAttribute(string command)
         return PreconditionResult.FromSuccess();
     }
 
-    private class SlashCommandMigrationWarningSent
-    {
-    }
+    private class SlashCommandMigrationWarningSent;
 }

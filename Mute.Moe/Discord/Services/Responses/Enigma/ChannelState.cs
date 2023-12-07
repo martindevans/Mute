@@ -11,7 +11,7 @@ public class ChannelState
 
     private readonly ILargeLanguageModel _llm;
 
-    private readonly HashSet<ulong> _participants = new();
+    private readonly HashSet<ulong> _participants = [ ];
     public IReadOnlyList<ulong> Participants => _participants.ToList();
 
     public DateTime LastUpdate { get; private set; }

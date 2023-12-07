@@ -24,7 +24,5 @@ public class WarnDebuggerAttribute
         return PreconditionResult.FromSuccess();
     }
 
-    private class DebuggerWarningSent
-    {
-    }
+    private class DebuggerWarningSent;
 }

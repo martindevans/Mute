@@ -9,7 +9,7 @@ public class ServiceHost
 {
     private readonly IServiceProvider _provider;
 
-    private readonly List<IHostedService> _services = new List<IHostedService>();
+    private readonly List<IHostedService> _services = [ ];
 
     public ServiceHost(IServiceProvider provider)
     {

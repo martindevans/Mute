@@ -15,7 +15,7 @@ public class ConversationalResponseService
 {
     private readonly DiscordSocketClient _client;
     private readonly Random _random;
-    private readonly List<IResponse> _responses = new();
+    private readonly List<IResponse> _responses = [ ];
 
     private readonly ConcurrentDictionary<IUser, IConversation?> _conversations = new();
 

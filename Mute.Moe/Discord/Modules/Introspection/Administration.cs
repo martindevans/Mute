@@ -60,21 +60,21 @@ public class Administration
     }
 
     [Command("presence"), Summary("I will set my presence")]
-    public async Task SetPresence(ActivityType activity, [Remainder] string? presence)
+    public Task SetPresence(ActivityType activity, [Remainder] string? presence)
     {
         if (string.IsNullOrEmpty(presence))
-            return;
+            return Task.CompletedTask;
 
         if (activity == ActivityType.CustomStatus)
-            await _client.SetActivityAsync(new CustomStatusGame(presence));
+            return _client.SetActivityAsync(new CustomStatusGame(presence));
         else
-            await _client.SetActivityAsync(new Game(presence, activity));
+            return _client.SetActivityAsync(new Game(presence, activity));
     }
 
     [Command("status"), Summary("I will set my status")]
-    public async Task SetStatus(UserStatus status)
+    public Task SetStatus(UserStatus status)
     {
-        await _client.SetStatusAsync(status);
+        return _client.SetStatusAsync(status);
     }
 
     [Command("kill"), Alias("die", "self-destruct", "terminate"), Summary("I will immediately terminate my process ⊙︿⊙")]
@@ -99,9 +99,9 @@ public class Administration
     }
 
     [Command("nickname"), Alias("nick"), Summary("Set my nickname")]
-    public async Task Nickname([Remainder] string name)
+    public Task Nickname([Remainder] string name)
     {
-        await Context.Guild.CurrentUser.ModifyAsync(a => a.Nickname = name);
+        return Context.Guild.CurrentUser.ModifyAsync(a => a.Nickname = name);
     }
 
     [Command("repick-avatar")]
@@ -140,12 +140,12 @@ public class Administration
         );
 
         builder.AddRow(new ActionRowBuilder()
-           .WithSelectMenu("e", minValues: 1, maxValues: 3, options: new()
-            {
+           .WithSelectMenu("e", minValues: 1, maxValues: 3, options:
+            [
                 new SelectMenuOptionBuilder("Label A", "A"),
                 new SelectMenuOptionBuilder("Label B", "B"),
                 new SelectMenuOptionBuilder("Label C", "C"),
-            })
+            ])
         );
 
         builder.AddRow(new ActionRowBuilder()

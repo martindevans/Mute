@@ -66,9 +66,9 @@ public class Enigma
     }
 
     [Command("status"), Summary("I will show the status of my current enigma conversations")]
-    public async Task Status()
+    public Task Status()
     {
-        await Status(false);
+        return Status(false);
     }
     #endregion
 
@@ -86,9 +86,9 @@ public class Enigma
     }
 
     [Command("query"), Summary("Query the conversation state for a channel")]
-    public async Task Query([Remainder] string message)
+    public Task Query([Remainder] string message)
     {
-        await Query(Context.Channel, message);
+        return Query(Context.Channel, message);
     }
     #endregion
 

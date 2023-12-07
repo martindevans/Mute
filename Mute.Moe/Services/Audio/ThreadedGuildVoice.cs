@@ -52,9 +52,9 @@ public class ThreadedGuildVoice
         await Stop();
     }
 
-    public async Task Stop()
+    public Task Stop()
     {
-        await Move(null);
+        return Move(null);
     }
 
     public async Task Move(IVoiceChannel? channel)
@@ -95,11 +95,11 @@ public class ThreadedGuildVoice
             _thread = Task.Run(ThreadEntry, _cancellation.Token);
         }
 
-        public async Task Stop()
+        public Task Stop()
         {
             _cancellation.Cancel();
 
-            await _thread;
+            return _thread;
         }
 
         private async Task ThreadEntry()

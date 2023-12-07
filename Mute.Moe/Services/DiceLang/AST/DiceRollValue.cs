@@ -8,7 +8,7 @@ public record DiceRollValue(IAstNode Count, IAstNode Sides, IAstNode? ExplodeThr
     : IAstNode
 {
     private bool _initialised;
-    private readonly List<DiceRollResult> _values = new();
+    private readonly List<DiceRollResult> _values = [ ];
 
     public async Task<double> Evaluate(IAstNode.Context context)
     {

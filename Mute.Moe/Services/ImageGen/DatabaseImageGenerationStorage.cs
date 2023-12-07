@@ -4,9 +4,7 @@ using System.Text.Json.Serialization;
 namespace Mute.Moe.Services.ImageGen;
 
 public interface IImageGenerationConfigStorage
-    : IKeyValueStorage<ImageGenerationConfig>
-{
-}
+    : IKeyValueStorage<ImageGenerationConfig>;
 
 public class ImageGenerationConfig
 {

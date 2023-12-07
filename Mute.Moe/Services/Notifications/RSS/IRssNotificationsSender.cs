@@ -3,6 +3,4 @@
 namespace Mute.Moe.Services.Notifications.RSS;
 
 public interface IRssNotificationsSender
-    : IHostedService
-{
-}
+    : IHostedService;

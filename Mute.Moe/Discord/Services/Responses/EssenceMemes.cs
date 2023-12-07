@@ -17,9 +17,10 @@ public partial class EssenceMemes
 
     private readonly Random _random;
 
-    private readonly HashSet<string> _triggerWords = new() {
+    private readonly HashSet<string> _triggerWords =
+    [
         "essence",
-    };
+    ];
 
     public EssenceMemes(Random random)
     {

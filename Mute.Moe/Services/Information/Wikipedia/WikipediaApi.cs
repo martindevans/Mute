@@ -114,7 +114,7 @@ public class WikipediaApi
 
             // Start tasks to get definitions
             var definitionsTasks = pages
-                .Select(a => Task.Run(async () => await GetPageDefinitions(a.Value)))
+                .Select(a => Task.Run(() => GetPageDefinitions(a.Value)))
                 .ToArray();
 
             // Wait on all the tasks and save them in a list

@@ -161,9 +161,9 @@ public class Uoi
     }
 
     [Command("pending"), Summary("I will list pending transactions you have yet to confirm")]
-    public async Task Pending()
+    public Task Pending()
     {
-        await PaginatedPending(
+        return PaginatedPending(
             _pending.Get(toId: Context.User.Id, state: PendingState.Pending),
             "No pending transactions to confirm",
             "You have {0} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise",
@@ -172,9 +172,9 @@ public class Uoi
     }
 
     [Command("pending-in"), Summary("I will list pending transactions involving you which the other person has no yet confirmed")]
-    public async Task ReversePending()
+    public Task ReversePending()
     {
-        await PaginatedPending(
+        return PaginatedPending(
             _pending.Get(fromId: Context.User.Id, state: PendingState.Pending),
             "No pending transactions involving you for others to confirm",
             "There are {0} unconfirmed payments to you. The other person should type `!confirm $id` or `!deny $id` to confirm or deny that the payment has happened",

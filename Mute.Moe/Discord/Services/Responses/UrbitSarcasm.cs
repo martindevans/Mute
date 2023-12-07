@@ -15,9 +15,10 @@ public class UrbitSarcasm
 
     private readonly Random _random;
 
-    private readonly HashSet<string> _triggerWords = new() {
+    private readonly HashSet<string> _triggerWords =
+    [
         "urbit", "hoon", "arvo", "nock",
-    };
+    ];
 
     public UrbitSarcasm(Random random)
     {

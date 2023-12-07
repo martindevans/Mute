@@ -5,6 +5,4 @@
 /// </summary>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
 internal class HiddenAttribute
-    : Attribute
-{
-}
+    : Attribute;

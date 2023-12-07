@@ -43,7 +43,7 @@ public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMes
     public Task<T> GetOrAdd<T>(Func<Task<T>> create)
         where T : class
     {
-        return Task.FromResult((T)_resources.GetOrAdd(typeof(T), _ => Task.Run(async () => await create()).Result));
+        return Task.FromResult((T)_resources.GetOrAdd(typeof(T), _ => Task.Run(create).Result));
     }
 
     /// <summary>

@@ -89,9 +89,7 @@ public class UrbanDictionaryConfig
     [UsedImplicitly] public uint CacheMaxTimeSeconds;
 }
 
-public class TTSConfig
-{
-}
+public class TTSConfig;
 
 public class STTConfig
 {

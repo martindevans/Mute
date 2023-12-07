@@ -110,9 +110,9 @@ namespace Mute.Moe.Discord.Interactions
         }
 
         [ComponentInteraction($"{MidjourneyStyleImageGenerationButtons.RedoButtonFullId}", ignoreGroupNames: true)]
-        public async Task MidjourneyButton()
+        public Task MidjourneyButton()
         {
-            await MidjourneyButtonWithIndex(MidjourneyStyleImageGenerationButtons.RedoButtonId, "0");
+            return MidjourneyButtonWithIndex(MidjourneyStyleImageGenerationButtons.RedoButtonId, "0");
         }
 
         [ComponentInteraction($"{MidjourneyStyleImageGenerationButtons.IdPrefix}*_*", ignoreGroupNames:true)]

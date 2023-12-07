@@ -44,17 +44,17 @@ public class ProCoinMarketCapCrypto
         _tickerBySymbol = _tickerCache.AddIndex("IndexBySymbol", a => a.Currency.Symbol);
     }
 
-    public async Task<ICurrency?> FindBySymbol(string symbol)
+    public Task<ICurrency?> FindBySymbol(string symbol)
     {
         symbol = Uri.EscapeDataString(symbol.ToUpperInvariant());
         var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?CMC_PRO_API_KEY={_key}&symbol={symbol}";
-        return await GetOrDownload<string, ICurrency, CmcCurrencyResponse>(symbol, _currencyCache, _currencyBySymbol, _ => _http.GetAsync(url), a => a.Data.Values);
+        return GetOrDownload<string, ICurrency, CmcCurrencyResponse>(symbol, _currencyCache, _currencyBySymbol, _ => _http.GetAsync(url), a => a.Data.Values);
     }
 
-    public async Task<ICurrency?> FindById(uint id)
+    public Task<ICurrency?> FindById(uint id)
     {
         var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?CMC_PRO_API_KEY={_key}&id={id}";
-        return await GetOrDownload<uint, ICurrency, CmcCurrencyResponse>(id, _currencyCache, _currencyById, _ => _http.GetAsync(url), a => a.Data.Values);
+        return GetOrDownload<uint, ICurrency, CmcCurrencyResponse>(id, _currencyCache, _currencyById, _ => _http.GetAsync(url), a => a.Data.Values);
     }
 
     private static async Task<TItem?> GetOrDownload<TKey, TItem, TResponse>(TKey key, FluidCache<TItem> cache, IIndex<TKey, TItem> index, Func<TKey, Task<HttpResponseMessage>> download, Func<TResponse, IEnumerable<TItem>?> extract)
@@ -146,11 +146,11 @@ public class ProCoinMarketCapCrypto
         return await FindByName(symbolOrName);
     }
 
-    public async Task<ITicker?> GetTicker(ICurrency currency, string? quote = null)
+    public Task<ITicker?> GetTicker(ICurrency currency, string? quote = null)
     {
-        return await GetOrDownload<string, ITicker, CmcTickerResponse>(currency.Symbol, _tickerCache, _tickerBySymbol, Download, r => r.Data.Values);
+        return GetOrDownload<string, ITicker, CmcTickerResponse>(currency.Symbol, _tickerCache, _tickerBySymbol, Download, r => r.Data.Values);
 
-        async Task<HttpResponseMessage> Download(string sym)
+        Task<HttpResponseMessage> Download(string sym)
         {
             //An API access costs 1 access token on the billing per 100 items queried, rounded up. We're only asking for 1 item here which is a huge waste.
             //Add on 99 random symbols so we can cache them and maybe save a token in the future.
@@ -176,7 +176,7 @@ public class ProCoinMarketCapCrypto
             var allTokens = string.Join(",", tokens.Distinct().Select(Uri.EscapeDataString));
             var uri = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?CMC_PRO_API_KEY={_key}&symbol={allTokens}";
 
-            return await _http.GetAsync(uri);
+            return _http.GetAsync(uri);
         }
     }
 

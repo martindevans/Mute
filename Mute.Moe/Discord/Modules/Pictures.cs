@@ -32,9 +32,9 @@ public class Pictures
 
     [Command("generate"), Alias("diffusion", "imagine"), Summary("I will generate a picture")]
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 10, "Please wait a bit before generating more images")]
-    public async Task Generate([Remainder] string prompt)
+    public Task Generate([Remainder] string prompt)
     {
-        await Context.GenerateImage(prompt);
+        return Context.GenerateImage(prompt);
     }
 
 

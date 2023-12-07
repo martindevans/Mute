@@ -23,7 +23,7 @@ public class BaseModule
     private class LazyList<T>
     {
         private readonly IAsyncEnumerator<T> _itemsSource;
-        private readonly List<T> _cache = new();
+        private readonly List<T> _cache = [ ];
 
         public int CurrentCount => _cache.Count;
         public bool Finished { get; private set; }
@@ -137,9 +137,9 @@ public class BaseModule
             return builder;
         }
 
-        public async Task Draw()
+        public Task Draw()
         {
-            await _message.ModifyAsync(a => {
+            return _message.ModifyAsync(a => {
                 a.Embed = BuildEmbed().Build();
                 a.Content = null;
             });
@@ -174,9 +174,9 @@ public class BaseModule
         Task<bool> ICriterion<SocketReaction>.JudgeAsync(SocketCommandContext sourceContext, SocketReaction parameter) => Task.FromResult(parameter.UserId == sourceContext.User.Id);
     }
 
-    protected async Task DisplayLazyPaginatedReply<T>(string title, IEnumerable<T> pagesEnumerable, Action<T, EmbedBuilder>? build = null)
+    protected Task DisplayLazyPaginatedReply<T>(string title, IEnumerable<T> pagesEnumerable, Action<T, EmbedBuilder>? build = null)
     {
-        await DisplayLazyPaginatedReply(title, pagesEnumerable.ToAsyncEnumerable());
+        return DisplayLazyPaginatedReply(title, pagesEnumerable.ToAsyncEnumerable());
     }
 
     protected async Task DisplayLazyPaginatedReply<T>(string title, IAsyncEnumerable<T> pagesEnumerable, Action<T, EmbedBuilder>? build = null)
@@ -212,9 +212,9 @@ public class BaseModule
     /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
     /// <param name="displayItem">Convert a single item (of many) to a string</param>
     /// <returns></returns>
-    protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
+    protected Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<IReadOnlyList<T>, Task> manyPrelude, Func<T, int, Task> displayItem)
     {
-        await DisplayItemList(
+        return DisplayItemList(
             items,
             nothing,
             null,
@@ -231,9 +231,9 @@ public class BaseModule
     /// <param name="nothing">Generate a string for no items</param>
     /// <param name="displayItem">Convert a single item (of many) to a string</param>
     /// <returns></returns>
-    protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<T, int, Task> displayItem)
+    protected Task DisplayItemList<T>(IReadOnlyList<T> items, Func<Task> nothing, Func<T, int, Task> displayItem)
     {
-        await DisplayItemList(
+        return DisplayItemList(
             items,
             nothing,
             null,
@@ -277,9 +277,9 @@ public class BaseModule
         }
     }
 
-    protected async Task DisplayItemList<T>(IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
+    protected Task DisplayItemList<T>(IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
     {
-        await DisplayItemList(
+        return DisplayItemList(
             items,
             nothing,
             null,
@@ -340,16 +340,16 @@ public class BaseModule
         }
     }
 
-    protected async Task DisplayItemList<T>(IReadOnlyList<T> items, string nothing, Func<T, Task>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
+    protected Task DisplayItemList<T>(IReadOnlyList<T> items, string nothing, Func<T, Task>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
     {
-        await DisplayItemList(items, () => nothing, singleItem, manyPrelude, itemToString);
+        return DisplayItemList(items, () => nothing, singleItem, manyPrelude, itemToString);
     }
     #endregion
 
     #region reply
-    protected async Task<IUserMessage> TypingReplyAsync(string message, bool isTTS = false, Embed? embed = null, RequestOptions? options = null)
+    protected Task<IUserMessage> TypingReplyAsync(string message, bool isTTS = false, Embed? embed = null, RequestOptions? options = null)
     {
-        return await Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
+        return Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
     }
 
     /// <summary>
@@ -424,9 +424,9 @@ public class BaseModule
         }
     }
 
-    protected async Task<IUserMessage> ReplyAsync(EmbedBuilder embed, RequestOptions? options = null)
+    protected Task<IUserMessage> ReplyAsync(EmbedBuilder embed, RequestOptions? options = null)
     {
-        return await ReplyAsync("", false, embed.Build(), options);
+        return ReplyAsync("", false, embed.Build(), options);
     }
 
     protected Task<IReadOnlyList<IUserMessage>> LongReplyAsync(string message)

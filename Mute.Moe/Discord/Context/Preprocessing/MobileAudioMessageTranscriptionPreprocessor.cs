@@ -156,8 +156,8 @@ public class AudioTranscription
         _tcs.SetResult(result);
     }
 
-    public async Task<string> GetTranscription()
+    public Task<string> GetTranscription()
     {
-        return await _tcs.Task;
+        return _tcs.Task;
     }
 }

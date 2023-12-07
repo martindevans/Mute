@@ -27,12 +27,12 @@ public class LLM
     }
 
     [Command("prompt"), Summary("I will generate a response using an LLM")]
-    public async Task Prompt([Remainder] string prompt)
+    public Task Prompt([Remainder] string prompt)
     {
         if (prompt.StartsWith("\"") && prompt.EndsWith("\""))
             prompt = prompt[1..^1];
 
-        await TypingReplyAsync(
+        return TypingReplyAsync(
             _llm.Generate(prompt),
             new MessageReference(Context.Message.Id)
         );

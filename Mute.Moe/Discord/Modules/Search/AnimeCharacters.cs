@@ -20,9 +20,9 @@ public class AnimeCharacters
 
     [Command("character"), Summary("I will tell you about the given anime character"), Alias("waifu")]
     [TypingReply]
-    public async Task FindCharacters([Remainder] string term)
+    public Task FindCharacters([Remainder] string term)
     {
-        await FindCharacter(1, term);
+        return FindCharacter(1, term);
     }
 
     [Command("character"), Summary("I will tell you about the given anime character"), Alias("waifu")]

@@ -21,9 +21,9 @@ public interface ITransaction
 
 public static class ITransactionExtensions
 {
-    public static async Task<string> Format(this ITransaction transaction, IUserService users, bool mention = false)
+    public static Task<string> Format(this ITransaction transaction, IUserService users, bool mention = false)
     {
-        return await TransactionFormatting.FormatTransaction(
+        return TransactionFormatting.FormatTransaction(
             users,
             transaction.FromId,
             transaction.ToId,

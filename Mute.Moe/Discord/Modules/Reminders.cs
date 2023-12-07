@@ -35,9 +35,9 @@ public class Reminders
     }
 
     [Command("reminders"), Summary("I will give you a list of all your pending reminders")]
-    public async Task ListReminders()
+    public Task ListReminders()
     {
-        await ListReminders(Context.User);
+        return ListReminders(Context.User);
     }
 
     [Command("reminders"), Summary("I will give you a list of all pending reminders for a user"), RequireOwner]
@@ -52,8 +52,7 @@ public class Reminders
                 await ReplyAsync("One pending reminder:");
                 await DisplayReminder(i);
             },
-            async l => await ReplyAsync($"{l.Count} pending reminders:"),
-            async (n, _) => await DisplayReminder(n)
+            async l => await ReplyAsync($"{l.Count} pending reminders:"), (n, _) => DisplayReminder(n)
         );
     }
 

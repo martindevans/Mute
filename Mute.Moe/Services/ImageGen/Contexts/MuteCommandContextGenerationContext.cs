@@ -17,8 +17,8 @@ public class MuteCommandContextGenerationContext
         _reply = reply;
     }
 
-    protected override async Task ModifyReply(Action<MessageProperties> modify)
+    protected override Task ModifyReply(Action<MessageProperties> modify)
     {
-        await _reply.ModifyAsync(modify);
+        return _reply.ModifyAsync(modify);
     }
 }
