@@ -21,7 +21,7 @@ namespace Mute.Tests.Extensions
             var l = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
             var r = new Random();
-            Assert.IsTrue(Enumerable.Range(0, 1000).Select(a => l.Random(r)).Distinct().Count() > 5);
+            Assert.IsTrue(Enumerable.Range(0, 1000).Select(_ => l.Random(r)).Distinct().Count() > 5);
         }
     }
 }

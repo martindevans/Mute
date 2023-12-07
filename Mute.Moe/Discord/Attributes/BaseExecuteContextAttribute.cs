@@ -14,19 +14,12 @@ public abstract class BaseExecuteContextAttribute
     protected internal abstract IEndExecute StartExecute(MuteCommandContext context);
 }
 
-public class DisposableEnd
+public class DisposableEnd(IDisposable disposable)
     : IEndExecute
 {
-    private readonly IDisposable _disposable;
-
-    public DisposableEnd(IDisposable disposable)
-    {
-        _disposable = disposable;
-    }
-
     public async Task EndExecute()
     {
-        _disposable.Dispose();
+        disposable.Dispose();
     }
 }
 

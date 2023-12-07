@@ -4,13 +4,8 @@
 /// Group for all commands in this module to be shown in help
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class HelpGroupAttribute
+public class HelpGroupAttribute(string groupId)
     : Attribute
 {
-    public string GroupId { get; }
-
-    public HelpGroupAttribute(string groupId)
-    {
-        GroupId = groupId;
-    }
+    public string GroupId { get; } = groupId;
 }

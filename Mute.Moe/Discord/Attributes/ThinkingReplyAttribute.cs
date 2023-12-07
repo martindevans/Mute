@@ -8,15 +8,10 @@ namespace Mute.Moe.Discord.Attributes;
 /// <summary>
 /// An emoji will be attached to the message which triggered this context for the duration of the response handler
 /// </summary>
-public class ThinkingReplyAttribute
+public class ThinkingReplyAttribute(string emote = EmojiLookup.Thinking)
     : BaseExecuteContextAttribute
 {
-    private readonly IEmote _emote;
-
-    public ThinkingReplyAttribute(string emote = EmojiLookup.Thinking)
-    {
-        _emote = new Emoji(emote);
-    }
+    private readonly IEmote _emote = new Emoji(emote);
 
     protected internal override IEndExecute StartExecute(MuteCommandContext context)
     {
@@ -25,23 +20,12 @@ public class ThinkingReplyAttribute
         return new EndExecute(context.Message, _emote, context.Client.CurrentUser);
     }
 
-    private class EndExecute
+    private class EndExecute(IUserMessage message, IEmote emote, IUser self)
         : IEndExecute
     {
-        private readonly IUserMessage _message;
-        private readonly IEmote _emote;
-        private readonly IUser _self;
-
-        public EndExecute(IUserMessage message, IEmote emote, IUser self)
-        {
-            _message = message;
-            _emote = emote;
-            _self = self;
-        }
-
         Task IEndExecute.EndExecute()
         {
-            return _message.RemoveReactionAsync(_emote, _self);
+            return message.RemoveReactionAsync(emote, self);
         }
     }
 }

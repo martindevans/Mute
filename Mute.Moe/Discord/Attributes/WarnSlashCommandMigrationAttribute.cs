@@ -4,17 +4,10 @@ using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Attributes;
 
-public class WarnSlashComandMigrationAttribute
-    : PreconditionAttribute 
+public class WarnSlashComandMigrationAttribute(string command)
+    : PreconditionAttribute
 {
-    private readonly string _command;
-
-    public WarnSlashComandMigrationAttribute(string command)
-    {
-        _command = command;
-    }
-
-    public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+    public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command1, IServiceProvider services)
     {
         // Attach a "SlashCommandMigrationWarningSent" object, to prevent this from spamming multiple warnings for one message
         if (context is MuteCommandContext mute)
@@ -24,7 +17,7 @@ public class WarnSlashComandMigrationAttribute
             mute.GetOrAdd(() => new SlashCommandMigrationWarningSent());
         }
 
-        await context.Channel.SendMessageAsync($"You should use the new slash command `/{_command}` instead!");
+        await context.Channel.SendMessageAsync($"You should use the new slash command `/{command}` instead!");
 
         return PreconditionResult.FromSuccess();
     }

@@ -5,20 +5,14 @@ using Discord.WebSocket;
 
 namespace Mute.Moe.Discord.Context;
 
-public class MuteCommandContext
-    : SocketCommandContext, IAsyncDisposable
+public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMessage msg, IServiceProvider services)
+    : SocketCommandContext(client, msg), IAsyncDisposable
 {
-    public IServiceProvider Services { get; }
+    public IServiceProvider Services { get; } = services;
 
-    private readonly ConcurrentDictionary<Type, object> _resources = new();
+    private readonly ConcurrentDictionary<Type, object> _resources = [ ];
 
-    private readonly List<Func<MuteCommandContext, Task>> _completions = new();
-
-    public MuteCommandContext(DiscordSocketClient client, SocketUserMessage msg, IServiceProvider services)
-        : base(client, msg)
-    {
-        Services = services;
-    }
+    private readonly List<Func<MuteCommandContext, Task>> _completions = [ ];
 
     #region context
     /// <summary>
@@ -75,18 +69,11 @@ public class MuteCommandContext
         _completions.Add(completion);
     }
 
-    private class ActionCompletion
+    private class ActionCompletion(Action<MuteCommandContext> action)
     {
-        private readonly Action<MuteCommandContext> _action;
-
-        public ActionCompletion(Action<MuteCommandContext> action)
-        {
-            _action = action;
-        }
-
         public void Complete(MuteCommandContext context)
         {
-            _action(context);
+            action(context);
         }
     }
 

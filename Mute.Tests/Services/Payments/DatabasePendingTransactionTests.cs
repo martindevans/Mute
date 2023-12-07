@@ -40,7 +40,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
             var results = await pending.Get(debtId: a).ToArrayAsync();
 
@@ -61,7 +61,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
             var results = await (pending.Get(fromId: 1)).ToArrayAsync();
 
@@ -78,7 +78,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
             var results = await (pending.Get(toId: 1)).ToArrayAsync();
 
@@ -95,7 +95,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
             var results = await (pending.Get(unit: "test")).ToArrayAsync();
 
@@ -112,7 +112,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
             var results = await (pending.Get(before: now + TimeSpan.FromMinutes(2.5))).ToArrayAsync();
 
@@ -129,7 +129,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
             var results = await (pending.Get(after: now + TimeSpan.FromMinutes(2.5))).ToArrayAsync();
 
@@ -165,7 +165,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
             var transactionsBefore = await (tsx.GetTransactions(0, 1, "TEST")).ToArrayAsync();
             Assert.AreEqual(0, transactionsBefore.Length);
@@ -187,7 +187,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
             Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(a));
             Assert.AreEqual(ConfirmResult.AlreadyConfirmed, await pending.ConfirmPending(a));
@@ -204,7 +204,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
             Assert.AreEqual(DenyResult.Denied, await pending.DenyPending(a));
             Assert.AreEqual(ConfirmResult.AlreadyDenied, await pending.ConfirmPending(a));
@@ -221,7 +221,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (_, _, _, d) = await CreateTestTransactions(now, pending);
 
             Assert.AreEqual(ConfirmResult.IdNotFound, await pending.ConfirmPending(d + 10));
             
@@ -237,7 +237,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
             var transactionsBefore = await (tsx.GetTransactions(0, 1, "TEST")).ToArrayAsync();
             Assert.AreEqual(0, transactionsBefore.Length);
@@ -259,7 +259,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
             Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(a));
             Assert.AreEqual(DenyResult.AlreadyConfirmed, await pending.DenyPending(a));
@@ -276,7 +276,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
             Assert.AreEqual(DenyResult.Denied, await pending.DenyPending(a));
             Assert.AreEqual(DenyResult.AlreadyDenied, await pending.DenyPending(a));
@@ -293,7 +293,7 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var now = DateTime.UtcNow;
-            var (a, b, c, d) = await CreateTestTransactions(now, pending);
+            var (_, _, _, d) = await CreateTestTransactions(now, pending);
 
             Assert.AreEqual(DenyResult.IdNotFound, await pending.DenyPending(d + 10));
 

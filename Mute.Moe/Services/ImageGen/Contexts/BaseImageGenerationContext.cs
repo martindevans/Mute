@@ -253,7 +253,7 @@ public static class ContextImageGenerationExtensions
                 .Split(" not ", StringSplitOptions.RemoveEmptyEntries);
 
             var positive = split[0];
-            var negative = string.Join(", ", split.Skip(1));
+            string? negative = string.Join(", ", split.Skip(1));
             (positive, negative) = PreprocessPrompt(positive, negative, isPrivate, blacklist, index > 0);
 
             if (index == 0)

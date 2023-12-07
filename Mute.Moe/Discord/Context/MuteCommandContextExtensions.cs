@@ -17,13 +17,8 @@ public static class MuteCommandContextExtensions
         return r.Result;
     }
 
-    private class SentimentResultContainer
+    private sealed class SentimentResultContainer(SentimentResult result)
     {
-        public readonly SentimentResult Result;
-
-        public SentimentResultContainer(SentimentResult result)
-        {
-            Result = result;
-        }
+        public readonly SentimentResult Result = result;
     }
 }
