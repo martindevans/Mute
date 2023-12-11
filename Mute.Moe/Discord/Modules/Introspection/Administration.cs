@@ -30,6 +30,7 @@ public class Administration
     }
 
     [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
+    [UsedImplicitly]
     public async Task Say(string message, IMessageChannel? channel = null)
     {
         channel ??= Context.Channel;
@@ -38,6 +39,7 @@ public class Administration
     }
 
     [Command("conversation-status"), Summary("I will show the status of my current conversation with a user")]
+    [UsedImplicitly]
     public async Task ConversationState(IGuildUser? user = null)
     {
         user ??= Context.Message.Author as IGuildUser;
@@ -60,6 +62,7 @@ public class Administration
     }
 
     [Command("presence"), Summary("I will set my presence")]
+    [UsedImplicitly]
     public Task SetPresence(ActivityType activity, [Remainder] string? presence)
     {
         if (string.IsNullOrEmpty(presence))
@@ -72,12 +75,14 @@ public class Administration
     }
 
     [Command("status"), Summary("I will set my status")]
+    [UsedImplicitly]
     public Task SetStatus(UserStatus status)
     {
         return _client.SetStatusAsync(status);
     }
 
     [Command("kill"), Alias("die", "self-destruct", "terminate"), Summary("I will immediately terminate my process ⊙︿⊙")]
+    [UsedImplicitly]
     public async Task Kill(int exitCode = -1)
     {
         try
@@ -99,12 +104,14 @@ public class Administration
     }
 
     [Command("nickname"), Alias("nick"), Summary("Set my nickname")]
+    [UsedImplicitly]
     public Task Nickname([Remainder] string name)
     {
         return Context.Guild.CurrentUser.ModifyAsync(a => a.Nickname = name);
     }
 
     [Command("repick-avatar")]
+    [UsedImplicitly]
     [ThinkingReply]
     public async Task RepickAvatar()
     {
@@ -117,6 +124,7 @@ public class Administration
     }
 
     [Command("DeleteThat")]
+    [UsedImplicitly]
     public async Task DeleteThat(string id)
     {
         var msg = await Context.Channel.GetMessageAsync(ulong.Parse(id));
@@ -124,6 +132,7 @@ public class Administration
     }
 
     [Command("test-ui")]
+    [UsedImplicitly]
     public async Task TestUI()
     {
         var builder = new ComponentBuilder();

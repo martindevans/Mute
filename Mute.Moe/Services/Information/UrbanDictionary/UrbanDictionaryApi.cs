@@ -65,17 +65,11 @@ public class UrbanDictionaryApi
               : new CacheEntry(key, items);
     }
 
-    private class CacheEntry
+    private class CacheEntry(string word, IReadOnlyList<IUrbanDefinition> entries)
         : IEquatable<CacheEntry>
     {
-        public readonly string Word;
-        public readonly IReadOnlyList<IUrbanDefinition> Entries;
-
-        public CacheEntry( string word,  IReadOnlyList<IUrbanDefinition> entries)
-        {
-            Word = word;
-            Entries = entries;
-        }
+        public readonly string Word = word;
+        public readonly IReadOnlyList<IUrbanDefinition> Entries = entries;
 
         public bool Equals(CacheEntry? other)
         {

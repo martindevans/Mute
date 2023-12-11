@@ -25,6 +25,7 @@ public class Voice
     [RequireOwner]
     [Command("tts")]
     [ThinkingReply(EmojiLookup.SpeakerMedVolume)]
+    [UsedImplicitly]
     public async Task TextToSpeech([Remainder] string message)
     {
         var user = Context.User;

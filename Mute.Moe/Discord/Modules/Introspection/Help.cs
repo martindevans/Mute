@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
+using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
@@ -27,6 +28,7 @@ public class Help
 
     [Command("modules"), Alias("help", "commands")]
     [Summary("I will list all command modules (groups of commands)")]
+    [UsedImplicitly]
     public async Task ListModules()
     {
         //Find modules which have at least one permitted command
@@ -49,6 +51,7 @@ public class Help
     }
 
     [Command("help"), Summary("I will tell you about commands or modules")]
+    [UsedImplicitly]
     public async Task ListDetails([Remainder] string search)
     {
         var commands = (await FindCommands(search)).ToArray();
@@ -69,6 +72,7 @@ public class Help
 
     [Command("module")]
     [Summary("I will tell you about the commands in a specific module")]
+    [UsedImplicitly]
     public async Task ListModuleDetails([Remainder] string search)
     {
         var modules = (await FindModules(search)).ToArray();
@@ -80,6 +84,7 @@ public class Help
 
     [Command("command")]
     [Summary("I will tell you about a specific command")]
+    [UsedImplicitly]
     public async Task ListCommandDetails([Remainder] string name)
     {
         var commands = (await FindCommands(name)).ToArray();

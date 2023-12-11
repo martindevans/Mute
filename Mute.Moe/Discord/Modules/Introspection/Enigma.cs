@@ -66,6 +66,7 @@ public class Enigma
     }
 
     [Command("status"), Summary("I will show the status of my current enigma conversations")]
+    [UsedImplicitly]
     public Task Status()
     {
         return Status(false);
@@ -86,6 +87,7 @@ public class Enigma
     }
 
     [Command("query"), Summary("Query the conversation state for a channel")]
+    [UsedImplicitly]
     public Task Query([Remainder] string message)
     {
         return Query(Context.Channel, message);

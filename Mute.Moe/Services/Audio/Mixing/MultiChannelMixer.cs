@@ -36,7 +36,7 @@ public class MultiChannelMixer
 
     public void Add(IMixerInput input)
     {
-        var samples = _inputMap.GetOrAdd(input, _ => input.ToMono().Resample(MixingFormat.SampleRate));
+        var samples = _inputMap.GetOrAdd(input, static (_, i) => i.ToMono().Resample(MixingFormat.SampleRate), input);
         _inputs.AddMixerInput(samples);
     }
 

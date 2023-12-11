@@ -27,6 +27,7 @@ public class Dice
 
     [WarnSlashComandMigration("dice roll")]
     [Command("roll"), Summary("I will roll a dice, allowing use of complex mathematical expressions")]
+    [UsedImplicitly]
     public async Task Roll([Remainder] string command)
     {
         try
@@ -73,6 +74,7 @@ public class Macro
     }
 
     [Command("find")]
+    [UsedImplicitly]
     public async Task FindMacros(string name)
     {
         // Get all results, matching search string with both name and namespace
@@ -95,6 +97,7 @@ public class Macro
     }
 
     [Command("create")]
+    [UsedImplicitly]
     public async Task CreateMacro([Remainder] string expression)
     {
         try
@@ -124,6 +127,7 @@ public class Macro
 
     [Command("delete")]
     [RequireOwner]
+    [UsedImplicitly]
     public async Task DeleteMacro(string ns, string name)
     {
         await _macros.Delete(ns, name);

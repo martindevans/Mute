@@ -9,12 +9,4 @@ public interface ISpeechToText
     IEnumerable<RecognitionWord> OneShotRecognition(ISampleProvider audio);
 }
 
-public readonly struct RecognitionWord
-{
-    public string? Text { get; }
-
-    public RecognitionWord(string? text)
-    {
-        Text = text;
-    }
-}
+public readonly record struct RecognitionWord(string? Text);

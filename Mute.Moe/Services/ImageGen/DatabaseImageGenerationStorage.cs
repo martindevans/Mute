@@ -77,11 +77,5 @@ public enum ImageGenerationType
     Outpaint
 }
 
-public class DatabaseImageGenerationStorage
-    : SimpleJsonBlobTable<ImageGenerationConfig>, IImageGenerationConfigStorage
-{
-    public DatabaseImageGenerationStorage(IDatabaseService database)
-        : base("ImageGeneration", database)
-    {
-    }
-}
+public class DatabaseImageGenerationStorage(IDatabaseService database)
+    : SimpleJsonBlobTable<ImageGenerationConfig>("ImageGeneration", database), IImageGenerationConfigStorage;

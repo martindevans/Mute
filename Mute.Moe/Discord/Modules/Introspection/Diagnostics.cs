@@ -24,6 +24,7 @@ public class Diagnostics
     }
 
     [Command("memory"), RequireOwner, Summary("I will tell you my current memory usage")]
+    [UsedImplicitly]
     public async Task MemoryUsage()
     {
         await ReplyAsync(new EmbedBuilder()
@@ -33,6 +34,7 @@ public class Diagnostics
     }
 
     [Command("hostinfo"), RequireOwner, Summary("I will tell you where I am being hosted")]
+    [UsedImplicitly]
     public async Task HostName()
     {
         var embed = new EmbedBuilder()
@@ -46,18 +48,21 @@ public class Diagnostics
     }
 
     [Command("ping"), Summary("I will respond with 'pong'"), Alias("test")]
+    [UsedImplicitly]
     public async Task Ping()
     {
         await ReplyAsync("pong");
     }
 
     [Command("pong"), Summary("I will respond with 'ping'"), Hidden]
+    [UsedImplicitly]
     public async Task Pong()
     {
         await ReplyAsync("ping");
     }
 
     [Command("latency"), Summary("I will respond with the server latency")]
+    [UsedImplicitly]
     public async Task Latency()
     {
         var latency = _status.Latency.TotalMilliseconds;
@@ -73,36 +78,39 @@ public class Diagnostics
     }
 
     [Command("home"), Summary("I will tell you where to find my source code"), Alias("source", "github")]
+    [UsedImplicitly]
     public async Task Home()
     {
         await TypingReplyAsync("My code is here: https://github.com/martindevans/Mute");
     }
 
     [Command("uptime"), Summary("I will tell you how long I have been running")]
+    [UsedImplicitly]
     public async Task Uptime()
     {
         await TypingReplyAsync(_uptime.Uptime.Humanize(2));
     }
 
-    [Command("simd"), RequireOwner, UsedImplicitly]
+    [Command("simd"), RequireOwner]
+    [UsedImplicitly]
     public async Task Simd()
     {
         var embed = new EmbedBuilder().WithTitle("SIMD Support").WithDescription(
-            $" - AES:  {Aes.IsSupported}\n" +
-            $" - AVX:  {Avx.IsSupported}\n" +
-            $" - AVX2: {Avx2.IsSupported}\n" +
-            $" - BMI1: {Bmi1.IsSupported}\n" +
-            $" - BMI2: {Bmi2.IsSupported}\n" +
-            $" - FMA:  {Fma.IsSupported}\n" +
-            $" - LZCNT:{Lzcnt.IsSupported}\n" +
-            $" - PCLMULQDQ:{Pclmulqdq.IsSupported}\n" +
-            $" - POPCNT:{Popcnt.IsSupported}\n" +
-            $" - SSE:{Sse.IsSupported}\n" +
-            $" - SSE2:{Sse2.IsSupported}\n" +
-            $" - SSE3:{Sse3.IsSupported}\n" +
-            $" - SSSE3:{Ssse3.IsSupported}\n" +
-            $" - SSE41:{Sse41.IsSupported}\n" +
-            $" - SSE42:{Sse42.IsSupported}\n"
+            $"- AES:  {Aes.IsSupported}\n" +
+            $"- AVX:  {Avx.IsSupported}\n" +
+            $"- AVX2: {Avx2.IsSupported}\n" +
+            $"- BMI1: {Bmi1.IsSupported}\n" +
+            $"- BMI2: {Bmi2.IsSupported}\n" +
+            $"- FMA:  {Fma.IsSupported}\n" +
+            $"- LZCNT:{Lzcnt.IsSupported}\n" +
+            $"- PCLMULQDQ:{Pclmulqdq.IsSupported}\n" +
+            $"- POPCNT:{Popcnt.IsSupported}\n" +
+            $"- SSE:{Sse.IsSupported}\n" +
+            $"- SSE2:{Sse2.IsSupported}\n" +
+            $"- SSE3:{Sse3.IsSupported}\n" +
+            $"- SSSE3:{Ssse3.IsSupported}\n" +
+            $"- SSE41:{Sse41.IsSupported}\n" +
+            $"- SSE42:{Sse42.IsSupported}\n"
         ).Build();
 
         await ReplyAsync(embed: embed);

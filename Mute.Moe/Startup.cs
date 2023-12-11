@@ -44,15 +44,8 @@ using Mute.Moe.Services.DiceLang.Macros;
 
 namespace Mute.Moe;
 
-public class Startup
+public record Startup(Configuration Configuration)
 {
-    public Configuration Configuration { get; }
-
-    public Startup(Configuration configuration)
-    {
-        Configuration = configuration;
-    }
-
     private static void ConfigureBaseServices(IServiceCollection services)
     {
         services.AddHttpClient();

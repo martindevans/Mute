@@ -15,8 +15,12 @@ public class InMemoryGuildVoiceCollection
         _client = client;
     }
 
-    public Task<IGuildVoice> GetPlayer(ulong guild)
+    public async Task<IGuildVoice> GetPlayer(ulong guild)
     {
-        return Task.FromResult(_lookup.GetOrAdd(guild, _ => new ThreadedGuildVoice(_client.GetGuild(guild), _client)));
+        return _lookup.GetOrAdd(
+            guild,
+            static (t, args) => new ThreadedGuildVoice(args._client.GetGuild(args.guild), args._client),
+            (guild, _client)
+        );
     }
 }

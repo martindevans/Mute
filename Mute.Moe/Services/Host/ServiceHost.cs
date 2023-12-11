@@ -5,20 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Mute.Moe.Services.Host;
 
-public class ServiceHost
+public class ServiceHost(IServiceProvider provider)
 {
-    private readonly IServiceProvider _provider;
-
     private readonly List<IHostedService> _services = [ ];
-
-    public ServiceHost(IServiceProvider provider)
-    {
-        _provider = provider;
-    }
 
     public async Task StartAsync(CancellationToken cancel)
     {
-        var services = _provider.GetServices<IHostedService>().ToImmutableList();
+        var services = provider.GetServices<IHostedService>().ToImmutableList();
 
         Console.WriteLine("Starting services:");
         foreach (var service in services)

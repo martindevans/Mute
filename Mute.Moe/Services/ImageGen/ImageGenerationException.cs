@@ -1,19 +1,7 @@
 ﻿namespace Mute.Moe.Services.ImageGen;
 
-public abstract class ImageGenerationException
-    : Exception
-{
-    protected ImageGenerationException(string message)
-        : base(message)
-    {
-    }
-}
+public abstract class ImageGenerationException(string message)
+    : Exception(message);
 
-public class ImageGenerationPrivateChannelRequiredException
-    : ImageGenerationException
-{
-    public ImageGenerationPrivateChannelRequiredException()
-        : base("I'm sorry I can't generate that image (use a DM channel to disable filters).")
-    {
-    }
-}
+public class ImageGenerationPrivateChannelRequiredException()
+    : ImageGenerationException("I'm sorry I can't generate that image (use a DM channel to disable filters).");

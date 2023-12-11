@@ -48,34 +48,18 @@ public record MacroDefinition(string Namespace, string Name, IReadOnlyList<strin
 
 
 
-public class MacroNotFoundException
-    : Exception
+public class MacroNotFoundException(string? ns, string name)
+    : Exception($"Failed to find macro `{ns}::{name}`")
 {
-    public string? Namespace { get; }
-    public string Name { get; set; }
-
-    public MacroNotFoundException(string? ns, string name)
-        : base($"Failed to find macro `{ns}::{name}`")
-    {
-        Namespace = ns;
-        Name = name;
-    }
+    public string? Namespace { get; } = ns;
+    public string Name { get; set; } = name;
 }
 
-public class MacroIncorrectArgumentCount
-    : Exception
+public class MacroIncorrectArgumentCount(string? ns, string name, int expected, int actual)
+    : Exception($"Expected {expected} arguments for macro `{ns}::{name}`, but given {actual}")
 {
-    public string? Namespace { get; }
-    public string Name { get; set; }
-    public int Expected { get; }
-    public int Actual { get; }
-
-    public MacroIncorrectArgumentCount(string? ns, string name, int expected, int actual)
-        : base($"Expected {expected} arguments for macro `{ns}::{name}`, but given {actual}")
-    {
-        Namespace = ns;
-        Name = name;
-        Expected = expected;
-        Actual = actual;
-    }
+    public string? Namespace { get; } = ns;
+    public string Name { get; set; } = name;
+    public int Expected { get; } = expected;
+    public int Actual { get; } = actual;
 }

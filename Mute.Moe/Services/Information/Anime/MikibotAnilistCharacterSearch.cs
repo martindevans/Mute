@@ -60,32 +60,19 @@ public class MikibotAnilistCharacterSearch
         return client.SearchCharactersAsync(search, index);
     }
 
-    private class MikibotCharacter
+    private class MikibotCharacter(Miki.Anilist.ICharacter item)
         : ICharacter
     {
-        public MikibotCharacter( Miki.Anilist.ICharacter item)
-        {
-            Id = item.Id.ToString();
+        public string Id { get; } = item.Id.ToString();
 
-            GivenName = item.FirstName;
-            FamilyName = item.LastName;
+        public string GivenName { get; } = item.FirstName;
 
-            Url = item.SiteUrl;
-            ImageUrl = item.LargeImageUrl ?? item.MediumImageUrl;
+        public string FamilyName { get; } = item.LastName;
 
-            Description = item.Description;
-        }
+        public string Description { get; } = item.Description;
 
-        public string Id { get; }
+        public string Url { get; } = item.SiteUrl;
 
-        public string GivenName { get; }
-
-        public string FamilyName { get; }
-
-        public string Description { get; }
-
-        public string Url { get; }
-
-        public string ImageUrl { get; }
+        public string ImageUrl { get; } = item.LargeImageUrl ?? item.MediumImageUrl;
     }
 }

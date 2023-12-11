@@ -61,18 +61,6 @@ public class DatabaseRssNotifications
         }
     }
 
-    private class RssSubscription
-        : IRssSubscription
-    {
-        public string FeedUrl { get; }
-        public ulong Channel { get; }
-        public ulong? MentionRole { get; }
-
-        public RssSubscription(string feedUrl, ulong channel, ulong? mentionRole)
-        {
-            Channel = channel;
-            MentionRole = mentionRole;
-            FeedUrl = feedUrl;
-        }
-    }
+    private record RssSubscription(string FeedUrl, ulong Channel, ulong? MentionRole)
+        : IRssSubscription;
 }

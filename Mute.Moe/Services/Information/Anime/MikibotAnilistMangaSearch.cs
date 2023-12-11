@@ -38,36 +38,19 @@ public class MikibotAnilistMangaSearch
         return item.Id;
     }
 
-    private class MikibotManga
+    private class MikibotManga(IMedia media)
         : IManga
     {
-        public MikibotManga(IMedia media)
-        {
-            Id = media.Id.ToString();
+        public string Id { get; } = media.Id.ToString();
 
-            TitleEnglish = media.EnglishTitle;
-            TitleJapanese = media.NativeTitle;
-            Description = media.Description;
+        public string TitleEnglish { get; } = media.EnglishTitle;
+        public string TitleJapanese { get; } = media.NativeTitle;
+        public string Description { get; } = media.Description;
 
-            Url  = media.Url;
-            ImageUrl = media.CoverImage;
+        public string Url { get; } = media.Url;
+        public string ImageUrl { get; } = media.CoverImage;
 
-            Chapters = media.Chapters;
-            Volumes = media.Volumes;
-        }
-
-        public string Id { get; }
-
-        public string TitleEnglish { get; }
-        public string TitleJapanese { get; }
-        public string Description { get; }
-
-        public string Url { get; }
-        public string ImageUrl { get; }
-
-        public int? Chapters { get; }
-        public int? Volumes { get; }
-
-            
+        public int? Chapters { get; } = media.Chapters;
+        public int? Volumes { get; } = media.Volumes;
     }
 }

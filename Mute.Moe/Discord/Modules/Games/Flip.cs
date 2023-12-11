@@ -43,12 +43,14 @@ public class Flip
     }
 
     [Command("flip"), Summary("I will flip a coin")]
+    [UsedImplicitly]
     public async Task FlipCmd()
     {
         await TypingReplyAsync(_dice.Flip() ? "Heads" : "Tails");
     }
 
     [Command("8ball"), Summary("I will reach into the hazy mists of the future to determine the truth")]
+    [UsedImplicitly]
     public async Task Magic8Ball([Remainder] string question)
     {
         if (string.IsNullOrWhiteSpace(question))

@@ -11,14 +11,4 @@ public interface IRateLimit
     public Task Reset(Guid rateId, ulong userId);
 }
 
-public readonly struct RateLimitState
-{
-    public DateTime LastUsed { get; }
-    public uint UseCount { get; }
-
-    public RateLimitState(DateTime lastUsed, uint useCount)
-    {
-        LastUsed = lastUsed;
-        UseCount = useCount;
-    }
-}
+public readonly record struct RateLimitState(DateTime LastUsed, uint UseCount);

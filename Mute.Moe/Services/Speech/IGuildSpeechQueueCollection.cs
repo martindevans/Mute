@@ -15,27 +15,17 @@ public interface IGuildSpeechQueue
     IGuildVoice VoicePlayer { get; }
 }
 
-public class InMemoryGuildSpeechQueueCollection
-    : BaseInMemoryAudioPlayerQueueCollection<InMemoryGuildSpeechQueue, IGuildSpeechQueue>, IGuildSpeechQueueCollection
+public class InMemoryGuildSpeechQueueCollection(IGuildVoiceCollection voice)
+    : BaseInMemoryAudioPlayerQueueCollection<InMemoryGuildSpeechQueue, IGuildSpeechQueue>(voice), IGuildSpeechQueueCollection
 {
-    public InMemoryGuildSpeechQueueCollection(IGuildVoiceCollection voice)
-        : base(voice)
+    protected override InMemoryGuildSpeechQueue Create(IGuildVoice v)
     {
-    }
-
-    protected override InMemoryGuildSpeechQueue Create(IGuildVoice voice)
-    {
-        return new(voice);
+        return new(v);
     }
 }
 
-public class InMemoryGuildSpeechQueue
+public class InMemoryGuildSpeechQueue(IGuildVoice voice)
     : SimpleQueueChannel<string>, IGuildSpeechQueue
 {
-    public IGuildVoice VoicePlayer { get; }
-
-    public InMemoryGuildSpeechQueue(IGuildVoice voice)
-    {
-        VoicePlayer = voice;
-    }
+    public IGuildVoice VoicePlayer { get; } = voice;
 }

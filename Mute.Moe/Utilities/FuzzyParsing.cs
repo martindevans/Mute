@@ -24,6 +24,8 @@ public static class FuzzyParsing
 
             //Try to get the date/time range
             var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2.daterange"));
+
+            // ReSharper disable once UseNullPropagation
             if (dt == null)
                 return null;
 

@@ -126,24 +126,13 @@ public class WikipediaApi
         }
     }
 
-    private class WikipediaApiDefinition
+    private record WikipediaApiDefinition(string Title, ulong PageId, string Definition)
         : IDefinition
     {
-        public string Title { get; }
-        public string Definition { get; }
-
-        private ulong PageId { get; }
         public string Url => $"https://en.wikipedia.org/?curid={PageId}";
-
-        public WikipediaApiDefinition( string title, ulong pageId,  string definition)
-        {
-            Title = title;
-            PageId = pageId;
-            Definition = definition;
-        }
     }
 
-#pragma warning disable CS0649
+    #pragma warning disable CS0649
     private class DefinitionResponseContainer
     {
         [JsonProperty("query")] public DefinitionResponse? Query;
@@ -184,5 +173,5 @@ public class WikipediaApi
     {
         [JsonProperty("title")] public string? Title;
     }
-#pragma warning restore CS0649
+    #pragma warning restore CS0649
 }
