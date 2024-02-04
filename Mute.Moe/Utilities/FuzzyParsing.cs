@@ -85,9 +85,9 @@ public static class FuzzyParsing
 
     public class MomentRangeExtraction
     {
-        public bool IsValid { get; set; }
+        public bool IsValid { get; init; }
 
-        public (DateTime, DateTime) Value { get; set; }
+        public (DateTime, DateTime) Value { get; init; }
 
         public string? ErrorMessage { get; set; }
     }
@@ -197,9 +197,9 @@ public static class FuzzyParsing
 
     public class MomentExtraction
     {
-        public bool IsValid { get; set; }
+        public bool IsValid { get; init; }
 
-        public DateTime Value { get; set; }
+        public DateTime Value { get; init; }
 
         public string? ErrorMessage { get; set; }
     }

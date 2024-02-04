@@ -52,14 +52,14 @@ public class MacroNotFoundException(string? ns, string name)
     : Exception($"Failed to find macro `{ns}::{name}`")
 {
     public string? Namespace { get; } = ns;
-    public string Name { get; set; } = name;
+    public string Name { get; } = name;
 }
 
 public class MacroIncorrectArgumentCount(string? ns, string name, int expected, int actual)
     : Exception($"Expected {expected} arguments for macro `{ns}::{name}`, but given {actual}")
 {
     public string? Namespace { get; } = ns;
-    public string Name { get; set; } = name;
+    public string Name { get; } = name;
     public int Expected { get; } = expected;
     public int Actual { get; } = actual;
 }

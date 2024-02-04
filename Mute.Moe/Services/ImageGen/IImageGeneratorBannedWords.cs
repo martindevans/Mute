@@ -9,10 +9,10 @@ public class HardcodedBannedWords
     : IImageGeneratorBannedWords
 {
     private static readonly string[] _bannedWords =
-    {
+    [
         "nsfw", "porn", "erotic", "fuck", "naked", "nude", "hentai", "tits", "sex", "penis",
         "spider", "arachnid", "tarantula", "arachnophobia",
-    };
+    ];
 
     public bool IsBanned(string prompt)
     {

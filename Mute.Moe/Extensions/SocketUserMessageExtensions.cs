@@ -14,14 +14,16 @@ public static class SocketUserMessageExtensions
     /// <returns></returns>
     public static IReadOnlyList<IAttachment> GetMessageImageAttachments(this IUserMessage message)
     {
+        // Get all attachments for message
         var attachments = message.Attachments.ToList<IAttachment>();
-        attachments.AddRange(message.ReferencedMessage?.Attachments ?? Array.Empty<IAttachment>());
 
-        var result = attachments
-                    .Where(a => a.ContentType.StartsWith("image/"))
-                    .ToList();
+        // Get all attachments from mentioned message (if any)
+        attachments.AddRange(message.ReferencedMessage?.Attachments ?? []);
 
-        return result;
+        // Remove all non image attachments
+        attachments.RemoveAll(a => !a.ContentType.StartsWith("image/"));
+
+        return attachments;
     }
 
     /// <summary>

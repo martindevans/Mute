@@ -58,7 +58,7 @@ public partial class SoftClipSampleProvider
         }
 
         [LibraryImport("opus")]
-        [UnmanagedCallConv(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+        [UnmanagedCallConv(CallConvs = [ typeof(System.Runtime.CompilerServices.CallConvCdecl) ])]
         private static partial void opus_pcm_soft_clip(nint pcm, int frameSize, int channels, float[] softClipMem);
     }
 }

@@ -18,11 +18,11 @@
     <PackageReference Include="Microsoft.Recognizers.Text.DataTypes.TimexExpression" Version="1.8.8" />
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.8.8" />
     <PackageReference Include="Microsoft.Recognizers.Text.NumberWithUnit" Version="1.8.8" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.2.0" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.2.0" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
-    <PackageReference Include="System.IO.Abstractions" Version="20.0.4" />
-    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="20.0.4" />
+    <PackageReference Include="System.IO.Abstractions" Version="20.0.15" />
+    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="20.0.15" />
     <PackageReference Include="System.ServiceModel.Syndication" Version="8.0.0" />
   </ItemGroup>
 

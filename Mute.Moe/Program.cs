@@ -65,11 +65,11 @@ public class Program
 internal partial class DependencyHelper
 {
     [LibraryImport("opus", EntryPoint = "opus_get_version_string")]
-    [UnmanagedCallConv(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [ typeof(System.Runtime.CompilerServices.CallConvCdecl) ])]
     private static partial nint OpusVersionString();
 
     [LibraryImport("libsodium", EntryPoint = "sodium_version_string")]
-    [UnmanagedCallConv(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallConv(CallConvs = [ typeof(System.Runtime.CompilerServices.CallConvCdecl) ])]
     private static partial nint SodiumVersionString();
         
     public static void TestDependencies()

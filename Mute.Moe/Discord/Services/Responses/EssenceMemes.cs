@@ -49,7 +49,7 @@ public partial class EssenceMemes
     #region response generator
     private static IEmote[] Emotes()
     {
-        return new IEmote[] { new Emoji(EmojiLookup.CrystalBall) };
+        return [ new Emoji(EmojiLookup.CrystalBall) ];
     }
 
     private string Text()

@@ -99,7 +99,7 @@ public class STTConfig
         [UsedImplicitly] public uint? Threads;
     }
     
-    public WhisperConfig? Whisper;
+    [UsedImplicitly] public WhisperConfig? Whisper;
 }
 
 public class LLMConfig
@@ -109,44 +109,44 @@ public class LLMConfig
 
 public class Automatic1111Config
 {
-    public Backend[] Backends = null!;
+    [UsedImplicitly] public Backend[] Backends = null!;
 
-    public string? Text2ImageSampler = null;
-    public string? Image2ImageSampler = null;
-    public int? SamplerSteps = null;
-    public int? OutpaintSteps = null;
-    public string? Checkpoint = null;
-    public uint? Width = null;
-    public uint? Height = null;
-    public string? Upscaler = null;
+    [UsedImplicitly] public string? Text2ImageSampler = null;
+    [UsedImplicitly] public string? Image2ImageSampler = null;
+    [UsedImplicitly] public int? SamplerSteps = null;
+    [UsedImplicitly] public int? OutpaintSteps = null;
+    [UsedImplicitly] public string? Checkpoint = null;
+    [UsedImplicitly] public uint? Width = null;
+    [UsedImplicitly] public uint? Height = null;
+    [UsedImplicitly] public string? Upscaler = null;
 
-    public int? GenerationTimeOutSeconds = null;
-    public int? FastTimeOutSeconds = null;
+    [UsedImplicitly] public int? GenerationTimeOutSeconds = null;
+    [UsedImplicitly] public int? FastTimeOutSeconds = null;
 
-    public uint? Image2ImageClipSkip = null;
-    public uint? Text2ImageClipSkip = null;
-    public int? RecheckDeadBackendTime = null;
+    [UsedImplicitly] public uint? Image2ImageClipSkip = null;
+    [UsedImplicitly] public uint? Text2ImageClipSkip = null;
+    [UsedImplicitly] public int? RecheckDeadBackendTime = null;
 
-    public ADetailer? AfterDetail = null;
+    [UsedImplicitly] public ADetailer? AfterDetail = null;
 
-    public class ADetailer
+    [UsedImplicitly] public class ADetailer
     {
-        public float? HandMinSize;
-        public float? FaceMinSize;
+        [UsedImplicitly] public float? HandMinSize;
+        [UsedImplicitly] public float? FaceMinSize;
     }
 
     public class Backend
     {
-        public bool Enabled;
-        public string? Url;
+        [UsedImplicitly] public bool Enabled;
+        [UsedImplicitly] public string? Url;
 
-        public int? GenerationTimeOutSeconds = null;
-        public int? FastTimeOutSeconds = null;
-        public float? StepsMultiplier = null;
+        [UsedImplicitly] public int? GenerationTimeOutSeconds = null;
+        [UsedImplicitly] public int? FastTimeOutSeconds = null;
+        [UsedImplicitly] public float? StepsMultiplier = null;
     }
 }
 
 public class GlobalImageGenerationConfig
 {
-    public int? BatchSize;
+    [UsedImplicitly] public int? BatchSize;
 }

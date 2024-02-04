@@ -70,6 +70,6 @@ public static class EmojiLookup
     public const string Dice4 = "⚃";
     public const string Dice5 = "⚄";
     public const string Dice6 = "⚅";
-    public static readonly string[] Dice = { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6 };
+    public static readonly string[] Dice = [ Dice1, Dice2, Dice3, Dice4, Dice5, Dice6 ];
 
 }

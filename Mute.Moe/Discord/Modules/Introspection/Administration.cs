@@ -68,10 +68,9 @@ public class Administration
         if (string.IsNullOrEmpty(presence))
             return Task.CompletedTask;
 
-        if (activity == ActivityType.CustomStatus)
-            return _client.SetActivityAsync(new CustomStatusGame(presence));
-        else
-            return _client.SetActivityAsync(new Game(presence, activity));
+        return activity == ActivityType.CustomStatus
+            ? _client.SetActivityAsync(new CustomStatusGame(presence))
+            : _client.SetActivityAsync(new Game(presence, activity));
     }
 
     [Command("status"), Summary("I will set my status")]
