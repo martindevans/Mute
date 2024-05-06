@@ -37,6 +37,7 @@ public class Finance
     }
 
     [Command("ticker"), Summary("I will find out information about a stock or currency")]
+    [UsedImplicitly]
     public async Task Ticker(string symbolOrName, string quote = "USD")
     {
         var crypto = TickerAsCrypto(symbolOrName, quote);
@@ -48,6 +49,7 @@ public class Finance
     }
 
     [Command("crypto")]
+    [UsedImplicitly]
     public async Task TickerCrypto(string symbolOrName, string quote = "USD")
     {
         if (!await TickerAsCrypto(symbolOrName, quote))
@@ -61,6 +63,7 @@ public class Finance
     }
 
     [Command("forex")]
+    [UsedImplicitly]
     public async Task TickerForex(string symbolOrName, string quote = "USD")
     {
         if (!await TickerAsForex(symbolOrName, quote))
@@ -74,6 +77,7 @@ public class Finance
     }
 
     [Command("stock")]
+    [UsedImplicitly]
     public async Task TickerStock(string symbolOrName)
     {
         if (!await TickerAsStock(symbolOrName))

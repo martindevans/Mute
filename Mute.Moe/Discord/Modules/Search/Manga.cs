@@ -20,6 +20,7 @@ public class Manga
 
     [Command("manga"), Summary("I will tell you about the given manga")]
     [TypingReply]
+    [UsedImplicitly]
     public async Task FindManga([Remainder] string term)
     {
         var manga = await _mangaSearch.GetMangaInfoAsync(term);

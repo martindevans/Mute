@@ -15,12 +15,14 @@ public class Roles(IGroups _groups, IUserService _users)
     : BaseModule
 {
     [Command("id"), Summary("I will type out the ID of the specified role")]
+    [UsedImplicitly]
     public async Task RoleId(IRole role)
     {
         await TypingReplyAsync($"ID for `{role.Name}` is `{role.Id}`");
     }
 
     [Command("create"), Summary("I will create a new unlocked role")]
+    [UsedImplicitly]
     public async Task Create(string name)
     {
         var similar = Context.Guild.Roles
@@ -45,6 +47,7 @@ public class Roles(IGroups _groups, IUserService _users)
     }
 
     [Command("join"), Summary("I will give you the given role (if the role is unlocked)")]
+    [UsedImplicitly]
     public async Task JoinRole(IRole role)
     {
         if (!await _groups.IsUnlocked(role))
@@ -64,6 +67,7 @@ public class Roles(IGroups _groups, IUserService _users)
     }
 
     [Command("leave"), Summary("I will remove the given role (if the role is unlocked)")]
+    [UsedImplicitly]
     public async Task LeaveRole(IRole role)
     {
         if (!await _groups.IsUnlocked(role))
@@ -83,6 +87,7 @@ public class Roles(IGroups _groups, IUserService _users)
     }
 
     [Command("who"), Summary("I will tell you who has a given role")]
+    [UsedImplicitly]
     public async Task RoleWho(IRole role)
     {
         var users1 = (from user in await role.Guild.GetUsersAsync()
@@ -95,6 +100,7 @@ public class Roles(IGroups _groups, IUserService _users)
     }
 
     [Command("list"), Alias("show", "unlocked"), Summary("I will list the unlocked roles")]
+    [UsedImplicitly]
     public async Task ListRoles()
     {
         var roles = await _groups.GetUnlocked(Context.Guild).ToListAsync();
@@ -108,6 +114,7 @@ public class Roles(IGroups _groups, IUserService _users)
     }
 
     [Command("test"), Alias("query"), Summary("I will tell you if the given role is unlocked")]
+    [UsedImplicitly]
     public async Task TestRole(IRole role)
     {
         if (await _groups.IsUnlocked(role))
@@ -117,6 +124,7 @@ public class Roles(IGroups _groups, IUserService _users)
     }
 
     [RequireOwner, Command("unlock"), Summary("I will unlock the given role (allow anyone to join/leave it)")]
+    [UsedImplicitly]
     public async Task UnlockRole(IRole role)
     {
         await _groups.Unlock(role);
@@ -124,6 +132,7 @@ public class Roles(IGroups _groups, IUserService _users)
     }
 
     [RequireOwner, Command("lock"), Summary("I will lock the given role (stop allowing anyone to join/leave it)")]
+    [UsedImplicitly]
     public async Task LockRole(IRole role)
     {
         await _groups.Lock(role);

@@ -8,9 +8,4 @@ public record ConstantValue(double Value)
     public async Task<double> Evaluate(IAstNode.Context context) => Value;
 
     public override string ToString() => $"{Value}";
-
-    public IAstNode Reduce()
-    {
-        return this;
-    }
 }

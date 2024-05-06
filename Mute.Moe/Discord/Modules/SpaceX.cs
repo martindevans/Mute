@@ -12,6 +12,7 @@ public class SpaceX(ISpacexInfo spacex, Random rng)
     : BaseModule
 {
     [Command("next"), Alias("upcoming"), Summary("I will tell you about the next spacex launch(es)")]
+    [UsedImplicitly]
     public async Task NextLaunches(int count = 1)
     {
         if (count == 1)

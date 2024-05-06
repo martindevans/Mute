@@ -20,6 +20,7 @@ public class AnimeCharacters
 
     [Command("character"), Summary("I will tell you about the given anime character"), Alias("waifu")]
     [TypingReply]
+    [UsedImplicitly]
     public Task FindCharacters([Remainder] string term)
     {
         return FindCharacter(1, term);
@@ -27,6 +28,7 @@ public class AnimeCharacters
 
     [Command("character"), Summary("I will tell you about the given anime character"), Alias("waifu")]
     [TypingReply]
+    [UsedImplicitly]
     public async Task FindCharacter(int max, [Remainder] string term)
     {
         await DisplayItemList(

@@ -23,6 +23,7 @@ public class Define
 
     [Command("define"), Summary("I will briefly explain what a thing is")]
     [ThinkingReply]
+    [UsedImplicitly]
     public Task DefineAsync([Remainder] string thing)
     {
         return DefineAsync(3, thing);
@@ -30,6 +31,7 @@ public class Define
 
     [Command("define"), Summary("I will briefly explain what a thing is, within a specified number of sentences")]
     [ThinkingReply]
+    [UsedImplicitly]
     public async Task DefineAsync(int sentences, [Remainder] string thing)
     {
         //Get definitions from wikipedia
@@ -60,6 +62,7 @@ public class Define
     }
 
     [Command("urbandefine"), Summary("I will briefly define a word according to urban dictionary")]
+    [UsedImplicitly]
     public async Task UrbanDefineAsync([Remainder] string thing)
     {
         var result = await _urban.SearchTermAsync(thing);

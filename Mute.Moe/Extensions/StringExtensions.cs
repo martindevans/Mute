@@ -50,17 +50,6 @@ public static class StringExtensions
         return null;
     }
 
-    public static string SHA256(this string str)
-    {
-        var result = new StringBuilder();
-        var bytes = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(str));
-
-        foreach (var b in bytes)
-            result.Append(b.ToString("x2"));
-
-        return result.ToString();
-    }
-
     public static uint Levenshtein(this string? a, string? b)
     {
         if (a == null)

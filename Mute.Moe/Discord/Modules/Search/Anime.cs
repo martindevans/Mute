@@ -21,6 +21,7 @@ public class Anime
 
     [Command("anime"), Alias("animu"), Summary("I will tell you about the given anime")]
     [TypingReply]
+    [UsedImplicitly]
     public async Task FindAnime([Remainder] string term)
     {
         var anime = await _animeSearch.GetAnimeInfoAsync(term);
@@ -44,6 +45,7 @@ public class Anime
 
     [Command("animes"), Alias("animus"), Summary("I will search for anime and display all matches")]
     [TypingReply]
+    [UsedImplicitly]
     public Task FindAnimes([Remainder] string term)
     {
         var nsfwOk = Context.Channel is not ITextChannel tc || tc.IsNsfw;
