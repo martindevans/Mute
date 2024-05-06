@@ -43,7 +43,8 @@ public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMes
     public T GetOrAdd<T>(Func<T> create)
         where T : class
     {
-        return (T)_resources.GetOrAdd(typeof(T), create);
+        // ReSharper disable once HeapView.CanAvoidClosure (Not correct for this! it would store the func directly)
+        return (T)_resources.GetOrAdd(typeof(T), _ => create());
     }
     #endregion
 
