@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace Mute.Moe;
 
-public class Program
+public static class Program
 {
     public static async Task Main(string[] args)
     {
@@ -62,7 +62,7 @@ public class Program
     }
 }
 
-internal partial class DependencyHelper
+internal static partial class DependencyHelper
 {
     [LibraryImport("opus", EntryPoint = "opus_get_version_string")]
     [UnmanagedCallConv(CallConvs = [ typeof(System.Runtime.CompilerServices.CallConvCdecl) ])]

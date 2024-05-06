@@ -77,37 +77,17 @@ public static class LaunchInfoExtensions
         if (!date.HasValue)
             return "";
 
-        switch (precision)
+        return precision switch
         {
-            case null:
-                return date.Value.Humanize();
-
-            case DatePrecision.Minute:
-                return date.Value.Humanize();
-
-            case DatePrecision.Hour:
-                return date.Value - DateTime.UtcNow > TimeSpan.FromDays(1)
-                     ? date.Value.Humanize()
-                     : $"about {date.Value.Humanize()}";
-
-            case DatePrecision.Day:
-                return $"on {date.Value:m}";
-
-            case DatePrecision.Month:
-                return $"in {CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(date.Value.Month)} {date.Value.Year}";
-
-            case DatePrecision.Quarter:
-                return $"in Q{date.Value.Month / 4 + 1} {date.Value.Year}";
-
-            case DatePrecision.Half:
-                return $"in H{date.Value.Month / 6 + 1} {date.Value.Year}";
-
-            case DatePrecision.Year:
-                return $"in {date.Value.Year}";
-
-            case DatePrecision.Unknown:
-            default:
-                throw new NotSupportedException($"Tenatative date time `{precision.Value}`, unknown precision");
-        }
+            null => date.Value.Humanize(),
+            DatePrecision.Minute => date.Value.Humanize(),
+            DatePrecision.Hour => date.Value - DateTime.UtcNow > TimeSpan.FromDays(1) ? date.Value.Humanize() : $"about {date.Value.Humanize()}",
+            DatePrecision.Day => $"on {date.Value:m}",
+            DatePrecision.Month => $"in {CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(date.Value.Month)} {date.Value.Year}",
+            DatePrecision.Quarter => $"in Q{date.Value.Month / 4 + 1} {date.Value.Year}",
+            DatePrecision.Half => $"in H{date.Value.Month / 6 + 1} {date.Value.Year}",
+            DatePrecision.Year => $"in {date.Value.Year}",
+            _ => throw new NotSupportedException($"Tenatative date time `{precision.Value}`, unknown precision")
+        };
     }
 }

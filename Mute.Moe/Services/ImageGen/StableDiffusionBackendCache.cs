@@ -20,7 +20,7 @@ public class StableDiffusionBackendCache
 
         var backends = new List<BackendStatus>();
         _backends = backends;
-        foreach (var backend in config.Automatic1111?.Backends ?? Array.Empty<Automatic1111Config.Backend>())
+        foreach (var backend in config.Automatic1111?.Backends ?? [])
         {
             if (backend is not { Enabled: true, Url: not null })
                 continue;

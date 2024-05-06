@@ -8,23 +8,16 @@ namespace Mute.Moe.Services.Audio.Mixing;
 /// <summary>
 /// Apply a soft clipping to the signal (so clipping does not generate unpleasant clicks)
 /// </summary>
-public partial class SoftClipSampleProvider
+public partial class SoftClipSampleProvider(ISampleProvider upstream)
     : ISampleProvider
 {
-    private readonly ISampleProvider _upstream;
-    private readonly OpusSoftClip _clipper;
+    private readonly OpusSoftClip _clipper = new(upstream.WaveFormat.Channels);
 
-    public WaveFormat WaveFormat => _upstream.WaveFormat;
-
-    public SoftClipSampleProvider( ISampleProvider upstream)
-    {
-        _upstream = upstream;
-        _clipper = new OpusSoftClip(upstream.WaveFormat.Channels);
-    }
+    public WaveFormat WaveFormat => upstream.WaveFormat;
 
     public int Read(float[] buffer, int offset, int count)
     {
-        var read = _upstream.Read(buffer, offset, count);
+        var read = upstream.Read(buffer, offset, count);
         _clipper.Clip(new ArraySegment<float>(buffer, offset, read));
         return read;
     }
@@ -59,6 +52,6 @@ public partial class SoftClipSampleProvider
 
         [LibraryImport("opus")]
         [UnmanagedCallConv(CallConvs = [ typeof(System.Runtime.CompilerServices.CallConvCdecl) ])]
-        private static partial void opus_pcm_soft_clip(nint pcm, int frameSize, int channels, float[] softClipMem);
+        private static partial void opus_pcm_soft_clip(nint pcm, int frameSize, int channels, [In, Out] float[] softClipMem);
     }
 }

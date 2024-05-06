@@ -16,6 +16,7 @@ public class HistoryLogging
 {
     [Command("log")]
     [ThinkingReply]
+    [UsedImplicitly]
     public async Task Log(int count = 10, bool ignoreBots = true)
     {
         var status = await ReplyAsync("Downloading...");

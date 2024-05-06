@@ -6,22 +6,13 @@ using Discord.WebSocket;
 
 namespace Mute.Moe.Services.Reminders;
 
-public class AsyncReminderSender
+public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _client)
     : IReminderSender
 {
-    private readonly IReminders _reminders;
-    private readonly DiscordSocketClient _client;
-
     private CancellationTokenSource? _cts;
     private Task? _thread;
 
     public TaskStatus Status => _thread?.Status ?? TaskStatus.WaitingForActivation;
-
-    public AsyncReminderSender(IReminders reminders, DiscordSocketClient client)
-    {
-        _reminders = reminders;
-        _client = client;
-    }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -31,7 +22,8 @@ public class AsyncReminderSender
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _cts?.Cancel();
+        if (_cts != null)
+            await _cts.CancelAsync();
     }
 
     private async Task ThreadEntry(CancellationToken token)
@@ -53,7 +45,7 @@ public class AsyncReminderSender
                 );
 
                 //cancel all the others
-                cts.Cancel();
+                await cts.CancelAsync();
 
                 //Run whichever one completed
                 await evt.Run(ref next);

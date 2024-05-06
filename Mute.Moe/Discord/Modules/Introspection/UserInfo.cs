@@ -24,6 +24,7 @@ public class UserInfo
     }
 
     [Command("userid"), Summary("I will type out the ID of the specified user")]
+    [UsedImplicitly]
     public async Task UserId(IUser? user = null)
     {
         user ??= Context.User;
@@ -32,12 +33,14 @@ public class UserInfo
     }
 
     [Command("whois"), Summary("I will print out a summary of information about the given user")]
+    [UsedImplicitly]
     public async Task Whois(IUser? user = null)
     {
         await TypingReplyAsync(GetUserInfo(user ?? Context.User));
     }
 
     [Command("avatar"), Summary("I will show the avatar for a user")]
+    [UsedImplicitly]
     public async Task Avatar(IUser? user = null)
     {
         var u = user ?? Context.User;

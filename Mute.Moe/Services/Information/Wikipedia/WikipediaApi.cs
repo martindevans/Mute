@@ -56,7 +56,7 @@ public class WikipediaApi
                 var response = JsonConvert.DeserializeObject<PropResponseContainer?>(await httpResponse.Content.ReadAsStringAsync());
 
                 // Find all links
-                var links = response?.Query?.Pages?.Select(p => p.Value).SelectMany(a => a.Links ?? Array.Empty<Property>());
+                var links = response?.Query?.Pages?.Select(p => p.Value).SelectMany(a => a.Links ?? []);
                 if (links == null)
                     return Array.Empty<IDefinition>();
 

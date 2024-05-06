@@ -71,6 +71,7 @@ public class SeasonalAvatar
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _cts?.Cancel();
+        if (_cts != null)
+            await _cts.CancelAsync();
     }
 }

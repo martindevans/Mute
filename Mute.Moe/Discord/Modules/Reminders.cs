@@ -13,21 +13,15 @@ using Mute.Moe.Services.Reminders;
 namespace Mute.Moe.Discord.Modules;
 
 [UsedImplicitly]
-public class Reminders
+public class Reminders(IReminders _reminders)
     : BaseModule
 {
     private static readonly Color Color = Color.Purple;
 
-    private readonly IReminders _reminders;
-
     private const string PastValueErrorMessage = "I'm sorry, but $moment$ is in the past.";
 
-    public Reminders(IReminders reminders)
-    {
-        _reminders = reminders;
-    }
-
     [Command("remindme"), Alias("remind", "remind-me", "remind_me", "reminder"), Summary("I will remind you of something after a period of time")]
+    [UsedImplicitly]
     public async Task CreateReminderCmd([Remainder] string message)
     {
         var msg = await CreateReminder(Context, message);
@@ -35,12 +29,14 @@ public class Reminders
     }
 
     [Command("reminders"), Summary("I will give you a list of all your pending reminders")]
+    [UsedImplicitly]
     public Task ListReminders()
     {
         return ListReminders(Context.User);
     }
 
     [Command("reminders"), Summary("I will give you a list of all pending reminders for a user"), RequireOwner]
+    [UsedImplicitly]
     public async Task ListReminders(IUser user)
     {
         var items = await _reminders.Get(user.Id).ToArrayAsync();
@@ -69,6 +65,7 @@ public class Reminders
     }
 
     [Command("cancel-reminder"), Alias("reminder-cancel", "remind-cancel", "cancel-remind", "unremind"), Summary("I will delete a reminder with the given ID")]
+    [UsedImplicitly]
     public async Task CancelReminder( string id)
     {
         var parsed = BalderHash32.Parse(id);
@@ -106,20 +103,13 @@ public class Reminders
     }
 }
 
-public class RemindersCommandWord
+public class RemindersCommandWord(IReminders _reminders)
     : ICommandWordHandler
 {
-    private readonly IReminders _reminders;
-
-    public IReadOnlyList<string> Triggers { get; } = new[]
-    {
+    public IReadOnlyList<string> Triggers { get; } =
+    [
         "remind", "Remind", "reminder", "Reminder"
-    };
-
-    public RemindersCommandWord(IReminders reminders)
-    {
-        _reminders = reminders;
-    }
+    ];
 
     public async Task<bool> Invoke(MuteCommandContext context, string message)
     {

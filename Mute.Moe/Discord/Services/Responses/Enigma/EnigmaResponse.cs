@@ -11,18 +11,11 @@ namespace Mute.Moe.Discord.Services.Responses.Enigma;
 /// <summary>
 /// Process every non-command message sent in any channel
 /// </summary>
-public class EnigmaResponse
+public class EnigmaResponse(ILargeLanguageModel llm)
     : IConversationPreprocessor
 {
-    private readonly ILargeLanguageModel _llm;
-
     private readonly ConcurrentDictionary<ulong, ChannelState> _channelState = new();
     public int Count => _channelState.Count;
-
-    public EnigmaResponse(ILargeLanguageModel llm)
-    {
-        _llm = llm;
-    }
 
     public async Task Process(MuteCommandContext context)
     {
@@ -34,7 +27,7 @@ public class EnigmaResponse
 
     private ChannelState CreateContext(ulong key)
     {
-        return new ChannelState(key, _llm);
+        return new ChannelState(key, llm);
     }
 
     public ChannelState GetState(IChannel channel)

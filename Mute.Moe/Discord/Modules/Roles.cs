@@ -11,18 +11,9 @@ namespace Mute.Moe.Discord.Modules;
 
 [UsedImplicitly]
 [Group("role"), Alias("roles"), RequireContext(ContextType.Guild)]
-public class Roles
+public class Roles(IGroups _groups, IUserService _users)
     : BaseModule
 {
-    private readonly IGroups _groups;
-    private readonly IUserService _users;
-
-    public Roles(IGroups groups, IUserService users)
-    {
-        _groups = groups;
-        _users = users;
-    }
-
     [Command("id"), Summary("I will type out the ID of the specified role")]
     public async Task RoleId(IRole role)
     {
@@ -36,7 +27,8 @@ public class Roles
             .Select(r => new {r.Name, Distance = r.Name.Levenshtein(name)})
             .Where(a => a.Distance < 3)
             .ToList();
-        if (similar.Any())
+
+        if (similar.Count != 0)
         {
             var closest = similar.OrderBy(a => a.Distance).First();
             await TypingReplyAsync($"Sorry, that name is too similar to the role `{closest.Name}`");
@@ -93,13 +85,13 @@ public class Roles
     [Command("who"), Summary("I will tell you who has a given role")]
     public async Task RoleWho(IRole role)
     {
-        var users = (from user in await role.Guild.GetUsersAsync()
+        var users1 = (from user in await role.Guild.GetUsersAsync()
             where user.RoleIds.Contains(role.Id)
             let name = _users.Name(user)
             orderby name
             select name).ToArray();
 
-        await DisplayItemList(users, () => "No one has this role", u => $"{u.Count} users have this role", (u, i) => $"{i + 1}. {u}");
+        await DisplayItemList(users1, () => "No one has this role", u => $"{u.Count} users have this role", (u, i) => $"{i + 1}. {u}");
     }
 
     [Command("list"), Alias("show", "unlocked"), Summary("I will list the unlocked roles")]

@@ -13,7 +13,6 @@ public class Configuration
     [UsedImplicitly] public DictionaryConfig? Dictionary;
     [UsedImplicitly] public SentimentReactionConfig? SentimentReactions;
     [UsedImplicitly] public UrbanDictionaryConfig? UrbanDictionary;
-    [UsedImplicitly] public TTSConfig? TTS;
     [UsedImplicitly] public STTConfig? STT;
     [UsedImplicitly] public LLMConfig? LLM;
     [UsedImplicitly] public Automatic1111Config? Automatic1111;
@@ -89,8 +88,6 @@ public class UrbanDictionaryConfig
     [UsedImplicitly] public uint CacheMaxTimeSeconds;
 }
 
-public class TTSConfig;
-
 public class STTConfig
 {
     public class WhisperConfig
@@ -111,23 +108,23 @@ public class Automatic1111Config
 {
     [UsedImplicitly] public Backend[] Backends = null!;
 
-    [UsedImplicitly] public string? Text2ImageSampler = null;
-    [UsedImplicitly] public string? Image2ImageSampler = null;
-    [UsedImplicitly] public int? SamplerSteps = null;
-    [UsedImplicitly] public int? OutpaintSteps = null;
-    [UsedImplicitly] public string? Checkpoint = null;
-    [UsedImplicitly] public uint? Width = null;
-    [UsedImplicitly] public uint? Height = null;
-    [UsedImplicitly] public string? Upscaler = null;
+    [UsedImplicitly] public string? Text2ImageSampler;
+    [UsedImplicitly] public string? Image2ImageSampler;
+    [UsedImplicitly] public int? SamplerSteps;
+    [UsedImplicitly] public int? OutpaintSteps;
+    [UsedImplicitly] public string? Checkpoint;
+    [UsedImplicitly] public uint? Width;
+    [UsedImplicitly] public uint? Height;
+    [UsedImplicitly] public string? Upscaler;
 
-    [UsedImplicitly] public int? GenerationTimeOutSeconds = null;
-    [UsedImplicitly] public int? FastTimeOutSeconds = null;
+    [UsedImplicitly] public int? GenerationTimeOutSeconds;
+    [UsedImplicitly] public int? FastTimeOutSeconds;
 
-    [UsedImplicitly] public uint? Image2ImageClipSkip = null;
-    [UsedImplicitly] public uint? Text2ImageClipSkip = null;
-    [UsedImplicitly] public int? RecheckDeadBackendTime = null;
+    [UsedImplicitly] public uint? Image2ImageClipSkip;
+    [UsedImplicitly] public uint? Text2ImageClipSkip;
+    [UsedImplicitly] public int? RecheckDeadBackendTime;
 
-    [UsedImplicitly] public ADetailer? AfterDetail = null;
+    [UsedImplicitly] public ADetailer? AfterDetail;
 
     [UsedImplicitly] public class ADetailer
     {
@@ -140,9 +137,9 @@ public class Automatic1111Config
         [UsedImplicitly] public bool Enabled;
         [UsedImplicitly] public string? Url;
 
-        [UsedImplicitly] public int? GenerationTimeOutSeconds = null;
-        [UsedImplicitly] public int? FastTimeOutSeconds = null;
-        [UsedImplicitly] public float? StepsMultiplier = null;
+        [UsedImplicitly] public int? GenerationTimeOutSeconds;
+        [UsedImplicitly] public int? FastTimeOutSeconds;
+        [UsedImplicitly] public float? StepsMultiplier;
     }
 }
 

@@ -9,17 +9,11 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 [UsedImplicitly]
 [Group("llm")]
 [RequireOwner]
-public class LLM
+public class LLM(ILargeLanguageModel _llm)
     : BaseModule
 {
-    private readonly ILargeLanguageModel _llm;
-
-    public LLM(ILargeLanguageModel llm)
-    {
-        _llm = llm;
-    }
-
     [Command("model"), Summary("I will tell you about my LLM model")]
+    [UsedImplicitly]
     public async Task Model()
     {
         var detail = _llm.Summary(new EmbedBuilder());
@@ -27,9 +21,10 @@ public class LLM
     }
 
     [Command("prompt"), Summary("I will generate a response using an LLM")]
+    [UsedImplicitly]
     public Task Prompt([Remainder] string prompt)
     {
-        if (prompt.StartsWith("\"") && prompt.EndsWith("\""))
+        if (prompt.StartsWith('\"') && prompt.EndsWith('\"'))
             prompt = prompt[1..^1];
 
         return TypingReplyAsync(

@@ -40,18 +40,6 @@ public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMes
     /// <typeparam name="T"></typeparam>
     /// <param name="create"></param>
     /// <returns></returns>
-    public Task<T> GetOrAdd<T>(Func<Task<T>> create)
-        where T : class
-    {
-        return Task.FromResult((T)_resources.GetOrAdd(typeof(T), static (_, c) => Task.Run(c).Result, create));
-    }
-
-    /// <summary>
-    /// Get context of type T that was previously attached. Creates and attached T using the provided factory if nothing has attached this context
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="create"></param>
-    /// <returns></returns>
     public T GetOrAdd<T>(Func<T> create)
         where T : class
     {
@@ -67,14 +55,6 @@ public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMes
     public void RegisterCompletion(Func<MuteCommandContext, Task> completion)
     {
         _completions.Add(completion);
-    }
-
-    private class ActionCompletion(Action<MuteCommandContext> action)
-    {
-        public void Complete(MuteCommandContext context)
-        {
-            action(context);
-        }
     }
 
     public async ValueTask DisposeAsync()

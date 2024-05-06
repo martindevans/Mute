@@ -18,20 +18,12 @@ namespace Mute.Moe.Discord.Modules;
 [UsedImplicitly]
 [Group("image")]
 [ThinkingReply(EmojiLookup.ArtistPalette)]
-public class Pictures
+public class Pictures(IImageAnalyser _analyser, HttpClient _http)
     : BaseModule
 {
-    private readonly IImageAnalyser _analyser;
-    private readonly HttpClient _http;
-
-    public Pictures(IImageAnalyser analyser, HttpClient http)
-    {
-        _analyser = analyser;
-        _http = http;
-    }
-
     [Command("generate"), Alias("diffusion", "imagine"), Summary("I will generate a picture")]
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 10, "Please wait a bit before generating more images")]
+    [UsedImplicitly]
     public Task Generate([Remainder] string prompt)
     {
         return Context.GenerateImage(prompt);
@@ -40,6 +32,7 @@ public class Pictures
 
     [Command("metadata"), Alias("parameters"), Summary("I will try to extract stable diffusion generation data from the image")]
     [RateLimit("2E3E6C68-1862-4573-858A-B478000B8154", 5, "Please wait a bit")]
+    [UsedImplicitly]
     public async Task Metadata()
     {
         var images = await GetMessageImages(Context.Message);
@@ -70,7 +63,8 @@ public class Pictures
 
 
     [Command("analyse"), Alias("interrogate", "describe"), Summary("I will try to describe the image")]
-    [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 30, "Please wait a bit")]
+    [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 30, "Please wait a bit before analysing more images")]
+    [UsedImplicitly]
     public async Task Analyse(InterrogateModel model = InterrogateModel.DeepDanbooru)
     {
         var images = await GetMessageImages(Context.Message);

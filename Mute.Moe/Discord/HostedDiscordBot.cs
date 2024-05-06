@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -36,7 +35,7 @@ public class HostedDiscordBot
         _interactions = interactions ?? throw new ArgumentNullException(nameof(interactions));
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken = default)
+    public async Task StartAsync()
     {
         // Sanity check config
         if (_config.Auth == null)

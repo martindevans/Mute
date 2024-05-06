@@ -9,23 +9,16 @@ using Mute.Moe.Utilities;
 namespace Mute.Moe.Discord.Services.Responses;
 
 [UsedImplicitly]
-public partial class EssenceMemes
+public partial class EssenceMemes(Random _random)
     : IResponse
 {
     public double BaseChance => 0.15;
     public double MentionedChance => 1;
 
-    private readonly Random _random;
-
     private readonly HashSet<string> _triggerWords =
     [
         "essence",
     ];
-
-    public EssenceMemes(Random random)
-    {
-        _random = random;
-    }
 
     [GeneratedRegex("[^a-zA-Z0-9 -]", RegexOptions.IgnoreCase, "en-GB")]
     private static partial Regex ReplaceRegex();

@@ -11,7 +11,7 @@ public class CommandWordService
     : IConversationPreprocessor
 {
     private readonly IServiceProvider _provider;
-    private readonly Dictionary<StringSpan, Type> _triggerWords = new();
+    private readonly Dictionary<StringSpan, Type> _triggerWords = [];
 
     public CommandWordService(IServiceProvider provider)
     {

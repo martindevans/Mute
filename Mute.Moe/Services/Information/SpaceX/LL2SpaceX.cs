@@ -58,9 +58,9 @@ public class LL2SpaceX
     private class LaunchCollectionModel
     {
         //[JsonProperty("count")] private int _count;
-        [JsonProperty("next")] private string? _next;
+        [JsonProperty("next"), UsedImplicitly] private string? _next;
         //[JsonProperty("previous")] private string? _previous;
-        [JsonProperty("results")] private List<LaunchModel?>? _results;
+        [JsonProperty("results"), UsedImplicitly] private List<LaunchModel?>? _results;
 
         public async IAsyncEnumerable<LaunchModel> Enumerate(HttpClient http)
         {
@@ -86,16 +86,16 @@ public class LL2SpaceX
     private class LaunchModel
         : ILaunchInfo
     {
-        [JsonProperty("id")] private string _id = null!;
-        //[JsonProperty("url")] private string _url = null!;
-        [JsonProperty("name")] private string? _name;
-        [JsonProperty("image")] private string? _image;
-        [JsonProperty("pad")] private LaunchPadInfo _pad = null!;
-        [JsonProperty("rocket")] private VehicleInfo _vehicle = null!;
-        [JsonProperty("net")] private DateTime? _net;
-        [JsonProperty("net_precision")] public NetPrecision? NetPrecision;
-        [JsonProperty("mission")] private MissionInfo? _mission;
-        [JsonProperty("status")] private StatusContainer _status = null!;
+        [JsonProperty("id"), UsedImplicitly] private string _id = null!;
+        //[JsonProperty("url"), UsedImplicitly] private string _url = null!;
+        [JsonProperty("name"), UsedImplicitly] private string? _name;
+        [JsonProperty("image"), UsedImplicitly] private string? _image;
+        [JsonProperty("pad"), UsedImplicitly] private LaunchPadInfo _pad = null!;
+        [JsonProperty("rocket"), UsedImplicitly] private VehicleInfo _vehicle = null!;
+        [JsonProperty("net"), UsedImplicitly] private DateTime? _net;
+        [JsonProperty("net_precision"), UsedImplicitly] public NetPrecision? NetPrecision;
+        [JsonProperty("mission"), UsedImplicitly] private MissionInfo? _mission;
+        [JsonProperty("status"), UsedImplicitly] private StatusContainer _status = null!;
 
         public string ID => _id;
         public string Name => _mission?.Name ?? _name ?? "";
@@ -134,7 +134,7 @@ public class LL2SpaceX
     [UsedImplicitly]
     private class NetPrecision
     {
-        [JsonProperty("name")] private string? _name;
+        [JsonProperty("name"), UsedImplicitly] private string? _name;
 
         public string? Name => _name;
     }
@@ -142,9 +142,9 @@ public class LL2SpaceX
     [UsedImplicitly]
     private class MissionInfo
     {
-        [JsonProperty("id")] private long _id;
-        [JsonProperty("name")] private string _name = null!;
-        [JsonProperty("description")] private string? _description;
+        [JsonProperty("id"), UsedImplicitly] private long _id;
+        [JsonProperty("name"), UsedImplicitly] private string _name = null!;
+        [JsonProperty("description"), UsedImplicitly] private string? _description;
 
         public long ID => _id;
         public string Name => _name;
@@ -154,7 +154,7 @@ public class LL2SpaceX
     [UsedImplicitly]
     private class StatusContainer
     {
-        [JsonProperty("id")] private LaunchStatus _status;
+        [JsonProperty("id"), UsedImplicitly] private LaunchStatus _status;
 
         public LaunchStatus Status => _status;
     }
@@ -170,10 +170,10 @@ public class LL2SpaceX
     private class LaunchPadInfo
         : ILaunchPadInfo
     {
-        [JsonProperty("id")] private long _id;
-        [JsonProperty("name")] private string? _name;
-        [JsonProperty("latitude")] private double _latitude;
-        [JsonProperty("longitude")] private double _longitude;
+        [JsonProperty("id"), UsedImplicitly] private long _id;
+        [JsonProperty("name"), UsedImplicitly] private string? _name;
+        [JsonProperty("latitude"), UsedImplicitly] private double _latitude;
+        [JsonProperty("longitude"), UsedImplicitly] private double _longitude;
 
         public long Id => _id;
         public string Name => _name ?? "";
@@ -184,8 +184,8 @@ public class LL2SpaceX
     private class VehicleInfo
         : IVehicleInfo
     {
-        [JsonProperty("id")] private long _id;
-        [JsonProperty("configuration")] private VehicleConfiguration? _configuration;
+        [JsonProperty("id"), UsedImplicitly] private long _id;
+        [JsonProperty("configuration"), UsedImplicitly] private VehicleConfiguration? _configuration;
 
         public long Id => _id;
         public string Name => _configuration?.Name ?? "";
@@ -193,9 +193,9 @@ public class LL2SpaceX
 
     private class VehicleConfiguration
     {
-        [JsonProperty("name")] private string? _name;
-        [JsonProperty("family")] private string? _family;
-        [JsonProperty("url")] private string? _url;
+        [JsonProperty("name"), UsedImplicitly] private string? _name;
+        [JsonProperty("family"), UsedImplicitly] private string? _family;
+        [JsonProperty("url"), UsedImplicitly] private string? _url;
 
         public string Name => _name ?? "";
         public string Family => _family ?? "";

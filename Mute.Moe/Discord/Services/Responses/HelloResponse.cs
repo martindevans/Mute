@@ -12,7 +12,7 @@ public class HelloResponse
 {
     private readonly Random _random;
 
-    public double BaseChance => 0.25;
+    public double BaseChance => 0.125;
     public double MentionedChance => 0;
 
     private static readonly IReadOnlyList<string> GeneralGreetings = new List<string> {
@@ -68,12 +68,5 @@ public class HelloResponse
         );
     }
 
-    private class HelloConversation
-        : TerminalConversation
-    {
-        public HelloConversation(string response)
-            : base(response)
-        {
-        }
-    }
+    private class HelloConversation(string response) : TerminalConversation(response);
 }

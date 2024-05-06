@@ -23,7 +23,9 @@ public class Finance
     private readonly IStockSearch _search;
     private readonly Random _random;
 
-    private readonly IReadOnlyList<string> _fail = new[] { EmojiLookup.Confused, EmojiLookup.Crying, EmojiLookup.Pensive, EmojiLookup.SlightlyFrowning, EmojiLookup.Thinking, EmojiLookup.Unamused, EmojiLookup.Worried };
+    private readonly IReadOnlyList<string> _fail = [
+        EmojiLookup.Confused, EmojiLookup.Crying, EmojiLookup.Pensive, EmojiLookup.SlightlyFrowning, EmojiLookup.Thinking, EmojiLookup.Unamused, EmojiLookup.Worried
+    ];
 
     public Finance(ICryptocurrencyInfo crypto, IStockQuotes stocks, IForexInfo forex, IStockSearch search, Random random)
     {
@@ -41,7 +43,7 @@ public class Finance
         var forex = TickerAsForex(symbolOrName, quote);
         var stock = TickerAsStock(symbolOrName);
 
-        if (!(await Task.WhenAll(crypto, forex, stock)).Any())
+        if ((await Task.WhenAll(crypto, forex, stock)).Length == 0)
             await Suggestions(symbolOrName, "crypto, currency or stock");
     }
 
@@ -113,10 +115,13 @@ public class Finance
             var delta = result.Price - result.Open;
             if (delta != 0)
             {
-                if (delta > 0)
-                    change += "up";
-                else if (delta < 0)
-                    change += "down";
+                change += delta switch
+                {
+                    > 0 => "up",
+                    < 0 => "down",
+                    _ => "",
+                };
+
                 change += $" {delta / result.Price:P}";
             }
             else

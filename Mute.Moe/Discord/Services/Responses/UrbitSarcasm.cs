@@ -7,23 +7,16 @@ using Mute.Moe.Extensions;
 namespace Mute.Moe.Discord.Services.Responses;
 
 [UsedImplicitly]
-public class UrbitSarcasm
+public class UrbitSarcasm(Random _random)
     : IResponse
 {
     public double BaseChance => 0.15;
     public double MentionedChance => 1;
 
-    private readonly Random _random;
-
     private readonly HashSet<string> _triggerWords =
     [
         "urbit", "hoon", "arvo", "nock",
     ];
-
-    public UrbitSarcasm(Random random)
-    {
-        _random = random;
-    }
 
     public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
     {

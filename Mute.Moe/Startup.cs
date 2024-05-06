@@ -15,7 +15,6 @@ using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.Payment;
 using Mute.Moe.Services.Randomness;
-using Mute.Moe.Services.Sentiment;
 using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Information.RSS;
 using Mute.Moe.Services.Information.UrbanDictionary;
@@ -66,15 +65,14 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<StableDiffusionBackendCache>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
 
-        services.AddSingleton<ILargeLanguageModel, LlamaSharpLLM>();
-        //services.AddSingleton<ILargeLanguageModel, NullLLM>();
+        //services.AddSingleton<ILargeLanguageModel, LlamaSharpLLM>();
+        services.AddSingleton<ILargeLanguageModel, NullLLM>();
 
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddTransient<ISpacexInfo, LL2SpaceX>();
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddSingleton<HttpClient, HttpClient>();
         services.AddSingleton<IDatabaseService, SqliteDatabase>();
-        services.AddHostedService<ISentimentEvaluator, NullSentiment>();
         services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
         services.AddSingleton<IMangaInfo, MikibotAnilistMangaSearch>();
         services.AddSingleton<ICharacterInfo, MikibotAnilistCharacterSearch>();
