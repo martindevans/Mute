@@ -32,6 +32,29 @@ public class SeasonalAvatar
 
     public async Task<AvatarPickResult> PickAvatarNow()
     {
+        var avatars = await GetOptions();
+        var avatar = avatars.Random(_rng);
+        return await SetAvatarNow(avatar);
+    }
+
+    public async Task<AvatarPickResult> SetAvatarNow(string path)
+    {
+        var avatars = await GetOptions();
+        if (!avatars.Contains(path))
+            return new AvatarPickResult(avatars, null);
+
+        Console.WriteLine($"Setting avatar to `{path}`");
+        await using (var stream = File.OpenRead(path))
+        {
+            var image = new Image(stream);
+            await _discord.CurrentUser.ModifyAsync(self => self.Avatar = image);
+        }
+
+        return new AvatarPickResult(avatars, path);
+    }
+
+    public Task<string[]> GetOptions()
+    {
         var now = DateTime.UtcNow.Date.DayOfYear;
 
         // Get all sets that apply, if any are exclusive remove all non exclusive sets
@@ -41,22 +64,13 @@ public class SeasonalAvatar
 
         var exts = new[] { "*.bmp", "*.png", "*.jpg", "*.jpeg" };
         var avatars = sets
-            .Where(a => a.Path != null && Directory.Exists(a.Path))
-            .SelectMany(a => exts.SelectMany(e => Directory.GetFiles(a.Path!, e)))
-            .Distinct()
-            .Shuffle()
-            .ToArray();
+                     .Where(a => a.Path != null && Directory.Exists(a.Path))
+                     .SelectMany(a => exts.SelectMany(e => Directory.GetFiles(a.Path!, e)))
+                     .Distinct()
+                     .Shuffle()
+                     .ToArray();
 
-        var avatar = avatars.Random(_rng);
-
-        Console.WriteLine($"Setting avatar to `{avatar}`");
-        await using (var stream = File.OpenRead(avatar))
-        {
-            var image = new Image(stream);
-            await _discord.CurrentUser.ModifyAsync(self => self.Avatar = image);
-        }
-
-        return new AvatarPickResult(avatars, avatar);
+        return Task.FromResult(avatars);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)

@@ -15,7 +15,7 @@ namespace Mute.Moe.Discord.Modules;
 public class BaseModule
     : InteractiveBase
 {
-    public new MuteCommandContext Context => (MuteCommandContext)base.Context;
+    protected new MuteCommandContext Context => (MuteCommandContext)base.Context;
 
     private IEndExecute[]? _afterExecuteDisposals;
 

@@ -7,6 +7,10 @@ public interface IAvatarPicker
     : IHostedService
 {
     Task<AvatarPickResult> PickAvatarNow();
+
+    Task<AvatarPickResult> SetAvatarNow(string path);
+
+    Task<string[]> GetOptions();
 }
 
 

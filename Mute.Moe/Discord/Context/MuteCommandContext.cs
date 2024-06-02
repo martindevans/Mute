@@ -10,7 +10,7 @@ public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMes
 {
     public IServiceProvider Services { get; } = services;
 
-    private readonly ConcurrentDictionary<Type, object> _resources = [ ];
+    private readonly ConcurrentDictionary<Type, Task> _resources = [ ];
 
     private readonly List<Func<MuteCommandContext, Task>> _completions = [ ];
 
@@ -24,10 +24,13 @@ public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMes
     public bool TryGet<T>(out T? value)
         where T : class
     {
-        if (_resources.TryGetValue(typeof(T), out var obj))
+        if (_resources.TryGetValue(typeof(T), out var task))
         {
-            value = (T)obj;
-            return true;
+            if (task.IsCompletedSuccessfully && task is Task<T> typed)
+            {
+                value = typed.Result;
+                return true;
+            }
         }
 
         value = null;
@@ -43,8 +46,23 @@ public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMes
     public T GetOrAdd<T>(Func<T> create)
         where T : class
     {
-        // ReSharper disable once HeapView.CanAvoidClosure (Not correct for this! it would store the func directly)
-        return (T)_resources.GetOrAdd(typeof(T), _ => create());
+        // ReSharper disable once HeapView.CanAvoidClosure
+        var task = (Task<T>)_resources.GetOrAdd(typeof(T), _ => Task.FromResult(create()));
+        return task.Result;
+    }
+
+    /// <summary>
+    /// Get context of type T that was previously attached. Creates and attached T using the provided factory if nothing has attached this context
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="create"></param>
+    /// <returns></returns>
+    public async Task<T> GetOrAddAsync<T>(Func<Task<T>> create)
+        where T : class
+    {
+        // ReSharper disable once HeapView.CanAvoidClosure
+        var task = (Task<T>)_resources.GetOrAdd(typeof(T), _ => create());
+        return await task;
     }
     #endregion
 

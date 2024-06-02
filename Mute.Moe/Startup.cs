@@ -27,10 +27,8 @@ using Discord.WebSocket;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Discord.Services.Avatar;
-using Mute.Moe.Discord.Services.Responses.Enigma;
 using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Host;
-using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Discord.Services.ComponentActions;
@@ -65,9 +63,6 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<StableDiffusionBackendCache>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
 
-        //services.AddSingleton<ILargeLanguageModel, LlamaSharpLLM>();
-        services.AddSingleton<ILargeLanguageModel, NullLLM>();
-
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddTransient<ISpacexInfo, LL2SpaceX>();
         services.AddSingleton<IFileSystem, FileSystem>();
@@ -98,9 +93,6 @@ public record Startup(Configuration Configuration)
         services.AddHostedService<IAvatarPicker, SeasonalAvatar>();
         services.AddSingleton<IMacroResolver>(x => x.GetRequiredService<IMacroStorage>());
         services.AddSingleton<IMacroStorage, DatabaseMacroStorage>();
-
-        services.AddSingleton(s => new EnigmaResponse(s.GetRequiredService<ILargeLanguageModel>()));
-        services.AddSingleton<IConversationPreprocessor>(s => s.GetRequiredService<EnigmaResponse>());
 
         services.AddSingleton<IMessagePreprocessor, MobileAudioMessageTranscriptionPreprocessor>();
 

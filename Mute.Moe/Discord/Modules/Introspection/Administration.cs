@@ -122,6 +122,34 @@ public class Administration
             await Context.Channel.SendMessageAsync($"Chose `{result.Choice}` from `{result.Options.Count}` options");
     }
 
+    [Command("choose-avatar")]
+    [UsedImplicitly]
+    [ThinkingReply]
+    public async Task ChooseAvatar(int choice = -1)
+    {
+        var options = await _avatar.GetOptions();
+
+        if (choice >= 0)
+        {
+            var result = await _avatar.SetAvatarNow(options[choice]);
+
+            if (result.Choice == null)
+                await Context.Channel.SendMessageAsync($"Failed to choose an avatar from `{result.Options.Count}` options");
+            else
+                await Context.Channel.SendMessageAsync($"Chose `{result.Choice}` from `{result.Options.Count}` options");
+        }
+        else
+        {
+            await DisplayItemList(
+                options,
+                () => "No avatar options available",
+                item => ReplyAsync(item),
+                items => $"There are {items.Count} matching macros:",
+                (item, idx) => $"{idx}: '{item}'"
+            );
+        }
+    }
+
     [Command("DeleteThat")]
     [UsedImplicitly]
     public async Task DeleteThat(string id)
