@@ -67,7 +67,7 @@ public class SeasonalAvatar
                      .Where(a => a.Path != null && Directory.Exists(a.Path))
                      .SelectMany(a => exts.SelectMany(e => Directory.GetFiles(a.Path!, e)))
                      .Distinct()
-                     .Shuffle()
+                     .Order()
                      .ToArray();
 
         return Task.FromResult(avatars);

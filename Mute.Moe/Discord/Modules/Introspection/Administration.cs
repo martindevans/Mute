@@ -145,7 +145,7 @@ public class Administration
                 () => "No avatar options available",
                 item => ReplyAsync(item),
                 items => $"There are {items.Count} matching macros:",
-                (item, idx) => $"{idx}: '{item}'"
+                (item, idx) => $"{idx}. `{item}`"
             );
         }
     }
