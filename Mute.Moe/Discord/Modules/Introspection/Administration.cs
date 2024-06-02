@@ -129,9 +129,9 @@ public class Administration
     {
         var options = await _avatar.GetOptions();
 
-        if (choice >= 0)
+        if (choice > 0)
         {
-            var result = await _avatar.SetAvatarNow(options[choice]);
+            var result = await _avatar.SetAvatarNow(options[choice - 1]);
 
             if (result.Choice == null)
                 await Context.Channel.SendMessageAsync($"Failed to choose an avatar from `{result.Options.Count}` options");
