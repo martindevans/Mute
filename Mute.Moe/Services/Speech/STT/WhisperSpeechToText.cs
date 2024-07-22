@@ -19,7 +19,7 @@ public class WhisperSpeechToText
 
         var model = config.STT.Whisper.ModelPath;
         ArgumentNullException.ThrowIfNull(model, nameof(config.STT.Whisper.ModelPath));
-        if (File.Exists(model))
+        if (!File.Exists(model))
             throw new FileNotFoundException("Whisper model not found", model);
 
         _threads = config.STT?.Whisper?.Threads ?? Math.Max(1, (uint)(Environment.ProcessorCount * 0.5));

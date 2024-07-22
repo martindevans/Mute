@@ -133,45 +133,53 @@ public class HostedDiscordBot
 
     private async Task HandleMessage(SocketMessage socketMessage)
     {
-        // Don't process the command if it was a System Message
-        if (socketMessage is not SocketUserMessage message)
-            return;
-
-        // Ignore messages from self
-        if (message.Author.Id == Client.CurrentUser.Id && !_config.ProcessMessagesFromSelf)
-            return;
-
-        // Check if the message starts with the command prefix character
-        var prefixPos = 0;
-        var hasPrefix = message.HasCharPrefix(_config.PrefixCharacter, ref prefixPos);
-
-        // Create a context for this message
-        await using var context = new MuteCommandContext(Client, message, _services);
-
-        // Apply generic message preproccessor
-        var preprocessors = _services.GetServices<IMessagePreprocessor>().ToList();
-        foreach (var pre in preprocessors)
+        try
         {
-            try
+            // Don't process the command if it was a System Message
+            if (socketMessage is not SocketUserMessage message)
+                return;
+
+            // Ignore messages from self
+            if (message.Author.Id == Client.CurrentUser.Id && !_config.ProcessMessagesFromSelf)
+                return;
+
+            // Check if the message starts with the command prefix character
+            var prefixPos = 0;
+            var hasPrefix = message.HasCharPrefix(_config.PrefixCharacter, ref prefixPos);
+
+            // Create a context for this message
+            await using var context = new MuteCommandContext(Client, message, _services);
+
+            // Apply generic message preproccessor
+            var preprocessors = _services.GetServices<IMessagePreprocessor>().ToList();
+            foreach (var pre in preprocessors)
             {
-                await pre.Process(context);
+                try
+                {
+                    await pre.Process(context);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
             }
-            catch (Exception ex)
+
+            // Either process as command or try to process conversationally
+            if (hasPrefix)
             {
-                Console.WriteLine(ex);
+                await ProcessAsCommand(prefixPos, context);
+            }
+            else
+            {
+                foreach (var pre in _services.GetServices<IConversationPreprocessor>())
+                    await pre.Process(context);
+                await _services.GetRequiredService<ConversationalResponseService>().Respond(context);
             }
         }
-
-        // Either process as command or try to process conversationally
-        if (hasPrefix)
+        catch (Exception ex)
         {
-            await ProcessAsCommand(prefixPos, context);
-        }
-        else
-        {
-            foreach (var pre in _services.GetServices<IConversationPreprocessor>())
-                await pre.Process(context);
-            await _services.GetRequiredService<ConversationalResponseService>().Respond(context);
+            await Console.Error.WriteLineAsync($"Message handler threw: {ex.Message}");
+            throw;
         }
     }
 
