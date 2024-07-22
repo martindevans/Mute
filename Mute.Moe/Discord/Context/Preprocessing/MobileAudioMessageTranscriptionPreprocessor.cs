@@ -1,7 +1,7 @@
 ﻿using System.Net.Http;
 using System.Threading.Tasks;
+using Concentus;
 using Concentus.Oggfile;
-using Concentus.Structs;
 using Discord;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Utilities;
@@ -90,7 +90,7 @@ public class MobileAudioMessageTranscriptionPreprocessor
             return null;
 
         var samples = new List<float>();
-        var decoder = OpusDecoder.Create(48000, 1);
+        var decoder = OpusCodecFactory.CreateDecoder(48000, 1);
         var oggIn = new OpusOggReadStream(decoder, await response.Content.ReadAsStreamAsync());
         while (oggIn.HasNextPacket)
         {

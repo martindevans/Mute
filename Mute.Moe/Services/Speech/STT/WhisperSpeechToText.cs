@@ -15,14 +15,14 @@ public class WhisperSpeechToText
 
     public WhisperSpeechToText(Configuration config)
     {
-        if (config.STT?.Whisper == null)
-            throw new ArgumentNullException(nameof(config.STT.Whisper));
+        ArgumentNullException.ThrowIfNull(config.STT?.Whisper, nameof(config.STT.Whisper));
 
         var model = config.STT.Whisper.ModelPath;
-        if (model == null || !File.Exists(model))
-            throw new ArgumentNullException(nameof(config.STT.Whisper.ModelPath));
+        ArgumentNullException.ThrowIfNull(model, nameof(config.STT.Whisper.ModelPath));
+        if (File.Exists(model))
+            throw new FileNotFoundException("Whisper model not found", model);
 
-        _threads = config.STT?.Whisper?.Threads ?? Math.Max(1, (uint)(Environment.ProcessorCount * 0.75));
+        _threads = config.STT?.Whisper?.Threads ?? Math.Max(1, (uint)(Environment.ProcessorCount * 0.5));
 
         _context = whisper_init_from_file(model);
     }
