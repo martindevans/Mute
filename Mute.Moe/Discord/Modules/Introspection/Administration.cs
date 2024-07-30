@@ -8,6 +8,7 @@ using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.ComponentActions;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Extensions;
+using Mute.Moe.Services.Information.Weather;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 
@@ -20,13 +21,15 @@ public class Administration
     private readonly ConversationalResponseService _conversations;
     private readonly IAvatarPicker _avatar;
     private readonly ComponentActionService _actions;
+    private readonly IWeather _weather;
 
-    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar, ComponentActionService actions)
+    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar, ComponentActionService actions, IWeather weather)
     {
         _client = client;
         _conversations = conversations;
         _avatar = avatar;
         _actions = actions;
+        _weather = weather;
     }
 
     [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -156,6 +159,14 @@ public class Administration
     {
         var msg = await Context.Channel.GetMessageAsync(ulong.Parse(id));
         await msg.DeleteAsync();
+    }
+
+    [Command("test_weather")]
+    [UsedImplicitly]
+    public async Task Weather()
+    {
+        var report = await _weather.GetCurrentWeather();
+        await ReplyAsync(report?.Description ?? "Unknown weather");
     }
 
     [Command("test-ui")]

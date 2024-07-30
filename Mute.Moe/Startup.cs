@@ -38,6 +38,7 @@ using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Modules;
 using Mute.Moe.Services.DiceLang.AST;
 using Mute.Moe.Services.DiceLang.Macros;
+using Mute.Moe.Services.Information.Weather;
 
 namespace Mute.Moe;
 
@@ -93,6 +94,7 @@ public record Startup(Configuration Configuration)
         services.AddHostedService<IAvatarPicker, SeasonalAvatar>();
         services.AddSingleton<IMacroResolver>(x => x.GetRequiredService<IMacroStorage>());
         services.AddSingleton<IMacroStorage, DatabaseMacroStorage>();
+        services.AddSingleton<IWeather, OpenWeatherMapService>();
 
         services.AddSingleton<IMessagePreprocessor, MobileAudioMessageTranscriptionPreprocessor>();
 
