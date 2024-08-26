@@ -9,7 +9,7 @@ public class MuteInteractionModuleBase
     : InteractionModuleBase
 {
     #region send reply
-    protected async Task ReplyAsyc(string? text = null, Embed[]? embeds = null, bool ephemeral = false)
+    protected async Task ReplyAsync2(string? text = null, Embed[]? embeds = null, bool ephemeral = false)
     {
         if (!Context.Interaction.HasResponded)
             await RespondAsync(text, embeds: embeds, ephemeral: ephemeral);
@@ -119,11 +119,11 @@ public class MuteInteractionModuleBase
         switch (items.Count)
         {
             case 0:
-                await ReplyAsyc(nothing());
+                await ReplyAsync2(nothing());
                 break;
 
             case 1 when singleItem != null:
-                await ReplyAsyc(singleItem(items[0]));
+                await ReplyAsync2(singleItem(items[0]));
                 break;
 
             default:

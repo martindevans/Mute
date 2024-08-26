@@ -158,7 +158,7 @@ public class Pictures
         }
         catch (Exception ex)
         {
-            await ReplyAsyc($"Interaction Exception! {ex.Message}");
+            await ReplyAsync2($"Interaction Exception! {ex.Message}");
             throw;
         }
     }

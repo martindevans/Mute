@@ -39,6 +39,7 @@ using Mute.Moe.Discord.Modules;
 using Mute.Moe.Services.DiceLang.AST;
 using Mute.Moe.Services.DiceLang.Macros;
 using Mute.Moe.Services.Information.Weather;
+using Wasmtime;
 
 namespace Mute.Moe;
 
@@ -95,6 +96,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IMacroResolver>(x => x.GetRequiredService<IMacroStorage>());
         services.AddSingleton<IMacroStorage, DatabaseMacroStorage>();
         services.AddSingleton<IWeather, OpenWeatherMapService>();
+        services.AddSingleton(new Engine(new Config().WithFuelConsumption(true)));
 
         services.AddSingleton<IMessagePreprocessor, MobileAudioMessageTranscriptionPreprocessor>();
 
