@@ -46,15 +46,26 @@ public class Python
 
         var runner = module.Build(Encoding.UTF8.GetBytes(code));
 
-        await ReplyAsync("Executing...");
+        var message = await ReplyAsync("Executing...");
         var initialFuel = runner.Fuel;
         var ticks = 1;
-        runner.Execute();
-        while (runner.IsSuspended)
+        try
         {
             runner.Execute();
-            await Task.Delay(128);
-            ticks++;
+            while (runner.IsSuspended)
+            {
+                runner.Execute();
+                await Task.Delay(128);
+                ticks++;
+            }
+        }
+        catch (TrapException ex)
+        {
+            await message.ModifyAsync(props =>
+            {
+                props.Content = $"Execution failed! Trap: `{ex.Type}`";
+            });
+            return;
         }
 
         stdOut.Position = 0;
@@ -63,7 +74,10 @@ public class Python
         var error = Encoding.UTF8.GetString(stdErr.ToArray());
 
         var fuelUsed = initialFuel - runner.Fuel;
-        await ReplyAsync($"Finished execution: {ticks:n0} ticks. {fuelUsed:n0} instructions.");
+        await message.ModifyAsync(props =>
+        {
+            props.Content = $"Execution finished! {ticks:n0} ticks. {fuelUsed:n0} fuel consumed.";
+        });
 
         if (error.Length > 0)
             await ReplyAsync($"Error:\n```{error}```");
