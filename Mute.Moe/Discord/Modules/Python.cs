@@ -35,18 +35,20 @@ public class Python
             code = code.Substring(3, code.Length - 6);
         else
             throw new InvalidOperationException("Unknown code formatting");
-        
 
-        using var module = new PythonBuilder(_engine);
-
-        var stdOut = new MemoryStream();
-        module.WithStdOut(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdOut));
-        var stdErr = new MemoryStream();
-        module.WithStdErr(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdErr));
-
-        var runner = module.Build(Encoding.UTF8.GetBytes(code));
-
+        // Construct runtime
         var message = await ReplyAsync("Executing...");
+        var stdOut = new MemoryStream();
+        var stdErr = new MemoryStream();
+        using var runner = await Task.Run(() =>
+        {
+            var module = new PythonBuilder(_engine);
+            module.WithStdOut(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdOut));
+            module.WithStdErr(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdErr));
+            return module.Build(Encoding.UTF8.GetBytes(code));
+        });
+
+        // Execute
         var initialFuel = runner.Fuel;
         var ticks = 1;
         try
@@ -68,21 +70,25 @@ public class Python
             return;
         }
 
+        // Extract output
         stdOut.Position = 0;
         var output = Encoding.UTF8.GetString(stdOut.ToArray());
         stdErr.Position = 0;
         var error = Encoding.UTF8.GetString(stdErr.ToArray());
 
+        // Print results
         var fuelUsed = initialFuel - runner.Fuel;
         await message.ModifyAsync(props =>
         {
-            props.Content = $"Execution finished! {ticks:n0} ticks. {fuelUsed:n0} fuel consumed.";
+            if (ticks > 1)
+                props.Content = $"Execution finished! {ticks:n0} ticks. {fuelUsed:n0} fuel consumed.";
+            else
+                props.Content = $"Execution finished! {fuelUsed:n0} fuel consumed.";
         });
-
         if (error.Length > 0)
-            await ReplyAsync($"Error:\n```{error}```");
+            await ReplyAsync($"Error:\n```\n{error}```");
         if (output.Length > 0)
-            await ReplyAsync($"Output:\n```{output}```");
+            await ReplyAsync($"Output:\n```\n{output}```");
 
     }
 }
