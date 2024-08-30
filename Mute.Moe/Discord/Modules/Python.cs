@@ -6,21 +6,16 @@ using Serpent;
 using Wasmtime;
 using Wazzy.WasiSnapshotPreview1.FileSystem.Implementations.VirtualFileSystem.Files;
 using Discord.Commands;
+using Mute.Moe.Discord.Attributes;
 
 namespace Mute.Moe.Discord.Modules;
 
-public class Python
+public class Python(PythonBuilder _builder)
     : BaseModule
 {
-    private readonly Engine _engine;
-
-    public Python(Engine engine)
-    {
-        _engine = engine;
-    }
-
     [Command("python"), Summary("I will run a block of Python code and print the output")]
     [UsedImplicitly]
+    [RateLimit("776B21EF-257D-4718-904B-D44A7D25EED9", 1, "Please wait a second")]
     public async Task ExecutePython([Remainder] string code)
     {
         if (!(code.StartsWith("```python") || code.StartsWith("```")) || !code.EndsWith("```"))
@@ -36,17 +31,17 @@ public class Python
         else
             throw new InvalidOperationException("Unknown code formatting");
 
+        var message = await ReplyAsync("Initialising...");
+
         // Construct runtime
-        var message = await ReplyAsync("Executing...");
         var stdOut = new MemoryStream();
         var stdErr = new MemoryStream();
-        using var runner = await Task.Run(() =>
-        {
-            var module = new PythonBuilder(_engine);
-            module.WithStdOut(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdOut));
-            module.WithStdErr(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdErr));
-            return module.Build(Encoding.UTF8.GetBytes(code));
-        });
+        using var runner = _builder.Create()
+              .WithStdOut(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdOut))
+              .WithStdErr(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdErr))
+              .Build(Encoding.UTF8.GetBytes(code));
+
+        await message.ModifyAsync(props => { props.Content = "Executing..."; });
 
         // Execute
         var initialFuel = runner.Fuel;
@@ -56,17 +51,23 @@ public class Python
             runner.Execute();
             while (runner.IsSuspended)
             {
+                var fuelBefore = runner.Fuel;
                 runner.Execute();
-                await Task.Delay(128);
+                var fuelAfter = runner.Fuel;
+                var fuelConsumed = fuelBefore - fuelAfter;
+
+                // If not much fuel was consumed then the code is probably in a loop
+                // polling until an async event happens. Use a longer delay in this case.
+                if (fuelConsumed < 50000)
+                    await Task.Delay(200);
+                else
+                    await Task.Delay(10);
                 ticks++;
             }
         }
         catch (TrapException ex)
         {
-            await message.ModifyAsync(props =>
-            {
-                props.Content = $"Execution failed! Trap: `{ex.Type}`";
-            });
+            await message.ModifyAsync(props => { props.Content = $"Execution failed! Trap: `{ex.Type}`"; });
             return;
         }
 
