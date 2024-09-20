@@ -18,12 +18,14 @@ public class Python(PythonBuilder _builder)
     [RateLimit("776B21EF-257D-4718-904B-D44A7D25EED9", 1, "Please wait a second")]
     public async Task ExecutePython([Remainder] string code)
     {
+        // Sanity check formatting
         if (!(code.StartsWith("```python") || code.StartsWith("```")) || !code.EndsWith("```"))
         {
             await ReplyAsync("Code block must be formatted with triple backticks:\n\\`\\`\\`python\ncode goes here\n\\`\\`\\`");
             return;
         }
 
+        // Strip off code block
         if (code.StartsWith("```python"))
             code = code.Substring(9, code.Length - 12);
         else if (code.StartsWith("```"))
@@ -31,6 +33,7 @@ public class Python(PythonBuilder _builder)
         else
             throw new InvalidOperationException("Unknown code formatting");
 
+        // Print a message, we'll edit it later with updates
         var message = await ReplyAsync("Initialising...");
 
         // Construct runtime
@@ -41,9 +44,8 @@ public class Python(PythonBuilder _builder)
               .WithStdErr(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdErr))
               .Build(Encoding.UTF8.GetBytes(code));
 
-        await message.ModifyAsync(props => { props.Content = "Executing..."; });
-
         // Execute
+        await message.ModifyAsync(props => { props.Content = "Executing..."; });
         var initialFuel = runner.Fuel;
         var ticks = 1;
         try
@@ -90,6 +92,5 @@ public class Python(PythonBuilder _builder)
             await ReplyAsync($"Error:\n```\n{error}```");
         if (output.Length > 0)
             await ReplyAsync($"Output:\n```\n{output}```");
-
     }
 }

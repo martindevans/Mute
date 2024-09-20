@@ -13,6 +13,7 @@ public static class SocketChannelExtensions
             SocketGroupChannel grp => $"#GRP {grp.Name}",
             SocketGuildChannel gc => guildName ? $"{gc.Guild.Name}#{gc.Name}" : $"#{gc.Name}",
 
+            null => "NULL (Deleted Channel?)",
             _ => $"UNK {channel.GetChannelType()} {channel.Id}",
         };
     }

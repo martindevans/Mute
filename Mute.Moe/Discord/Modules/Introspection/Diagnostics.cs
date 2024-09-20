@@ -110,7 +110,12 @@ public class Diagnostics
             $"- SSE3:{Sse3.IsSupported}\n" +
             $"- SSSE3:{Ssse3.IsSupported}\n" +
             $"- SSE41:{Sse41.IsSupported}\n" +
-            $"- SSE42:{Sse42.IsSupported}\n"
+            $"- SSE42:{Sse42.IsSupported}\n" +
+            $"- Avx512BW:{Avx512BW.IsSupported}\n" +
+            $"- Avx512CD:{Avx512CD.IsSupported}\n" +
+            $"- Avx512DQ:{Avx512DQ.IsSupported}\n" +
+            $"- Avx512F:{Avx512F.IsSupported}\n" +
+            $"- Avx512Vbmi:{Avx512Vbmi.IsSupported}\n"
         ).Build();
 
         await ReplyAsync(embed: embed);

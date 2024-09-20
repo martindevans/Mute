@@ -9,7 +9,6 @@ using Mute.Moe.Services.Groups;
 using Mute.Moe.Services.Information.Anime;
 using Mute.Moe.Services.Information.Cryptocurrency;
 using Mute.Moe.Services.Information.Forex;
-using Mute.Moe.Services.Information.SpaceX;
 using Mute.Moe.Services.Information.Stocks;
 using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.Introspection.Uptime;
@@ -67,7 +66,6 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
 
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
-        services.AddTransient<ISpacexInfo, LL2SpaceX>();
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddSingleton<HttpClient, HttpClient>();
         services.AddSingleton<IDatabaseService, SqliteDatabase>();
