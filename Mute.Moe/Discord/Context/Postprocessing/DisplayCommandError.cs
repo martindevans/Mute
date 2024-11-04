@@ -50,7 +50,7 @@ public class DisplayCommandError
             }
 
             // Suggest a potential matched command
-            await context.Channel.TypingReplyAsync("I don't know that command, did you mean:", embed: Help.FormatCommandDetails(context, _prefix, new[] { closest.c }).Build());
+            await context.Channel.TypingReplyAsync("I don't know that command, did you mean:", embed: Help.FormatCommandDetails(context, _prefix, [ closest.c ]).Build());
         }
         else
         {

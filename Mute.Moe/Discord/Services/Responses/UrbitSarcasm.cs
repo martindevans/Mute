@@ -77,13 +77,15 @@ public class UrbitSarcasm(Random _random)
     #endregion
 
     #region data
-    private readonly IReadOnlyList<string> _intros = new[] {
+    private readonly IReadOnlyList<string> _intros =
+    [
         "Just write some Hoon that",
         "Just compose Nock formulas that",
         "Just use Arvo to",
-    };
+    ];
 
-    private readonly IReadOnlyList<string> _ships = new[] {
+    private readonly IReadOnlyList<string> _ships =
+    [
         "~zod",
         "~fyr",
         "~ped",
@@ -93,9 +95,10 @@ public class UrbitSarcasm(Random _random)
         "~tasfyn-partyv",
         "~porned-fapped",
         "~torbyt-sogwyx",
-    };
+    ];
 
-    private readonly IReadOnlyList<string> _verbs = new[] {
+    private readonly IReadOnlyList<string> _verbs =
+    [
         "bunt",
         "unbunt",
         "slot",
@@ -112,9 +115,10 @@ public class UrbitSarcasm(Random _random)
         "mint",
         "bone",
         "burn",
-    };
+    ];
 
-    private readonly IReadOnlyList<string> _adjectives = new[] {
+    private readonly IReadOnlyList<string> _adjectives =
+    [
         "regular",
         "irregular",
         "moldy",
@@ -135,9 +139,10 @@ public class UrbitSarcasm(Random _random)
         "ultralapidary",
         "running",
         "jogging",
-    };
+    ];
 
-    private readonly IReadOnlyList<string> _nouns = new[] {
+    private readonly IReadOnlyList<string> _nouns =
+    [
         "atom",
         "cell",
         "noun",
@@ -185,9 +190,10 @@ public class UrbitSarcasm(Random _random)
         "comet",
         "ship",
         "pier",
-    };
+    ];
 
-    private readonly IReadOnlyList<ValueTuple<string, string>> _runes = new[] {
+    private readonly IReadOnlyList<ValueTuple<string, string>> _runes =
+    [
         ("ace", " "),
         ("bar", "|"),
         ("bas", "\\"),
@@ -221,6 +227,6 @@ public class UrbitSarcasm(Random _random)
         ("tis", "="),
         ("wut", "?"),
         ("zap", "!"),
-    };
+    ];
     #endregion
 }

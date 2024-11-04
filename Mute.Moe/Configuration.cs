@@ -17,6 +17,7 @@ public class Configuration
     [UsedImplicitly] public LLMConfig? LLM;
     [UsedImplicitly] public Automatic1111Config? Automatic1111;
     [UsedImplicitly] public GlobalImageGenerationConfig? ImageGeneration;
+    [UsedImplicitly] public LocationConfig? Location;
     [UsedImplicitly] public OpenWeatherMapConfig? OpenWeatherMap;
 
     [UsedImplicitly] public bool ProcessMessagesFromSelf;
@@ -149,10 +150,13 @@ public class GlobalImageGenerationConfig
     [UsedImplicitly] public int? BatchSize;
 }
 
+public class LocationConfig
+{
+    [UsedImplicitly] public float Latitude;
+    [UsedImplicitly] public float Longitude;
+}
+
 public class OpenWeatherMapConfig
 {
     [UsedImplicitly] public string? ApiKey;
-
-    [UsedImplicitly] public float Latitude;
-    [UsedImplicitly] public float Longitude;
 }

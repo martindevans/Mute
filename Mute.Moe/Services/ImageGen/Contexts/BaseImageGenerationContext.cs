@@ -142,7 +142,7 @@ public abstract class BaseImageGenerationContext
             return _config.Type switch
             {
                 ImageGenerationType.Generate => await GenerateImage2Image(referenceImage),
-                ImageGenerationType.Upscale => new[] { await GenerateUpscale(referenceImage) },
+                ImageGenerationType.Upscale => [ await GenerateUpscale(referenceImage) ],
                 ImageGenerationType.Outpaint => await GenerateOutpaint(referenceImage),
                 _ => throw new ArgumentOutOfRangeException()
             };
@@ -232,7 +232,7 @@ public static class ContextImageGenerationExtensions
     }
 
     #region prompt filtering
-    private static readonly IReadOnlyList<string> BaseNegative = new[] { "easynegative, badhandv4, bad-hands-5" };
+    private static readonly IReadOnlyList<string> BaseNegative = [ "easynegative, badhandv4, bad-hands-5" ];
 
     private static Prompt Parse(string input, bool isPrivate, IImageGeneratorBannedWords blacklist)
     {

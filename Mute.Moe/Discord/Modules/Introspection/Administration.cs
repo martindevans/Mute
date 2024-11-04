@@ -17,14 +17,16 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 public class Administration
     : BaseModule
 {
+    private readonly Configuration _config;
     private readonly DiscordSocketClient _client;
     private readonly ConversationalResponseService _conversations;
     private readonly IAvatarPicker _avatar;
     private readonly ComponentActionService _actions;
     private readonly IWeather _weather;
 
-    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar, ComponentActionService actions, IWeather weather)
+    public Administration(Configuration config, DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar, ComponentActionService actions, IWeather weather)
     {
+        _config = config;
         _client = client;
         _conversations = conversations;
         _avatar = avatar;
@@ -165,7 +167,14 @@ public class Administration
     [UsedImplicitly]
     public async Task Weather()
     {
-        var report = await _weather.GetCurrentWeather();
+        // Use a random location in middle of UK if none is specified
+        var pos = _config.Location ?? new LocationConfig
+        {
+            Latitude = 52.49f,
+            Longitude = -1.23f
+        };
+
+        var report = await _weather.GetCurrentWeather(pos.Latitude, pos.Longitude);
         await ReplyAsync(report?.Description ?? "Unknown weather");
     }
 

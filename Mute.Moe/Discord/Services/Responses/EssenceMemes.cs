@@ -53,10 +53,11 @@ public partial class EssenceMemes(Random _random)
     #endregion
 
     #region data
-    private readonly IReadOnlyList<string> _gifs = new[] {
+    private readonly IReadOnlyList<string> _gifs =
+    [
         "https://i.imgur.com/iJS2UgR.gif",
         "https://c.tenor.com/UellOL75INkAAAAM/dark-crystal-chamberlain-skeksis.gif",
         "https://64.media.tumblr.com/4a5ea64eff44a62e9987e4c9a3923756/bab8d2162e3b9037-1a/s540x810/f9cb0b2d43634ae5f24f9b7354ef44fc5a23fdf3.gif",
-    };
+    ];
     #endregion
 }

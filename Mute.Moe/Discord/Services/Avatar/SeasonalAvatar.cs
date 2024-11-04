@@ -5,7 +5,6 @@ using Mute.Moe.Services.Notifications.Cron;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using MoreLinq;
 
 namespace Mute.Moe.Discord.Services.Avatar;
 

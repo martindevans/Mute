@@ -4,8 +4,6 @@ namespace Mute.Moe.Services.Information.Weather;
 
 public interface IWeather
 {
-    public Task<IWeatherReport?> GetCurrentWeather();
-
     public Task<IWeatherReport?> GetCurrentWeather(float latitude, float longitude);
 }
 

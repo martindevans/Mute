@@ -11,9 +11,6 @@ public class OpenWeatherMapService
     private readonly HttpClient _http;
     private readonly string _apiKey;
 
-    private readonly float _latitude;
-    private readonly float _longitude;
-
     private readonly JsonSerializerOptions _serializer;
 
     public OpenWeatherMapService(Configuration config, IHttpClientFactory http)
@@ -21,21 +18,13 @@ public class OpenWeatherMapService
         _apiKey = config.OpenWeatherMap?.ApiKey
                ?? throw new ArgumentNullException(nameof(config.OpenWeatherMap.ApiKey));
 
-        _latitude = config.OpenWeatherMap?.Latitude ?? 0;
-        _longitude = config.OpenWeatherMap?.Longitude ?? 0;
-
         _http = http.CreateClient();
 
-        _serializer = new JsonSerializerOptions()
+        _serializer = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-    }
-
-    public Task<IWeatherReport?> GetCurrentWeather()
-    {
-        return GetCurrentWeather(_latitude, _longitude);
     }
 
     public async Task<IWeatherReport?> GetCurrentWeather(float latitude, float longitude)

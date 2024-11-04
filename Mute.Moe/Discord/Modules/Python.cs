@@ -81,13 +81,14 @@ public class Python(PythonBuilder _builder)
 
         // Print results
         var fuelUsed = initialFuel - runner.Fuel;
+
         await message.ModifyAsync(props =>
         {
-            if (ticks > 1)
-                props.Content = $"Execution finished! {ticks:n0} ticks. {fuelUsed:n0} fuel consumed.";
-            else
-                props.Content = $"Execution finished! {fuelUsed:n0} fuel consumed.";
+            props.Content = ticks > 1
+                          ? $"Execution finished! {ticks:n0} ticks. {fuelUsed:n0} fuel consumed."
+                          : $"Execution finished! {fuelUsed:n0} fuel consumed.";
         });
+        
         if (error.Length > 0)
             await ReplyAsync($"Error:\n```\n{error}```");
         if (output.Length > 0)

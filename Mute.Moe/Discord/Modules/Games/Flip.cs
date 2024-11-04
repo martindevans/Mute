@@ -13,7 +13,8 @@ public class Flip
 {
     private readonly IDiceRoller _dice;
 
-    private static readonly IReadOnlyList<string> Ball8Replies = new[] {
+    private static readonly IReadOnlyList<string> Ball8Replies =
+    [
         "It is certain.",
         "It is decidedly so.",
         "Without a doubt.",
@@ -34,7 +35,7 @@ public class Flip
         "My sources say no",
         "Outlook not so good.",
         "Very doubtful.",
-    };
+    ];
 
 
     public Flip(IDiceRoller dice)
