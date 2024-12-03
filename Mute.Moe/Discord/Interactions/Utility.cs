@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord.Interactions;
+using Discord.WebSocket;
 using JetBrains.Annotations;
 
 namespace Mute.Moe.Discord.Interactions;
@@ -8,10 +9,17 @@ namespace Mute.Moe.Discord.Interactions;
 public class Utility
     : MuteInteractionModuleBase
 {
+    private readonly BaseSocketClient _client;
+
+    public Utility(BaseSocketClient client)
+    {
+        _client = client;
+    }
+
     [SlashCommand("ping", "Check that I am awake")]
     [UsedImplicitly]
-    public Task Ping()
+    public async Task Ping()
     {
-        return RespondAsync("pong");
+        await RespondAsync("pong");
     }
 }

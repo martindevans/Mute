@@ -42,7 +42,8 @@ public class Python(PythonBuilder _builder)
         using var runner = _builder.Create()
               .WithStdOut(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdOut))
               .WithStdErr(() => new InMemoryFile(0, ReadOnlySpan<byte>.Empty, stdErr))
-              .Build(Encoding.UTF8.GetBytes(code));
+              .WithCode(Encoding.UTF8.GetBytes(code))
+              .Build();
 
         // Execute
         await message.ModifyAsync(props => { props.Content = "Executing..."; });

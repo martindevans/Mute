@@ -230,6 +230,7 @@ public class HostedDiscordBot
         services.AddSingleton(new InteractionService(client.Rest, new InteractionServiceConfig
         {
             DefaultRunMode = global::Discord.Interactions.RunMode.Async,
+            UseCompiledLambda = true,
         }));
 
         services.AddSingleton(client);
