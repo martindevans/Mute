@@ -63,7 +63,7 @@
     <PackageReference Include="morelinq" Version="4.3.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="Pegasus" Version="4.1.0" />
-    <PackageReference Include="Serpent" Version="0.0.28" />
+    <PackageReference Include="Serpent" Version="0.0.29" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
     <PackageReference Include="SteamWebAPI2" Version="4.4.1" />
