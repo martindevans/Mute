@@ -62,7 +62,7 @@ public class Python(PythonBuilder _builder)
                 // If not much fuel was consumed then the code is probably in a loop
                 // polling until an async event happens. Use a longer delay in this case.
                 if (fuelConsumed < 50000)
-                    await Task.Delay(200);
+                    await Task.Delay(100);
                 else
                     await Task.Delay(10);
                 ticks++;
