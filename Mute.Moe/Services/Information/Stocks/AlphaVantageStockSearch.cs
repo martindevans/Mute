@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Net.Http;
-using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Stocks;

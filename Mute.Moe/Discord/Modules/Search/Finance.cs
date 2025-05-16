@@ -1,9 +1,7 @@
 ﻿using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.Cryptocurrency;
 using Mute.Moe.Services.Information.Forex;
 using Mute.Moe.Services.Information.Stocks;

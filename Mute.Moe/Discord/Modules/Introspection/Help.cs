@@ -2,9 +2,7 @@
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.Introspection;

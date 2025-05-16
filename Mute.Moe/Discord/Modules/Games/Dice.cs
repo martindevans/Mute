@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using System.Threading.Tasks;
 using Discord.Commands;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.DiceLang;
 using Mute.Moe.Services.DiceLang.AST;

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using JetBrains.Annotations;
 using Microsoft.Recognizers.Text.DateTime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

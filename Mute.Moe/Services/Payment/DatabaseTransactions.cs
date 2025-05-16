@@ -2,8 +2,6 @@
 using System.Data.SQLite;
 using System.Globalization;
 using System.Threading.Tasks;
-
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Payment;

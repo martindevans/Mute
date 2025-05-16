@@ -1,9 +1,7 @@
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Context;
-using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Services.Responses;

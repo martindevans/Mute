@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using FluidCaching;
 using Miki.Anilist;
 using Miki.Anilist.Objects;
-using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Services.Information.Anime;
 

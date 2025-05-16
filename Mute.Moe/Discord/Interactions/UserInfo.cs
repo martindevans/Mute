@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
-using JetBrains.Annotations;
 
 namespace Mute.Moe.Discord.Interactions;
 

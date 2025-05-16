@@ -1,8 +1,6 @@
 ﻿using System.Data.Common;
 using System.Data.SQLite;
 using System.Threading.Tasks;
-
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Reminders;

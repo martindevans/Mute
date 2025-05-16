@@ -1,6 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-
-using Mute.Moe.Extensions;
 using NAudio.Wave;
 
 namespace Mute.Moe.Services.Audio.Mixing;
@@ -39,15 +37,19 @@ public partial class SoftClipSampleProvider(ISampleProvider upstream)
 
         public void Clip(ArraySegment<float> samples)
         {
+            unsafe
+            {
 #if !NCRUNCH
-            using var handle = samples.Pin();
-            opus_pcm_soft_clip(
-                handle.Ptr,
-                samples.Count / _memory.Length,
-                _memory.Length,
-                _memory
-            );
+                using var pin = samples.AsMemory().Pin();
+
+                opus_pcm_soft_clip(
+                    (IntPtr)pin.Pointer,
+                    samples.Count / _memory.Length,
+                    _memory.Length,
+                    _memory
+                );
 #endif
+            }
         }
 
         [LibraryImport("opus")]

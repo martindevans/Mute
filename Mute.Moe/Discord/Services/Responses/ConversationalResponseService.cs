@@ -6,7 +6,6 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
-using Mute.Moe.Extensions;
 using IEnumerableExtensions = Mute.Moe.Extensions.IEnumerableExtensions;
 
 namespace Mute.Moe.Discord.Services.Responses;

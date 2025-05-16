@@ -1,6 +1,4 @@
-﻿using JetBrains.Annotations;
-
-namespace Mute.Moe;
+﻿namespace Mute.Moe;
 
 public class Configuration
 {

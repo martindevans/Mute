@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Discord;
 using Microsoft.Extensions.DependencyInjection;
 using MoreLinq;
-using Mute.Moe.Extensions;
 using SixLabors.ImageSharp;
 using System.IO;
 using System.Net.Http;

@@ -1,5 +1,4 @@
 ﻿using Discord.Commands;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Randomness;
 using System.Threading.Tasks;

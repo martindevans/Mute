@@ -1,14 +1,12 @@
 ﻿using System.Net.Http;
 using System.Text;
 using Discord.Interactions;
-using JetBrains.Annotations;
 using Mute.Moe.Services.ImageGen;
 using System.Threading.Tasks;
 using Autofocus.Config;
 using Discord;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Services.ImageGeneration;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.ImageGen.Contexts;
 using SixLabors.ImageSharp;
 

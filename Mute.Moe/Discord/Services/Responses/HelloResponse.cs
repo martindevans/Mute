@@ -1,8 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord.WebSocket;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Context;
-using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Services.Responses;
 

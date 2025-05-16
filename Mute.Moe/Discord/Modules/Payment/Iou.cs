@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
-using JetBrains.Annotations;
 using MoreLinq;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Users;

@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using System.Web;
 using FluidCaching;
-using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.UrbanDictionary;

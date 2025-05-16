@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using System.Xml;
 using Discord;
 using Discord.WebSocket;
-
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Information.RSS;
 

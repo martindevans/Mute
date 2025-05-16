@@ -3,7 +3,6 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluidCaching;
-using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Cryptocurrency;

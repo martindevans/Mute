@@ -5,7 +5,6 @@ using Discord;
 using Discord.Commands;
 using Humanizer;
 using Humanizer.Localisation;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.Reminders;

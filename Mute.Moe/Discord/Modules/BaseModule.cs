@@ -7,7 +7,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Context;
-using Mute.Moe.Extensions;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules;

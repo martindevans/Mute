@@ -1,8 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
-using JetBrains.Annotations;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Notifications.RSS;
 
 namespace Mute.Moe.Discord.Modules;

@@ -5,8 +5,8 @@ namespace Mute.Moe.Extensions;
 
 public static class StringExtensions
 {
-    private static readonly IDictionary<string, string> CurrencyNameToSymbol;
-    private static readonly IDictionary<string, string> CurrencySymbolToName;
+    private static readonly Dictionary<string, string> CurrencyNameToSymbol;
+    private static readonly Dictionary<string, string> CurrencySymbolToName;
 
     static StringExtensions()
     {
@@ -37,16 +37,12 @@ public static class StringExtensions
 
     public static string TryGetCurrencySymbol(this string isoCurrencySymbol)
     {
-        if (CurrencyNameToSymbol.TryGetValue(isoCurrencySymbol.ToLowerInvariant(), out var symbol))
-            return symbol;
-        return isoCurrencySymbol;
+        return CurrencyNameToSymbol.GetValueOrDefault(isoCurrencySymbol.ToLowerInvariant(), defaultValue: isoCurrencySymbol);
     }
 
     public static string? TryGetCurrencyIsoName(this string symbol)
     {
-        if (CurrencySymbolToName.TryGetValue(symbol, out var result))
-            return result;
-        return null;
+        return CurrencySymbolToName.GetValueOrDefault(symbol);
     }
 
     public static uint Levenshtein(this string? a, string? b)

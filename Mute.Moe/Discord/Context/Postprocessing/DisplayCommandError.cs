@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord.Commands;
 using Mute.Moe.Discord.Modules.Introspection;
-using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Context.Postprocessing;
 

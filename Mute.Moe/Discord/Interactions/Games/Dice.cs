@@ -1,5 +1,4 @@
 ﻿using Discord.Interactions;
-using JetBrains.Annotations;
 using Mute.Moe.Services.DiceLang;
 using Mute.Moe.Services.DiceLang.AST;
 using Mute.Moe.Services.DiceLang.Macros;

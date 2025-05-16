@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Humanizer;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Services.Users;
 
 namespace Mute.Moe.Discord.Modules.Introspection;

@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Notifications.Cron;
 using System.IO;
 using System.Threading;

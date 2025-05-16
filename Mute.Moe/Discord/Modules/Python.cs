@@ -1,13 +1,11 @@
 ﻿using System.IO;
 using System.Text;
-using JetBrains.Annotations;
 using System.Threading.Tasks;
 using Serpent;
 using Wasmtime;
 using Wazzy.WasiSnapshotPreview1.FileSystem.Implementations.VirtualFileSystem.Files;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Modules;
 

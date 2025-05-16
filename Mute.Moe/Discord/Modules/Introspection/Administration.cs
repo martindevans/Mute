@@ -2,12 +2,10 @@
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.ComponentActions;
 using Mute.Moe.Discord.Services.Responses;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.Weather;
 
 namespace Mute.Moe.Discord.Modules.Introspection;

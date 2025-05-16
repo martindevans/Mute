@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Mute.Moe.Discord.Context;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
-using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Commands;
 

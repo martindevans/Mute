@@ -8,7 +8,6 @@ using SixLabors.ImageSharp.Processing;
 using Autofocus.ImageSharp.Extensions;
 using Autofocus.Outpaint;
 using Autofocus.Scripts.UltimateUpscaler;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.ImageGen.Outpaint;
 using SixLabors.ImageSharp;
 using Image = SixLabors.ImageSharp.Image;

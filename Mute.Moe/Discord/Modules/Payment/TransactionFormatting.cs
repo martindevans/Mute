@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Mute.Moe.Discord.Services.Users;
-using Mute.Moe.Extensions;
 
 namespace Mute.Moe.Discord.Modules.Payment;
 

@@ -1,9 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using JetBrains.Annotations;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Extensions;
 using Mute.Moe.Services.Information.Anime;
 
 namespace Mute.Moe.Discord.Modules.Search;
