@@ -6,6 +6,8 @@ public interface IRssNotifications
 {
     Task Subscribe(string feedUrl, ulong channel, ulong? mentionGroup);
 
+    Task Unsubscribe(string feedUrl, ulong channel);
+
     IAsyncEnumerable<IRssSubscription> GetSubscriptions();
 }
 

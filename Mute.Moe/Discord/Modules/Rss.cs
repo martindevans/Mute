@@ -17,6 +17,14 @@ public class Rss(IRssNotifications _rss, DiscordSocketClient _client)
         return _rss.Subscribe(url, Context.Channel.Id, null);
     }
 
+    [RequireOwner, Command("unsubscribe"), Summary("I will remove an RSS subscription in the current channel")]
+    [UsedImplicitly]
+    public async Task Unsubscribe(string url)
+    {
+        await _rss.Unsubscribe(url, Context.Channel.Id);
+        await TypingReplyAsync("Done");
+    }
+
     [RequireOwner, Command("list"), Summary("I will list all RSS subscriptions")]
     [UsedImplicitly]
     public async Task List()
