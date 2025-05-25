@@ -26,7 +26,7 @@ public class Uoi
         _users = users;
     }
 
-    [Command("uoi"), Summary("I will I will notify someone that they owe you something")]
+    [Command("uoi"), Summary("I will I will notify someone that they owe you something"), UsedImplicitly]
     public async Task CreatePendingUoi(IUser user, decimal amount, string unit, [Remainder] string? note = null)
     {
         if (amount < 0)
@@ -44,7 +44,7 @@ public class Uoi
         }
     }
 
-    [Command("pay"), Summary("I will record that you have paid someone something")]
+    [Command("pay"), Summary("I will record that you have paid someone something"), UsedImplicitly]
     public async Task CreatePendingPayment(IUser user, decimal amount, string unit, [Remainder] string? note = null)
     {
         if (amount < 0)
@@ -61,13 +61,13 @@ public class Uoi
         }
     }
 
-    [Command("confirm"), Summary("I will confirm a pending transaction")]
+    [Command("confirm"), Summary("I will confirm a pending transaction"), UsedImplicitly]
     public async Task Confirm(string input)
     {
         var fid = BalderHash32.Parse(input);
         if (!fid.HasValue)
         {
-            await TypingReplyAsync("Invalid ID `{id}`");
+            await TypingReplyAsync($"Invalid ID: `{input}`");
             return;
         }
 
@@ -110,7 +110,7 @@ public class Uoi
         }
     }
 
-    [Command("deny"), Summary("I will deny a pending transaction")]
+    [Command("deny"), Summary("I will deny a pending transaction"), UsedImplicitly]
     public async Task Deny(string input)
     {
         var fid = BalderHash32.Parse(input);
@@ -159,7 +159,7 @@ public class Uoi
         }
     }
 
-    [Command("pending"), Summary("I will list pending transactions you have yet to confirm")]
+    [Command("pending"), Summary("I will list pending transactions you have yet to confirm"), UsedImplicitly]
     public Task Pending()
     {
         return PaginatedPending(
@@ -170,7 +170,7 @@ public class Uoi
         );
     }
 
-    [Command("pending-in"), Summary("I will list pending transactions involving you which the other person has no yet confirmed")]
+    [Command("pending-in"), Summary("I will list pending transactions involving you which the other person has no yet confirmed"), UsedImplicitly]
     public Task ReversePending()
     {
         return PaginatedPending(
