@@ -9,13 +9,14 @@ public class HttpRss
 {
     public Task<IEnumerable<SyndicationItem>> Fetch(string url)
     {
-        return Task.Run(() => {
+        return Task.Run(() =>
+        {
+            using var reader = XmlReader.Create(url, new()
+            {
+                DtdProcessing = DtdProcessing.Ignore,
+            });
 
-            var reader = XmlReader.Create(url);
-            var feed = SyndicationFeed.Load(reader);
-            reader.Close();
-
-            return feed.Items;
+            return SyndicationFeed.Load(reader).Items;
         });
     }
 }
