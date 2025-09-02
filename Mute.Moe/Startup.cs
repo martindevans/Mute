@@ -40,6 +40,7 @@ using Mute.Moe.Services.DiceLang.Macros;
 using Mute.Moe.Services.Information.Weather;
 using Wasmtime;
 using Serpent;
+using Serpent.Loading;
 
 namespace Mute.Moe;
 
@@ -97,7 +98,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IWeather, OpenWeatherMapService>();
 
         services.AddSingleton(new Engine(new Config().WithFuelConsumption(true)));
-        services.AddSingleton(services => PythonBuilder.Load(services.GetRequiredService<Engine>()));
+        services.AddSingleton(services => PythonBuilder.Load(services.GetRequiredService<Engine>(), new DefaultPythonModuleLoader()));
 
         services.AddSingleton<IMessagePreprocessor, MobileAudioMessageTranscriptionPreprocessor>();
 

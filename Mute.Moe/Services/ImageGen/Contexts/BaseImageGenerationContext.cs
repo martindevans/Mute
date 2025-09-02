@@ -179,12 +179,12 @@ public abstract class BaseImageGenerationContext
         var outpaintRow = new ActionRowBuilder();
         for (var i = 0; i < count; i++)
         {
-            upscaleRow.AddComponent(ButtonBuilder.CreatePrimaryButton($"U{i + 1}", MidjourneyStyleImageGenerationButtons.GetUpscaleButtonId(i)).Build());
-            variantRow.AddComponent(ButtonBuilder.CreateSuccessButton($"V{i + 1}", MidjourneyStyleImageGenerationButtons.GetVariantButtonId(i)).Build());
-            outpaintRow.AddComponent(ButtonBuilder.CreateDangerButton($"O{i + 1}", MidjourneyStyleImageGenerationButtons.GetOutpaintButtonId(i)).Build());
+            upscaleRow.AddComponent(ButtonBuilder.CreatePrimaryButton($"U{i + 1}", MidjourneyStyleImageGenerationButtons.GetUpscaleButtonId(i)));
+            variantRow.AddComponent(ButtonBuilder.CreateSuccessButton($"V{i + 1}", MidjourneyStyleImageGenerationButtons.GetVariantButtonId(i)));
+            outpaintRow.AddComponent(ButtonBuilder.CreateDangerButton($"O{i + 1}", MidjourneyStyleImageGenerationButtons.GetOutpaintButtonId(i)));
         }
 
-        upscaleRow.AddComponent(ButtonBuilder.CreateSecondaryButton("♻️", MidjourneyStyleImageGenerationButtons.GetRedoButtonId()).Build());
+        upscaleRow.AddComponent(ButtonBuilder.CreateSecondaryButton("♻️", MidjourneyStyleImageGenerationButtons.GetRedoButtonId()));
 
         var components = new ComponentBuilder();
         components.AddRow(upscaleRow);
