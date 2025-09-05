@@ -24,7 +24,7 @@ public class Dice
         _macros = macros;
     }
 
-    [WarnSlashComandMigration("dice roll")]
+    [WarnSlashComandMigration("dice roll", 90)]
     [Command("roll"), Summary("I will roll a dice, allowing use of complex mathematical expressions")]
     [UsedImplicitly]
     public async Task Roll([Remainder] string command)
