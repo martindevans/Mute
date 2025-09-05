@@ -32,11 +32,16 @@ public class Dice
         try
         {
             var parser = new DiceLangParser();
-            var result = parser.Parse(command);
-            var value = await result.Evaluate(_dice, _macros);
-            var description = result.ToString();
+            var ast = parser.Parse(command);
+            var value = await ast.Evaluate(_dice, _macros);
+            var description = ast.ToString();
 
-            await TypingReplyAsync($"{value.ToString(CultureInfo.InvariantCulture)} = {description}");
+            // If it's a simple roll (1 dice, no explode) just display the value
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (ast is DiceRollValue { ExplodeThreshold: null, Count: ConstantValue { Value: 1 } })
+                await TypingReplyAsync($"{value}");
+            else
+                await TypingReplyAsync($"{value.ToString(CultureInfo.InvariantCulture)} = {description}");
         }
         catch (FormatException e)
         {

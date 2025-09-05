@@ -36,10 +36,12 @@ number <IAstNode>
     / i:identifier { new Parameter(i) }
 
 dice_explode <DiceRollValue>
-    = a:integer "d" b:integer "E" c:integer { new DiceRollValue(a, b, c) }
+    = a:integer "d" b:integer "e" c:integer { new DiceRollValue(a, b, c) }
+    / "d" b:integer "e" c:integer { new DiceRollValue(new ConstantValue(1), b, c) }
 
 dice <DiceRollValue>
     = a:integer "d" b:integer { new DiceRollValue(a, b, null) }
+    / "d" b:integer { new DiceRollValue(new ConstantValue(1), b, null) }
 
 decimal <ConstantValue> -memoize
     = value:([0-9]+ ("." [0-9]+)?) { new ConstantValue(double.Parse(string.Join("", value), CultureInfo.InvariantCulture)) }
