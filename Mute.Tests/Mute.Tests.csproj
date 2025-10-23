@@ -12,18 +12,18 @@
     <PackageReference Include="Discord.Net" Version="3.18.0" />
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
     <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
     <PackageReference Include="Microsoft.Recognizers.Text" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.Choice" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.DataTypes.TimexExpression" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.NumberWithUnit" Version="1.8.13" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.10.4" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.10.4" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.0.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.0.1" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
-    <PackageReference Include="System.IO.Abstractions" Version="22.0.15" />
-    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="22.0.15" />
-    <PackageReference Include="System.ServiceModel.Syndication" Version="9.0.8" />
+    <PackageReference Include="System.IO.Abstractions" Version="22.0.16" />
+    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="22.0.16" />
+    <PackageReference Include="System.ServiceModel.Syndication" Version="9.0.10" />
   </ItemGroup>
 
   <ItemGroup>
