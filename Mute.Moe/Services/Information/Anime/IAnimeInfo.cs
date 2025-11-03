@@ -10,14 +10,14 @@ namespace Mute.Moe.Services.Information.Anime;
 public interface IAnimeInfo
 {
     /// <summary>
-    /// Get information about a single anime
+    /// Get information about a single anime, anime movie, ONA, OVA etc.
     /// </summary>
     /// <param name="title">The title of the anime</param>
     /// <returns></returns>
     Task<IAnime?> GetAnimeInfoAsync(string title);
 
     /// <summary>
-    /// Search for anime
+    /// Fuzzy search for anime, anime movies, ONA, OVA etc
     /// </summary>
     /// <param name="search">The term to search for</param>
     /// <param name="limit">Maximum number of results to return</param>
@@ -63,7 +63,7 @@ public class AnimeToolProvider
         Tools =
         [
             new AutoTool("anime_info", false, info.GetAnimeInfoAsync),
-            new AutoTool("anime_search", false, info.GetAnimesInfoAsync, postprocessAsync: async x => await ((IAsyncEnumerable<IAnime>)x!).Take(1024).ToArrayAsync()),
+            new AutoTool("anime_search", false, info.GetAnimesInfoAsync, postprocess: AutoTool.AsyncEnumerableToEnumerable<IAnime>),
         ];
     }
 }

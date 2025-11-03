@@ -162,4 +162,16 @@ public class AutoTool
         // Success!
         return (true, result);
     }
+
+    /// <summary>
+    /// Convert an object which is an <see cref="IAsyncEnumerable{T}"/> to an <see cref="IEnumerable{T}"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="obj"></param>
+    /// <returns></returns>
+    public static IEnumerable<T> AsyncEnumerableToEnumerable<T>(object? obj)
+    {
+        var en = (IAsyncEnumerable<T>)obj!;
+        return en.ToBlockingEnumerable();
+    }
 }

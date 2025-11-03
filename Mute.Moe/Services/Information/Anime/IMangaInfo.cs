@@ -9,14 +9,14 @@ namespace Mute.Moe.Services.Information.Anime;
 public interface IMangaInfo
 {
     /// <summary>
-    /// Get information about a single manga
+    /// Get information about a single manga, graphic novel or light novel.
     /// </summary>
     /// <param name="title">The title of the manga</param>
     /// <returns></returns>
     Task<IManga?> GetMangaInfoAsync(string title);
 
     /// <summary>
-    /// Search for manga
+    ///Fuzzy search for anime, graphic novel or light novel.
     /// </summary>
     /// <param name="search">The term to search for</param>
     /// <param name="limit">Maximum number of results to return</param>
@@ -59,6 +59,7 @@ public class MangaToolProvider
         Tools =
         [
             new AutoTool("manga_info", false, info.GetMangaInfoAsync),
+            new AutoTool("manga_search", false, info.GetMangasInfoAsync, postprocess: AutoTool.AsyncEnumerableToEnumerable<IAnime>),
         ];
     }
 }
