@@ -152,16 +152,15 @@ public class ToolExecutionEngine
             return (false, error);
 
         // Find all tools, ordered by similarity to query embedding
-        var results = (await _allTools.Find(query)).ToList();
+        var results = (await _allTools.Find(query, limit: 5)).ToList();
 
         // Add tools
         var matches = new List<string>();
         if (results.Count > 0)
         {
             var top = results[0].Similarity;
-            var threshold1 = top * 0.8;
-            var threshold2 = 0.5;
-            var maxMatches = 5;
+            var threshold1 = top * 0.95;
+            var threshold2 = 0.8;
 
             // Add tools which are within the thresholds
             foreach (var (similarity, tool) in results)
@@ -181,9 +180,6 @@ public class ToolExecutionEngine
                         });
                     }
                 }
-
-                if (matches.Count > maxMatches)
-                    break;
             }
         }
 

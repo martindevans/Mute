@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Mute.Moe.Tools;
 
 
 namespace Mute.Moe.Services.Information.Cryptocurrency;
@@ -13,7 +14,7 @@ public interface ICryptocurrencyInfo
 
     Task<ICurrency?> FindById(uint id);
 
-    Task<ITicker?> GetTicker(ICurrency currency, string? quote = null);
+    Task<ITicker?> GetTicker(ICurrency currency);
 }
 
 public interface IQuote
@@ -58,4 +59,48 @@ public interface ICurrency
     /// Short symbol of this currency
     /// </summary>
     string Symbol { get; }
+}
+
+/// <summary>
+/// Provides cryptocurrency related tools
+/// </summary>
+public class CryptocurrencyInfoToolProvider
+    : IToolProvider
+{
+    private readonly ICryptocurrencyInfo _info;
+
+    /// <inheritdoc />
+    public IReadOnlyList<ITool> Tools { get; }
+
+    /// <summary>
+    /// Create a new <see cref="CryptocurrencyInfoToolProvider"/>
+    /// </summary>
+    /// <param name="info"></param>
+    public CryptocurrencyInfoToolProvider(ICryptocurrencyInfo info)
+    {
+        _info = info;
+
+        Tools =
+        [
+            new AutoTool("get_cryptocurrency_info", false, GetInfo)
+        ];
+    }
+
+    /// <summary>
+    /// Given a cryptocurrency name (e.g. Bitcoin) or a ticker symbol (e.g. BTC) retrieve price information about the currency, including ticker in various other currencies.
+    /// </summary>
+    /// <param name="query">The name or symbol to query</param>
+    /// <returns></returns>
+    private async Task<object> GetInfo(string query)
+    {
+        var currency = await _info.FindBySymbolOrName(query);
+        if (currency == null)
+            return new { error = "Cannot find cryptocurrency with that name or symbol" };
+
+        var ticker = await _info.GetTicker(currency);
+
+        return new CryptoInfo(currency, ticker);
+    }
+
+    private record CryptoInfo(ICurrency Currency, ITicker? Ticker);
 }

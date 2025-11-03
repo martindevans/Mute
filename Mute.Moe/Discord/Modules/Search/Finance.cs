@@ -158,7 +158,7 @@ public class Finance
         if (currency == null)
             return false;
 
-        var ticker = await _crypto.GetTicker(currency, quote);
+        var ticker = await _crypto.GetTicker(currency);
 
         string reply;
         if (ticker == null)

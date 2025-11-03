@@ -33,8 +33,9 @@ public interface IToolIndex
     /// Fuzzy find tools for the given natural language query
     /// </summary>
     /// <param name="query"></param>
+    /// <param name="limit"></param>
     /// <returns></returns>
-    Task<IEnumerable<(float Similarity, ITool Tool)>> Find(string query);
+    Task<IEnumerable<(float Similarity, ITool Tool)>> Find(string query, int limit);
 }
 
 /// <inheritdoc />
@@ -82,25 +83,38 @@ public class DatabaseToolIndex
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<(float, ITool)>> Find(string query)
+    public async Task<IEnumerable<(float Similarity, ITool Tool)>> Find(string query, int limit)
     {
         await Update();
 
-        var result = await _embeddings.Embed(query);
-        if (result == null)
+        var embedding = await _embeddings.Embed(query);
+        if (embedding == null)
             return [ ];
 
-        var tools = await _database.Connection.QueryAsync<ToolDescriptionEmbedding>("SELECT * FROM ToolDescriptionEmbeddings WHERE (Model = @Model)", new
+        const string SQL = """
+            SELECT t.Name, v.distance
+            FROM ToolDescriptionEmbeddings AS t
+            JOIN vector_quantize_scan(
+                'ToolDescriptionEmbeddings',
+                'Embedding',
+                @QueryEmbedding,
+                @TopK
+            ) AS v
+            ON t.rowid = v.rowid
+            ORDER BY v.distance ASC;
+        """;
+
+        var result = _database.Connection.Query<(string Name, float distance)>(SQL, new
         {
-            Model = _embeddings.Model
+            QueryEmbedding = MemoryMarshal.Cast<float, byte>(embedding.Result.Span).ToArray(),
+            TopK = limit
         });
 
-        return from toolEmb in tools
-               let similarity = TensorPrimitives.CosineSimilarity(MemoryMarshal.Cast<byte, float>(toolEmb.Embedding.AsSpan()), result.Result.Span)
+        return from r in result
+               let similarity = (2 - r.distance) / 2
                where !float.IsNaN(similarity)
                where !float.IsInfinity(similarity)
-               orderby similarity descending 
-               let tool = Tools.GetValueOrDefault(toolEmb.Name)
+               let tool = Tools.GetValueOrDefault(r.Name)
                where tool != null
                select (similarity, tool);
     }
@@ -126,13 +140,20 @@ public class DatabaseToolIndex
             tsx.Commit();
         }
 
+        // Delete all tools from the DB which have a different embedding model
+        using (var tsx = db.BeginTransaction())
+        {
+            await db.ExecuteAsync("DELETE FROM `ToolDescriptionEmbeddings` WHERE (Model != @Model)", new { Model = _embeddings.Model }, tsx);
+            tsx.Commit();
+        }
+
         // Insert all tools into DB which aren't already there
         using (var tsx = db.BeginTransaction())
         {
             foreach (var (name, tool) in Tools)
             {
                 var count = await db.ExecuteScalarAsync<int>(
-                    "SELECT Count(*) FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name) AND (Model = @Model)",
+                    "SELECT Count(*) FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name)",
                     new
                     {
                         Name = name,
@@ -161,6 +182,10 @@ public class DatabaseToolIndex
 
             tsx.Commit();
         }
+
+        // Initialise the column as a vector store
+        await db.ExecuteAsync($"SELECT vector_init('ToolDescriptionEmbeddings', 'Embedding', 'type=FLOAT32,dimension={_embeddings.Dimensions},distance=cosine');");
+        await db.ExecuteAsync( "SELECT vector_quantize('ToolDescriptionEmbeddings', 'Embedding')");
     }
 
     private class ToolDescriptionEmbedding

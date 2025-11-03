@@ -27,6 +27,11 @@ public interface IEmbeddings
     /// The name of model used for embeddings generation
     /// </summary>
     string Model { get; }
+
+    /// <summary>
+    /// The dimensionality of embeddings
+    /// </summary>
+    int Dimensions { get; }
 }
 
 /// <summary>
@@ -48,6 +53,9 @@ public class TornadoEmbeddings
 
     /// <inheritdoc />
     public string Model => _model.Name;
+
+    /// <inheritdoc />
+    public int Dimensions => _model.OutputDimensions ?? 0;
 
     /// <summary>
     /// 

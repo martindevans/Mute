@@ -7,18 +7,22 @@ namespace Mute.Moe.Services.Database;
 public class SqliteInMemoryDatabase
     : IDatabaseService
 {
-    private readonly SQLiteConnection _connection;
+    private readonly SQLiteConnection _dbConnection;
 
-    public IDbConnection Connection => _connection;
+    public IDbConnection Connection => _dbConnection;
 
     public SqliteInMemoryDatabase()
     {
-        _connection = new SQLiteConnection("Data Source=:memory:");
-        _connection.Open();
+        _dbConnection = new SQLiteConnection("Data Source=:memory:");
+        _dbConnection.Open();
+
+        _dbConnection.EnableExtensions(true);
+        _dbConnection.LoadExtension("vector");
+        _dbConnection.EnableExtensions(false);
     }
 
     public DbCommand CreateCommand()
     {
-        return _connection.CreateCommand();
+        return _dbConnection.CreateCommand();
     }
 }

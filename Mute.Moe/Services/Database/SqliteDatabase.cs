@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
+using Dapper;
 
 
 namespace Mute.Moe.Services.Database;
@@ -17,6 +18,10 @@ public class SqliteDatabase
         Console.WriteLine($"Connection String: `{config.Database?.ConnectionString}`");
         _dbConnection = new SQLiteConnection(config.Database?.ConnectionString ?? throw new ArgumentNullException(nameof(config.Database.ConnectionString)));
         _dbConnection.Open();
+
+        _dbConnection.EnableExtensions(true);
+        _dbConnection.LoadExtension("vector");
+        _dbConnection.EnableExtensions(false);
     }
 
     public DbCommand CreateCommand()

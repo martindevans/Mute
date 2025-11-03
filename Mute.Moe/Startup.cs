@@ -143,8 +143,6 @@ public record Startup(Configuration Configuration)
         if (Configuration.Auth == null)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
-        services.AddSingleton<ILlmPermission, DatabaseLlmPermissionStorage>();
-
         var providers = new List<ProviderAuthentication>();
         if (Configuration.RemoteLLM?.Google?.Key != null)
             providers.Add(new ProviderAuthentication(LLmProviders.Google, Configuration.RemoteLLM.Google.Key));
@@ -162,5 +160,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, WeatherToolProvider>();
         services.AddSingleton<IToolProvider, MangaToolProvider>();
         services.AddSingleton<IToolProvider, AnimeToolProvider>();
+        services.AddSingleton<IToolProvider, CryptocurrencyInfoToolProvider>();
+        services.AddSingleton<IToolProvider, ForexToolProvider>();
     }
 }

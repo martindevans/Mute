@@ -2,12 +2,9 @@
 using LlmTornado;
 using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
-using LlmTornado.Code;
-using LlmTornado.Common;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Modules;
 using Mute.Moe.Services.Information.Weather;
-using Mute.Moe.Services.LLM;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
@@ -26,42 +23,29 @@ public class LlmDev
 {
     private readonly TornadoApi _api;
     private readonly ChatModel _model;
-    private readonly ILlmPermission _permission;
-    private readonly IWeather _weather;
-    private readonly IGeocoding _geocoding;
     private readonly ToolExecutionEngineFactory _toolFactory;
     private readonly IToolIndex _tools;
 
-    public LlmDev(TornadoApi api, ChatModel model, ILlmPermission permission, IWeather weather, IGeocoding geocoding, ToolExecutionEngineFactory toolFactory, IToolIndex tools)
+    public LlmDev(TornadoApi api, ChatModel model, ToolExecutionEngineFactory toolFactory, IToolIndex tools)
     {
         _api = api;
         _model = model;
-        _permission = permission;
-        _weather = weather;
-        _geocoding = geocoding;
         _toolFactory = toolFactory;
         _tools = tools;
-    }
-
-    [Command("llm-perm"), RequireOwner, Summary("I will remember that you have given permission for remote LLM usage")]
-    [UsedImplicitly]
-    public async Task LlmPerm(bool value = true)
-    {
-        await _permission.SetPermission(Context.User.Id, value);
-
-        if (value)
-            await ReplyAsync("Ok, I'll remember that you've allowed use of remotely hosted LLMs. You can use this command again with a 'false' parameter to withdraw permission");
-        else
-            await ReplyAsync("Ok, I won't use remote LLMs to process any of your message content");
     }
 
     [Command("llm-tool-search"), RequireOwner, Summary("Fuzzy search for tools")]
     [UsedImplicitly]
     public async Task LlmToolSearch(string query, int n = 5)
     {
-        var results = (await _tools.Find(query)).Take(n).ToArray();
+        var results = (await _tools.Find(query, 5)).ToArray();
 
-        await DisplayItemList(results, () => ReplyAsync("No results"), rs => ReplyAsync($"{rs.Count} results"), (item, idx) => ReplyAsync($"{idx + 1}. {item.Tool.Name}: {item.Tool.Description} ({item.Similarity})"));
+        await DisplayItemList(
+            results,
+            () => "No results",
+            rs => $"{rs.Count} results",
+            (item, idx) => $"{idx + 1}. {item.Tool.Name}: {item.Tool.Description} ({item.Similarity})"
+        );
     }
 
     [Command("llm-test"), RequireOwner, Summary("I will respond with an LLM")]

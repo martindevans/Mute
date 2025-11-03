@@ -145,7 +145,7 @@ public class ProCoinMarketCapCrypto
         return await FindByName(symbolOrName);
     }
 
-    public Task<ITicker?> GetTicker(ICurrency currency, string? quote = null)
+    public Task<ITicker?> GetTicker(ICurrency currency)
     {
         return GetOrDownload<string, ITicker, CmcTickerResponse>(currency.Symbol, _tickerCache, _tickerBySymbol, Download, r => r.Data.Values);
 
