@@ -127,11 +127,6 @@ public abstract class BaseMikibotSearchService<TSearchItem, TItem>
         return await GetItemAsyncCached(client, result);
     }
 
-    protected IAsyncEnumerable<TItem> GetItemsInfoAsync(ICharacter character)
-    {
-        throw new NotImplementedException();
-    }
-
     protected IAsyncEnumerable<TItem> GetItemsInfoAsync(string search)
     {
         var client = new AnilistClient();

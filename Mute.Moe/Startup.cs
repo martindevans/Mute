@@ -1,49 +1,60 @@
-﻿using System.IO.Abstractions;
-using Discord.Addons.Interactive;
+﻿using Discord.Addons.Interactive;
+using Discord.WebSocket;
+using LlmTornado;
+using LlmTornado.Chat.Models;
+using LlmTornado.Code;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
+using Mute.Moe.Discord.Commands;
+using Mute.Moe.Discord.Context.Preprocessing;
+using Mute.Moe.Discord.Modules;
+using Mute.Moe.Discord.Services.Avatar;
+using Mute.Moe.Discord.Services.ComponentActions;
 using Mute.Moe.Discord.Services.Games;
 using Mute.Moe.Discord.Services.Responses;
+using Mute.Moe.Discord.Services.Users;
+using Mute.Moe.Services.Audio;
 using Mute.Moe.Services.Database;
+using Mute.Moe.Services.DiceLang.AST;
+using Mute.Moe.Services.DiceLang.Macros;
 using Mute.Moe.Services.Groups;
+using Mute.Moe.Services.Host;
+using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.Information.Anime;
 using Mute.Moe.Services.Information.Cryptocurrency;
 using Mute.Moe.Services.Information.Forex;
+using Mute.Moe.Services.Information.Geocoding;
+using Mute.Moe.Services.Information.RSS;
 using Mute.Moe.Services.Information.Stocks;
+using Mute.Moe.Services.Information.UrbanDictionary;
+using Mute.Moe.Services.Information.Weather;
+using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.Introspection.Uptime;
+using Mute.Moe.Services.LLM;
+using Mute.Moe.Services.Notifications.Cron;
+using Mute.Moe.Services.Notifications.RSS;
 using Mute.Moe.Services.Payment;
 using Mute.Moe.Services.Randomness;
-using Mute.Moe.Services.Audio;
-using Mute.Moe.Services.Information.RSS;
-using Mute.Moe.Services.Information.UrbanDictionary;
-using Mute.Moe.Services.Information.Wikipedia;
-using Mute.Moe.Services.Notifications.RSS;
+using Mute.Moe.Services.RateLimit;
 using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Speech;
-using System.Net.Http;
-using Discord.WebSocket;
-using Mute.Moe.Discord.Context.Preprocessing;
-using Mute.Moe.Services.Notifications.Cron;
-using Mute.Moe.Discord.Services.Avatar;
-using Mute.Moe.Discord.Services.Users;
-using Mute.Moe.Services.Host;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
-using Mute.Moe.Discord.Services.ComponentActions;
-using Mute.Moe.Services.ImageGen;
-using Mute.Moe.Services.RateLimit;
-using Mute.Moe.Discord.Commands;
-using Mute.Moe.Discord.Modules;
-using Mute.Moe.Services.DiceLang.AST;
-using Mute.Moe.Services.DiceLang.Macros;
-using Mute.Moe.Services.Information.Weather;
-using Wasmtime;
+using Mute.Moe.Tools;
 using Serpent;
 using Serpent.Loading;
+using System.IO.Abstractions;
+using System.Net.Http;
+using LlmTornado.Embedding.Models;
+using Wasmtime;
 
 namespace Mute.Moe;
 
+/// <summary>
+/// Configures DI container
+/// </summary>
+/// <param name="Configuration"></param>
 public record Startup(Configuration Configuration)
 {
     private static void ConfigureBaseServices(IServiceCollection services)
@@ -96,6 +107,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IMacroResolver>(x => x.GetRequiredService<IMacroStorage>());
         services.AddSingleton<IMacroStorage, DatabaseMacroStorage>();
         services.AddSingleton<IWeather, OpenWeatherMapService>();
+        services.AddSingleton<IGeocoding, OpenWeatherMapGeocoding>();
 
         services.AddSingleton(new Engine(new Config().WithFuelConsumption(true)));
         services.AddSingleton(services => PythonBuilder.Load(services.GetRequiredService<Engine>(), new DefaultPythonModuleLoader()));
@@ -109,6 +121,14 @@ public record Startup(Configuration Configuration)
 
         services.AddTransient<IConversationPreprocessor, CommandWordService>();
         services.AddTransient<ICommandWordHandler, RemindersCommandWord>();
+
+        services.AddSingleton<ToolExecutionEngineFactory>();
+        AddToolProviders(services);
+
+        services.AddSingleton<IEmbeddings, TornadoEmbeddings>();
+        services.AddSingleton<IToolIndex, DatabaseToolIndex>(svc =>
+            new DatabaseToolIndex(svc.GetServices<IToolProvider>(), svc.GetRequiredService<IDatabaseService>(), svc.GetRequiredService<IEmbeddings>())
+        );
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -122,5 +142,25 @@ public record Startup(Configuration Configuration)
 
         if (Configuration.Auth == null)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
+
+        services.AddSingleton<ILlmPermission, DatabaseLlmPermissionStorage>();
+
+        var providers = new List<ProviderAuthentication>();
+        if (Configuration.RemoteLLM?.Google?.Key != null)
+            providers.Add(new ProviderAuthentication(LLmProviders.Google, Configuration.RemoteLLM.Google.Key));
+        if (Configuration.RemoteLLM?.OpenAI?.Key != null)
+            providers.Add(new ProviderAuthentication(LLmProviders.OpenAi, Configuration.RemoteLLM.OpenAI.Key));
+        var api = new TornadoApi(providers);
+        services.AddSingleton(api);
+        services.AddSingleton(ChatModel.Google.Gemini.Gemini25Flash);
+        services.AddSingleton(EmbeddingModel.Google.Gemini.GeminiEmbedding001);
+    }
+
+    private static void AddToolProviders(IServiceCollection services)
+    {
+        services.AddSingleton<IToolProvider, GeocodingToolProvider>();
+        services.AddSingleton<IToolProvider, WeatherToolProvider>();
+        services.AddSingleton<IToolProvider, MangaToolProvider>();
+        services.AddSingleton<IToolProvider, AnimeToolProvider>();
     }
 }

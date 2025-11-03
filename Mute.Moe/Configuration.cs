@@ -17,6 +17,7 @@ public class Configuration
     [UsedImplicitly] public GlobalImageGenerationConfig? ImageGeneration;
     [UsedImplicitly] public LocationConfig? Location;
     [UsedImplicitly] public OpenWeatherMapConfig? OpenWeatherMap;
+    [UsedImplicitly] public RemoteLLMConfig? RemoteLLM;
 
     [UsedImplicitly] public bool ProcessMessagesFromSelf;
     [UsedImplicitly] public char PrefixCharacter = '!';
@@ -102,6 +103,22 @@ public class STTConfig
 public class LLMConfig
 {
     [UsedImplicitly] public string? ModelPath;
+}
+
+public class RemoteLLMConfig
+{
+    [UsedImplicitly] public GoogleConfig? Google;
+    [UsedImplicitly] public OpenAIConfig? OpenAI;
+
+    public class GoogleConfig
+    {
+        public string? Key;
+    }
+
+    public class OpenAIConfig
+    {
+        public string? Key;
+    }
 }
 
 public class Automatic1111Config

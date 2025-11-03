@@ -5,6 +5,7 @@ using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
+using Mute.Moe.Tools;
 using Newtonsoft.Json;
 
 namespace Mute.Moe;
@@ -18,11 +19,15 @@ public static class Program
         var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)))
                   ?? throw new InvalidOperationException("Config was null");
 
+        // Build DI container
         var collection = new ServiceCollection();
         collection.AddSingleton<ServiceHost>();
         var startup = new Startup(config);
         startup.ConfigureServices(collection);
         var provider = collection.BuildServiceProvider();
+
+        // Run some service setup stuff
+        await provider.GetRequiredService<IToolIndex>().Update();
 
         // Connect to Discord
         var bot = provider.GetRequiredService<HostedDiscordBot>();

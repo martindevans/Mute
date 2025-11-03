@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System.Data;
+using System.Data.Common;
 using System.Data.SQLite;
 
 
@@ -8,6 +9,8 @@ public class SqliteDatabase
     : IDatabaseService
 {
     private readonly SQLiteConnection _dbConnection;
+
+    public IDbConnection Connection => _dbConnection;
 
     public SqliteDatabase(Configuration config)
     {

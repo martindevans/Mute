@@ -26,7 +26,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
         _database = database;
         _putSql = $"INSERT OR REPLACE into {tableName} (ID, Json) values(@ID, @Json)";
         _getSql = $"SELECT Json FROM {tableName} WHERE ID = @ID";
-        _deleteSql = $"DELETE Json FROM {tableName} WHERE ID = @ID";
+        _deleteSql = $"DELETE FROM {tableName} WHERE ID = @ID";
         _countSql = $"SELECT COUNT(*) FROM {tableName}";
         _randomSql = $"SELECT * FROM {tableName} ORDER BY RANDOM() LIMIT 1;";
 
@@ -43,8 +43,9 @@ public abstract class SimpleJsonBlobTable<TBlob>
 
     public async Task Put(ulong id, TBlob data)
     {
-        var json = JsonSerializer.Serialize(data);
+        await Delete(id);
 
+        var json = JsonSerializer.Serialize(data);
         try
         {
             await using (var cmd = _database.CreateCommand())

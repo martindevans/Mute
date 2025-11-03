@@ -2,6 +2,9 @@
 
 namespace Mute.Moe.Services.Information.Anime;
 
+/// <summary>
+/// Rtrieve information about anime characters
+/// </summary>
 public interface ICharacterInfo
 {
     Task<ICharacter?> GetCharacterInfoAsync(string search);

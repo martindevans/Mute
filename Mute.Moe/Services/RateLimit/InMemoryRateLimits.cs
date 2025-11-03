@@ -3,11 +3,13 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.RateLimit;
 
+/// <inheritdoc />
 public class InMemoryRateLimits
     : IRateLimit
 {
     private readonly ConcurrentDictionary<(Guid, ulong), RateLimitState> _used = new();
 
+    /// <inheritdoc />
     public async Task<RateLimitState?> TryGetLastUsed(Guid rateId, ulong userId)
     {
         await Task.CompletedTask;
@@ -17,6 +19,7 @@ public class InMemoryRateLimits
         return null;
     }
 
+    /// <inheritdoc />
     public Task Use(Guid rateId, ulong userId)
     {
         if (!_used.TryGetValue((rateId, userId), out var value))
@@ -26,6 +29,7 @@ public class InMemoryRateLimits
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task Reset(Guid rateId, ulong userId)
     {
         _used.TryRemove((rateId, userId), out _);

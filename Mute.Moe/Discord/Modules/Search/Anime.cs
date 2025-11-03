@@ -49,7 +49,7 @@ public class Anime
         var nsfwOk = Context.Channel is not ITextChannel tc || tc.IsNsfw;
 
         var animes = _animeSearch
-            .GetAnimesInfoAsync(term)
+            .GetAnimesInfoAsync(term, int.MaxValue)
             .Where(a => !a.Adult || nsfwOk)
             .Select(a => {
                 var title = $"{(a.Adult ? "⚠" : "")} {a.TitleEnglish ?? a.TitleJapanese ?? a.Id}".LimitLength(60);

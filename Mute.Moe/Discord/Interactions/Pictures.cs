@@ -12,6 +12,9 @@ using SixLabors.ImageSharp;
 
 namespace Mute.Moe.Discord.Interactions;
 
+/// <summary>
+/// Generate images with AI
+/// </summary>
 [Group("image", "Image generation")]
 [UsedImplicitly]
 public class Pictures
@@ -25,6 +28,16 @@ public class Pictures
     private readonly IImageUpscaler _upscaler;
     private readonly IImageOutpainter _outpainter;
 
+    /// <summary>
+    /// Construct a new <see cref="Pictures"/> module
+    /// </summary>
+    /// <param name="analyser"></param>
+    /// <param name="http"></param>
+    /// <param name="backends"></param>
+    /// <param name="storage"></param>
+    /// <param name="generator"></param>
+    /// <param name="upscaler"></param>
+    /// <param name="outpainter"></param>
     public Pictures(IImageAnalyser analyser, HttpClient http, StableDiffusionBackendCache backends, IImageGenerationConfigStorage storage, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter)
     {
         _analyser = analyser;
@@ -36,6 +49,10 @@ public class Pictures
         _outpainter = outpainter;
     }
 
+    /// <summary>
+    /// Check if image generation backends are available
+    /// </summary>
+    /// <returns></returns>
     [SlashCommand("status", "I will check the status of the image generation backends")]
     [UsedImplicitly]
     public async Task Status()

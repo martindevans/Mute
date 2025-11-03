@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Information.Weather;
 
+/// <inheritdoc />
 public class OpenWeatherMapService
     : IWeather
 {
@@ -13,6 +14,12 @@ public class OpenWeatherMapService
 
     private readonly JsonSerializerOptions _serializer;
 
+    /// <summary>
+    /// Construct a new <see cref="OpenWeatherMapService"/>
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="http"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public OpenWeatherMapService(Configuration config, IHttpClientFactory http)
     {
         _apiKey = config.OpenWeatherMap?.ApiKey
@@ -27,6 +34,7 @@ public class OpenWeatherMapService
         };
     }
 
+    /// <inheritdoc />
     public async Task<IWeatherReport?> GetCurrentWeather(float latitude, float longitude)
     {
         var result = await _http.GetAsync($"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&units=metric&appid={_apiKey}");
@@ -75,9 +83,9 @@ public class OpenWeatherMapService
         }
 
         public string Description { get; }
-        public float Temperature => _weather.Main.Temp;
-        public float? TemperatureFeelsLike => _weather.Main.FeelsLike;
-        public float? WindSpeed => _weather.Wind.Speed;
+        public float TemperatureCelsius => _weather.Main.Temp;
+        public float? TemperatureCelsiusFeelsLike => _weather.Main.FeelsLike;
+        public float? WindSpeedMetersPerSecond => _weather.Wind.Speed;
         public float? WindBearing => _weather.Wind.Deg;
         public float? RainMM => _weather.Rain?.oneHour ?? 0;
     }

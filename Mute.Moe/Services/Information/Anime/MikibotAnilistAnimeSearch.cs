@@ -1,37 +1,43 @@
-﻿using System.Threading.Tasks;
+﻿using System.Reflection;
+using System.Threading.Tasks;
 using Miki.Anilist;
 using Miki.Anilist.Objects;
 
 namespace Mute.Moe.Services.Information.Anime;
 
+/// <summary>
+/// Provides anime info using AniList API
+/// </summary>
 public class MikibotAnilistAnimeSearch
     : BaseMikibotMediaSearchService<IAnime>, IAnimeInfo
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public MikibotAnilistAnimeSearch()
         : base(MediaFormat.MANGA, MediaFormat.NOVEL, MediaFormat.MUSIC)    //This is a list of formats _not_ to return!
     {
     }
 
-    public Task<IAnime?> GetAnimeInfoAsync(string search)
+    /// <inheritdoc />
+    public Task<IAnime?> GetAnimeInfoAsync(string title)
     {
-        return GetItemInfoAsync(search);
+        return GetItemInfoAsync(title);
     }
 
-    public IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search)
+    /// <inheritdoc />
+    public IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search, int limit)
     {
-        return GetItemsInfoAsync(search);
+        return GetItemsInfoAsync(search).Take(limit);
     }
 
-    public IAsyncEnumerable<IAnime> GetAnimesInfoAsync(ICharacter search)
-    {
-        return GetItemsInfoAsync(search);
-    }
-
+    /// <inheritdoc />
     protected override IAnime WrapItem(IMedia media)
     {
         return new MikibotAnime(media);
     }
 
+    /// <inheritdoc />
     protected override string ExtractId(IAnime item)
     {
         return item.Id;
@@ -53,8 +59,9 @@ public class MikibotAnilistAnimeSearch
             StartDate = null;
             EndDate = null;
 
-            //Adult = (bool)(media.GetType().GetField("isAdultContent")?.GetValue(media) ?? false);
-            Adult = false;
+            var internalMediaObject = media.GetType().GetField("_media", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(media);
+            var internalAdultValue = (bool?)internalMediaObject?.GetType()?.GetField("isAdultContent", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(internalMediaObject) ?? false;
+            Adult = internalAdultValue;
 
             ImageUrl = media.CoverImage;
             Genres = media.Genres;

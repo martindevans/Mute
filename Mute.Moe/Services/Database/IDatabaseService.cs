@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System.Data;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,6 +8,8 @@ namespace Mute.Moe.Services.Database;
 
 public interface IDatabaseService
 {
+    IDbConnection Connection { get; }
+
     DbCommand CreateCommand();
 }
 

@@ -7,6 +7,7 @@ namespace Mute.Moe.Services.Information.Anime;
 public class MikibotAnilistCharacterSearch
     : BaseMikibotSearchService<ICharacterSearchResult, ICharacter>, ICharacterInfo
 {
+    /// <inheritdoc />
     protected override async Task<ICharacter?> GetItemAsync(AnilistClient client, ICharacterSearchResult searchItem)
     {
         var item = await client.GetCharacterAsync(searchItem.Id);
@@ -16,16 +17,19 @@ public class MikibotAnilistCharacterSearch
         return new MikibotCharacter(item);
     }
 
+    /// <inheritdoc />
     public Task<ICharacter?> GetCharacterInfoAsync(string search)
     {
         return GetItemInfoAsync(search);
     }
 
+    /// <inheritdoc />
     public IAsyncEnumerable<ICharacter> GetCharactersInfoAsync(string search)
     {
         return GetItemsInfoAsync(search);
     }
 
+    /// <inheritdoc />
     protected override uint Distance(ICharacterSearchResult item, string search)
     {
         var fld = Dist(item.FirstName + " " + item.LastName);
@@ -44,16 +48,19 @@ public class MikibotAnilistCharacterSearch
         }
     }
 
+    /// <inheritdoc />
     protected override string ExtractId(ICharacterSearchResult item)
     {
         return item.Id.ToString();
     }
 
+    /// <inheritdoc />
     protected override string ExtractId(ICharacter item)
     {
         return item.Id;
     }
 
+    /// <inheritdoc />
     protected override Task<ISearchResult<ICharacterSearchResult>> SearchPage(AnilistClient client, string search, int index)
     {
         return client.SearchCharactersAsync(search, index);

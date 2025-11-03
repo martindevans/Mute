@@ -1,30 +1,28 @@
-﻿using System.Threading.Tasks;
+﻿using Mute.Moe.Tools;
+using System.Threading.Tasks;
 
 
 namespace Mute.Moe.Services.Information.Anime;
 
+/// <summary>
+/// Retrieve information about anime series
+/// </summary>
 public interface IAnimeInfo
 {
     /// <summary>
-    /// Get a single anime given the search term (best match)
+    /// Get information about a single anime
     /// </summary>
-    /// <param name="search"></param>
+    /// <param name="title">The title of the anime</param>
     /// <returns></returns>
-    Task<IAnime?> GetAnimeInfoAsync(string search);
+    Task<IAnime?> GetAnimeInfoAsync(string title);
 
     /// <summary>
-    /// Get anime by the given search term
+    /// Search for anime
     /// </summary>
-    /// <param name="search"></param>
+    /// <param name="search">The term to search for</param>
+    /// <param name="limit">Maximum number of results to return</param>
     /// <returns></returns>
-    IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search);
-
-    /// <summary>
-    /// Get all the anime featuring the given character
-    /// </summary>
-    /// <param name="character"></param>
-    /// <returns></returns>
-    IAsyncEnumerable<IAnime> GetAnimesInfoAsync(ICharacter character);
+    IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search, int limit);
 }
 
 public interface IAnime
@@ -45,4 +43,27 @@ public interface IAnime
     IReadOnlyList<string> Genres { get; }
 
     uint? TotalEpisodes { get; }
+}
+
+/// <summary>
+/// Provides manga related tools to LLMs
+/// </summary>
+public class AnimeToolProvider
+    : IToolProvider
+{
+    /// <inheritdoc />
+    public IReadOnlyList<ITool> Tools { get; }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="info"></param>
+    public AnimeToolProvider(IAnimeInfo info)
+    {
+        Tools =
+        [
+            new AutoTool("anime_info", false, info.GetAnimeInfoAsync),
+            new AutoTool("anime_search", false, info.GetAnimesInfoAsync, postprocessAsync: async x => await ((IAsyncEnumerable<IAnime>)x!).Take(1024).ToArrayAsync()),
+        ];
+    }
 }

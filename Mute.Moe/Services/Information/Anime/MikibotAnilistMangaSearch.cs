@@ -5,34 +5,39 @@ using Miki.Anilist.Objects;
 
 namespace Mute.Moe.Services.Information.Anime;
 
+/// <summary>
+/// Retrieve info about mangas from the anilist API
+/// </summary>
 public class MikibotAnilistMangaSearch
     : BaseMikibotMediaSearchService<IManga>, IMangaInfo
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public MikibotAnilistMangaSearch()
         : base(MediaFormat.MOVIE, MediaFormat.MUSIC, MediaFormat.ONA, MediaFormat.ONE_SHOT, MediaFormat.OVA, MediaFormat.SPECIAL, MediaFormat.TV, MediaFormat.TV_SHORT)    //This is a list of formats _not_ to return!
     {
     }
 
-    public Task<IManga?> GetMangaInfoAsync(string search)
+    /// <inheritdoc />
+    public Task<IManga?> GetMangaInfoAsync(string title)
     {
-        return GetItemInfoAsync(search);
+        return GetItemInfoAsync(title);
     }
 
-    public IAsyncEnumerable<IManga> GetMangasInfoAsync(string search)
+    /// <inheritdoc />
+    public IAsyncEnumerable<IManga> GetMangasInfoAsync(string search, int limit)
     {
-        return GetItemsInfoAsync(search);
+        return GetItemsInfoAsync(search).Take(limit);
     }
 
-    public IAsyncEnumerable<IManga> GetMangasInfoAsync(ICharacter search)
-    {
-        return GetItemsInfoAsync(search);
-    }
-
+    /// <inheritdoc />
     protected override IManga WrapItem(IMedia media)
     {
         return new MikibotManga(media);
     }
 
+    /// <inheritdoc />
     protected override string ExtractId(IManga item)
     {
         return item.Id;

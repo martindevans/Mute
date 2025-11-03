@@ -2,6 +2,9 @@
 
 namespace Mute.Moe.Services.Information.UrbanDictionary;
 
+/// <summary>
+/// Search urban dictionary
+/// </summary>
 public interface IUrbanDictionary
 {
     Task<IReadOnlyList<IUrbanDefinition>> SearchTermAsync(string term);

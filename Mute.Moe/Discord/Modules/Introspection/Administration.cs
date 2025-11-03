@@ -160,19 +160,4 @@ public class Administration
         var msg = await Context.Channel.GetMessageAsync(ulong.Parse(id));
         await msg.DeleteAsync();
     }
-
-    [Command("test_weather")]
-    [UsedImplicitly]
-    public async Task Weather()
-    {
-        // Use a random location in middle of UK if none is specified
-        var pos = _config.Location ?? new LocationConfig
-        {
-            Latitude = 52.49f,
-            Longitude = -1.23f
-        };
-
-        var report = await _weather.GetCurrentWeather(pos.Latitude, pos.Longitude);
-        await ReplyAsync(report?.Description ?? "Unknown weather");
-    }
 }
