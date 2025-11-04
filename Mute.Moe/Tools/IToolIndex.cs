@@ -152,6 +152,12 @@ public class DatabaseToolIndex
         {
             foreach (var (name, tool) in Tools)
             {
+                if (string.IsNullOrWhiteSpace(tool.Description))
+                {
+                    await Console.Error.WriteLineAsync($"Tool '{name}' has empty/null description!");
+                    continue;
+                }
+
                 var count = await db.ExecuteScalarAsync<int>(
                     "SELECT Count(*) FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name)",
                     new

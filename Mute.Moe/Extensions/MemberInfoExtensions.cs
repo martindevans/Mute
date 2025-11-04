@@ -171,10 +171,6 @@ public static class MemberInfoExtensions
     /// </summary>
     private static string? GetXmlDocumentationPath(Assembly assembly)
     {
-        var assemblyLocation = assembly.Location;
-        if (string.IsNullOrEmpty(assemblyLocation))
-            return null;
-
-        return Path.ChangeExtension(assemblyLocation, ".xml");
+        return Path.Combine(AppContext.BaseDirectory, "Mute.Moe.xml");
     }
 }
