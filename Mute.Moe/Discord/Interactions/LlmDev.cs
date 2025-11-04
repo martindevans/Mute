@@ -4,11 +4,9 @@ using LlmTornado.Chat;
 using LlmTornado.Chat.Models;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Modules;
-using Mute.Moe.Services.Information.Weather;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using Mute.Moe.Services.Information.Geocoding;
 using Mute.Moe.Tools;
 
 namespace Mute.Moe.Discord.Interactions;

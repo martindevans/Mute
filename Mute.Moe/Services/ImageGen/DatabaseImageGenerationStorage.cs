@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace Mute.Moe.Services.ImageGen;
 
+/// <summary>
+/// Store the config setting used to generate an image
+/// </summary>
 public interface IImageGenerationConfigStorage
     : IKeyValueStorage<ImageGenerationConfig>;
 
@@ -59,6 +62,9 @@ public class ImageGenerationConfig
     }
 }
 
+/// <summary>
+/// Indicates what type of operation was used to generate an image
+/// </summary>
 public enum ImageGenerationType
 {
     /// <summary>
@@ -77,5 +83,6 @@ public enum ImageGenerationType
     Outpaint
 }
 
+/// <inheritdoc cref="IImageGenerationConfigStorage" />
 public class DatabaseImageGenerationStorage(IDatabaseService database)
     : SimpleJsonBlobTable<ImageGenerationConfig>("ImageGeneration", database), IImageGenerationConfigStorage;

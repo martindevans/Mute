@@ -163,5 +163,8 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, CryptocurrencyInfoToolProvider>();
         services.AddSingleton<IToolProvider, ForexToolProvider>();
         services.AddSingleton<IToolProvider, StockToolProvider>();
+        services.AddSingleton<IToolProvider, ServerStatusToolProvider>();
+        services.AddSingleton<IToolProvider, WikipediaToolProvider>();
+        services.AddSingleton<IToolProvider, DiceRollToolProvider>();
     }
 }

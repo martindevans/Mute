@@ -39,7 +39,7 @@ public class UrbanDictionaryApi
         //Get it from the API, early exit if we get nothing
         var response = await SearchTermNoCacheAsync(urlTerm);
         if (response == null)
-            return Array.Empty<IUrbanDefinition>();
+            return [ ];
 
         //Add it to the cache
         _definitionCache.Add(new CacheEntry(urlTerm, response.Entries));

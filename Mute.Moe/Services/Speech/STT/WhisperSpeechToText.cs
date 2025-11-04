@@ -47,7 +47,7 @@ public class WhisperSpeechToText
         {
             var ret = whisper_full_with_state(_context, state, parameters, chunk.Array, chunk.Count);
             if (ret != 0)
-                return Array.Empty<RecognitionWord>();
+                return [ ];
             parameters.no_context = false;
 
             var segmentsCount = whisper_full_n_segments_from_state(state);

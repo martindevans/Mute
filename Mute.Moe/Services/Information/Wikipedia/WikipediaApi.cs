@@ -6,26 +6,28 @@ using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Wikipedia;
 
+/// <inheritdoc />
 public class WikipediaApi
     : IWikipedia
 {
-    private readonly HttpClient _client;
+    private readonly IHttpClientFactory _client;
 
     private readonly FluidCache<Tuple<string, IReadOnlyList<IDefinition>>> _cache;
     private readonly IIndex<string, Tuple<string, IReadOnlyList<IDefinition>>> _bySearchTerm;
 
     public WikipediaApi(IHttpClientFactory client)
     {
-        _client = client.CreateClient();
+        _client = client;
 
         _cache = new FluidCache<Tuple<string, IReadOnlyList<IDefinition>>>(1024, TimeSpan.FromMinutes(5), TimeSpan.FromDays(1), () => DateTime.UtcNow);
         _bySearchTerm = _cache.AddIndex("bySearchTerm", a => a.Item1);
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<IDefinition>> Define(string? topic, int length = 3)
     {
         if (topic == null)
-            return Array.Empty<IDefinition>();
+            return [ ];
 
         var key = topic + length;
 
@@ -43,14 +45,14 @@ public class WikipediaApi
 
     private async Task<IReadOnlyList<IDefinition>> FetchDefinitionAsync(string escapedTopic, int length)
     {
-        async Task<IReadOnlyList<IDefinition>> GetPageDefinitions(PropPage page)
+        async Task<IReadOnlyList<IDefinition>> GetPageDefinitions(PropPage page, HttpClient client)
         {
             if (page.Categories != null && page.Categories.Any(a => (a.Title?.Equals("Category:All disambiguation pages") ?? false) || (a.Title?.Equals("Category:Disambiguation pages") ?? false)))
             {
                 // This is a disambiguation page, get all links on the page and fetch those definitions instead
-                using var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&titles={escapedTopic}&prop=links");
+                using var httpResponse = await client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&titles={escapedTopic}&prop=links");
                 if (!httpResponse.IsSuccessStatusCode)
-                    return Array.Empty<IDefinition>();
+                    return [ ];
 
                 //Parse JSON of response
                 var response = JsonConvert.DeserializeObject<PropResponseContainer?>(await httpResponse.Content.ReadAsStringAsync());
@@ -58,7 +60,7 @@ public class WikipediaApi
                 // Find all links
                 var links = response?.Query?.Pages?.Select(p => p.Value).SelectMany(a => a.Links ?? []);
                 if (links == null)
-                    return Array.Empty<IDefinition>();
+                    return [ ];
 
                 // Fetch all the links
                 var results = new List<IDefinition>();
@@ -70,9 +72,9 @@ public class WikipediaApi
             else
             {
                 // This is an actual page, fetch the definition
-                using var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles={page.Title}&exsentences={length}");
+                using var httpResponse = await client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles={page.Title}&exsentences={length}");
                 if (!httpResponse.IsSuccessStatusCode)
-                    return Array.Empty<IDefinition>();
+                    return [ ];
 
                 //Parse JSON of response
                 var response = JsonConvert.DeserializeObject<DefinitionResponseContainer?>(await httpResponse.Content.ReadAsStringAsync());
@@ -80,7 +82,7 @@ public class WikipediaApi
                 //If the response contains no useful data return nothing
                 var pages = response?.Query?.Pages;
                 if (pages == null)
-                    return Array.Empty<IDefinition>();
+                    return [ ];
 
                 //Extract all the valid items we can from the response
                 var result = new List<IDefinition>();
@@ -98,11 +100,14 @@ public class WikipediaApi
             }
         }
 
+        using var client = _client.CreateClient();
+        client.DefaultRequestHeaders.Add("User-Agent", "*Mute");
+
         // Find the page and get the categories for it, this way we can tell if it's a disambiguation page
-        using (var httpResponse = await _client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&titles={escapedTopic}&prop=categories"))
+        using (var httpResponse = await client.GetAsync($"https://en.wikipedia.org/w/api.php?format=json&action=query&redirects=1&titles={escapedTopic}&prop=categories"))
         {
             if (!httpResponse.IsSuccessStatusCode)
-                return Array.Empty<IDefinition>();
+                return [ ];
 
             //Parse JSON of response
             var response = JsonConvert.DeserializeObject<PropResponseContainer?>(await httpResponse.Content.ReadAsStringAsync());
@@ -110,11 +115,12 @@ public class WikipediaApi
             // Early exit if no pages were found
             var pages = response?.Query?.Pages;
             if (pages == null)
-                return Array.Empty<IDefinition>();
+                return [ ];
 
             // Start tasks to get definitions
+            // ReSharper disable once AccessToDisposedClosure
             var definitionsTasks = pages
-                .Select(a => Task.Run(() => GetPageDefinitions(a.Value)))
+                .Select(a => Task.Run(() => GetPageDefinitions(a.Value, client)))
                 .ToArray();
 
             // Wait on all the tasks and save them in a list
