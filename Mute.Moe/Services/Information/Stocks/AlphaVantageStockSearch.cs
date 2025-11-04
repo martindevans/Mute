@@ -1,6 +1,8 @@
-﻿using System.IO;
-using System.Net.Http;
+﻿using FluidCaching;
 using Newtonsoft.Json;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Information.Stocks;
 
@@ -11,6 +13,9 @@ public class AlphaVantageStockSearch
 
     private readonly string _key;
 
+    private readonly FluidCache<IStockInfo> _infoCache;
+    private readonly IIndex<string, IStockInfo> _infoBySymbol;
+
     public AlphaVantageStockSearch(Configuration config, IHttpClientFactory http)
     {
         if (config.AlphaAdvantage == null)
@@ -18,6 +23,9 @@ public class AlphaVantageStockSearch
 
         _key = config.AlphaAdvantage.Key ?? throw new ArgumentNullException(nameof(config.AlphaAdvantage.Key));
         _http = http.CreateClient();
+
+        _infoCache = new FluidCache<IStockInfo>(config.AlphaAdvantage.CacheSize, TimeSpan.FromDays(1), TimeSpan.FromDays(7), () => DateTime.UtcNow);
+        _infoBySymbol = _infoCache.AddIndex("BySymbol", a => a.Symbol);
     }
 
     public async IAsyncEnumerable<IStockSearchResult> Search(string search)
@@ -41,6 +49,32 @@ public class AlphaVantageStockSearch
             yield return item;
     }
 
+    /// <inheritdoc />
+    public async Task<IStockInfo?> Lookup(string symbol)
+    {
+        // https://www.alphavantage.co/query?function=OVERVIEW&symbol=IBM&apikey=demo
+
+        var cached = await _infoBySymbol.GetItem(symbol);
+        if (cached != null)
+            return cached;
+
+        using var result = await _http.GetAsync($"https://www.alphavantage.co/query?function=OVERVIEW&symbol={Uri.EscapeDataString(symbol)}&apikey={_key}");
+        if (!result.IsSuccessStatusCode)
+            return null;
+
+        StockInfoResponse? response;
+        var serializer = new JsonSerializer();
+        using (var sr = new StreamReader(await result.Content.ReadAsStreamAsync()))
+        await using (var jsonTextReader = new JsonTextReader(sr))
+            response = serializer.Deserialize<StockInfoResponse>(jsonTextReader);
+
+        if (string.IsNullOrWhiteSpace(response?.Symbol))
+            return null;
+
+        _infoCache.Add(response);
+        return response;
+    }
+
     private class StockSearchResponseContainer
     {
 #pragma warning disable IDE0044 // Add readonly modifier
@@ -52,7 +86,7 @@ public class AlphaVantageStockSearch
         public StockSearchResponse[] BestMatches => _bestMatches ?? throw new InvalidOperationException("API returned null value for `bestMatches` field");
     }
 
-    public class StockSearchResponse
+    private class StockSearchResponse
         : IStockSearchResult
     {
 #pragma warning disable IDE0044 // Add readonly modifier
@@ -68,5 +102,23 @@ public class AlphaVantageStockSearch
         public string Name => _name ?? throw new InvalidOperationException("API returned null value for `2. name` field");
         public string Currency => _currency ?? throw new InvalidOperationException("API returned null value for `8. currency` field");
         public string MatchScore => _matchScore ?? throw new InvalidOperationException("API returned null value for `9. matchScore` field");
+    }
+
+    private class StockInfoResponse
+        : IStockInfo
+    {
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable 0649 // Field not assigned
+        [JsonProperty("Symbol"), UsedImplicitly] private string? _symbol;
+        [JsonProperty("Name"), UsedImplicitly] private string? _name;
+        [JsonProperty("Description"), UsedImplicitly] private string? _description;
+        [JsonProperty("Currency"), UsedImplicitly] private string? _currency;
+#pragma warning restore 0649 // Field not assigned
+#pragma warning restore IDE0044 // Add readonly modifier
+
+        [JsonIgnore] public string Symbol => _symbol ?? "";
+        [JsonIgnore] public string Name => _name ?? "";
+        [JsonIgnore] public string? Description => _description;
+        [JsonIgnore] public string Currency => _currency ?? "";
     }
 }

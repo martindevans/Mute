@@ -3,8 +3,17 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Information.Forex;
 
+/// <summary>
+/// Get currency foreign exchange info
+/// </summary>
 public interface IForexInfo
 {
+    /// <summary>
+    /// Get the exchange rate, converting from one currency to another
+    /// </summary>
+    /// <param name="fromSymbol">Symbol to convert from</param>
+    /// <param name="toSymbol">Symbol to convert to</param>
+    /// <returns></returns>
     Task<IForexQuote?> GetExchangeRate(string fromSymbol, string toSymbol);
 }
 
@@ -45,7 +54,7 @@ public class ForexToolProvider
     }
 
     /// <summary>
-    /// Given a currency symbol (e.g. GBP) and another currency symbol (USD) return information about the change rate from the first to the second.
+    /// Given a currency symbol (e.g. GBP) and another currency symbol (USD) return information about the currency exchange rate from the first to the second.
     /// </summary>
     /// <param name="from">Currency symbol to convert from</param>
     /// <param name="to">Currency symbol to convert to</param>

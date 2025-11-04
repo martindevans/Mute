@@ -11,8 +11,9 @@ public class AlphaVantageStocks
 {
     private readonly HttpClient _http;
 
-    private readonly FluidCache<IStockQuote> _cache;
-    private readonly IIndex<string, IStockQuote> _bySymbol;
+    private readonly FluidCache<IStockQuote> _quoteCache;
+    private readonly IIndex<string, IStockQuote> _quoteBySymbol;
+
     private readonly string _key;
 
     public AlphaVantageStocks(Configuration config, IHttpClientFactory http)
@@ -22,15 +23,19 @@ public class AlphaVantageStocks
 
         _key = config.AlphaAdvantage.Key ?? throw new ArgumentNullException(nameof(config.AlphaAdvantage));
         _http = http.CreateClient();
-        _cache = new FluidCache<IStockQuote>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMaxAgeSeconds), () => DateTime.UtcNow);
-        _bySymbol = _cache.AddIndex("BySymbol", a => a.Symbol);
+
+        _quoteCache = new FluidCache<IStockQuote>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMaxAgeSeconds), () => DateTime.UtcNow);
+        _quoteBySymbol = _quoteCache.AddIndex("BySymbol", a => a.Symbol);
+
+        
     }
 
+    /// <inheritdoc />
     public async Task<IStockQuote?> GetQuote(string stock)
     {
         //https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=msft&apikey=demo
 
-        var cached = await _bySymbol.GetItem(stock);
+        var cached = await _quoteBySymbol.GetItem(stock);
         if (cached != null)
             return cached;
 
@@ -47,7 +52,7 @@ public class AlphaVantageStocks
         if (response?.Response?.Symbol == null)
             return null;
 
-        _cache.Add(response.Response);
+        _quoteCache.Add(response.Response);
         return response.Response;
     }
 
