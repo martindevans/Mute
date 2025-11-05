@@ -166,5 +166,6 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, ServerStatusToolProvider>();
         services.AddSingleton<IToolProvider, WikipediaToolProvider>();
         services.AddSingleton<IToolProvider, DiceRollToolProvider>();
+        services.AddSingleton<IToolProvider, PythonToolProvider>();
     }
 }
