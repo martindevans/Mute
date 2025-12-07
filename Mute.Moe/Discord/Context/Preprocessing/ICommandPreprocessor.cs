@@ -8,5 +8,10 @@ namespace Mute.Moe.Discord.Context.Preprocessing;
 /// </summary>
 public interface ICommandPreprocessor
 {
+    /// <summary>
+    /// Preprocess the context, before the command handler is invoked
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
     Task Process(ICommandContext context);
 }

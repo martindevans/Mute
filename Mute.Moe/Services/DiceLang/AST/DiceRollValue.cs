@@ -4,12 +4,19 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.DiceLang.AST;
 
+/// <summary>
+/// AST node representing a dice roll. Rolling <see cref="Count"/> dice, each with <see cref="Sides"/> sides, and each dice exploding if above <see cref="ExplodeThreshold"/>
+/// </summary>
+/// <param name="Count"></param>
+/// <param name="Sides"></param>
+/// <param name="ExplodeThreshold"></param>
 public record DiceRollValue(IAstNode Count, IAstNode Sides, IAstNode? ExplodeThreshold)
     : IAstNode
 {
     private bool _initialised;
     private readonly List<DiceRollResult> _values = [ ];
 
+    /// <inheritdoc />
     public async Task<double> Evaluate(IAstNode.Context context)
     {
         _initialised = true;
@@ -42,6 +49,7 @@ public record DiceRollValue(IAstNode Count, IAstNode Sides, IAstNode? ExplodeThr
         }
     }
 
+    /// <inheritdoc />
     public override string ToString()
     {
         if (!_initialised)
@@ -70,4 +78,9 @@ public record DiceRollValue(IAstNode Count, IAstNode Sides, IAstNode? ExplodeThr
     }
 }
 
+/// <summary>
+/// Result from rolling one or more dice
+/// </summary>
+/// <param name="Value">Total value</param>
+/// <param name="Explosion">Indicates if the dice exploded</param>
 public record DiceRollResult(ulong Value, bool Explosion);

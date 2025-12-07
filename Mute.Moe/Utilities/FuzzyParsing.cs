@@ -5,17 +5,25 @@ using Microsoft.Recognizers.Text.NumberWithUnit;
 
 namespace Mute.Moe.Utilities;
 
+/// <summary>
+/// Helpers for fuzzy parsing of information from strings
+/// </summary>
 public static class FuzzyParsing
 {
+    /// <summary>
+    /// Extract a range of time
+    /// </summary>
+    /// <param name="userInput"></param>
+    /// <param name="culture"></param>
+    /// <returns></returns>
     public static MomentRangeExtraction MomentRange(string userInput, string culture = Culture.EnglishOthers)
     {
         return Extract(userInput)
-            ?? new MomentRangeExtraction
-               {
-                   IsValid = false,
-                   Value = (DateTime.MinValue, DateTime.MaxValue),
-                   ErrorMessage = "That doesn't seem to be a valid time range.",
-               };
+            ?? new MomentRangeExtraction(
+                IsValid: false,
+                Value: (DateTime.MinValue, DateTime.MaxValue),
+                ErrorMessage: "That doesn't seem to be a valid time range."
+            );
 
         MomentRangeExtraction? Extract(string input)
         {
@@ -46,7 +54,7 @@ public static class FuzzyParsing
                     return null;
 
                 moment += ApplyTimezone(resolutionValues);
-                return new MomentRangeExtraction { IsValid = true, Value = (moment, moment) };
+                return new MomentRangeExtraction(IsValid: true, Value: (moment, moment), ErrorMessage: null);
             }
 
             //Check if it's a range of times
@@ -65,7 +73,7 @@ public static class FuzzyParsing
                 momentStart += ApplyTimezone(resolutionValues);
                 momentEnd += ApplyTimezone(resolutionValues);
 
-                return new MomentRangeExtraction { IsValid = true, Value = (momentStart, momentEnd) };
+                return new MomentRangeExtraction(IsValid: true, Value: (momentStart, momentEnd));
             }
 
             return null;
@@ -83,17 +91,17 @@ public static class FuzzyParsing
         }
     }
 
-    public class MomentRangeExtraction
-    {
-        public bool IsValid { get; init; }
+    /// <summary>
+    /// Result from trying to extract a moment range from a user input
+    /// </summary>
+    /// <param name="IsValid"></param>
+    /// <param name="Value"></param>
+    /// <param name="ErrorMessage"></param>
+    public record MomentRangeExtraction(bool IsValid, (DateTime Min, DateTime Max) Value, string? ErrorMessage = null);
 
-        public (DateTime, DateTime) Value { get; init; }
-
-        public string? ErrorMessage { get; set; }
-    }
 
     /// <summary>
-    /// 
+    /// Extract a single point in time
     /// </summary>
     /// <param name="userInput"></param>
     /// <param name="culture"></param>
@@ -103,12 +111,11 @@ public static class FuzzyParsing
     {
         return Extract(userInput)
             ?? Extract($"in {userInput}")
-            ?? new MomentExtraction
-               {
-                   IsValid = false,
-                   Value = DateTime.MinValue,
-                   ErrorMessage = "That doesn't seem to be a valid moment.",
-               };
+            ?? new MomentExtraction(
+                   IsValid: false,
+                   Value: DateTime.MinValue,
+                   ErrorMessage: "That doesn't seem to be a valid moment."
+               );
 
         MomentExtraction? Extract(string input)
         {
@@ -162,7 +169,7 @@ public static class FuzzyParsing
                     return null;
 
                 moment = DateTime.SpecifyKind(moment + ApplyTimezone(resolutionValues), DateTimeKind.Utc);
-                return new MomentExtraction { IsValid = true, Value = moment };
+                return new MomentExtraction(IsValid: true, Value: moment);
             }
 
             return null;
@@ -195,23 +202,28 @@ public static class FuzzyParsing
         }
     }
 
-    public class MomentExtraction
-    {
-        public bool IsValid { get; init; }
+    /// <summary>
+    /// Result from trying to extract a single moment from user input
+    /// </summary>
+    /// <param name="IsValid"></param>
+    /// <param name="Value"></param>
+    /// <param name="ErrorMessage"></param>
+    public record MomentExtraction(bool IsValid, DateTime Value, string? ErrorMessage = null);
 
-        public DateTime Value { get; init; }
 
-        public string? ErrorMessage { get; set; }
-    }
-
+    /// <summary>
+    /// Extract a time offset (i.e. timezone) from user input
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="culture"></param>
+    /// <returns></returns>
     public static TimeOffsetExtraction TimeOffset(string input, string culture = Culture.EnglishOthers)
     {
-        return Extract() ?? new TimeOffsetExtraction
-        {
-            IsValid = false,
-            UtcOffset = TimeSpan.Zero,
-            ErrorMessage = "I'm sorry, that doesn't seem to be a valid timezone",
-        };
+        return Extract() ?? new TimeOffsetExtraction(
+            IsValid: false,
+            UtcOffset: TimeSpan.Zero,
+            ErrorMessage: "I'm sorry, that doesn't seem to be a valid timezone"
+        );
 
         TimeOffsetExtraction? Extract()
         {
@@ -236,27 +248,29 @@ public static class FuzzyParsing
                 // https://github.com/Microsoft/Recognizers-Text/issues/871
                 if (utcOff == "-10000")
                     return null;
-                    
-                return new TimeOffsetExtraction {
-                    IsValid = true,
-                    UtcOffset = TimeSpan.FromMinutes(int.Parse(utcOff)),
-                    ErrorMessage = null,
-                };
+
+                return new TimeOffsetExtraction(IsValid: true, UtcOffset: TimeSpan.FromMinutes(int.Parse(utcOff)));
             }
 
             return null;
         }
     }
 
-    public class TimeOffsetExtraction
-    {
-        public bool IsValid { get; set; }
+    /// <summary>
+    /// Result from trying to extract a timeoffset from user input
+    /// </summary>
+    /// <param name="IsValid"></param>
+    /// <param name="UtcOffset"></param>
+    /// <param name="ErrorMessage"></param>
+    public record TimeOffsetExtraction(bool IsValid, TimeSpan UtcOffset, string? ErrorMessage = null);
 
-        public TimeSpan UtcOffset { get; set; }
 
-        public string? ErrorMessage { get; set; }
-    }
-
+    /// <summary>
+    /// Extract a boolean choice from user input
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="culture"></param>
+    /// <returns></returns>
     public static BooleanChoiceExtraction BooleanChoice(string input, string culture = Culture.EnglishOthers)
     {
         var bools = ChoiceRecognizer.RecognizeBoolean(input, culture).Where(a => a.TypeName == "boolean").ToArray();
@@ -275,13 +289,13 @@ public static class FuzzyParsing
             var value = Convert.ToBoolean(valueObj);
             var confidence = Convert.ToSingle(confidenceObj);
 
-            //Keep a count of true and false matches
+            // Keep a count of true and false matches
             if (value)
                 trues++;
             else
                 falses++;
 
-            //Return false as soon as we find both results (i.e. we're not sure)
+            // Return false as soon as we find both results (i.e. we're not sure)
             if (trues * falses != 0)
                 return new BooleanChoiceExtraction(false, 0);
 
@@ -291,23 +305,25 @@ public static class FuzzyParsing
         return new BooleanChoiceExtraction(trues > 0, bestConfidence);
     }
 
-    public class BooleanChoiceExtraction
+    /// <summary>
+    /// Result from trying to extract a boolean choice from user input
+    /// </summary>
+    /// <param name="Value"></param>
+    /// <param name="Confidence"></param>
+    public record BooleanChoiceExtraction(bool Value, float Confidence);
+
+
+    /// <summary>
+    /// Extract a currency and an amount in that currency from user input
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="culture"></param>
+    /// <returns></returns>
+    public static CurrencyAndAmountExtraction CurrencyAndAmount(string input, string culture = Culture.EnglishOthers)
     {
-        public bool Value { get; }
-        public float Confidence { get; }
+        return Extract() ?? CurrencyAndAmountExtraction.CreateError("value,unit");
 
-        public BooleanChoiceExtraction(bool value, float confidence)
-        {
-            Value = value;
-            Confidence = confidence;
-        }
-    }
-
-    public static Extraction CurrencyAndAmount(string input, string culture = Culture.EnglishOthers)
-    {
-        return Extract() ?? new Extraction("value,unit");
-
-        Extraction? Extract()
+        CurrencyAndAmountExtraction? Extract()
         {
             var results = NumberWithUnitRecognizer.RecognizeCurrency(input, culture);
 
@@ -319,43 +335,81 @@ public static class FuzzyParsing
             var values = cur.Resolution;
 
             if (!values.TryGetValue("unit", out var unitObj) || unitObj is not string unit)
-                return new Extraction("unit");
+                return CurrencyAndAmountExtraction.CreateError("unit");
 
             if (!values.TryGetValue("value", out var valueObj) || valueObj is not string value)
-                return new Extraction("value");
+                return CurrencyAndAmountExtraction.CreateError("value");
 
             if (!decimal.TryParse(value, out var deci))
-                return new Extraction("value");
+                return CurrencyAndAmountExtraction.CreateError("value");
 
-            return new Extraction(unit, deci);
+            return CurrencyAndAmountExtraction.CreateValid(unit, deci);
         }
     }
 
-    public class Extraction
+    /// <summary>
+    /// Result from trying to extract currency and amount from user input
+    /// </summary>
+    public record CurrencyAndAmountExtraction
     {
-        public bool IsValid { get; }
+        /// <summary>
+        /// Indicates if this represents a successful extraction
+        /// </summary>
+        public bool IsValid { get; private init; }
 
-        public string? Currency { get; }
-        public decimal Amount { get; }
+        /// <summary>
+        /// The currency unit, null if this is an error state (IsValid == false)
+        /// </summary>
+        public string? Currency { get; private init; }
 
-        public string? ErrorMessage { get; }
+        /// <summary>
+        /// The currency amount, zero if this is an error state (IsValid == false)
+        /// </summary>
+        public decimal Amount { get; private init; }
 
-        public Extraction(string error)
+        /// <summary>
+        /// Error message, only non-null when IsValid == false
+        /// </summary>
+        public string? ErrorMessage { get; private init; }
+
+        private CurrencyAndAmountExtraction()
         {
-            IsValid = false;
-            ErrorMessage = error;
-
-            Currency = null;
-            Amount = 0;
+            
         }
 
-        public Extraction(string currency, decimal amount)
+        /// <summary>
+        /// Create an error state
+        /// </summary>
+        /// <param name="error"></param>
+        /// <returns></returns>
+        public static CurrencyAndAmountExtraction CreateError(string error)
         {
-            IsValid = true;
-            Currency = currency;
-            Amount = amount;
+            return new CurrencyAndAmountExtraction
+            {
+                IsValid = false,
+                ErrorMessage = error,
 
-            ErrorMessage = null;
+                Currency = null,
+                Amount = 0
+            };
+        }
+
+        /// <summary>
+        /// Create a valid state
+        /// </summary>
+        /// <param name="currency"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        public static CurrencyAndAmountExtraction CreateValid(string currency, decimal amount)
+        {
+            return new CurrencyAndAmountExtraction
+            {
+                IsValid = true,
+                ErrorMessage = null,
+
+                Currency = currency,
+                Amount = amount
+            };
         }
     }
 }

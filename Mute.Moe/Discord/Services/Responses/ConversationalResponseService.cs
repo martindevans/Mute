@@ -6,6 +6,7 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
+using Serilog;
 using IEnumerableExtensions = Mute.Moe.Extensions.IEnumerableExtensions;
 
 namespace Mute.Moe.Discord.Services.Responses;
@@ -23,7 +24,6 @@ public class ConversationalResponseService
         _client = client;
         _random = random;
 
-        // Create response generators
         _responses.AddRange(from t in Assembly.GetExecutingAssembly().GetTypes()
             where t.IsClass
             where typeof(IResponse).IsAssignableFrom(t)
@@ -31,9 +31,8 @@ public class ConversationalResponseService
             where i != null
             select i);
 
-        Console.WriteLine($"Loaded Response Generators ({_responses.Count}):");
         foreach (var response in _responses)
-            Console.WriteLine($" - {response.GetType().Name}");
+            Log.Information("Loaded response generator: {0}", response.GetType().Name);
     }
 
     public async Task Respond(MuteCommandContext context)
@@ -85,7 +84,7 @@ public class ConversationalResponseService
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Response `{generator.GetType().Name}` failed with exception: " + e);
+                Log.Error(e, "Response generator {0} failed with exception", generator.GetType().Name);
             }
         }
 
@@ -96,6 +95,11 @@ public class ConversationalResponseService
         return IEnumerableExtensions.Random(candidates, _random);
     }
 
+    /// <summary>
+    /// Get the conversation the current user is in
+    /// </summary>
+    /// <param name="user"></param>
+    /// <returns></returns>
     public IConversation? GetConversation(IGuildUser user)
     {
         return _conversations.GetValueOrDefault(user);

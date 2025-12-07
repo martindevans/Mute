@@ -4,11 +4,18 @@ using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
+/// <summary>
+/// Tell everyone how fantastic Urbit is
+/// </summary>
+/// <param name="_random"></param>
 [UsedImplicitly]
-public class UrbitSarcasm(Random _random)
+public partial class UrbitSarcasm(Random _random)
     : IResponse
 {
+    /// <inheritdoc />
     public double BaseChance => 0.15;
+
+    /// <inheritdoc />
     public double MentionedChance => 1;
 
     private readonly HashSet<string> _triggerWords =
@@ -16,9 +23,10 @@ public class UrbitSarcasm(Random _random)
         "urbit", "hoon", "arvo", "nock",
     ];
 
+    /// <inheritdoc />
     public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
     {
-        var rgx = new Regex("[^a-zA-Z0-9 -]");
+        var rgx = CleanRegex();
         var msg = rgx.Replace(context.Message.Content, "");
 
         var words = msg.ToLowerInvariant().Split(' ');
@@ -27,14 +35,10 @@ public class UrbitSarcasm(Random _random)
         return null;
     }
 
-    private class UrbitConversation
-        : TerminalConversation
-    {
-        public UrbitConversation(string response)
-            : base(response)
-        {
-        }
-    }
+    [GeneratedRegex("[^a-zA-Z0-9 -]")]
+    private static partial Regex CleanRegex();
+
+    private class UrbitConversation(string response) : TerminalConversation(response);
 
     #region response generator
     private static string Plural(string noun)

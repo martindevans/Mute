@@ -1,4 +1,5 @@
 ﻿using Mute.Moe.Tools;
+using Mute.Moe.Tools.Providers;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Information.Weather;
@@ -51,6 +52,16 @@ public interface IWeatherReport
     /// Current rain (mm/hour)
     /// </summary>
     public float? RainMM { get; }
+
+    /// <summary>
+    /// Latitude for this report
+    /// </summary>
+    public float Latitude { get; }
+
+    /// <summary>
+    /// Longitude for this report
+    /// </summary>
+    public float Longitude { get; }
 }
 
 /// <summary>

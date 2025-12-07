@@ -6,11 +6,31 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Database;
 
+/// <summary>
+/// Main SQL database services
+/// </summary>
 public interface IDatabaseService
 {
+    /// <summary>
+    /// The current open DB connection
+    /// </summary>
     IDbConnection Connection { get; }
 
+    /// <summary>
+    /// Create a database command
+    /// </summary>
+    /// <returns></returns>
     DbCommand CreateCommand();
+}
+
+public static class IDatabaseServiceExtensions
+{
+    public static int Exec(this IDatabaseService db, string sql)
+    {
+        using var cmd = db.CreateCommand();
+        cmd.CommandText = sql;
+        return cmd.ExecuteNonQuery();
+    }
 }
 
 public class SqlAsyncResult<TItem>

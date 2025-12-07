@@ -4,11 +4,14 @@ using System.Text.Json.Serialization;
 namespace Mute.Moe.Services.ImageGen;
 
 /// <summary>
-/// Store the config setting used to generate an image
+/// Store the config settings used to generate an image
 /// </summary>
 public interface IImageGenerationConfigStorage
     : IKeyValueStorage<ImageGenerationConfig>;
 
+/// <summary>
+/// The config settings used to generate an image
+/// </summary>
 public class ImageGenerationConfig
 {
     [JsonPropertyName("pos")] public required string Positive { get; set; }
@@ -26,6 +29,10 @@ public class ImageGenerationConfig
     [JsonPropertyName("type")] public required ImageGenerationType Type { get; set; }
     [JsonPropertyName("bat")] public required int BatchSize { get; set; }
 
+    /// <summary>
+    /// Convert to a prompt
+    /// </summary>
+    /// <returns></returns>
     public Prompt ToPrompt()
     {
         return new Prompt
@@ -41,6 +48,15 @@ public class ImageGenerationConfig
         };
     }
 
+    /// <summary>
+    /// Convert from a prompt
+    /// </summary>
+    /// <param name="prompt"></param>
+    /// <param name="referenceUrl"></param>
+    /// <param name="isPrivate"></param>
+    /// <param name="batchSize"></param>
+    /// <param name="type"></param>
+    /// <returns></returns>
     public static ImageGenerationConfig FromPrompt(Prompt prompt, string? referenceUrl, bool isPrivate, int batchSize, ImageGenerationType type)
     {
         return new ImageGenerationConfig

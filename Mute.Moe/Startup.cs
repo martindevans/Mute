@@ -47,6 +47,7 @@ using Serpent.Loading;
 using System.IO.Abstractions;
 using System.Net.Http;
 using LlmTornado.Embedding.Models;
+using Mute.Moe.Tools.Providers;
 using Wasmtime;
 
 namespace Mute.Moe;
@@ -71,8 +72,10 @@ public record Startup(Configuration Configuration)
 
         services.AddTransient<IImageGeneratorBannedWords, HardcodedBannedWords>();
         services.AddTransient<IImageGenerator, Automatic1111>();
-        services.AddTransient<IImageAnalyser, Automatic1111>();
-        services.AddTransient<IImageUpscaler, Automatic1111>();
+        //services.AddTransient<IImageAnalyser, Automatic1111>();
+        services.AddTransient<IImageAnalyser, TornadoAnalyser>();
+        //services.AddTransient<IImageUpscaler, Automatic1111>();
+        services.AddTransient<IImageUpscaler, ImagesharpUpscaler>();
         services.AddTransient<IImageOutpainter, Automatic1111>();
         services.AddSingleton<StableDiffusionBackendCache>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
@@ -87,7 +90,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<ITransactions, DatabaseTransactions>();
         services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
         services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
-        services.AddSingleton<IUptime, UtcDifferenceUptime>();
+        services.AddSingleton<IUptime>(new UtcDifferenceUptime());
         services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
         services.AddSingleton<IForexInfo, AlphaVantageForex>();
         services.AddSingleton<IStockSearch, AlphaVantageStockSearch>();
@@ -143,15 +146,37 @@ public record Startup(Configuration Configuration)
         if (Configuration.Auth == null)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
-        var providers = new List<ProviderAuthentication>();
-        if (Configuration.RemoteLLM?.Google?.Key != null)
-            providers.Add(new ProviderAuthentication(LLmProviders.Google, Configuration.RemoteLLM.Google.Key));
-        if (Configuration.RemoteLLM?.OpenAI?.Key != null)
-            providers.Add(new ProviderAuthentication(LLmProviders.OpenAi, Configuration.RemoteLLM.OpenAI.Key));
-        var api = new TornadoApi(providers);
+        // Create API
+        TornadoApi api;
+        if (Configuration.LLM?.SelfHost?.Endpoint != null)
+        {
+            api = new TornadoApi(new Uri(Configuration.LLM.SelfHost.Endpoint), Configuration.LLM.SelfHost.Key, LLmProviders.Custom);
+
+            services.AddSingleton(new ChatModel(Configuration.LLM.SelfHost.ChatModel));
+
+            services.AddSingleton(new EmbeddingModel(
+                Configuration.LLM.SelfHost.EmbeddingModel,
+                LLmProviders.Custom,
+                Configuration.LLM.SelfHost.EmbeddingContext,
+                Configuration.LLM.SelfHost.EmbeddingDims
+            ));
+
+            services.AddSingleton(new TornadoAnalyser.Model(new(Configuration.LLM.SelfHost.VisionLanguageModel), IsLocal:true));
+        }
+        else
+        {
+            var providers = new List<ProviderAuthentication>();
+            if (Configuration.LLM?.Google?.Key != null)
+                providers.Add(new ProviderAuthentication(LLmProviders.Google, Configuration.LLM.Google.Key));
+            if (Configuration.LLM?.OpenAI?.Key != null)
+                providers.Add(new ProviderAuthentication(LLmProviders.OpenAi, Configuration.LLM.OpenAI.Key));
+            api = new TornadoApi(providers);
+
+            services.AddSingleton(ChatModel.Google.Gemini.Gemini25Flash);
+            services.AddSingleton(EmbeddingModel.Google.Gemini.GeminiEmbedding001);
+        }
+
         services.AddSingleton(api);
-        services.AddSingleton(ChatModel.Google.Gemini.Gemini25Flash);
-        services.AddSingleton(EmbeddingModel.Google.Gemini.GeminiEmbedding001);
     }
 
     private static void AddToolProviders(IServiceCollection services)
@@ -167,5 +192,6 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, WikipediaToolProvider>();
         services.AddSingleton<IToolProvider, DiceRollToolProvider>();
         services.AddSingleton<IToolProvider, PythonToolProvider>();
+        services.AddSingleton<IToolProvider, SubAgentCreationToolProvider>();
     }
 }

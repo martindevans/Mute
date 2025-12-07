@@ -10,6 +10,7 @@ namespace Mute.Moe.Discord.Attributes;
 public class RequireVoiceChannel
     : PreconditionAttribute 
 {
+    /// <inheritdoc />
     public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
     {
         return context.User is IVoiceState

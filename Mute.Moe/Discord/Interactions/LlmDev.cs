@@ -11,6 +11,8 @@ using Mute.Moe.Tools;
 
 namespace Mute.Moe.Discord.Interactions;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 /// <summary>
 /// Development playground for LLM stuff
 /// </summary>
@@ -91,6 +93,8 @@ public class LlmDev
 
         await conversation.StreamResponseRich(handler);
 
+        if (message.Length == 0)
+            message.AppendLine("No Response From LLM");
         var replies = await LongReplyAsync(message.ToString());
 
         if (reasoning.Length > 0)

@@ -1,7 +1,11 @@
 ﻿// ReSharper disable UnusedMember.Global
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 namespace Mute.Moe.Utilities;
 
+/// <summary>
+/// Constants for various emoji
+/// </summary>
 public static class EmojiLookup
 {
     public const string Unamused = "😒";

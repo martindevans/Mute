@@ -9,6 +9,8 @@ using Mute.Moe.Discord.Attributes;
 
 namespace Mute.Moe.Discord.Modules;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 public class Python(PythonBuilder _builder)
     : BaseModule
 {

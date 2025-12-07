@@ -1,21 +1,31 @@
 ﻿using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
-using Dapper;
+using Serilog;
 
 
 namespace Mute.Moe.Services.Database;
 
+/// <summary>
+/// SQLite database
+/// </summary>
 public class SqliteDatabase
     : IDatabaseService
 {
     private readonly SQLiteConnection _dbConnection;
 
+    /// <inheritdoc />
     public IDbConnection Connection => _dbConnection;
 
+    /// <summary>
+    /// Create new SQLite database connection
+    /// </summary>
+    /// <param name="config"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public SqliteDatabase(Configuration config)
     {
-        Console.WriteLine($"Connection String: `{config.Database?.ConnectionString}`");
+        Log.Information("DB Connection String: {0}", config.Database?.ConnectionString);
+
         _dbConnection = new SQLiteConnection(config.Database?.ConnectionString ?? throw new ArgumentNullException(nameof(config.Database.ConnectionString)));
         _dbConnection.Open();
 
@@ -24,19 +34,9 @@ public class SqliteDatabase
         _dbConnection.EnableExtensions(false);
     }
 
+    /// <inheritdoc />
     public DbCommand CreateCommand()
     {
         return new SQLiteCommand(_dbConnection);
-    }
-}
-
-// ReSharper disable once InconsistentNaming
-public static class IDatabaseServiceExtensions
-{
-    public static int Exec(this IDatabaseService db, string sql)
-    {
-        using var cmd = db.CreateCommand();
-        cmd.CommandText = sql;
-        return cmd.ExecuteNonQuery();
     }
 }

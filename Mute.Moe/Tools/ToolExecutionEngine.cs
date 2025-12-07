@@ -2,6 +2,7 @@
 using LlmTornado.ChatFunctions;
 using LlmTornado.Common;
 using LlmTornado.Infra;
+using Mute.Moe.Tools.Providers;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Tools;
@@ -36,10 +37,12 @@ public class ToolExecutionEngineFactory
     /// Create a new <see cref="ToolExecutionEngineFactory"/> for the given conversation
     /// </summary>
     /// <param name="conversation"></param>
+    /// <param name="toolSearch"></param>
+    /// <param name="defaultTools"></param>
     /// <returns></returns>
-    public ToolExecutionEngine GetExecutionEngine(Conversation conversation)
+    public ToolExecutionEngine GetExecutionEngine(Conversation conversation, bool toolSearch = true, bool defaultTools = true)
     {
-        var engine = new ToolExecutionEngine(conversation, _toolsIndex);
+        var engine = new ToolExecutionEngine(conversation, _toolsIndex, toolSearch, defaultTools);
         return engine;
     }
 }
@@ -52,6 +55,8 @@ public class ToolExecutionEngine
     private readonly Conversation _conversation;
     private readonly IToolIndex _allTools;
     private readonly Dictionary<string, ITool> _availableTools = [ ];
+    private readonly HashSet<string> _bannedTools = [ ];
+    private readonly List<string> _calls = [ ];
 
     /// <summary>
     /// All tools which have been made available to this conversation so far
@@ -59,33 +64,93 @@ public class ToolExecutionEngine
     public IReadOnlyDictionary<string, ITool> AvailableTools => _availableTools;
 
     /// <summary>
+    /// Get a list of all tool calls that have been made
+    /// </summary>
+    public IReadOnlyList<string> ToolCalls => _calls;
+
+    /// <summary>
     /// Create a new execution engine, adds the `search_for_tools` meta tool and all default tools
     /// </summary>
     /// <param name="conversation"></param>
     /// <param name="tools"></param>
-    public ToolExecutionEngine(Conversation conversation, IToolIndex tools)
+    /// <param name="allowToolSearch"></param>
+    /// <param name="addDefaultTools"></param>
+    public ToolExecutionEngine(Conversation conversation, IToolIndex tools, bool allowToolSearch, bool addDefaultTools)
     {
         _conversation = conversation;
         _allTools = tools;
 
         conversation.Update(c =>
         {
+            c.Tools ??= [];
+
             // Add the `search_for_tools` meta tool
-            c.Tools ??= [ ];
-            c.Tools.Add(new Tool([
-                new ToolParam("query", "A detailed natural language query describing the functionality of the tool required.", ToolParamAtomicTypes.String)
-            ], "search_for_tools", "Performs an approximate/fuzzy search for tools through embedding vector similarity. If no results are found, try rewording your query."));
+            if (allowToolSearch)
+            {
+                c.Tools.Add(new Tool([
+                    new ToolParam("query", "A detailed natural language query describing the functionality of the tool required.", ToolParamAtomicTypes.String)
+                ], "search_for_tools", "Performs an approximate/fuzzy search for tools through embedding vector similarity. If no results are found, try rewording your query."));
+            }
 
             // Add default tools
-            foreach (var (key, tool) in _allTools.Tools)
+            if (addDefaultTools)
             {
-                if (tool.IsDefaultTool)
+                foreach (var (key, tool) in _allTools.Tools)
                 {
-                    c.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
-                    _availableTools.Add(key, tool);
+                    if (tool.IsDefaultTool)
+                    {
+                        c.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
+                        _availableTools.Add(key, tool);
+                    }
                 }
             }
         });
+    }
+
+    /// <summary>
+    /// Add a specific tool to the chat context.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns>True, if the tool was found in the index</returns>
+    public async Task<bool> AddTool(string name)
+    {
+        // Try to get the tool from the index
+        if (!_allTools.Tools.TryGetValue(name, out var tool))
+            return false;
+
+        // Add it to the conversation
+        if (_availableTools.TryAdd(tool.Name, tool))
+        {
+            _conversation.Update(c =>
+            {
+                c.Tools ??= [ ];
+                c.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
+            });
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Ban a specific tool from this chat context. If the tool has been added already it will be removed.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public async Task<bool> BanTool(string name)
+    {
+        _bannedTools.Add(name);
+
+        if (!_availableTools.ContainsKey(name))
+            return false;
+        
+        _conversation.Update(c =>
+        {
+            c.Tools ??= [];
+            c.Tools.RemoveAll(a => name.Equals(a.Function?.Name));
+        });
+
+        return true;
+
     }
 
     /// <summary>
@@ -104,6 +169,19 @@ public class ToolExecutionEngine
     /// <param name="functionCall"></param>
     public async Task Execute(FunctionCall functionCall)
     {
+        _calls.Add(functionCall.Name);
+
+        if (_bannedTools.Contains(functionCall.Name))
+        {
+            var error = new
+            {
+                error = $"Tool '{functionCall.Name}' is not allowed in this context"
+            };
+
+            functionCall.Result = new FunctionResult(functionCall, error, false);
+            return;
+        }
+
         switch (functionCall.Name)
         {
             // Meta tool to search for tools
@@ -145,6 +223,11 @@ public class ToolExecutionEngine
         }
     }
 
+    /// <summary>
+    /// Execute a handler for the `search_for_tools` function
+    /// </summary>
+    /// <param name="call"></param>
+    /// <returns></returns>
     private async Task<(bool success, object result)> SearchForTools(FunctionCall call)
     {
         // Get the 'query' parameter
@@ -152,7 +235,7 @@ public class ToolExecutionEngine
             return (false, error);
 
         // Find all tools, ordered by similarity to query embedding
-        var results = (await _allTools.Find(query, limit: 5)).ToList();
+        var results = (await _allTools.Find(query, limit: 5)).Where(x => !_bannedTools.Contains(x.Tool.Name)).ToList();
 
         // Add tools
         var matches = new List<string>();
@@ -162,25 +245,25 @@ public class ToolExecutionEngine
             var threshold1 = top * 0.95;
             var threshold2 = 0.8;
 
-            // Add tools which are within the thresholds
-            foreach (var (similarity, tool) in results)
+            _conversation.Update(c =>
             {
-                if (similarity >= threshold1 && similarity >= threshold2)
+                // Ensure tools list is not null before we add to it
+                c.Tools ??= [];
+
+                foreach (var (similarity, tool) in results)
                 {
-                    // Return all tool names to LLM, regardless of if they're new
+                    // Ignore tools below thresholds
+                    if (similarity < threshold1 || similarity < threshold2)
+                        continue;
+
+                    // Add to the list of results returned to the LLM
                     matches.Add(tool.Name);
 
                     // Add new tools to the conversation
                     if (_availableTools.TryAdd(tool.Name, tool))
-                    {
-                        _conversation.Update(c =>
-                        {
-                            c.Tools ??= [ ];
-                            c.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
-                        });
-                    }
+                        c.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
                 }
-            }
+            });
         }
 
         return (true, matches);

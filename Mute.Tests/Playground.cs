@@ -14,14 +14,6 @@ namespace Mute.Tests
     [TestClass]
     public class Playground
     {
-
-        [TestMethod]
-        public void MethodName()
-        {
-            var m = "hello <@!2334>".FindUserMentions();
-            Console.WriteLine(m.Single());
-        }
-
         [TestMethod]
         public void BooleanChoices()
         {
@@ -56,7 +48,7 @@ namespace Mute.Tests
             Assert.AreEqual(("British pound", 9M), M("you owe me 9 gbp"));
             Assert.AreEqual(("Dollar", 10M), M("Oh i send you that $10 by bank transfer earlier btw"));
 
-            Assert.AreEqual(null, M("you owe me 3 quid"));
+            Assert.IsNull(M("you owe me 3 quid"));
         }
 
         private static (string, decimal)? M([NotNull] string input)
@@ -88,7 +80,7 @@ namespace Mute.Tests
         public void JsonRecord()
         {
             var add = new Add(
-                new MacroInvoke("ns", "name", new IAstNode[] { new ConstantValue(1) }),
+                new MacroInvoke("ns", "name", [ new ConstantValue(1) ]),
                 new Negate(new ConstantValue(2))
             );
 

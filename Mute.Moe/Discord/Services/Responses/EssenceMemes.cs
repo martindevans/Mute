@@ -6,11 +6,18 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
+/// <summary>
+/// Calliope asked for this
+/// </summary>
+/// <param name="_random"></param>
 [UsedImplicitly]
 public partial class EssenceMemes(Random _random)
     : IResponse
 {
+    /// <inheritdoc />
     public double BaseChance => 0.15;
+
+    /// <inheritdoc />
     public double MentionedChance => 1;
 
     private readonly HashSet<string> _triggerWords =
@@ -21,6 +28,7 @@ public partial class EssenceMemes(Random _random)
     [GeneratedRegex("[^a-zA-Z0-9 -]", RegexOptions.IgnoreCase, "en-GB")]
     private static partial Regex ReplaceRegex();
 
+    /// <inheritdoc />
     public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
     {
         var rgx = ReplaceRegex();

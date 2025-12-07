@@ -3,7 +3,6 @@ using System.Text;
 using Discord.Interactions;
 using Mute.Moe.Services.ImageGen;
 using System.Threading.Tasks;
-using Autofocus.Config;
 using Discord;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Services.ImageGeneration;
@@ -11,6 +10,8 @@ using Mute.Moe.Services.ImageGen.Contexts;
 using SixLabors.ImageSharp;
 
 namespace Mute.Moe.Discord.Interactions;
+
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 /// <summary>
 /// Generate images with AI
@@ -76,9 +77,13 @@ public class Pictures
         }
     }
 
+    /// <summary>
+    /// Analyse image, produce textual description of it
+    /// </summary>
+    /// <param name="attachment"></param>
     [SlashCommand("analyse", "I will try to describe the image")]
     [UsedImplicitly]
-    public async Task Analyse(IAttachment attachment, InterrogateModel model = InterrogateModel.DeepDanbooru)
+    public async Task Analyse(IAttachment attachment)
     {
         await DeferAsync();
 
@@ -89,12 +94,18 @@ public class Pictures
             return;
         }
 
-        var description = await _analyser.GetImageDescription(image, model);
+        var analysis = await _analyser.GetImageDescription(image);
+        var desc = analysis?.Description ?? "Something went wrong analysing that image";
+        var title = analysis?.Title ?? attachment.Title ?? "Image Analysis";
 
+        var localTag = _analyser.IsLocal ? " (local)" : "";
         var embed = new EmbedBuilder()
                    .WithImageUrl(attachment.Url)
+                   .WithFooter($"{_analyser.ModelName}{localTag}")
+                   .WithDescription(desc)
+                   .WithTitle(title)
                    .Build();
-        await FollowupAsync($"```{description}```", embed: embed);
+        await FollowupAsync(embed: embed);
     }
 
     [SlashCommand("metadata", "I will try to extract stable diffusion generation data from the image")]

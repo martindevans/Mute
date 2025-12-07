@@ -5,9 +5,13 @@ using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Attributes;
 
+/// <summary>
+/// Send a message warning if the debugger is attached when this command is executed
+/// </summary>
 public class WarnDebuggerAttribute
     : PreconditionAttribute 
 {
+    /// <inheritdoc />
     public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
     {
         // Attach a "DebuggerWarningSent" object, to prevent this from spamming multiple warnings for one message

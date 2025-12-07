@@ -1,5 +1,6 @@
 ﻿using Autofocus;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofocus.Config;
 using Autofocus.CtrlNet;
@@ -15,6 +16,9 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace Mute.Moe.Services.ImageGen;
 
+/// <summary>
+/// Implementation of various image related services, using Automatic1111 API
+/// </summary>
 public class Automatic1111
     : IImageGenerator, IImageAnalyser, IImageUpscaler, IImageOutpainter
 {
@@ -34,6 +38,10 @@ public class Automatic1111
 
     private readonly float _afterDetailHandMinSize;
     private readonly float _afterDetailFaceMinSize;
+
+    private const InterrogateModel _model = InterrogateModel.DeepDanbooru;
+    string IImageAnalyser.ModelName => _model.ToString();
+    bool IImageAnalyser.IsLocal => true;
 
     public Automatic1111(Configuration config, StableDiffusionBackendCache backends)
     {
@@ -61,6 +69,7 @@ public class Automatic1111
             ?? throw new InvalidOperationException("No image generation backends accessible");
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyCollection<Image>> Text2Image(int? seed, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         // Get the backend and lock it for the duration of this operation
@@ -107,6 +116,7 @@ public class Automatic1111
         return results;
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image inputImage, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         // Get the backend and lock it for the duration of this operation
@@ -196,7 +206,7 @@ public class Automatic1111
         return await result.Images
             .Take(result.Images.Count - (cnetConfig == null ? 0 : 1)) // Skip the last image if cnet is used, to remove the guidance image which is added to the end
             .ToAsyncEnumerable()
-            .SelectAwait(async a => await a.ToImageSharpAsync())
+            .Select(async (Base64EncodedImage a, CancellationToken _) => await a.ToImageSharpAsync())
             .ToListAsync();
     }
 
@@ -245,7 +255,8 @@ public class Automatic1111
         }
     }
 
-    public async Task<string> GetImageDescription(Stream image, InterrogateModel model)
+    /// <inheritdoc />
+    public async Task<ImageAnalysisResult?> GetImageDescription(Stream image)
     {
         // Get the backend and lock it for the duration of this operation
         using var scope = await (await GetBackend()).Lock(default);
@@ -255,13 +266,14 @@ public class Automatic1111
         await image.CopyToAsync(mem);
         var buffer = mem.ToArray();
 
-        var analysis = await backend.Interrogate(new Base64EncodedImage(buffer), model);
+        var analysis = await backend.Interrogate(new Base64EncodedImage(buffer), _model);
 
-        return analysis.Caption
-                       .Replace("\\(", "(")
-                       .Replace("\\)", ")");
+        var desc = analysis.Caption.Replace("\\(", "(").Replace("\\)", ")");
+
+        return new ImageAnalysisResult(null, desc);
     }
 
+    /// <inheritdoc />
     public async Task<Image> UpscaleImage(Image inputImage, uint width, uint height, Func<ProgressReport, Task>? progressReporter = null)
     {
         // Get the backend and lock it for the duration of this operation
@@ -316,6 +328,7 @@ public class Automatic1111
         return await upscaleResult.Images[0].ToImageSharpAsync();
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyCollection<Image>> Outpaint(Image inputImage, string positive, string negative, Func<ProgressReport, Task>? progressReporter = null)
     {
         // Get the backend and lock it for the duration of this operation

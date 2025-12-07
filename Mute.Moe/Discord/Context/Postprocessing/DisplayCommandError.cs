@@ -4,24 +4,33 @@ using Mute.Moe.Discord.Modules.Introspection;
 
 namespace Mute.Moe.Discord.Context.Postprocessing;
 
+/// <summary>
+/// When a command execution fails for some reason, display an error
+/// </summary>
 public class DisplayCommandError
     : IUnsuccessfulCommandPostprocessor
 {
     private readonly CommandService _commands;
     private readonly Random _random;
-    private readonly Configuration _config;
     private readonly char _prefix;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="commands"></param>
+    /// <param name="random"></param>
     public DisplayCommandError(Configuration config, CommandService commands, Random random)
     {
         _commands = commands;
         _random = random;
-        _config = config;
         _prefix = config.PrefixCharacter;
     }
 
+    /// <inheritdoc />
     public uint Order => uint.MaxValue;
 
+    /// <inheritdoc />
     public async Task<bool> Process(MuteCommandContext context,  IResult result)
     {
         if (result.Error == CommandError.UnknownCommand)
@@ -32,7 +41,7 @@ public class DisplayCommandError
             if (spaceIndex != -1)
                 inputCmd = input[..spaceIndex];
 
-            inputCmd = inputCmd.TrimStart(_config.PrefixCharacter);
+            inputCmd = inputCmd.TrimStart(_prefix);
 
             // Take a random command from the group of commands which are closest
             var closest = _commands.Commands

@@ -7,6 +7,8 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [HelpGroup("help")]
 public class Help
     : BaseModule

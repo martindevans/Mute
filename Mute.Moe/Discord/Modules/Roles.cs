@@ -7,6 +7,8 @@ using IRole = Discord.IRole;
 
 namespace Mute.Moe.Discord.Modules;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [UsedImplicitly]
 [Group("role"), Alias("roles"), RequireContext(ContextType.Guild)]
 public class Roles(IGroups _groups, IUserService _users)

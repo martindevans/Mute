@@ -4,6 +4,9 @@ using SixLabors.ImageSharp.Metadata;
 
 namespace Mute.Moe.Extensions;
 
+/// <summary>
+/// Extensions related to images
+/// </summary>
 public static class ImageExtensions
 {
     public static string? GetGenerationMetadata(this PngMetadata pngMeta)

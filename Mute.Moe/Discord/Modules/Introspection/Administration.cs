@@ -10,6 +10,8 @@ using Mute.Moe.Services.Information.Weather;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [UsedImplicitly]
 [RequireOwner]
 public class Administration

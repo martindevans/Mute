@@ -26,6 +26,11 @@ public class ComponentActionService
             waiter.Set(args);
     }
 
+    /// <summary>
+    /// Get a task that completes when the given socket message component ID is execited
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
     public Task<SocketMessageComponent> GetWaiter(string id)
     {
         return _waiters.GetOrAdd(id, _ => new()).Task;

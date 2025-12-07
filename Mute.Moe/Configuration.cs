@@ -1,15 +1,16 @@
 ﻿namespace Mute.Moe;
 
+/// <summary>
+/// Bot configuration, loaded from config.json file
+/// </summary>
 public class Configuration
 {
+    #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     [UsedImplicitly] public AuthConfig? Auth;
     [UsedImplicitly] public AvatarConfig? Avatar;
     [UsedImplicitly] public AlphaAdvantageConfig? AlphaAdvantage;
     [UsedImplicitly] public CoinMarketCapConfig? CoinMarketCap;
     [UsedImplicitly] public DatabaseConfig? Database;
-    [UsedImplicitly] public SteamConfig? Steam;
-    [UsedImplicitly] public DictionaryConfig? Dictionary;
-    [UsedImplicitly] public SentimentReactionConfig? SentimentReactions;
     [UsedImplicitly] public UrbanDictionaryConfig? UrbanDictionary;
     [UsedImplicitly] public STTConfig? STT;
     [UsedImplicitly] public LLMConfig? LLM;
@@ -17,31 +18,68 @@ public class Configuration
     [UsedImplicitly] public GlobalImageGenerationConfig? ImageGeneration;
     [UsedImplicitly] public LocationConfig? Location;
     [UsedImplicitly] public OpenWeatherMapConfig? OpenWeatherMap;
-    [UsedImplicitly] public RemoteLLMConfig? RemoteLLM;
+    #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
-    [UsedImplicitly] public bool ProcessMessagesFromSelf;
+    /// <summary>
+    /// Set if the bot process messages from itself
+    /// </summary>
+    [UsedImplicitly] public bool ProcessMessagesFromSelf = false;
+
+    /// <summary>
+    /// Set the command prefix character
+    /// </summary>
     [UsedImplicitly] public char PrefixCharacter = '!';
 }
 
+/// <summary>
+/// Configuration for avatars
+/// </summary>
 public class AvatarConfig
 {
+    /// <summary>
+    /// A set of avatars, which applies within a certain date range
+    /// </summary>
     public class AvatarSet
     {
+        /// <summary>
+        /// Start day-of-year (inclusive) that this avatar can be used
+        /// </summary>
         [UsedImplicitly] public int StartDay;
+
+        /// <summary>
+        /// End day-of-years (inclusive) that this avatar can be used
+        /// </summary>
         [UsedImplicitly] public int EndDay;
+
+        /// <summary>
+        /// Path to a directory that contains images
+        /// </summary>
         [UsedImplicitly] public string? Path;
+
+        /// <summary>
+        /// If any active avatar sets are exclusive, then all non-exclusive sets are disabled
+        /// </summary>
         [UsedImplicitly] public bool Exclusive;
     }
 
+    /// <summary>
+    /// All sets of avatars
+    /// </summary>
     [UsedImplicitly] public AvatarSet[]? Avatars;
 }
 
+/// <summary>
+/// Discord Auth
+/// </summary>
 public class AuthConfig
 {
     [UsedImplicitly] public string? Token;
     [UsedImplicitly] public string? ClientId;
 }
 
+/// <summary>
+/// Alpha Advantage API service config
+/// </summary>
 public class AlphaAdvantageConfig
 {
     [UsedImplicitly] public string? Key;
@@ -51,6 +89,9 @@ public class AlphaAdvantageConfig
     [UsedImplicitly] public int CacheMaxAgeSeconds = (int)TimeSpan.FromHours(6).TotalSeconds;
 }
 
+/// <summary>
+/// CoinMarketCap API service config
+/// </summary>
 public class CoinMarketCapConfig
 {
     [UsedImplicitly] public string? Key;
@@ -60,28 +101,20 @@ public class CoinMarketCapConfig
     [UsedImplicitly] public int CacheMaxAgeSeconds = (int)TimeSpan.FromHours(6).TotalSeconds;
 }
 
+/// <summary>
+/// SQLite database config
+/// </summary>
 public class DatabaseConfig
 {
+    /// <summary>
+    /// SQLite connection string
+    /// </summary>
     [UsedImplicitly] public string? ConnectionString;
 }
 
-public class SteamConfig
-{
-    [UsedImplicitly] public string? WebApiKey;
-}
-
-public class DictionaryConfig
-{
-    [UsedImplicitly] public string? WordListPath;
-}
-
-public class SentimentReactionConfig
-{
-    [UsedImplicitly] public double CertaintyThreshold = 0.8;
-    [UsedImplicitly] public double ReactionChance = 0.05;
-    [UsedImplicitly] public double MentionReactionChance = 0.25;
-}
-
+/// <summary>
+/// Urban dictionary API service config
+/// </summary>
 public class UrbanDictionaryConfig
 {
     [UsedImplicitly] public uint CacheSize;
@@ -89,26 +122,28 @@ public class UrbanDictionaryConfig
     [UsedImplicitly] public uint CacheMaxTimeSeconds;
 }
 
+/// <summary>
+/// Config for Speech-To-Text
+/// </summary>
 public class STTConfig
 {
+    [UsedImplicitly] public WhisperConfig? Whisper;
+
     public class WhisperConfig
     {
         [UsedImplicitly] public string? ModelPath;
         [UsedImplicitly] public uint? Threads;
     }
-    
-    [UsedImplicitly] public WhisperConfig? Whisper;
 }
 
+/// <summary>
+/// Config for large language models
+/// </summary>
 public class LLMConfig
-{
-    [UsedImplicitly] public string? ModelPath;
-}
-
-public class RemoteLLMConfig
 {
     [UsedImplicitly] public GoogleConfig? Google;
     [UsedImplicitly] public OpenAIConfig? OpenAI;
+    [UsedImplicitly] public SelfHostConfig? SelfHost;
 
     public class GoogleConfig
     {
@@ -119,8 +154,24 @@ public class RemoteLLMConfig
     {
         public string? Key;
     }
+
+    public class SelfHostConfig
+    {
+        public string Endpoint = "http://localhost:8080";
+        public string Key = "nokey";
+
+        public required string ChatModel;
+        public required string VisionLanguageModel;
+
+        public required string EmbeddingModel;
+        public int EmbeddingContext;
+        public int EmbeddingDims;
+    }
 }
 
+/// <summary>
+/// Config for Automatic1111 image generation backends
+/// </summary>
 public class Automatic1111Config
 {
     [UsedImplicitly] public Backend[] Backends = null!;
@@ -160,18 +211,55 @@ public class Automatic1111Config
     }
 }
 
+/// <summary>
+/// General config for image generation (non A1111 specific)
+/// </summary>
 public class GlobalImageGenerationConfig
 {
+    /// <summary>
+    /// How many images to generate per request
+    /// </summary>
     [UsedImplicitly] public int? BatchSize;
 }
 
+/// <summary>
+/// Provide the bot with it's approximate physical location on Earth
+/// </summary>
 public class LocationConfig
 {
+    /// <summary>
+    /// Location Latitude
+    /// </summary>
     [UsedImplicitly] public float Latitude;
+
+    /// <summary>
+    /// Location Longitude
+    /// </summary>
     [UsedImplicitly] public float Longitude;
 }
 
+/// <summary>
+/// Config for OpenWeatherMap API service
+/// </summary>
 public class OpenWeatherMapConfig
 {
+    /// <summary>
+    /// API key for OpenWeatherMap
+    /// </summary>
     [UsedImplicitly] public string? ApiKey;
+
+    /// <summary>
+    /// Max items in cache
+    /// </summary>
+    [UsedImplicitly] public int CacheSize = 32;
+
+    /// <summary>
+    /// Min age of items before they can be culled
+    /// </summary>
+    [UsedImplicitly] public int CacheMinAgeSeconds = (int)TimeSpan.FromSeconds(30).TotalSeconds;
+
+    /// <summary>
+    /// Max age of items before they must be culled
+    /// </summary>
+    [UsedImplicitly] public int CacheMaxAgeSeconds = (int)TimeSpan.FromMinutes(7).TotalSeconds;
 }

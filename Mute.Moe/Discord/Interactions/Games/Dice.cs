@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Discord.Interactions.Games;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [Group("dice", "Rolling dice")]
 [UsedImplicitly]
 public class Dice

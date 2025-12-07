@@ -12,17 +12,17 @@ namespace Mute.Tests.Extensions
         [TestMethod]
         public void RandomItemSingleItemList()
         {
-            var l = (IEnumerable<int>)new[] { 1 };
+            var l = (IEnumerable<int>)[ 1 ];
             Assert.AreEqual(1, l.Random(new Random()));
         }
 
         [TestMethod]
         public void RandomItemFromList()
         {
-            var l = (IEnumerable<int>)new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            var l = (IEnumerable<int>)[ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
 
             var r = new Random();
-            Assert.IsTrue(Enumerable.Range(0, 1000).Select(_ => l.Random(r)).Distinct().Count() > 5);
+            Assert.IsGreaterThan(5, Enumerable.Range(0, 1000).Select(_ => l.Random(r)).Distinct().Count());
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Mute.Moe.Tools;
+using Mute.Moe.Tools.Providers;
 
 namespace Mute.Moe.Services.Information.Anime;
 

@@ -9,6 +9,8 @@ using Mute.Moe.Discord.Services.Users;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [UsedImplicitly]
 public class UserInfo
     : BaseModule

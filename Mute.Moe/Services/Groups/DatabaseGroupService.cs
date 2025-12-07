@@ -1,12 +1,13 @@
-﻿using System.Data.Common;
+﻿using Discord;
+using Mute.Moe.Services.Database;
+using Serilog;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.Threading.Tasks;
-using Discord;
-
-using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Groups;
 
+/// <inheritdoc />
 public class DatabaseGroupService
     : IGroups
 {
@@ -31,10 +32,11 @@ public class DatabaseGroupService
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Creating 'UnlockedRoles' table failed");
         }
     }
 
+    /// <inheritdoc />
     public async Task<bool> IsUnlocked( IRole grp)
     {
         await using var cmd = _database.CreateCommand();
@@ -46,6 +48,7 @@ public class DatabaseGroupService
         return results.HasRows;
     }
 
+    /// <inheritdoc />
     public IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
     {
         return new SqlAsyncResult<IRole?>(_database, PrepareQuery, ParseRole)
@@ -67,6 +70,7 @@ public class DatabaseGroupService
         }
     }
 
+    /// <inheritdoc />
     public async Task Unlock(IRole grp)
     {
         await using var cmd = _database.CreateCommand();
@@ -76,6 +80,7 @@ public class DatabaseGroupService
         await cmd.ExecuteNonQueryAsync();
     }
 
+    /// <inheritdoc />
     public async Task Lock(IRole grp)
     {
         await using var cmd = _database.CreateCommand();

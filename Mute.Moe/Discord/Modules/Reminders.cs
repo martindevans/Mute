@@ -4,12 +4,13 @@ using BalderHash;
 using Discord;
 using Discord.Commands;
 using Humanizer;
-using Humanizer.Localisation;
 using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.Reminders;
 
 namespace Mute.Moe.Discord.Modules;
+
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 [UsedImplicitly]
 public class Reminders(IReminders _reminders)
@@ -51,7 +52,7 @@ public class Reminders(IReminders _reminders)
         );
     }
 
-    private async Task DisplayReminder(IReminder reminder)
+    private async Task DisplayReminder(Reminder reminder)
     {
         var embed = new EmbedBuilder()
             .WithColor(Color)
@@ -102,17 +103,23 @@ public class Reminders(IReminders _reminders)
     }
 }
 
+/// <summary>
+/// Schedule reminders from audio messages
+/// </summary>
+/// <param name="_reminders"></param>
 public class RemindersCommandWord(IReminders _reminders)
     : ICommandWordHandler
 {
+    /// <inheritdoc />
     public IReadOnlyList<string> Triggers { get; } =
     [
         "remind", "Remind", "reminder", "Reminder"
     ];
 
-    public async Task<bool> Invoke(MuteCommandContext context, string message)
+    /// <inheritdoc />
+    public async Task<bool> Invoke(MuteCommandContext context, string transcription)
     {
-        var maybeTriggerMoment = message.TryParseReminderMoment();
+        var maybeTriggerMoment = transcription.TryParseReminderMoment();
 
         if (maybeTriggerMoment is not DateTime triggerMoment)
             return false;
@@ -121,7 +128,7 @@ public class RemindersCommandWord(IReminders _reminders)
 
         // Add some context to the message
         var prelude = $"{context.Message.Author.Mention} Reminder from {DateTime.UtcNow.Humanize(dateToCompareAgainst: triggerMoment)}...";
-        var msg = $"remind me {message}";
+        var msg = $"remind me {transcription}";
 
         // Save to database
         var n = await _reminders.Create(triggerMoment, prelude, msg, context.Message.Channel.Id, context.User.Id);

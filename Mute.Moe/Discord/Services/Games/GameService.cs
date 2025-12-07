@@ -8,6 +8,9 @@ using Mute.Moe.Services.Host;
 
 namespace Mute.Moe.Discord.Services.Games;
 
+/// <summary>
+/// Monitor user "playing" status, store them in the DB
+/// </summary>
 public class GameService
     : IHostedService
 {
@@ -52,11 +55,13 @@ public class GameService
         }
     }
 
+    /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _client.GuildMemberUpdated += Updated;
     }
 
+    /// <inheritdoc />
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         _client.GuildMemberUpdated -= Updated;

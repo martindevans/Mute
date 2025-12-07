@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FluidCaching;
 using Miki.Anilist;
@@ -6,27 +7,38 @@ using Miki.Anilist.Objects;
 
 namespace Mute.Moe.Services.Information.Anime;
 
+/// <summary>
+/// Fetch media info from Anilist, using the Mikibot API wrapper
+/// </summary>
+/// <typeparam name="TItem"></typeparam>
 public abstract class BaseMikibotMediaSearchService<TItem>
     : BaseMikibotSearchService<IMediaSearchResult, TItem>
     where TItem : class
 {
     private readonly MediaFormat[] _formats;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="formats">List of formats to <b>EXCLUDE</b></param>
     protected BaseMikibotMediaSearchService(params MediaFormat[] formats)
     {
         _formats = formats;
     }
 
+    /// <inheritdoc />
     protected override string ExtractId(IMediaSearchResult item)
     {
         return item.Id.ToString();
     }
 
+    /// <inheritdoc />
     protected override Task<ISearchResult<IMediaSearchResult>> SearchPage(AnilistClient client, string search, int index)
     {
         return client.SearchMediaAsync(search, index, false, filter: _formats);
     }
 
+    /// <inheritdoc />
     protected override async Task<TItem?> GetItemAsync(AnilistClient client, IMediaSearchResult item)
     {
         var mediaItem = await client.GetMediaAsync(item.Id);
@@ -43,6 +55,7 @@ public abstract class BaseMikibotMediaSearchService<TItem>
         return WrapItem(new MediaDescriptionReplacement(mediaItem, sb.ToString()));
     }
 
+    /// <inheritdoc />
     protected override uint Distance(IMediaSearchResult item, string searchTerm)
     {
         var itemTitle = item.EnglishTitle?.ToLowerInvariant() ?? "";
@@ -132,7 +145,7 @@ public abstract class BaseMikibotSearchService<TSearchItem, TItem>
         var client = new AnilistClient();
 
         return GetSearchItemsAsync(client, search)
-            .SelectAwait(async i => await GetItemAsyncCached(client, i))
+            .Select(async (TSearchItem i, CancellationToken ct) => await GetItemAsyncCached(client, i))
             .Where(a => a != null)
             .Select(a => a!);
     }

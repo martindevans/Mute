@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.DiceLang.AST;
+using Serilog;
 
 namespace Mute.Moe.Services.DiceLang.Macros;
 
@@ -22,15 +23,17 @@ public class DatabaseMacroStorage
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Creating 'DiceMacros' table failed");
         }
     }
 
+    /// <inheritdoc />
     public async Task<MacroDefinition?> Find(string? ns, string name)
     {
         return await FindAll(ns, name).SingleOrDefaultAsync();
     }
 
+    /// <inheritdoc />
     public IAsyncEnumerable<MacroDefinition> FindAll(string? ns, string? name)
     {
         if (ns == null && name == null)
@@ -50,6 +53,7 @@ public class DatabaseMacroStorage
         }
     }
 
+    /// <inheritdoc />
     public async Task Create(MacroDefinition definition)
     {
         const string InsertMacroSql = "INSERT INTO `DiceMacros` (`JSON`, `Namespace`, `Name`) VALUES (@JSON, @Namespace, @Name);";
@@ -66,6 +70,7 @@ public class DatabaseMacroStorage
         await cmd.ExecuteNonQueryAsync();
     }
 
+    /// <inheritdoc />
     public async Task Delete(string ns, string name)
     {
         const string DeleteMacroSql = "DELETE FROM `DiceMacros` WHERE Namespace = @Namespace AND Name = @Name";

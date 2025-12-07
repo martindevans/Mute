@@ -9,6 +9,8 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.Search;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [UsedImplicitly]
 [HelpGroup("finance")]
 [ThinkingReply]

@@ -11,6 +11,7 @@ using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Context.Postprocessing;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Discord.Services.Responses;
+using Serilog;
 using ExecuteResult = Discord.Commands.ExecuteResult;
 using IResult = Discord.Commands.IResult;
 using RunMode = Discord.Commands.RunMode;
@@ -53,7 +54,7 @@ public class HostedDiscordBot
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Exception while adding modules and interactions");
             throw;
         }
 
@@ -120,7 +121,7 @@ public class HostedDiscordBot
             return;
 
         if (result is ExecuteResult er)
-            Console.WriteLine(er.Exception);
+            Log.Error(er.Exception, "CommandExecuted completed with: {0}", er.ErrorReason);
 
         await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
     }
@@ -160,7 +161,7 @@ public class HostedDiscordBot
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    Log.Error(ex, "Generic command preprocessor failed: {0}", pre.GetType().Name);
                 }
             }
 
@@ -178,7 +179,7 @@ public class HostedDiscordBot
         }
         catch (Exception ex)
         {
-            await Console.Error.WriteLineAsync($"Message handler threw: {ex.Message}");
+            Log.Error(ex, "Message handler threw exception");
             throw;
         }
     }
@@ -210,10 +211,14 @@ public class HostedDiscordBot
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Executing command threw an exception");
         }
     }
 
+    /// <summary>
+    /// Configure discord related services on the DI container
+    /// </summary>
+    /// <param name="services"></param>
     public static void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton(new CommandService(new CommandServiceConfig {

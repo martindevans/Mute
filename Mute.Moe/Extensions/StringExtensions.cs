@@ -3,6 +3,9 @@ using System.Text.RegularExpressions;
 
 namespace Mute.Moe.Extensions;
 
+/// <summary>
+/// Extensions for <see cref="string"/>
+/// </summary>
 public static class StringExtensions
 {
     private static readonly Dictionary<string, string> CurrencyNameToSymbol;
@@ -45,6 +48,12 @@ public static class StringExtensions
         return CurrencySymbolToName.GetValueOrDefault(symbol);
     }
 
+    /// <summary>
+    /// Distance between 2 strings
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns></returns>
     public static uint Levenshtein(this string? a, string? b)
     {
         if (a == null)
@@ -82,16 +91,32 @@ public static class StringExtensions
         return (uint)matrix[aLength, bLength];
     }
 
+    /// <summary>
+    /// Find all mentions of users, returns the IDs
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
     public static IEnumerable<ulong> FindUserMentions(this string str)
     {
         return FindMentions(str, '@');
     }
 
+    /// <summary>
+    /// Find all mentions of channels, returns the IDs
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
     public static IEnumerable<ulong> FindChannelMentions(this string str)
     {
         return FindMentions(str, '#');
     }
 
+    /// <summary>
+    /// Find mentions, returns them
+    /// </summary>
+    /// <param name="str"></param>
+    /// <param name="prefix"></param>
+    /// <returns></returns>
     private static IEnumerable<ulong> FindMentions(this string str, char prefix)
     {
         var r = new Regex($@"\<{prefix}(!?)(?<id>[0-9]+)\>");
@@ -101,6 +126,13 @@ public static class StringExtensions
         return matches.SelectMany(m => m.Groups["id"].Captures.Select(c => c.Value)).Select(ulong.Parse);
     }
 
+    /// <summary>
+    /// string.split, but returning an enumerable of <see cref="ReadOnlyMemory{T}"/>
+    /// </summary>
+    /// <param name="str"></param>
+    /// <param name="separator"></param>
+    /// <param name="options"></param>
+    /// <returns></returns>
     public static IEnumerable<ReadOnlyMemory<char>> SplitSpan(this string str, char separator, StringSplitOptions options = StringSplitOptions.None)
     {
         var start = 0;
@@ -119,6 +151,12 @@ public static class StringExtensions
             yield return str.AsMemory(start, str.Length - start);
     }
 
+    /// <summary>
+    /// Limit a string to a given max length
+    /// </summary>
+    /// <param name="str"></param>
+    /// <param name="maxLength"></param>
+    /// <returns></returns>
     public static string LimitLength(this string str, int maxLength)
     {
         if (str.Length < maxLength)

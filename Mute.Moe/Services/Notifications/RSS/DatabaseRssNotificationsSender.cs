@@ -1,16 +1,18 @@
-﻿using System.Data.Common;
+﻿using Discord;
+using Discord.WebSocket;
+using Mute.Moe.Services.Database;
+using Mute.Moe.Services.Information.RSS;
+using Serilog;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.ServiceModel.Syndication;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Discord;
-using Discord.WebSocket;
-using Mute.Moe.Services.Database;
-using Mute.Moe.Services.Information.RSS;
 
 namespace Mute.Moe.Services.Notifications.RSS;
 
+/// <inheritdoc />
 public class DatabaseRssNotificationsSender
     : IRssNotificationsSender
 {
@@ -39,16 +41,18 @@ public class DatabaseRssNotificationsSender
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Creating 'RssNotificationsSent' table failed");
         }
     }
 
+    /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _cts = new CancellationTokenSource();
         _ = Task.Run(() => ThreadEntry(_cts.Token), _cts.Token);
     }
 
+    /// <inheritdoc />
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         if (_cts != null)
@@ -78,7 +82,10 @@ public class DatabaseRssNotificationsSender
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine($"{nameof(DatabaseRssNotificationsSender)} Swallowed exception:\n{e}");
+                        Log.Error(e, "Exception while processing RSS feed '{0}'", feed.FeedUrl);
+
+                        // Wait a bit before processing the next feed, just in case there's some transient network error
+                        await Task.Delay(TimeSpan.FromSeconds(30), token);
                     }
                 }
 

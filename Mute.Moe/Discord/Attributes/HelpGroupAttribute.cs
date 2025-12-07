@@ -7,5 +7,8 @@
 public class HelpGroupAttribute(string groupId)
     : Attribute
 {
+    /// <summary>
+    /// ID of the group this command belongs to
+    /// </summary>
     public string GroupId { get; } = groupId;
 }

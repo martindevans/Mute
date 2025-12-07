@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Discord.Modules.Games;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [UsedImplicitly]
 [HelpGroup("games")]
 public class Flip

@@ -3,8 +3,17 @@ using Mute.Moe.Services.Information.Anime;
 
 namespace Mute.Moe.Extensions;
 
+/// <summary>
+/// Extensions for <see cref="IAnime"/>
+/// </summary>
 public static class IAnimeExtensions
 {
+    /// <summary>
+    /// Convert to an embed with summary info about this anime
+    /// </summary>
+    /// <param name="anime"></param>
+    /// <param name="embed"></param>
+    /// <returns></returns>
     public static EmbedBuilder ToEmbed(this IAnime anime, EmbedBuilder? embed = null)
     {
         if (embed == null)
@@ -56,6 +65,13 @@ public static class IAnimeExtensions
         return builder;
     }
 
+    /// <summary>
+    /// Get the full title of this anime
+    /// </summary>
+    /// <param name="anime"></param>
+    /// <param name="preferJapanese"></param>
+    /// <param name="softMaxLength"></param>
+    /// <returns></returns>
     public static string FullTitle(this IAnime anime, bool preferJapanese = false, int softMaxLength = int.MaxValue)
     {
         // Attach appropriate title

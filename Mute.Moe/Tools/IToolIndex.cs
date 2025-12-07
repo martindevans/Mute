@@ -1,10 +1,10 @@
-﻿using System.Numerics.Tensors;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Dapper;
 using Mute.Moe.Services.Database;
 using Dapper.Contrib.Extensions;
 using Mute.Moe.Services.LLM;
+using Mute.Moe.Tools.Providers;
 
 namespace Mute.Moe.Tools;
 
@@ -73,7 +73,7 @@ public class DatabaseToolIndex
     {
         _database = database;
         _embeddings = embeddings;
-        Providers = providers.ToArray();
+        Providers = [ ..providers ];
 
         Tools = (
             from provider in Providers

@@ -7,6 +7,7 @@ using static Whisper.Runtime.WhisperRuntime;
 
 namespace Mute.Moe.Services.Speech.STT;
 
+/// <inheritdoc />
 public class WhisperSpeechToText
     : ISpeechToText
 {
@@ -27,6 +28,7 @@ public class WhisperSpeechToText
         _context = whisper_init_from_file(model);
     }
 
+    /// <inheritdoc />
     public IEnumerable<RecognitionWord> OneShotRecognition(ISampleProvider audio)
     {
         using var state = whisper_init_state(_context);

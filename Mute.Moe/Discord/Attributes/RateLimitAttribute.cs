@@ -16,6 +16,7 @@ public class RateLimitAttribute
     private readonly TimeSpan _cooldown;
     private readonly TimeSpan _reset;
 
+    /// <inheritdoc />
     public RateLimitAttribute(string id, uint cooldownSeconds, string message)
     {
         _message = message;
@@ -24,6 +25,7 @@ public class RateLimitAttribute
         _reset = _cooldown * 20;
     }
 
+    /// <inheritdoc />
     public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
     {
         // If there's no rate limit service always succeed

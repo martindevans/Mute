@@ -4,6 +4,7 @@ using Mute.Moe.Tools;
 using Pegasus.Common;
 using System.Threading.Tasks;
 using Mute.Moe.Services.DiceLang.Macros;
+using Mute.Moe.Tools.Providers;
 
 namespace Mute.Moe.Services.Randomness;
 

@@ -97,7 +97,7 @@ namespace Mute.Tests.Services.Reminders
 
             var rs = await rm.Get(channel: 17, count: 3).ToArrayAsync();
 
-            Assert.AreEqual(3, rs.Length);
+            Assert.HasCount(3, rs);
             Assert.AreEqual((t + TimeSpan.FromMinutes(0)).UnixTimestamp(), rs[0].TriggerTime.UnixTimestamp());
             Assert.AreEqual((t + TimeSpan.FromMinutes(1)).UnixTimestamp(), rs[1].TriggerTime.UnixTimestamp());
             Assert.AreEqual((t + TimeSpan.FromMinutes(2)).UnixTimestamp(), rs[2].TriggerTime.UnixTimestamp());
@@ -116,7 +116,7 @@ namespace Mute.Tests.Services.Reminders
 
             var rs = await rm.Get(channel: 17).ToArrayAsync();
 
-            Assert.AreEqual(0, rs.Length);
+            Assert.HasCount(0, rs);
         }
     }
 }

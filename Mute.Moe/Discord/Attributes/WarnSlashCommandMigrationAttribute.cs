@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Discord.Attributes;
 
+/// <summary>
+/// Send a warning that this text command should not be used, and the slash command should be preferred
+/// </summary>
 public class WarnSlashComandMigrationAttribute
     : PreconditionAttribute
 {
@@ -13,6 +16,7 @@ public class WarnSlashComandMigrationAttribute
     private readonly string _command;
     private readonly TimeSpan _rateLimitSeconds;
 
+    /// <inheritdoc />
     public WarnSlashComandMigrationAttribute(string command, double rateLimitSeconds = 0, string? limitId = null)
     {
         _command = command;
@@ -20,6 +24,7 @@ public class WarnSlashComandMigrationAttribute
         _id = limitId == null ? Guid.NewGuid() : Guid.Parse(limitId);
     }
 
+    /// <inheritdoc />
     public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command1, IServiceProvider services)
     {
         // Check if we should send this reminder again

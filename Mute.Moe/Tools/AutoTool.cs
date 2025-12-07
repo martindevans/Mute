@@ -56,28 +56,40 @@ public class AutoTool
 
         foreach (var parameterInfo in _action.Method.GetParameters())
         {
-            var docs = parameterInfo.GetDocumentation();
-            var ttype = ParamType(parameterInfo.ParameterType);
+            var docs = parameterInfo.GetDocumentation() ?? "";
+            var ttype = ParamType(parameterInfo.ParameterType, docs, true);
 
-            toolParams.Add(new ToolParam(parameterInfo.Name!, docs, ttype, true));
+            toolParams.Add(new ToolParam(parameterInfo.Name!, ttype));
 
             methodParams.Add((parameterInfo.Name!, parameterInfo.ParameterType));
         }
     }
 
-    private static ToolParamAtomicTypes ParamType(Type type)
+    private static IToolParamType ParamType(Type type, string desc, bool required)
     {
+        // Atomic types
         if (type == typeof(float))
-            return ToolParamAtomicTypes.Float;
-
+            return new ToolParamNumber(desc, required);
         if (type == typeof(int))
-            return ToolParamAtomicTypes.Int;
-
+            return new ToolParamInt(desc, required);
         if (type == typeof(string))
-            return ToolParamAtomicTypes.String;
-
+            return new ToolParamString(desc, required);
         if (type == typeof(bool))
-            return ToolParamAtomicTypes.Bool;
+            return new ToolParamBool(desc, required);
+
+        if (type.IsArray)
+        {
+            var element = type.GetElementType()!;
+
+            if (element == typeof(float))
+                return new ToolParamListAtomic(desc, ToolParamAtomicTypes.Float, required);
+            if (element == typeof(int))
+                return new ToolParamListAtomic(desc, ToolParamAtomicTypes.Int, required);
+            if (element == typeof(string))
+                return new ToolParamListAtomic(desc, ToolParamAtomicTypes.String, required);
+            if (element == typeof(bool))
+                return new ToolParamListAtomic(desc, ToolParamAtomicTypes.Bool, required);
+        }
 
         throw new ArgumentException($"Type '{type.FullName}' cannot be mapped to tool type");
     }
@@ -120,9 +132,38 @@ public class AutoTool
                     return (false, e);
                 parameters[idx++] = b;
             }
+            else if (type.IsArray)
+            {
+                var element = type.GetElementType()!;
+
+                if (element == typeof(float))
+                {
+                    if (!arguments.GetToolParameterFloatArray(name, out var fa, out var e))
+                        return (false, e);
+                    parameters[idx++] = fa;
+                }
+                else if (element == typeof(float))
+                {
+                    if (!arguments.GetToolParameterIntArray(name, out var ia, out var e))
+                        return (false, e);
+                    parameters[idx++] = ia;
+                }
+                else if (element == typeof(string))
+                {
+                    if (!arguments.GetToolParameterStringArray(name, out var sa, out var e))
+                        return (false, e);
+                    parameters[idx++] = sa;
+                }
+                else if (element == typeof(bool))
+                {
+                    if (!arguments.GetToolParameterBoolArray(name, out var sa, out var e))
+                        return (false, e);
+                    parameters[idx++] = sa;
+                }
+            }
             else
             {
-                return (false, new { error = $"Invalid parameter type '{type.FullName}'" });
+                return (false, new { error = $"Invalid parameter type '{type.FullName}' - this is likely a bug in the AutoTool code, report it to developers" });
             }
         }
 

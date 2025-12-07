@@ -7,17 +7,29 @@ using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
 using Mute.Moe.Tools;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Mute.Moe;
 
+/// <summary>
+/// Root entry point of *Mute
+/// </summary>
 public static class Program
 {
+    /// <summary>
+    /// Root entry point of *Mute
+    /// </summary>
     public static async Task Main(string[] args)
     {
         DependencyHelper.TestDependencies();
 
         var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)))
                   ?? throw new InvalidOperationException("Config was null");
+
+        // Setup logger
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console()
+            .CreateLogger();
 
         // Build DI container
         var collection = new ServiceCollection();
@@ -57,11 +69,12 @@ public static class Program
     /// </summary>
     private static void WaitForExitSignal()
     {
-        Console.WriteLine("type 'exit' to exit");
+        Log.Information("Type 'exit' to exit");
+
         while (true)
         {
             var line = Console.ReadLine();
-            if (line != null && line.ToLowerInvariant() == "exit")
+            if (line != null && line.Equals("exit", StringComparison.InvariantCultureIgnoreCase))
                 return;
         }
     }
@@ -79,10 +92,13 @@ internal static partial class DependencyHelper
         
     public static void TestDependencies()
     {
+        // These calls are important, they load the string from the DLL. So successfully making
+        // these calls indicates that the deps are loaded.
+
         var opusVersion = Marshal.PtrToStringAnsi(OpusVersionString());
-        Console.WriteLine($"Loaded opus with version string: {opusVersion}");
+        Log.Information("Loaded opus: {0}", opusVersion);
 
         var sodiumVersion = Marshal.PtrToStringAnsi(SodiumVersionString());
-        Console.WriteLine($"Loaded sodium with version string: {sodiumVersion}");
+        Log.Information("Loaded sodium: {0}", sodiumVersion);
     }
 }

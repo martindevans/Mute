@@ -3,6 +3,9 @@ using Mute.Moe.Services.Audio.Clips;
 
 namespace Mute.Moe.Services.Speech.TTS;
 
+/// <summary>
+/// Use TTS to convert a string to an audio clip
+/// </summary>
 public interface ITextToSpeech
 {
     /// <summary>
@@ -11,5 +14,5 @@ public interface ITextToSpeech
     /// <param name="text"></param>
     /// <param name="voice">Voice to use (service dependent)</param>
     /// <returns></returns>
-    Task<IAudioClip> Synthesize(string text, string? voice  = null);
+    Task<IAudioClip> Synthesize(string text, string? voice = null);
 }

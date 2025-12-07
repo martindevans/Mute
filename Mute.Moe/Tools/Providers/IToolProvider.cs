@@ -1,4 +1,4 @@
-﻿namespace Mute.Moe.Tools;
+﻿namespace Mute.Moe.Tools.Providers;
 
 /// <summary>
 /// Provides a set of tools for LLM usage

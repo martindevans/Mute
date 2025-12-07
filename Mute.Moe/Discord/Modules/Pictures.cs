@@ -1,17 +1,17 @@
-﻿using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Autofocus.Config;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.ImageGen.Contexts;
 using Mute.Moe.Utilities;
 using SixLabors.ImageSharp;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Discord.Modules;
+
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 [UsedImplicitly]
 [Group("image")]
@@ -39,9 +39,8 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
 
         var success = false;
         var count = 1;
-        foreach (var stream in images)
+        foreach (var img in images)
         {
-            var img = await Image.IdentifyAsync(stream);
             var meta = img.Metadata.GetPngMetadata();
             var parameters = meta.GetGenerationMetadata();
 
@@ -63,7 +62,7 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
     [Command("analyse"), Alias("interrogate", "describe"), Summary("I will try to describe the image")]
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 30, "Please wait a bit before analysing more images")]
     [UsedImplicitly]
-    public async Task Analyse(InterrogateModel model = InterrogateModel.DeepDanbooru)
+    public async Task Analyse()
     {
         var images = await GetMessageImages(Context.Message);
         if (images == null)
@@ -72,10 +71,20 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
         var success = false;
         foreach (var stream in images)
         {
-            var description = await _analyser.GetImageDescription(stream, model);
+            var analysis = await _analyser.GetImageDescription(stream);
+            var desc = analysis?.Description ?? "Something went wrong analysing that image";
+            var title = analysis?.Title ?? "Image Analysis";
+
             success = true;
 
-            await ReplyAsync($"```{description}```");
+            var localTag = _analyser.IsLocal ? " (local)" : "";
+            var embed = new EmbedBuilder()
+                       .WithFooter($"🧠 {_analyser.ModelName}{localTag}")
+                       .WithDescription(desc)
+                       .WithTitle(title)
+                       .Build();
+            await ReplyAsync(embed: embed);
+
             await Task.Delay(250);
         }
 
@@ -84,7 +93,7 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
     }
     
 
-    private async Task<IReadOnlyList<Stream>?> GetMessageImages(IUserMessage message)
+    private async Task<IReadOnlyList<Image>?> GetMessageImages(IUserMessage message)
     {
         var result = await message.GetMessageImages(_http);
         if (result.Count == 0)

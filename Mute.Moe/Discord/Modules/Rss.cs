@@ -5,6 +5,8 @@ using Mute.Moe.Services.Notifications.RSS;
 
 namespace Mute.Moe.Discord.Modules;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [UsedImplicitly]
 [Group("rss")]
 public class Rss(IRssNotifications _rss, DiscordSocketClient _client)

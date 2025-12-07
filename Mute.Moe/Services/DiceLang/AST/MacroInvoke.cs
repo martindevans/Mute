@@ -2,9 +2,16 @@
 
 namespace Mute.Moe.Services.DiceLang.AST;
 
+/// <summary>
+/// AST node for invoking a macro/function
+/// </summary>
+/// <param name="Namespace"></param>
+/// <param name="Name"></param>
+/// <param name="Arguments"></param>
 public record MacroInvoke(string? Namespace, string Name, IReadOnlyList<IAstNode> Arguments)
     : IAstNode
 {
+    /// <inheritdoc />
     public async Task<double> Evaluate(IAstNode.Context context)
     {
         // Get the macro
@@ -25,6 +32,7 @@ public record MacroInvoke(string? Namespace, string Name, IReadOnlyList<IAstNode
         return await macro.Root.Evaluate(ctx);
     }
 
+    /// <inheritdoc />
     public override string ToString()
     {
         var name = string.IsNullOrEmpty(Namespace) ? Name : $"{Namespace}::{Name}";
@@ -32,14 +40,24 @@ public record MacroInvoke(string? Namespace, string Name, IReadOnlyList<IAstNode
     }
 }
 
-
+/// <summary>
+/// Service to find macros
+/// </summary>
 public interface IMacroResolver
 {
     Task<MacroDefinition?> Find(string? ns, string name);
 }
 
+/// <summary>
+/// A macro
+/// </summary>
+/// <param name="Namespace"></param>
+/// <param name="Name"></param>
+/// <param name="ParameterNames"></param>
+/// <param name="Root"></param>
 public record MacroDefinition(string Namespace, string Name, IReadOnlyList<string> ParameterNames, IAstNode Root)
 {
+    /// <inheritdoc />
     public override string ToString()
     {
         return $"`{Namespace}::{Name}({string.Join(", ", ParameterNames)}) = {Root}`";
@@ -47,19 +65,52 @@ public record MacroDefinition(string Namespace, string Name, IReadOnlyList<strin
 }
 
 
-
+/// <summary>
+/// Thrown when a macro cannot be found
+/// </summary>
+/// <param name="ns"></param>
+/// <param name="name"></param>
 public class MacroNotFoundException(string? ns, string name)
     : Exception($"Failed to find macro `{ns}::{name}`")
 {
+    /// <summary>
+    /// Macro namespace
+    /// </summary>
     public string? Namespace { get; } = ns;
+
+    /// <summary>
+    /// Macro name
+    /// </summary>
     public string Name { get; } = name;
 }
 
+/// <summary>
+/// Thrown when the wrong number of args are passed to a macro
+/// </summary>
+/// <param name="ns"></param>
+/// <param name="name"></param>
+/// <param name="expected"></param>
+/// <param name="actual"></param>
 public class MacroIncorrectArgumentCount(string? ns, string name, int expected, int actual)
     : Exception($"Expected {expected} arguments for macro `{ns}::{name}`, but given {actual}")
 {
+    /// <summary>
+    /// Macro namespace
+    /// </summary>
     public string? Namespace { get; } = ns;
+
+    /// <summary>
+    /// Macro name
+    /// </summary>
     public string Name { get; } = name;
+
+    /// <summary>
+    /// Expected number of parameters
+    /// </summary>
     public int Expected { get; } = expected;
+
+    /// <summary>
+    /// Actual number of parameters supplied
+    /// </summary>
     public int Actual { get; } = actual;
 }

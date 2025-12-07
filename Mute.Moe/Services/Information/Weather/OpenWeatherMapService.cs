@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using FluidCaching;
 
 namespace Mute.Moe.Services.Information.Weather;
 
@@ -13,6 +14,9 @@ public class OpenWeatherMapService
     private readonly string _apiKey;
 
     private readonly JsonSerializerOptions _serializer;
+
+    private readonly FluidCache<IWeatherReport?> _currentWeatherCache;
+    private readonly IIndex<(float Lat, float Lon), IWeatherReport?> _currentWeatherByLocation;
 
     /// <summary>
     /// Construct a new <see cref="OpenWeatherMapService"/>
@@ -32,11 +36,27 @@ public class OpenWeatherMapService
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
+
+        _currentWeatherCache = new FluidCache<IWeatherReport?>(
+            config.OpenWeatherMap.CacheSize,
+            TimeSpan.FromSeconds(config.OpenWeatherMap.CacheMinAgeSeconds),
+            TimeSpan.FromSeconds(config.OpenWeatherMap.CacheMaxAgeSeconds),
+            () => DateTime.UtcNow
+        );
+        _currentWeatherByLocation = _currentWeatherCache.AddIndex("ByLocation", a => (a?.Latitude ?? 0, a?.Longitude ?? 0));
     }
 
     /// <inheritdoc />
     public async Task<IWeatherReport?> GetCurrentWeather(float latitude, float longitude)
     {
+        return await _currentWeatherByLocation.GetItem((latitude, longitude), GetCurrentWeatherUncached);
+    }
+
+    private async Task<IWeatherReport?> GetCurrentWeatherUncached((float latitude, float longitude) loc)
+    {
+        var latitude = loc.latitude;
+        var longitude = loc.longitude;
+
         var result = await _http.GetAsync($"https://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&units=metric&appid={_apiKey}");
         if (!result.IsSuccessStatusCode)
             return null;
@@ -88,5 +108,8 @@ public class OpenWeatherMapService
         public float? WindSpeedMetersPerSecond => _weather.Wind.Speed;
         public float? WindBearing => _weather.Wind.Deg;
         public float? RainMM => _weather.Rain?.oneHour ?? 0;
+
+        public float Latitude => _weather.Coord.Lat;
+        public float Longitude => _weather.Coord.Lon;
     }
 }

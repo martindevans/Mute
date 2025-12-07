@@ -55,7 +55,7 @@
 
 //        recogniser.Canceled += (_, e) =>
 //        {
-//            Console.WriteLine($"CANCELED: Reason={e.Reason}");
+//            Log.Error($"CANCELED: Reason={e.Reason}");
 
 //            if (e.Reason == CancellationReason.Error)
 //            {

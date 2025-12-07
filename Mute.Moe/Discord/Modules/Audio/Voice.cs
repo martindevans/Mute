@@ -8,6 +8,8 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules.Audio;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [UsedImplicitly]
 public class Voice
     : BaseModule

@@ -9,12 +9,20 @@ using NAudio.Wave;
 
 namespace Mute.Moe.Discord.Context.Preprocessing;
 
+/// <summary>
+/// Detects audio messages sent in channels and attaches an audio transcription to them
+/// </summary>
 public class MobileAudioMessageTranscriptionPreprocessor
     : IMessagePreprocessor
 {
     private readonly ISpeechToText _stt;
     private readonly HttpClient _client;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="stt"></param>
+    /// <param name="http"></param>
     public MobileAudioMessageTranscriptionPreprocessor(ISpeechToText stt, IHttpClientFactory http)
     {
         _stt = stt;
@@ -23,6 +31,7 @@ public class MobileAudioMessageTranscriptionPreprocessor
         _client.Timeout = TimeSpan.FromMilliseconds(999);
     }
 
+    /// <inheritdoc />
     public async Task Process(MuteCommandContext context)
     {
         var audio = await GetAudio(context);
@@ -156,6 +165,7 @@ public class AudioTranscription
         _tcs.SetResult(result);
     }
 
+    /// <inheritdoc />
     public Task<string> GetTranscription()
     {
         return _tcs.Task;

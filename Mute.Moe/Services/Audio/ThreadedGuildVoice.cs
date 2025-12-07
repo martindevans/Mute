@@ -7,6 +7,7 @@ using Discord.WebSocket;
 using Mute.Moe.Services.Audio.Mixing;
 using Mute.Moe.Services.Audio.Mixing.Channels;
 using NAudio.Wave;
+using Serilog;
 
 namespace Mute.Moe.Services.Audio;
 
@@ -52,11 +53,13 @@ public class ThreadedGuildVoice
         await Stop();
     }
 
+    /// <inheritdoc />
     public Task Stop()
     {
         return Move(null);
     }
 
+    /// <inheritdoc />
     public async Task Move(IVoiceChannel? channel)
     {
         if (Channel?.Id == channel?.Id)
@@ -73,6 +76,7 @@ public class ThreadedGuildVoice
             _pump = new AudioPump(channel, _mixer);
     }
 
+    /// <inheritdoc />
     public void Open(IMixerChannel channel)
     {
         _mixer.Add(channel);
@@ -149,7 +153,7 @@ public class ThreadedGuildVoice
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Log.Error(e, $"Exception killed {nameof(ThreadedGuildVoice)} thread");
                 throw;
             }
 

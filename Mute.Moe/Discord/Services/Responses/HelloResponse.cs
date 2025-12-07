@@ -4,13 +4,19 @@ using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
+/// <summary>
+/// Respond when someone says hello
+/// </summary>
 [UsedImplicitly]
 public class HelloResponse
     : IResponse
 {
     private readonly Random _random;
 
+    /// <inheritdoc />
     public double BaseChance => 0.125;
+
+    /// <inheritdoc />
     public double MentionedChance => 0;
 
     private static readonly IReadOnlyList<string> GeneralGreetings = new List<string> {
@@ -32,13 +38,14 @@ public class HelloResponse
         _random = random;
     }
 
+    /// <inheritdoc />
     public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)
     {
         //Determine if thie message is a greeting
         var isGreeting = context.Message.Content.Split(' ').Select(CleanWord).Any(a => AllGreetings.Contains(a));
 
         var gu = context.User as SocketGuildUser;
-        var name = gu?.Nickname ?? context.User.Username;
+        var name = gu?.Nickname ?? context.User.GlobalName ?? context.User.Username;
 
         return isGreeting
             ? new HelloConversation(string.Format(ChooseGreeting(), name))

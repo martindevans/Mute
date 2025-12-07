@@ -1,10 +1,12 @@
-﻿using System.Data.Common;
+﻿using Mute.Moe.Services.Database;
+using Serilog;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.Threading.Tasks;
-using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Reminders;
 
+/// <inheritdoc />
 public class DatabaseReminders
     : IReminders
 {
@@ -22,7 +24,7 @@ public class DatabaseReminders
 
     private readonly IDatabaseService _database;
 
-    public event Action<IReminder>? ReminderCreated;
+    public event Action<Reminder>? ReminderCreated;
     public event Action<uint>? ReminderDeleted;
 
     public DatabaseReminders(IDatabaseService database)
@@ -35,11 +37,12 @@ public class DatabaseReminders
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Creating 'Reminders2' table failed");
         }
     }
 
-    public async Task<IReminder> Create(DateTime triggerTime, string prelude, string msg, ulong channelId, ulong userId)
+    /// <inheritdoc />
+    public async Task<Reminder> Create(DateTime triggerTime, string prelude, string msg, ulong channelId, ulong userId)
     {
         try
         {
@@ -47,8 +50,11 @@ public class DatabaseReminders
             await using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = InsertReminder;
-                reminder.Write(cmd);
-                reminder = reminder.WithId((uint)(long)(await cmd.ExecuteScalarAsync())!);
+                WriteReminder(reminder, cmd);
+                reminder = reminder with
+                {
+                    ID = (uint)(long)(await cmd.ExecuteScalarAsync())!
+                };
             }
 
             ReminderCreated?.Invoke(reminder);
@@ -57,11 +63,12 @@ public class DatabaseReminders
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Creating reminder {0} {1} @ {2} (user:{3}) failed", prelude, msg, triggerTime, userId);
             throw;
         }
     }
 
+    /// <inheritdoc />
     public async Task<bool> Delete(ulong userId, uint reminderId)
     {
         bool deleted;
@@ -80,9 +87,10 @@ public class DatabaseReminders
         return deleted;
     }
 
-    public IOrderedAsyncEnumerable<IReminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
+    /// <inheritdoc />
+    public IOrderedAsyncEnumerable<Reminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
     {
-        return new SqlAsyncResult<IReminder>(_database, PrepareQuery, Reminder.Parse).OrderBy(a => a.TriggerTime);
+        return new SqlAsyncResult<Reminder>(_database, PrepareQuery, ParseReminder).OrderBy(a => a.TriggerTime);
 
         DbCommand PrepareQuery(IDatabaseService db)
         {
@@ -97,120 +105,25 @@ public class DatabaseReminders
         }
     }
 
-    public class Reminder
-        : IReminder, IComparable<IReminder>, IEquatable<IReminder>
+    private static Reminder ParseReminder(DbDataReader reader)
     {
-        public uint ID { get; }
-        public ulong UserId { get; }
-        public ulong ChannelId { get; }
+        return new Reminder(
+            ID: uint.Parse(reader["rowid"].ToString()!),
+            TriggerTime: ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
+            Prelude: reader["Prelude"].ToString(),
+            Message: reader["Message"].ToString()!,
+            ChannelId: ulong.Parse((string)reader["ChannelId"]),
+            UserId: ulong.Parse((string)reader["UserId"])
+        );
+    }
 
-        public DateTime TriggerTime { get; }
-
-        public string Message { get; }
-        public string? Prelude { get; }
-
-        public Reminder(uint id, DateTime triggerTime, string? prelude, string message, ulong channelId, ulong userId)
-        {
-            ID = id;
-            UserId = userId;
-            ChannelId = channelId;
-
-            TriggerTime = triggerTime;
-
-            Message = message;
-            Prelude = prelude;
-        }
-
-        public static Reminder Parse(DbDataReader reader)
-        {
-            return new Reminder(
-                uint.Parse(reader["rowid"].ToString()!),
-                ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
-                reader["Prelude"].ToString(),
-                reader["Message"].ToString()!,
-                ulong.Parse((string)reader["ChannelId"]),
-                ulong.Parse((string)reader["UserId"])
-            );
-        }
-
-        public void Write(DbCommand cmd)
-        {
-            cmd.CommandText = InsertReminder;
-            cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) {Value = TriggerTime.UnixTimestamp()});
-            cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) {Value = ChannelId.ToString()});
-            cmd.Parameters.Add(new SQLiteParameter("@Prelude", System.Data.DbType.String) {Value = Prelude});
-            cmd.Parameters.Add(new SQLiteParameter("@Message", System.Data.DbType.String) {Value = Message});
-            cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) {Value = UserId.ToString()});
-        }
-
-        public int CompareTo(IReminder? other)
-        {
-            if (ReferenceEquals(this, other))
-                return 0;
-            if (other is null)
-                return 1;
-
-            // ReSharper disable once ImpureMethodCallOnReadonlyValueField
-            return TriggerTime.CompareTo(other.TriggerTime);
-        }
-
-        #region equality
-        public bool Equals(IReminder? other)
-        {
-            if (other is null)
-                return false;
-            if (ReferenceEquals(this, other))
-                return true;
-            return ID == other.ID;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            if (obj is null)
-                return false;
-            if (ReferenceEquals(this, obj))
-                return true;
-            if (obj.GetType() != GetType())
-                return false;
-            return Equals((IReminder)obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return (int)ID;
-        }
-
-        public static bool operator ==(Reminder? left, IReminder? right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(Reminder? left, IReminder? right)
-        {
-            return !Equals(left, right);
-        }
-
-        public static bool operator ==(IReminder? left, Reminder? right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(IReminder? left, Reminder? right)
-        {
-            return !Equals(left, right);
-        }
-        #endregion
-
-        public Reminder WithId(uint id)
-        {
-            return new Reminder(
-                id,
-                TriggerTime,
-                Prelude,
-                Message,
-                ChannelId,
-                UserId
-            );
-        }
+    private static void WriteReminder(Reminder reminder, DbCommand cmd)
+    {
+        cmd.CommandText = InsertReminder;
+        cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = reminder.TriggerTime.UnixTimestamp() });
+        cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = reminder.ChannelId.ToString() });
+        cmd.Parameters.Add(new SQLiteParameter("@Prelude", System.Data.DbType.String) { Value = reminder.Prelude });
+        cmd.Parameters.Add(new SQLiteParameter("@Message", System.Data.DbType.String) { Value = reminder.Message });
+        cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = reminder.UserId.ToString() });
     }
 }

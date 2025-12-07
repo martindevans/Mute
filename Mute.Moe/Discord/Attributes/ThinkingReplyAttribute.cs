@@ -13,6 +13,7 @@ public class ThinkingReplyAttribute(string emote = EmojiLookup.Thinking)
 {
     private readonly IEmote _emote = new Emoji(emote);
 
+    /// <inheritdoc />
     protected internal override IEndExecute StartExecute(MuteCommandContext context)
     {
         context.Message.AddReactionAsync(_emote);

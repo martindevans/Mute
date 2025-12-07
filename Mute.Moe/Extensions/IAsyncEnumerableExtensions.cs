@@ -1,5 +1,8 @@
 ﻿namespace Mute.Moe.Extensions;
 
+/// <summary>
+/// Extensions for <see cref="IAsyncEnumerable{TSource}"/>
+/// </summary>
 public static class IAsyncEnumerableExtensions
 {
     public static async IAsyncEnumerable<IList<TSource>> BufferByTime<TSource>(this IAsyncEnumerable<TSource> source, TimeSpan timeSpan)

@@ -10,6 +10,8 @@ using Mute.Moe.Services.Payment;
 
 namespace Mute.Moe.Discord.Modules.Payment;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 [UsedImplicitly]
 [HelpGroup("payment")]
 [WarnDebugger]

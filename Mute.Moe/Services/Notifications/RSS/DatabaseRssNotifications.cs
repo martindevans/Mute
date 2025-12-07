@@ -1,8 +1,8 @@
-﻿using System.Data.Common;
+﻿using Mute.Moe.Services.Database;
+using Serilog;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.Threading.Tasks;
-
-using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Notifications.RSS;
 
@@ -25,10 +25,11 @@ public class DatabaseRssNotifications
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Creating 'RssSubscriptions' table failed");
         }
     }
 
+    /// <inheritdoc />
     public async Task Subscribe(string feedUrl, ulong channel, ulong? mentionGroup)
     {
         await using var cmd = _database.CreateCommand();
@@ -40,6 +41,7 @@ public class DatabaseRssNotifications
         await cmd.ExecuteNonQueryAsync();
     }
 
+    /// <inheritdoc />
     public async Task Unsubscribe(string feedUrl, ulong channel)
     {
         await using var cmd = _database.CreateCommand();
@@ -50,6 +52,7 @@ public class DatabaseRssNotifications
         await cmd.ExecuteNonQueryAsync();
     }
 
+    /// <inheritdoc />
     public IAsyncEnumerable<IRssSubscription> GetSubscriptions()
     {
         return new SqlAsyncResult<IRssSubscription>(_database, PrepareQuery, ParseSubscription);
@@ -72,6 +75,5 @@ public class DatabaseRssNotifications
         }
     }
 
-    private record RssSubscription(string FeedUrl, ulong Channel, ulong? MentionRole)
-        : IRssSubscription;
+    private record RssSubscription(string FeedUrl, ulong Channel, ulong? MentionRole) : IRssSubscription;
 }

@@ -2,6 +2,7 @@
 using System.Data.SQLite;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace Mute.Moe.Services.Database;
 
@@ -19,11 +20,19 @@ public abstract class SimpleJsonBlobTable<TBlob>
     private readonly string _countSql;
     private readonly string _randomSql;
 
+    private readonly string _tableName;
     private readonly IDatabaseService _database;
 
+    /// <summary>
+    /// Create a new table to store JSON blobs
+    /// </summary>
+    /// <param name="tableName"></param>
+    /// <param name="database"></param>
     protected SimpleJsonBlobTable(string tableName, IDatabaseService database)
     {
+        _tableName = tableName;
         _database = database;
+
         _putSql = $"INSERT OR REPLACE into {tableName} (ID, Json) values(@ID, @Json)";
         _getSql = $"SELECT Json FROM {tableName} WHERE ID = @ID";
         _deleteSql = $"DELETE FROM {tableName} WHERE ID = @ID";
@@ -37,10 +46,11 @@ public abstract class SimpleJsonBlobTable<TBlob>
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "Creating SimpleJsonBlobTable '{0}' failed", tableName);
         }
     }
 
+    /// <inheritdoc />
     public async Task Put(ulong id, TBlob data)
     {
         await Delete(id);
@@ -58,11 +68,12 @@ public abstract class SimpleJsonBlobTable<TBlob>
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "PUT into SimpleJsonBlobTable '{0}' failed. Key={1}.", _tableName, id);
             throw;
         }
     }
 
+    /// <inheritdoc />
     public async Task<TBlob?> Get(ulong id)
     {
         try
@@ -76,11 +87,12 @@ public abstract class SimpleJsonBlobTable<TBlob>
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "GET from SimpleJsonBlobTable '{0}' failed. Key={1}.", _tableName, id);
             throw;
         }
     }
 
+    /// <inheritdoc />
     public async Task<bool> Delete(ulong id)
     {
         try
@@ -95,11 +107,12 @@ public abstract class SimpleJsonBlobTable<TBlob>
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "DELETE from SimpleJsonBlobTable '{0}' failed. Key={1}.", _tableName, id);
             throw;
         }
     }
 
+    /// <inheritdoc />
     public async Task<int> Count()
     {
         try
@@ -113,11 +126,12 @@ public abstract class SimpleJsonBlobTable<TBlob>
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "COUNT SimpleJsonBlobTable '{0}' failed.", _tableName);
             throw;
         }
     }
 
+    /// <inheritdoc />
     public async Task<TBlob?> Random()
     {
         try
@@ -130,11 +144,16 @@ public abstract class SimpleJsonBlobTable<TBlob>
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Log.Error(e, "RANDOM from SimpleJsonBlobTable '{0}' failed.", _tableName);
             throw;
         }
     }
 
+    /// <summary>
+    /// Read a TBlob from the given <see cref="DbCommand"/>
+    /// </summary>
+    /// <param name="cmd"></param>
+    /// <returns></returns>
     protected virtual async Task<TBlob?> Read(DbCommand cmd)
     {
         var json = (string?)await cmd.ExecuteScalarAsync();

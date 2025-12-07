@@ -1,14 +1,12 @@
-﻿using LlmTornado.Common;
-using Mute.Moe.Discord.Modules;
-using Serpent;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Serpent;
 using Wasmtime;
 using Wazzy.Async;
 using Wazzy.WasiSnapshotPreview1.FileSystem.Implementations.VirtualFileSystem.Files;
 
-namespace Mute.Moe.Tools;
+namespace Mute.Moe.Tools.Providers;
 
 /// <summary>
 /// Provides Python code execution (sandboxed).
@@ -66,6 +64,7 @@ public class PythonToolProvider
 
                 if (python.SuspendedReason is TaskSuspend t)
                 {
+                    // If WASM is suspended waiting for a dotnet task, await it here
                     await t.Task;
                     delay = 1;
                 }

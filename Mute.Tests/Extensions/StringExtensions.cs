@@ -37,7 +37,7 @@ namespace Mute.Tests.Extensions
             const string str = "a b c";
             var split = str.SplitSpan(' ').ToArray();
 
-            Assert.AreEqual(3, split.Length);
+            Assert.HasCount(3, split);
             Assert.AreEqual("a", split[0].ToString());
             Assert.AreEqual("b", split[1].ToString());
             Assert.AreEqual("c", split[2].ToString());
@@ -50,7 +50,7 @@ namespace Mute.Tests.Extensions
 
             var split = str.SplitSpan(' ').ToArray();
 
-            Assert.AreEqual(6, split.Length);
+            Assert.HasCount(6, split);
             Assert.AreEqual("a", split[0].ToString());
             Assert.AreEqual("b", split[1].ToString());
             Assert.AreEqual("c", split[2].ToString());
@@ -66,7 +66,7 @@ namespace Mute.Tests.Extensions
 
             var split = str.SplitSpan(' ', System.StringSplitOptions.RemoveEmptyEntries).ToArray();
 
-            Assert.AreEqual(4, split.Length);
+            Assert.HasCount(4, split);
             Assert.AreEqual("a", split[0].ToString());
             Assert.AreEqual("b", split[1].ToString());
             Assert.AreEqual("c", split[2].ToString());

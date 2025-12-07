@@ -55,7 +55,7 @@ namespace Mute.Tests.Services.Payments
 
             var tsx = await svc.GetTransactions(fromId: 0).OrderBy(a => a.Instant).ToArrayAsync();
 
-            Assert.AreEqual(2, tsx.Length);
+            Assert.HasCount(2, tsx);
             Assert.AreEqual("test", tsx[0].Unit);
             Assert.AreEqual("test2", tsx[1].Unit);
         }
@@ -70,7 +70,7 @@ namespace Mute.Tests.Services.Payments
 
             var tsx = await (svc.GetTransactions(toId: 0)).OrderBy(a => a.Instant).ToArrayAsync();
 
-            Assert.AreEqual(1, tsx.Length);
+            Assert.HasCount(1, tsx);
             Assert.AreEqual("test", tsx[0].Unit);
         }
 
@@ -84,7 +84,7 @@ namespace Mute.Tests.Services.Payments
 
             var tsx = await (svc.GetTransactions(unit: "test")).OrderBy(a => a.Instant).ToArrayAsync();
 
-            Assert.AreEqual(2, tsx.Length);
+            Assert.HasCount(2, tsx);
             Assert.AreEqual("test", tsx[0].Unit);
             Assert.AreEqual("test", tsx[1].Unit);
         }
@@ -99,7 +99,7 @@ namespace Mute.Tests.Services.Payments
 
             var tsx = await (svc.GetTransactions(before: now + TimeSpan.FromMinutes(2.5))).OrderBy(a => a.Instant).ToArrayAsync();
 
-            Assert.AreEqual(2, tsx.Length);
+            Assert.HasCount(2, tsx);
             Assert.AreEqual("test", tsx[0].Unit);
             Assert.AreEqual("test", tsx[1].Unit);
         }
@@ -114,7 +114,7 @@ namespace Mute.Tests.Services.Payments
 
             var tsx = await (svc.GetTransactions(after: now + TimeSpan.FromMinutes(2.5))).OrderBy(a => a.Instant).ToArrayAsync();
 
-            Assert.AreEqual(2, tsx.Length);
+            Assert.HasCount(2, tsx);
             Assert.AreEqual("test2", tsx[0].Unit);
             Assert.AreEqual("test3", tsx[1].Unit);
         }
@@ -129,7 +129,7 @@ namespace Mute.Tests.Services.Payments
 
             var balances = (await svc.GetBalances(0, 1)).ToArray();
 
-            Assert.AreEqual(2, balances.Length);
+            Assert.HasCount(2, balances);
         }
 
         [TestMethod]
@@ -142,7 +142,7 @@ namespace Mute.Tests.Services.Payments
 
             var balances = (await svc.GetBalances(1, 0)).ToArray();
 
-            Assert.AreEqual(2, balances.Length);
+            Assert.HasCount(2, balances);
         }
 
         [TestMethod]
@@ -155,7 +155,7 @@ namespace Mute.Tests.Services.Payments
 
             var balances = (await svc.GetBalances(1, null)).ToArray();
 
-            Assert.AreEqual(3, balances.Length);
+            Assert.HasCount(3, balances);
 
             //1 -> 0 == -5 TEST
             //1 -> 0 == -1 TEST2

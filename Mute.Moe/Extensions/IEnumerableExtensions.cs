@@ -1,7 +1,17 @@
 ﻿namespace Mute.Moe.Extensions;
 
+/// <summary>
+/// Extensions for <see cref="IEnumerable{T}"/>
+/// </summary>
 public static class IEnumerableExtensions
 {
+    /// <summary>
+    /// Pick a random element from an enumerable. Enumerates it to completion
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="items"></param>
+    /// <param name="random"></param>
+    /// <returns></returns>
     public static T? Random<T>(this IEnumerable<T>? items, Random random)
     {
         if (items == null)
