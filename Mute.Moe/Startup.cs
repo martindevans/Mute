@@ -72,9 +72,6 @@ public record Startup(Configuration Configuration)
 
         services.AddTransient<IImageGeneratorBannedWords, HardcodedBannedWords>();
         services.AddTransient<IImageGenerator, Automatic1111>();
-        //services.AddTransient<IImageAnalyser, Automatic1111>();
-        services.AddTransient<IImageAnalyser, TornadoAnalyser>();
-        //services.AddTransient<IImageUpscaler, Automatic1111>();
         services.AddTransient<IImageUpscaler, ImagesharpUpscaler>();
         services.AddTransient<IImageOutpainter, Automatic1111>();
         services.AddSingleton<StableDiffusionBackendCache>();
@@ -162,6 +159,7 @@ public record Startup(Configuration Configuration)
             ));
 
             services.AddSingleton(new TornadoAnalyser.Model(new(Configuration.LLM.SelfHost.VisionLanguageModel), IsLocal:true));
+            services.AddTransient<IImageAnalyser, TornadoAnalyser>();
         }
         else
         {
@@ -174,6 +172,8 @@ public record Startup(Configuration Configuration)
 
             services.AddSingleton(ChatModel.Google.Gemini.Gemini25Flash);
             services.AddSingleton(EmbeddingModel.Google.Gemini.GeminiEmbedding001);
+
+            services.AddTransient<IImageAnalyser, Automatic1111>();
         }
 
         services.AddSingleton(api);
