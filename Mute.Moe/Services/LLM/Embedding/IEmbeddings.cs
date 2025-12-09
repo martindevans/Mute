@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.LLM;
+namespace Mute.Moe.Services.LLM.Embedding;
 
 /// <summary>
 /// Provides functions to embed text

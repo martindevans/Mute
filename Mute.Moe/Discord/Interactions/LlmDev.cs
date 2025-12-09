@@ -1,13 +1,12 @@
-﻿using Discord.Commands;
-using LlmTornado;
+﻿using Discord;
+using Discord.Commands;
 using LlmTornado.Chat;
-using LlmTornado.Chat.Models;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Modules;
+using Mute.Moe.Services.LLM;
+using Mute.Moe.Tools;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
-using Mute.Moe.Tools;
 
 namespace Mute.Moe.Discord.Interactions;
 
@@ -21,14 +20,12 @@ namespace Mute.Moe.Discord.Interactions;
 public class LlmDev
     : BaseModule
 {
-    private readonly TornadoApi _api;
-    private readonly ChatModel _model;
+    private readonly ChatModelEndpoint _model;
     private readonly ToolExecutionEngineFactory _toolFactory;
     private readonly IToolIndex _tools;
 
-    public LlmDev(TornadoApi api, ChatModel model, ToolExecutionEngineFactory toolFactory, IToolIndex tools)
+    public LlmDev(ChatModelEndpoint model, ToolExecutionEngineFactory toolFactory, IToolIndex tools)
     {
-        _api = api;
         _model = model;
         _toolFactory = toolFactory;
         _tools = tools;
@@ -54,9 +51,9 @@ public class LlmDev
     [TypingReply]
     public async Task LlmTest(string sys, string msg)
     {
-        var conversation = _api.Chat.CreateConversation(new ChatRequest
+        var conversation = _model.Api.Chat.CreateConversation(new ChatRequest
         {
-            Model = _model,
+            Model = _model.Model,
             MaxTokens = 10_000,
         });
 

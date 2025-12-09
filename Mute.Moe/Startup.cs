@@ -47,8 +47,11 @@ using Serpent.Loading;
 using System.IO.Abstractions;
 using System.Net.Http;
 using LlmTornado.Embedding.Models;
+using LlmTornado.Rerank.Models;
 using Mute.Moe.Tools.Providers;
 using Wasmtime;
+using Mute.Moe.Services.LLM.Embedding;
+using Mute.Moe.Services.LLM.Rerank;
 
 namespace Mute.Moe;
 
@@ -127,7 +130,7 @@ public record Startup(Configuration Configuration)
 
         services.AddSingleton<IEmbeddings, TornadoEmbeddings>();
         services.AddSingleton<IToolIndex, DatabaseToolIndex>(svc =>
-            new DatabaseToolIndex(svc.GetServices<IToolProvider>(), svc.GetRequiredService<IDatabaseService>(), svc.GetRequiredService<IEmbeddings>())
+            new DatabaseToolIndex(svc.GetServices<IToolProvider>(), svc.GetRequiredService<IDatabaseService>(), svc.GetRequiredService<IEmbeddings>(), svc.GetRequiredService<IReranking>())
         );
     }
 
@@ -144,22 +147,37 @@ public record Startup(Configuration Configuration)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
         // Create API
-        TornadoApi api;
         if (Configuration.LLM?.SelfHost?.Endpoint != null)
         {
-            api = new TornadoApi(new Uri(Configuration.LLM.SelfHost.Endpoint), Configuration.LLM.SelfHost.Key, LLmProviders.Custom);
+            var api = new TornadoApi(new Uri(Configuration.LLM.SelfHost.Endpoint), Configuration.LLM.SelfHost.Key);
 
-            services.AddSingleton(new ChatModel(Configuration.LLM.SelfHost.ChatModel));
-
-            services.AddSingleton(new EmbeddingModel(
-                Configuration.LLM.SelfHost.EmbeddingModel,
-                LLmProviders.Custom,
-                Configuration.LLM.SelfHost.EmbeddingContext,
-                Configuration.LLM.SelfHost.EmbeddingDims
+            services.AddSingleton(new ChatModelEndpoint(
+                api,
+                new(Configuration.LLM.SelfHost.ChatModel),
+                IsLocal:true
             ));
 
-            services.AddSingleton(new TornadoAnalyser.Model(new(Configuration.LLM.SelfHost.VisionLanguageModel), IsLocal:true));
+            services.AddSingleton(new EmbeddingModelEndpoint(
+                api,
+                new(
+                    Configuration.LLM.SelfHost.EmbeddingModel,
+                    LLmProviders.Custom,
+                    Configuration.LLM.SelfHost.EmbeddingContext,
+                    Configuration.LLM.SelfHost.EmbeddingDims
+                ),
+                IsLocal:true
+            ));
+
+            services.AddSingleton(new ImageAnalysisModelEndpoint(
+                api,
+                new(Configuration.LLM.SelfHost.VisionLanguageModel),
+                IsLocal:true
+            ));
+
             services.AddTransient<IImageAnalyser, TornadoAnalyser>();
+
+            // todo: add locally hosted re-ranking model
+            services.AddTransient<IReranking, NullRerank>();
         }
         else
         {
@@ -168,15 +186,23 @@ public record Startup(Configuration Configuration)
                 providers.Add(new ProviderAuthentication(LLmProviders.Google, Configuration.LLM.Google.Key));
             if (Configuration.LLM?.OpenAI?.Key != null)
                 providers.Add(new ProviderAuthentication(LLmProviders.OpenAi, Configuration.LLM.OpenAI.Key));
-            api = new TornadoApi(providers);
+            var api = new TornadoApi(providers);
 
-            services.AddSingleton(ChatModel.Google.Gemini.Gemini25Flash);
-            services.AddSingleton(EmbeddingModel.Google.Gemini.GeminiEmbedding001);
+            services.AddSingleton(new ChatModelEndpoint(
+                api,
+                ChatModel.Google.Gemini.Gemini25Flash,
+                IsLocal: false
+            ));
+
+            services.AddSingleton(new EmbeddingModelEndpoint(
+                api,
+                EmbeddingModel.Google.Gemini.GeminiEmbedding001,
+                IsLocal: false
+            ));
 
             services.AddTransient<IImageAnalyser, Automatic1111>();
+            services.AddTransient<IReranking, NullRerank>();
         }
-
-        services.AddSingleton(api);
     }
 
     private static void AddToolProviders(IServiceCollection services)

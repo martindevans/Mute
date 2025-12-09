@@ -1,0 +1,24 @@
+﻿using System.Threading.Tasks;
+
+namespace Mute.Moe.Services.LLM.Rerank;
+
+/// <summary>
+/// Rerank documents according to a query
+/// </summary>
+public interface IReranking
+{
+    /// <summary>
+    /// Rank a set of documents for relevance to the given query
+    /// </summary>
+    /// <param name="query"></param>
+    /// <param name="documents"></param>
+    /// <returns>Rerank results, in order of relevance</returns>
+    Task<List<RerankResult>> Rerank(string query, IReadOnlyList<string> documents);
+}
+
+/// <summary>
+/// Result from reranking a set of documents
+/// </summary>
+/// <param name="Index"></param>
+/// <param name="Relevance"></param>
+public record struct RerankResult(int Index, float Relevance);

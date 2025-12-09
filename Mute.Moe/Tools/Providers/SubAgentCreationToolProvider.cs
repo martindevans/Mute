@@ -1,10 +1,9 @@
-﻿using System.Text;
-using System.Threading.Tasks;
-using LlmTornado;
-using LlmTornado.Chat;
-using LlmTornado.Chat.Models;
+﻿using LlmTornado.Chat;
 using Microsoft.Extensions.DependencyInjection;
+using Mute.Moe.Services.LLM;
 using Serilog;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Tools.Providers;
 
@@ -14,8 +13,7 @@ namespace Mute.Moe.Tools.Providers;
 public class SubAgentCreationToolProvider
     : IToolProvider
 {
-    private readonly TornadoApi _api;
-    private readonly ChatModel _model;
+    private readonly ChatModelEndpoint _model;
     private readonly IServiceProvider _services;
 
     /// <inheritdoc />
@@ -29,15 +27,12 @@ public class SubAgentCreationToolProvider
     /// <summary>
     /// Create <see cref="SubAgentCreationToolProvider"/>
     /// </summary>
-    /// <param name="model"></param>
-    /// <param name="api"></param>
+    /// <param name="chat">LLM and API to use</param>
     /// <param name="services"></param>
-    public SubAgentCreationToolProvider(TornadoApi api, ChatModel model, IServiceProvider services)
+    public SubAgentCreationToolProvider(ChatModelEndpoint chat, IServiceProvider services)
     {
-        _api = api;
-        _model = model;
+        _model = chat;
         _services = services;
-
 
         Tools =
         [
@@ -64,9 +59,9 @@ public class SubAgentCreationToolProvider
     /// <returns></returns>
     private async Task<object> DelegateAgent(string task, string context, string[] facts, string[] tools)
     {
-        var conversation = _api.Chat.CreateConversation(new ChatRequest
+        var conversation = _model.Api.Chat.CreateConversation(new ChatRequest
         {
-            Model = _model,
+            Model = _model.Model,
             MaxTokens = 5_000,
         });
 

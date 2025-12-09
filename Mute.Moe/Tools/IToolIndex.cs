@@ -3,8 +3,9 @@ using System.Threading.Tasks;
 using Dapper;
 using Mute.Moe.Services.Database;
 using Dapper.Contrib.Extensions;
-using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools.Providers;
+using Mute.Moe.Services.LLM.Embedding;
+using Mute.Moe.Services.LLM.Rerank;
 
 namespace Mute.Moe.Tools;
 
@@ -53,6 +54,11 @@ public class DatabaseToolIndex
     private readonly IEmbeddings _embeddings;
 
     /// <summary>
+    /// Reranker for tool queries
+    /// </summary>
+    private readonly IReranking _reranking;
+
+    /// <summary>
     /// Indicates if the <see cref="Update"/> method has been run
     /// </summary>
     private bool _updated;
@@ -69,10 +75,12 @@ public class DatabaseToolIndex
     /// <param name="providers"></param>
     /// <param name="database"></param>
     /// <param name="embeddings"></param>
-    public DatabaseToolIndex(IEnumerable<IToolProvider> providers, IDatabaseService database, IEmbeddings embeddings)
+    /// <param name="reranking"></param>
+    public DatabaseToolIndex(IEnumerable<IToolProvider> providers, IDatabaseService database, IEmbeddings embeddings, IReranking reranking)
     {
         _database = database;
         _embeddings = embeddings;
+        _reranking = reranking;
         Providers = [ ..providers ];
 
         Tools = (
@@ -110,13 +118,28 @@ public class DatabaseToolIndex
             TopK = limit
         });
 
-        return from r in result
-               let similarity = (2 - r.distance) / 2
-               where !float.IsNaN(similarity)
-               where !float.IsInfinity(similarity)
-               let tool = Tools.GetValueOrDefault(r.Name)
-               where tool != null
-               select (similarity, tool);
+        // Select results from embedding query
+        var results = (from r in result
+                      let similarity = (2 - r.distance) / 2
+                      where !float.IsNaN(similarity)
+                      where !float.IsInfinity(similarity)
+                      let tool = Tools.GetValueOrDefault(r.Name)
+                      where tool != null
+                      select (similarity, tool)).ToList();
+
+        // Early exit if there's no real re-ranker, just to skip the useless work
+        if (_reranking is NullRerank)
+            return results;
+
+        // Rerank the tools based on the query and their description
+        var reranking = await _reranking.Rerank(query, results.Select(a => a.tool.Description).ToArray());
+
+        // New list of ersults
+        var rerankedResults = new List<(float, ITool)>();
+        foreach (var rank in reranking)
+            rerankedResults.Add((rank.Relevance, results[rank.Index].tool));
+
+        return rerankedResults;
     }
 
     /// <inheritdoc />
