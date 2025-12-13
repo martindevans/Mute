@@ -157,13 +157,25 @@ public class LLMConfig
 
     public class SelfHostConfig
     {
-        public string Endpoint = "http://localhost:8080";
-        public string Key = "nokey";
+        public LocalModelEndpoint? ChatLanguageModel = null;
+        public LocalModelEndpoint? VisionLanguageModel = null;
+        public LocalEmbeddingModelEndpoint? EmbeddingModel = null;
+        public LocalModelEndpoint? RerankingModel = null;
+    }
 
-        public required string ChatModel;
-        public required string VisionLanguageModel;
+    public class LocalModelEndpoint
+    {
+        public required string Endpoint;
+        public required string Key;
+        public required string ModelName;
+    }
 
-        public required string EmbeddingModel;
+    public class LocalEmbeddingModelEndpoint
+    {
+        public required string Endpoint;
+        public required string Key;
+        public required string ModelName;
+
         public int EmbeddingContext;
         public int EmbeddingDims;
     }

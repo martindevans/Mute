@@ -33,7 +33,7 @@ public class AutoTool
     /// </summary>
     /// <param name="name"></param>
     /// <param name="isDefault"></param>
-    /// <param name="action"></param>
+    /// <param name="action">The actual tool action. XML docs will be extracted from this method, and used as the docs for the tool.</param>
     /// <param name="preprocess">Preprocess arguments before calling action</param>
     /// <param name="postprocess">Postprocess result from calling action</param>
     /// <param name="postprocessAsync">Postprocess result from calling action</param>
@@ -67,6 +67,15 @@ public class AutoTool
 
     private static IToolParamType ParamType(Type type, string desc, bool required)
     {
+        // Handle nullables of the other types
+        var innerNullable = Nullable.GetUnderlyingType(type);
+        if (innerNullable != null)
+        {
+            return new ToolParamNullable(
+                ParamType(innerNullable, desc, required)
+            );
+        }
+
         // Atomic types
         if (type == typeof(float))
             return new ToolParamNumber(desc, required);
@@ -76,7 +85,10 @@ public class AutoTool
             return new ToolParamString(desc, required);
         if (type == typeof(bool))
             return new ToolParamBool(desc, required);
+        if (type.IsEnum)
+            return new ToolParamEnum(desc, type.GetEnumNames().ToList(), required);
 
+        // Array of atomic types
         if (type.IsArray)
         {
             var element = type.GetElementType()!;
@@ -89,6 +101,8 @@ public class AutoTool
                 return new ToolParamListAtomic(desc, ToolParamAtomicTypes.String, required);
             if (element == typeof(bool))
                 return new ToolParamListAtomic(desc, ToolParamAtomicTypes.Bool, required);
+            if (element.IsEnum)
+                return new ToolParamListEnum(desc, element.GetEnumNames(), required);
         }
 
         throw new ArgumentException($"Type '{type.FullName}' cannot be mapped to tool type");

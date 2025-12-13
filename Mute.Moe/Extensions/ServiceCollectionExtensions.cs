@@ -3,6 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Mute.Moe.Extensions;
 
+/// <summary>
+/// Extensions to <see cref="IServiceCollection"/>
+/// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>

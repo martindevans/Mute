@@ -31,11 +31,12 @@ public class ServerStatusToolProvider
         [
             new AutoTool("get_self_uptime", false, GetUptime),
             new AutoTool("get_self_latency", false, GetLatency),
+            new AutoTool("get_self_memory", false, GetMemory),
         ];
     }
 
     /// <summary>
-    /// Get the total amount of time that this process has been running for
+    /// Get the total amount of time that this process has been running for.
     /// </summary>
     /// <returns></returns>
     private object GetUptime()
@@ -52,7 +53,7 @@ public class ServerStatusToolProvider
     }
 
     /// <summary>
-    /// Get the current response time (i.e. latency) of the Discord API
+    /// Get the current response time (i.e. latency) of the Discord API.
     /// </summary>
     /// <returns></returns>
     private object GetLatency()
@@ -60,6 +61,20 @@ public class ServerStatusToolProvider
         return new
         {
             TotalMilliseconds = _status.Latency.TotalMilliseconds,
+        };
+    }
+
+    /// <summary>
+    /// Get the current memory usage of this process, including working set (the total bytes of physical memory mapped) and
+    /// total GC memory (the heap size in bytes excluding fragmentation)
+    /// </summary>
+    /// <returns></returns>
+    private object GetMemory()
+    {
+        return new
+        {
+            MemoryWorkingSet = _status.MemoryWorkingSet,
+            TotalGCMemory = _status.TotalGCMemory
         };
     }
 }

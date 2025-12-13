@@ -11,16 +11,16 @@ namespace Mute.Moe.Services.Information.Anime;
 public interface IAnimeInfo
 {
     /// <summary>
-    /// Get information about a single anime, anime movie, ONA, OVA etc.
+    /// Get general information about a single anime series, movie, ONA, OVA etc, from it's title. Information includes title (english and Japanese), description, airing date and genre.
     /// </summary>
     /// <param name="title">The title of the anime</param>
     /// <returns></returns>
     Task<IAnime?> GetAnimeInfoAsync(string title);
 
     /// <summary>
-    /// Fuzzy search for anime, anime movies, ONA, OVA etc
+    /// Search for anime, anime movies, ONA, OVA etc. Search string could be part of the title, a character name, or part of the description.
     /// </summary>
-    /// <param name="search">The term to search for</param>
+    /// <param name="search">The term to search for - could be part of the title, a character name or part of the description</param>
     /// <param name="limit">Maximum number of results to return</param>
     /// <returns></returns>
     IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search, int limit);

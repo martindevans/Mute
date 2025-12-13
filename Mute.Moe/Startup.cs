@@ -147,37 +147,46 @@ public record Startup(Configuration Configuration)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
         // Create API
-        if (Configuration.LLM?.SelfHost?.Endpoint != null)
+        if (Configuration.LLM?.SelfHost != null)
         {
-            var api = new TornadoApi(new Uri(Configuration.LLM.SelfHost.Endpoint), Configuration.LLM.SelfHost.Key);
+            if (Configuration.LLM.SelfHost.ChatLanguageModel is { } cm)
+            {
+                var api = new TornadoApi(new Uri(cm.Endpoint), cm.Key);
+                var ep = new ChatModelEndpoint(api, new(cm.ModelName, LLmProviders.Custom), true);
+                services.AddSingleton(ep);
+            }
 
-            services.AddSingleton(new ChatModelEndpoint(
-                api,
-                new(Configuration.LLM.SelfHost.ChatModel),
-                IsLocal:true
-            ));
+            if (Configuration.LLM.SelfHost.VisionLanguageModel is { } vm)
+            {
+                var api = new TornadoApi(new Uri(vm.Endpoint), vm.Key);
+                var ep = new ImageAnalysisModelEndpoint(api, new ChatModel(vm.ModelName, LLmProviders.Custom), true);
+                services.AddSingleton(ep);
 
-            services.AddSingleton(new EmbeddingModelEndpoint(
-                api,
-                new(
-                    Configuration.LLM.SelfHost.EmbeddingModel,
-                    LLmProviders.Custom,
-                    Configuration.LLM.SelfHost.EmbeddingContext,
-                    Configuration.LLM.SelfHost.EmbeddingDims
-                ),
-                IsLocal:true
-            ));
+                services.AddTransient<IImageAnalyser, TornadoAnalyser>();
+            }
+            else
+            {
+                services.AddTransient<IImageAnalyser, Automatic1111>();
+            }
 
-            services.AddSingleton(new ImageAnalysisModelEndpoint(
-                api,
-                new(Configuration.LLM.SelfHost.VisionLanguageModel),
-                IsLocal:true
-            ));
+            if (Configuration.LLM.SelfHost.EmbeddingModel is { } em)
+            {
+                var api = new TornadoApi(new Uri(em.Endpoint), em.Key);
+                var ep = new EmbeddingModelEndpoint(api, new EmbeddingModel(em.ModelName, LLmProviders.Custom, em.EmbeddingContext, em.EmbeddingDims), true);
+                services.AddSingleton(ep);
+            }
 
-            services.AddTransient<IImageAnalyser, TornadoAnalyser>();
+            if (Configuration.LLM.SelfHost.RerankingModel is { } rm)
+            {
+                var ep = new RerankModelEndpoint(rm.Endpoint, new RerankModel(rm.ModelName, LLmProviders.Custom), true);
+                services.AddSingleton(ep);
 
-            // todo: add locally hosted re-ranking model
-            services.AddTransient<IReranking, NullRerank>();
+                services.AddTransient<IReranking, LlamaServerReranking>();
+            }
+            else
+            {
+                services.AddTransient<IReranking, NullRerank>();
+            }
         }
         else
         {

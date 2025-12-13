@@ -9,9 +9,14 @@ namespace Mute.Moe.Extensions;
 /// </summary>
 public static class ImageExtensions
 {
-    public static string? GetGenerationMetadata(this PngMetadata pngMeta)
+    /// <summary>
+    /// Get Automatic1111 image generation metadata embedded in this image
+    /// </summary>
+    /// <param name="meta"></param>
+    /// <returns></returns>
+    public static string? GetGenerationMetadata(this PngMetadata meta)
     {
-        var parameters = pngMeta.TextData.FirstOrDefault(a => a.Keyword == "parameters");
+        var parameters = meta.TextData.FirstOrDefault(a => a.Keyword == "parameters");
 
         if (string.IsNullOrEmpty(parameters.Value))
             return null;
@@ -19,21 +24,35 @@ public static class ImageExtensions
         return parameters.Value;
     }
 
-
+    /// <summary>
+    /// Get Automatic1111 image generation prompt embedded in this image
+    /// </summary>
+    /// <param name="image"></param>
+    /// <returns></returns>
     public static (string, string)? GetGenerationPrompt(this Image image)
     {
         return image.Metadata.GetGenerationPrompt();
     }
 
+    /// <summary>
+    /// Get Automatic1111 image generation prompt embedded in this image
+    /// </summary>
+    /// <param name="meta"></param>
+    /// <returns></returns>
     public static (string, string)? GetGenerationPrompt(this ImageMetadata meta)
     {
         var pngMeta = meta.GetPngMetadata();
         return pngMeta.GetGenerationPrompt();
     }
 
-    public static (string, string)? GetGenerationPrompt(this PngMetadata pngMeta)
+    /// <summary>
+    /// Get Automatic1111 image generation prompt embedded in this image
+    /// </summary>
+    /// <param name="meta"></param>
+    /// <returns></returns>
+    public static (string, string)? GetGenerationPrompt(this PngMetadata meta)
     {
-        var parameters = GetGenerationMetadata(pngMeta);
+        var parameters = GetGenerationMetadata(meta);
         if (string.IsNullOrEmpty(parameters))
             return null;
 

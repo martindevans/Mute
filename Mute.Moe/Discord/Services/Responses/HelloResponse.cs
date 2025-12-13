@@ -11,7 +11,7 @@ namespace Mute.Moe.Discord.Services.Responses;
 public class HelloResponse
     : IResponse
 {
-    private readonly Random _random;
+    private readonly Random _random = new();
 
     /// <inheritdoc />
     public double BaseChance => 0.125;
@@ -32,11 +32,6 @@ public class HelloResponse
     };
 
     private static readonly IReadOnlyList<string> AllGreetings = GeneralGreetings.Concat(MorningGreetings).Concat(EveningGreetings).Select(a => string.Format(a, "").Trim().ToLowerInvariant()).ToArray();
-
-    public HelloResponse(Random random)
-    {
-        _random = random;
-    }
 
     /// <inheritdoc />
     public async Task<IConversation?> TryRespond(MuteCommandContext context, bool containsMention)

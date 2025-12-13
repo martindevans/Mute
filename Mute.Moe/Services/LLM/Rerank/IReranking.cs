@@ -21,4 +21,12 @@ public interface IReranking
 /// </summary>
 /// <param name="Index"></param>
 /// <param name="Relevance"></param>
-public record struct RerankResult(int Index, float Relevance);
+public readonly record struct RerankResult(int Index, float Relevance)
+    : IComparable<RerankResult>
+{
+    /// <inheritdoc />
+    public int CompareTo(RerankResult other)
+    {
+        return Relevance.CompareTo(other.Relevance);
+    }
+}

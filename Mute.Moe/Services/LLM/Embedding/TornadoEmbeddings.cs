@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using LlmTornado.Rerank;
 
 namespace Mute.Moe.Services.LLM.Embedding;
 
