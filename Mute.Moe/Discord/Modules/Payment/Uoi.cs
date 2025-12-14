@@ -37,6 +37,9 @@ public class Uoi
         }
         else
         {
+            if (!await Iou.CheckUnit(unit, this, Context))
+                return;
+
             var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
             var fid = new BalderHash32(id).ToString();
 
@@ -55,6 +58,9 @@ public class Uoi
         }
         else
         {
+            if (!await Iou.CheckUnit(unit, this, Context))
+                return;
+
             var id = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
             var fid = new BalderHash32(id).ToString();
 

@@ -1,12 +1,14 @@
-﻿using System.Text;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using MoreLinq;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Payment;
+using System.Reactive;
+using System.Text;
+using System.Threading.Tasks;
+using Mute.Moe.Discord.Context;
 
 namespace Mute.Moe.Discord.Modules.Payment;
 
@@ -78,6 +80,22 @@ public class Iou
             }
         }
     }
+
+    internal static async Task<bool> CheckUnit(string unit, BaseModule module, MuteCommandContext context)
+    {
+        if (!string.Equals(unit, "gbp", StringComparison.OrdinalIgnoreCase))
+        {
+            await context.Channel.SendMessageAsync($"Unusual unit detected: **'{unit}'**. Type **'confirm'** to confirm this transaction, or anything else to deny.");
+            var reply = await module.Interactive.NextMessageAsync(context);
+            if (reply == null || !string.Equals(reply.Content, "confirm", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Channel.SendMessageAsync("**Cancelling transaction**");
+                return false;
+            }
+        }
+
+        return true;
+    }
     #endregion
 
     [Command("iou"), Summary("I will remember that you owe something to another user")]
@@ -87,6 +105,9 @@ public class Iou
             await TypingReplyAsync("You cannot owe a negative amount!");
         else
         {
+            if (!await CheckUnit(unit, this, Context))
+                return;
+
             await _transactions.CreateTransaction(user.Id, Context.User.Id, amount, unit, note, DateTime.UtcNow);
             await ReplyAsync(
                 $"{Context.User.Mention} owes {TransactionFormatting.FormatCurrency(amount, unit)} to {user.Mention}");

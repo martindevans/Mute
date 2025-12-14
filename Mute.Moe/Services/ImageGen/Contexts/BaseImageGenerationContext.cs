@@ -3,7 +3,6 @@ using Mute.Moe.Discord.Context;
 using System.Threading.Tasks;
 using Discord;
 using Microsoft.Extensions.DependencyInjection;
-using MoreLinq;
 using SixLabors.ImageSharp;
 using System.IO;
 using System.Net.Http;
