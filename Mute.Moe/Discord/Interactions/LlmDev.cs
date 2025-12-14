@@ -41,7 +41,7 @@ public class LlmDev
             results,
             () => "No results",
             rs => $"{rs.Count} results",
-            (item, idx) => $"{idx + 1}. {item.Tool.Name}: {item.Tool.Description} ({item.Similarity})"
+            (item, idx) => $"{idx + 1}. {item.Tool.Name}: {item.Tool.Description} ({item.Relevance})"
         );
     }
 
@@ -94,10 +94,16 @@ public class LlmDev
             message.AppendLine("No Response From LLM");
         var replies = await LongReplyAsync(message.ToString());
 
-        if (reasoning.Length > 0)
+        if (reasoning.Length > 0 || engine.ToolCalls.Count > 0)
         {
             var thread = await ((ITextChannel)Context.Channel).CreateThreadAsync("Reasoning", autoArchiveDuration: ThreadArchiveDuration.OneHour, message: replies[^1]);
-            await thread.SendLongMessageAsync(reasoning.ToString());
+
+            if (reasoning.Length > 0)
+                await thread.SendLongMessageAsync(reasoning.ToString());
+
+            if (engine.ToolCalls.Count > 0)
+                await thread.SendLongMessageAsync($"## Tools:\n{string.Join("\n", engine.ToolCalls.Select(a => $" - {a.Name}: {a.Json}"))}");
+
             await thread.ModifyAsync(t => t.Locked = true);
         }
     }

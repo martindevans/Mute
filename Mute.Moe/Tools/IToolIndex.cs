@@ -36,7 +36,7 @@ public interface IToolIndex
     /// <param name="query"></param>
     /// <param name="limit"></param>
     /// <returns></returns>
-    Task<IEnumerable<(float Similarity, ITool Tool)>> Find(string query, int limit);
+    Task<IEnumerable<(float Relevance, ITool Tool)>> Find(string query, int limit);
 }
 
 /// <inheritdoc />
@@ -91,7 +91,7 @@ public class DatabaseToolIndex
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<(float Similarity, ITool Tool)>> Find(string query, int limit)
+    public async Task<IEnumerable<(float Relevance, ITool Tool)>> Find(string query, int limit)
     {
         await Update();
 
@@ -134,7 +134,7 @@ public class DatabaseToolIndex
         // Rerank the tools based on the query and their description
         var reranking = await _reranking.Rerank(query, results.Select(a => a.tool.Description).ToArray());
 
-        // New list of ersults
+        // New list of results
         var rerankedResults = new List<(float, ITool)>();
         foreach (var rank in reranking)
             rerankedResults.Add((rank.Relevance, results[rank.Index].tool));

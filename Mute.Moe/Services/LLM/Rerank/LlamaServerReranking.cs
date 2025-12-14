@@ -32,7 +32,6 @@ public sealed class LlamaServerReranking
     public async Task<List<RerankResult>> Rerank(string query, IReadOnlyList<string> documents)
     {
         // Create request
-        
         var json = JsonSerializer.Serialize(new
         {
             model = _model,
@@ -58,8 +57,6 @@ public sealed class LlamaServerReranking
 
         // Sort into order, highest relevance first
         return results.OrderByDescending(a => a.Relevance).ToList();
-
-        return results;
     }
 
     private sealed class RerankResponse

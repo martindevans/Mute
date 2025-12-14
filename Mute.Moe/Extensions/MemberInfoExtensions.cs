@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
@@ -9,7 +10,7 @@ namespace Mute.Moe.Extensions;
 /// <summary>
 /// Get XML doc strings for members
 /// </summary>
-public static class MemberInfoExtensions
+public static partial class MemberInfoExtensions
 {
     /// <summary>
     /// A cache to store loaded XML documentation files.
@@ -23,10 +24,22 @@ public static class MemberInfoExtensions
     /// <returns>The summary documentation, or null if not found.</returns>
     public static string? GetDocumentation(this MemberInfo memberInfo)
     {
-        return GetMemberXmlElement(memberInfo)
-             ?.Element("summary")
-             ?.Value
-              .Trim();
+        // Get the lines of text
+        var r = GetMemberXmlElement(memberInfo)
+              ?.Element("summary")
+              ?.Nodes()
+               .OfType<XText>()
+               .Select(x => x.Value)
+               .Aggregate(string.Concat)
+               .Trim();
+
+        if (r == null)
+            return null;
+
+        // Find all patterns of "<newline>      " and replace with a single space " "
+        r = NewlineAndFollowingSpaces().Replace(r, " ");
+
+        return r;
     }
 
     /// <summary>
@@ -169,8 +182,11 @@ public static class MemberInfoExtensions
     /// <summary>
     /// Gets the path to the XML documentation file for a given assembly.
     /// </summary>
-    private static string? GetXmlDocumentationPath(Assembly assembly)
+    private static string GetXmlDocumentationPath(Assembly assembly)
     {
         return Path.Combine(AppContext.BaseDirectory, "Mute.Moe.xml");
     }
+
+    [GeneratedRegex(@"\r?\n[ \t]*")]
+    private static partial Regex NewlineAndFollowingSpaces();
 }

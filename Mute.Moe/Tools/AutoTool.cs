@@ -65,48 +65,63 @@ public class AutoTool
         }
     }
 
+    #region tool parameters
+    private static readonly Dictionary<Type, Func<string, bool, IToolParamType>> AtomicTypes = new()
+    {
+        { typeof(int), (desc, req) => new ToolParamInt(desc, req) },
+        { typeof(float), (desc, req) => new ToolParamNumber(desc, req) },
+        { typeof(string), (desc, req) => new ToolParamString(desc, req) },
+        { typeof(bool), (desc, req) => new ToolParamBool(desc, req) }
+    };
+
+    private static readonly Dictionary<Type, ToolParamAtomicTypes> AtomicTypeMap = new()
+    {
+        { typeof(int), ToolParamAtomicTypes.Int },
+        { typeof(float), ToolParamAtomicTypes.Float },
+        { typeof(string), ToolParamAtomicTypes.String },
+        { typeof(bool), ToolParamAtomicTypes.Bool }
+    };
+
     private static IToolParamType ParamType(Type type, string desc, bool required)
     {
-        // Handle nullables of the other types
+        // Recursive handling for Nullable (e.g. `int?`)
         var innerNullable = Nullable.GetUnderlyingType(type);
         if (innerNullable != null)
-        {
-            return new ToolParamNullable(
-                ParamType(innerNullable, desc, required)
-            );
-        }
+            return new ToolParamNullable(ParamType(innerNullable, desc, required));
 
-        // Atomic types
-        if (type == typeof(float))
-            return new ToolParamNumber(desc, required);
-        if (type == typeof(int))
-            return new ToolParamInt(desc, required);
-        if (type == typeof(string))
-            return new ToolParamString(desc, required);
-        if (type == typeof(bool))
-            return new ToolParamBool(desc, required);
+        // Array (e.g. int[])
+        if (type.IsArray)
+            return ParamTypeArray(type.GetElementType()!, desc, required);
+
+        // Any type in `AtomicTypes` map
+        if (AtomicTypes.TryGetValue(type, out var ctor))
+            return ctor(desc, required);
+
+        // Enum
         if (type.IsEnum)
             return new ToolParamEnum(desc, type.GetEnumNames().ToList(), required);
 
-        // Array of atomic types
-        if (type.IsArray)
-        {
-            var element = type.GetElementType()!;
-
-            if (element == typeof(float))
-                return new ToolParamListAtomic(desc, ToolParamAtomicTypes.Float, required);
-            if (element == typeof(int))
-                return new ToolParamListAtomic(desc, ToolParamAtomicTypes.Int, required);
-            if (element == typeof(string))
-                return new ToolParamListAtomic(desc, ToolParamAtomicTypes.String, required);
-            if (element == typeof(bool))
-                return new ToolParamListAtomic(desc, ToolParamAtomicTypes.Bool, required);
-            if (element.IsEnum)
-                return new ToolParamListEnum(desc, element.GetEnumNames(), required);
-        }
-
         throw new ArgumentException($"Type '{type.FullName}' cannot be mapped to tool type");
     }
+
+    private static IToolParamType ParamTypeArray(Type element, string desc, bool required)
+    {
+        // Nullable element inside array
+        var innerNullable = Nullable.GetUnderlyingType(element);
+        if (innerNullable != null)
+            element = innerNullable;
+
+        // Atomic element
+        if (AtomicTypeMap.TryGetValue(element, out var atomicType))
+            return new ToolParamListAtomic(desc, atomicType, required);
+
+        // Enum element
+        if (element.IsEnum)
+            return new ToolParamListEnum(desc, element.GetEnumNames(), required);
+
+        throw new ArgumentException($"Array element type '{element.FullName}' cannot be mapped to tool type");
+    }
+    #endregion
 
     /// <inheritdoc />
     public IReadOnlyList<ToolParam> GetParameters()

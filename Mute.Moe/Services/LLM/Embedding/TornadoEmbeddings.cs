@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Serilog;
 
 namespace Mute.Moe.Services.LLM.Embedding;
 
@@ -28,12 +29,21 @@ public class TornadoEmbeddings
     /// <inheritdoc />
     public async Task<EmbeddingResult?> Embed(string text)
     {
-        var embedding = await _embedding.Api.Embeddings.CreateEmbedding(_embedding.Model, text, Dimensions);
+        try
+        {
+            var embedding = await _embedding.Api.Embeddings.CreateEmbedding(_embedding.Model, text, Dimensions);
 
-        if (embedding == null || embedding.Data.Count < 1)
-            return null;
+            if (embedding == null || embedding.Data.Count < 1)
+                return null;
 
-        return new EmbeddingResult(text, _embedding.Model.Name, embedding.Data[0].Embedding);
+            return new EmbeddingResult(text, _embedding.Model.Name, embedding.Data[0].Embedding);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Embedding error");
+        }
+
+        return null;
     }
 
     /// <inheritdoc />

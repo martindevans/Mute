@@ -65,8 +65,8 @@ public class ServerStatusToolProvider
     }
 
     /// <summary>
-    /// Get the current memory usage of this process, including working set (the total bytes of physical memory mapped) and
-    /// total GC memory (the heap size in bytes excluding fragmentation)
+    /// Get the current memory usage of this process (hosting the bot). This Includes working set (the total bytes of physical memory mapped) and
+    /// total GC memory (the heap size in bytes, excluding fragmentation).
     /// </summary>
     /// <returns></returns>
     private object GetMemory()

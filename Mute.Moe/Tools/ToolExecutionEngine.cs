@@ -56,7 +56,7 @@ public class ToolExecutionEngine
     private readonly IToolIndex _allTools;
     private readonly Dictionary<string, ITool> _availableTools = [ ];
     private readonly HashSet<string> _bannedTools = [ ];
-    private readonly List<string> _calls = [ ];
+    private readonly List<(string Name, string Json)> _calls = [ ];
 
     /// <summary>
     /// All tools which have been made available to this conversation so far
@@ -66,7 +66,7 @@ public class ToolExecutionEngine
     /// <summary>
     /// Get a list of all tool calls that have been made
     /// </summary>
-    public IReadOnlyList<string> ToolCalls => _calls;
+    public IReadOnlyList<(string Name, string Json)> ToolCalls => _calls;
 
     /// <summary>
     /// Create a new execution engine, adds the `search_for_tools` meta tool and all default tools
@@ -169,7 +169,7 @@ public class ToolExecutionEngine
     /// <param name="functionCall"></param>
     public async Task Execute(FunctionCall functionCall)
     {
-        _calls.Add(functionCall.Name);
+        _calls.Add((functionCall.Name, functionCall.GetJson()));
 
         if (_bannedTools.Contains(functionCall.Name))
         {
@@ -241,8 +241,8 @@ public class ToolExecutionEngine
         var matches = new List<string>();
         if (results.Count > 0)
         {
-            var top = results[0].Similarity;
-            var threshold1 = top * 0.95;
+            var top = results[0].Relevance;
+            var threshold1 = top * 0.9;
             var threshold2 = 0.8;
 
             _conversation.Update(c =>
