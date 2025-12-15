@@ -51,6 +51,11 @@ public static class IUserServiceExtensions
         if (mention)
             return user.Mention;
 
-        return (user as IGuildUser)?.Nickname ?? user.GlobalName ?? user.Username;
+        var name = (user as IGuildUser)?.Nickname ?? user.GlobalName ?? user.Username;
+
+        // Sanitise formatting
+        return name
+              .Replace("*", "\\*")
+              .Replace("_", "\\_");
     }
 }

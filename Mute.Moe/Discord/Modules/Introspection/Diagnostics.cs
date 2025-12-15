@@ -1,11 +1,12 @@
-﻿using System.Runtime.Intrinsics.X86;
-using System.Threading.Tasks;
+﻿using BalderHash;
 using Discord;
 using Discord.Commands;
 using Humanizer;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.Introspection.Uptime;
+using System.Runtime.Intrinsics.X86;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 
@@ -120,5 +121,20 @@ public class Diagnostics
         ).Build();
 
         await ReplyAsync(embed: embed);
+    }
+
+    [Command("balderhash"), RequireOwner]
+    [UsedImplicitly, Hidden]
+    public async Task Balderhash(string input)
+    {
+        if (uint.TryParse(input, out var integer))
+            await ReplyAsync($"Hash: {new BalderHash32(integer).Value}");
+        else
+        {
+            if (BalderHash32.Parse(input) is BalderHash32 hash)
+                await ReplyAsync($"Value: {hash.Value}");
+            else
+                await ReplyAsync("Cannot parse as balderhash or integer");
+        }
     }
 }

@@ -2,6 +2,9 @@
 
 namespace Mute.Moe.Services.Payment;
 
+/// <summary>
+/// Extensions to get IOU transactions
+/// </summary>
 public static class ITransactionsExtensions
 {
     /// <summary>
@@ -69,7 +72,7 @@ public static class ITransactionsExtensions
     /// <param name="userB"></param>
     /// <param name="unit"></param>
     /// <returns>All non-zero balances in order of amount</returns>
-    public static Task<IReadOnlyList<IBalance>> GetBalances( this ITransactions database, ulong userA, ulong? userB, string? unit = null)
+    public static Task<IReadOnlyList<IBalance>> GetBalances(this ITransactions database, ulong userA, ulong? userB, string? unit = null)
     {
         //e.g.
         //A -> B £2
@@ -94,7 +97,7 @@ public static class ITransactionsExtensions
     /// <param name="userA">One of the users in the transaction</param>
     /// <param name="userB"></param>
     /// <returns>All transactions involving A (filtered to also involving B if specified), ordered by instant</returns>
-    public static async Task<IReadOnlyList<ITransaction>> GetAllTransactions( this ITransactions database, ulong userA, ulong? userB = null)
+    public static async Task<IReadOnlyList<ITransaction>> GetAllTransactions(this ITransactions database, ulong userA, ulong? userB = null)
     {
         var ab = database.GetTransactions(fromId: userA, toId: userB);
         var ba = database.GetTransactions(fromId: userB, toId: userA);

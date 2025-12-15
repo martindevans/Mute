@@ -195,7 +195,7 @@ public class Uoi
         var formatted = new List<string>();
         var longForm = pendingArr.Count < 5;
         foreach (var item in pendingArr)
-            formatted.Add(await FormatSinglePending(item));
+            formatted.Add(await FormatSinglePending(item, _users, mentionReceiver, longForm));
 
         if (pendingArr.Count == 0)
             await TypingReplyAsync(none);
@@ -206,20 +206,19 @@ public class Uoi
             await TypingReplyAsync(string.Format(paginatedHeader, pendingArr.Count));
             await PagedReplyAsync(new PaginatedMessage { Pages = formatted.Batch(7).Select(d => string.Join("\n", d)) });
         }
+    }
 
-        return;
+    public static async Task<string> FormatSinglePending(IPendingTransaction p, IUserService users, bool mentionReceiver, bool longForm)
+    {
+        var receiver = await users.Name(p.ToId, mention: mentionReceiver);
+        var payer = (await users.Name(p.FromId));
+        var note = string.IsNullOrEmpty(p.Note) ? "" : $"'{p.Note}'";
+        var amount = TransactionFormatting.FormatCurrency(p.Amount, p.Unit);
+        var date = p.Instant.ToShortDateString();
 
-        async Task<string> FormatSinglePending(IPendingTransaction p)
-        {
-            var receiver = await _users.Name(p.ToId, mention: mentionReceiver);
-            var payer = await _users.Name(p.FromId);
-            var note = string.IsNullOrEmpty(p.Note) ? "" : $"'{p.Note}'";
-            var amount = TransactionFormatting.FormatCurrency(p.Amount, p.Unit);
-
-            var fid = new BalderHash32(p.Id).ToString();
-            return longForm
-                ? $"{receiver} Type `!confirm {fid}` or `!deny {fid}` to confirm/deny transaction of {amount} from {payer} {note}"
-                : $"`{fid}`: {payer} paid {amount} to {receiver} {note}";
-        }
+        var fid = new BalderHash32(p.Id).ToString();
+        return longForm
+            ? $"{receiver} Type `!confirm {fid}` or `!deny {fid}` to confirm/deny transaction of {amount} from {payer} {note} ({date})"
+            : $"`{fid}`: {payer} paid {amount} to {receiver} {note} ({date})";
     }
 }

@@ -5,7 +5,6 @@ using MoreLinq;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Payment;
-using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Mute.Moe.Discord.Context;
