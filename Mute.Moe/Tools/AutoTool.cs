@@ -18,6 +18,7 @@ public class AutoTool
 
     private readonly IReadOnlyList<ToolParam> _params;
     private readonly IReadOnlyList<(string, Type)> _methodParams;
+    private readonly bool _paramsHasContext;
 
     /// <inheritdoc />
     public string Name { get; }
@@ -54,14 +55,27 @@ public class AutoTool
         var methodParams = new List<(string, Type)>();
         _methodParams = methodParams;
 
+        var first = true;
         foreach (var parameterInfo in _action.Method.GetParameters())
         {
+            // Ignore context parameter, model doesn't need to know about it!
+            if (parameterInfo.ParameterType == typeof(ITool.CallContext))
+            {
+                if (!first)
+                    throw new InvalidOperationException("Tool 'name' has CallContext parameter, but it is not first");
+
+                _paramsHasContext = true;
+                continue;
+            }
+
             var docs = parameterInfo.GetDocumentation() ?? "";
             var ttype = ParamType(parameterInfo.ParameterType, docs, true);
 
             toolParams.Add(new ToolParam(parameterInfo.Name!, ttype));
 
             methodParams.Add((parameterInfo.Name!, parameterInfo.ParameterType));
+
+            first = false;
         }
     }
 
@@ -130,11 +144,17 @@ public class AutoTool
     }
 
     /// <inheritdoc />
-    public async Task<(bool success, object result)> Execute(IReadOnlyDictionary<string, object?> arguments)
+    public async Task<(bool success, object result)> Execute(ITool.CallContext context, IReadOnlyDictionary<string, object?> arguments)
     {
         // Get all parameters and convert to the right type
-        var parameters = new object[_methodParams.Count];
+        var parameters = new object[_methodParams.Count + Convert.ToInt32(_paramsHasContext)];
         var idx = 0;
+
+        // Handle the magic context parameter
+        if (_paramsHasContext)
+            parameters[idx++] = context;
+
+        // Convert all the other params
         foreach (var (name, type) in _methodParams)
         {
             if (type == typeof(float))

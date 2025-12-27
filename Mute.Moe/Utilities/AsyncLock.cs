@@ -3,14 +3,25 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Utilities;
 
+/// <summary>
+/// Provide a lock that can be used in an async context
+/// </summary>
 public class AsyncLock
 {
-    private readonly object _mutex = new();
+    private readonly Lock _mutex = new();
 
     private readonly Queue<TaskCompletionSource<IDisposable>> _waiting = new();
 
+    /// <summary>
+    /// Indicates if this lock is currently held
+    /// </summary>
     public bool IsLocked { get; private set; }
 
+    /// <summary>
+    /// Acquire the lock. Task blocks until lock is acquired.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns>A disposable which releases the lock</returns>
     public Task<IDisposable> LockAsync(CancellationToken cancellationToken = default)
     {
         lock (_mutex)

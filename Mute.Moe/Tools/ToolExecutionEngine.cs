@@ -37,12 +37,13 @@ public class ToolExecutionEngineFactory
     /// Create a new <see cref="ToolExecutionEngineFactory"/> for the given conversation
     /// </summary>
     /// <param name="conversation"></param>
+    /// <param name="context"></param>
     /// <param name="toolSearch"></param>
     /// <param name="defaultTools"></param>
     /// <returns></returns>
-    public ToolExecutionEngine GetExecutionEngine(Conversation conversation, bool toolSearch = true, bool defaultTools = true)
+    public ToolExecutionEngine GetExecutionEngine(Conversation conversation, ITool.CallContext context, bool toolSearch = true, bool defaultTools = true)
     {
-        var engine = new ToolExecutionEngine(conversation, _toolsIndex, toolSearch, defaultTools);
+        var engine = new ToolExecutionEngine(conversation, _toolsIndex, toolSearch, defaultTools, context);
         return engine;
     }
 }
@@ -54,6 +55,7 @@ public class ToolExecutionEngine
 {
     private readonly Conversation _conversation;
     private readonly IToolIndex _allTools;
+    private readonly ITool.CallContext _context;
     private readonly Dictionary<string, ITool> _availableTools = [ ];
     private readonly HashSet<string> _bannedTools = [ ];
     private readonly List<(string Name, string Json)> _calls = [ ];
@@ -75,10 +77,12 @@ public class ToolExecutionEngine
     /// <param name="tools"></param>
     /// <param name="allowToolSearch"></param>
     /// <param name="addDefaultTools"></param>
-    public ToolExecutionEngine(Conversation conversation, IToolIndex tools, bool allowToolSearch, bool addDefaultTools)
+    /// <param name="context"></param>
+    public ToolExecutionEngine(Conversation conversation, IToolIndex tools, bool allowToolSearch, bool addDefaultTools, ITool.CallContext context)
     {
         _conversation = conversation;
         _allTools = tools;
+        _context = context;
 
         conversation.Update(c =>
         {
@@ -164,6 +168,15 @@ public class ToolExecutionEngine
     }
 
     /// <summary>
+    /// Execute all tool calls in list, returns a value task
+    /// </summary>
+    /// <param name="calls"></param>
+    public async ValueTask ExecuteValueTask(List<FunctionCall> calls)
+    {
+        await Execute(calls);
+    }
+
+    /// <summary>
     /// Execute a single tool call
     /// </summary>
     /// <param name="functionCall"></param>
@@ -195,7 +208,7 @@ public class ToolExecutionEngine
             // Tool is available
             case var key when _availableTools.TryGetValue(key, out var tool):
             {
-                var (success, result) = await ExecuteTool(functionCall, tool);
+                var (success, result) = await ExecuteTool(functionCall, tool, _context);
                 functionCall.Result = new FunctionResult(functionCall, result, success);
                 break;
             }
@@ -269,11 +282,11 @@ public class ToolExecutionEngine
         return (true, matches);
     }
 
-    private static async Task<(bool success, object result)> ExecuteTool(FunctionCall call, ITool tool)
+    private static async Task<(bool success, object result)> ExecuteTool(FunctionCall call, ITool tool, ITool.CallContext context)
     {
         try
         {
-            return await tool.Execute(call.GetArguments());
+            return await tool.Execute(context, call.GetArguments());
         }
         catch (Exception ex)
         {

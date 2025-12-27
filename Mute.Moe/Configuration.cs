@@ -168,15 +168,13 @@ public class LLMConfig
         public required string Endpoint;
         public required string Key;
         public required string ModelName;
+
+        public required int ContextSize;
     }
 
     public class LocalEmbeddingModelEndpoint
+        : LocalModelEndpoint
     {
-        public required string Endpoint;
-        public required string Key;
-        public required string ModelName;
-
-        public int EmbeddingContext;
         public int EmbeddingDims;
     }
 }

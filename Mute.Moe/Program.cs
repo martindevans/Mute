@@ -45,9 +45,7 @@ public static class Program
         var bot = provider.GetRequiredService<HostedDiscordBot>();
         await bot.StartAsync();
 
-        // Get information about a guild, when this completes it means the bot is in a sensible state to start other services
-        await bot.Client.Rest.GetGuildAsync(537765528991825920);
-        await Task.Delay(1000);
+        // Start long running services
         await provider.GetRequiredService<ServiceHost>().StartAsync(default);
 
         // Register interactions. If this is debug mode only register them to the test guild

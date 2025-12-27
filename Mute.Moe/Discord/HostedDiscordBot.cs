@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.Reflection;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.Rest;
@@ -12,12 +9,19 @@ using Mute.Moe.Discord.Context.Postprocessing;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Discord.Services.Responses;
 using Serilog;
+using Serilog.Events;
+using System.Diagnostics;
+using System.Reflection;
+using System.Threading.Tasks;
 using ExecuteResult = Discord.Commands.ExecuteResult;
 using IResult = Discord.Commands.IResult;
 using RunMode = Discord.Commands.RunMode;
 
 namespace Mute.Moe.Discord;
 
+/// <summary>
+/// Connects to discord, receives events, dispatches them to various bot systems. Really the heart of the bot.
+/// </summary>
 public class HostedDiscordBot
 {
     private readonly Configuration _config;
@@ -25,17 +29,37 @@ public class HostedDiscordBot
     private readonly IServiceProvider _services;
     private readonly InteractionService _interactions;
 
+    /// <summary>
+    /// The <see cref="DiscordSocketClient"/> in use
+    /// </summary>
     public DiscordSocketClient Client { get; }
 
+    /// <summary>
+    /// Create new <see cref="HostedDiscordBot"/>
+    /// </summary>
+    /// <param name="client"></param>
+    /// <param name="config"></param>
+    /// <param name="commands"></param>
+    /// <param name="services"></param>
+    /// <param name="interactions"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services, InteractionService interactions)
     {
         Client = client ?? throw new ArgumentNullException(nameof(client));
+
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _commands = commands ?? throw new ArgumentNullException(nameof(commands));
         _services = services ?? throw new ArgumentNullException(nameof(services));
         _interactions = interactions ?? throw new ArgumentNullException(nameof(interactions));
+
+        Client.Log += LogAsync;
     }
 
+    /// <summary>
+    /// Start the bot
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public async Task StartAsync()
     {
         // Sanity check config
@@ -63,9 +87,9 @@ public class HostedDiscordBot
         _commands.CommandExecuted += CommandExecuted;
 
         // Hook up interactions
-        Client.InteractionCreated += async x =>
+        Client.InteractionCreated += async interaction =>
         {
-            var ctx = new SocketInteractionContext(Client, x);
+            var ctx = new SocketInteractionContext(Client, interaction);
             try
             {
                 var result = await _interactions.ExecuteCommandAsync(ctx, _services);
@@ -112,6 +136,12 @@ public class HostedDiscordBot
 
         // Wait for ready
         await tcs.Task;
+
+        // Get information about a guild, when this completes it means the bot is in a sensible state to start other services.
+        await Client.Rest.GetGuildAsync(537765528991825920);
+
+        // Some extra delay for good measure. We really don't want to start other stuff while the bot isn't ready!
+        await Task.Delay(1000);
     }
 
     private static async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context,  IResult result)
@@ -126,6 +156,9 @@ public class HostedDiscordBot
         await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
     }
 
+    /// <summary>
+    /// Stop the bot
+    /// </summary>
     public async Task StopAsync()
     {
         await Client.LogoutAsync();
@@ -244,5 +277,21 @@ public class HostedDiscordBot
         services.AddSingleton<IDiscordClient>(client);
 
         services.AddTransient<IUnsuccessfulCommandPostprocessor, DisplayCommandError>();
+    }
+
+    private static async Task LogAsync(LogMessage message)
+    {
+        var severity = message.Severity switch
+        {
+            LogSeverity.Critical => LogEventLevel.Fatal,
+            LogSeverity.Error => LogEventLevel.Error,
+            LogSeverity.Warning => LogEventLevel.Warning,
+            LogSeverity.Info => LogEventLevel.Information,
+            LogSeverity.Verbose => LogEventLevel.Verbose,
+            LogSeverity.Debug => LogEventLevel.Debug,
+            _ => LogEventLevel.Information
+        };
+        Log.Write(severity, message.Exception, "[{Source}] {Message}", message.Source, message.Message);
+        await Task.CompletedTask;
     }
 }

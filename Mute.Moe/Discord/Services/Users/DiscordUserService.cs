@@ -43,6 +43,6 @@ internal class DiscordUserService
     private async Task<IUser> GetUncached(ulong user)
     {
         return await _client.GetUserAsync(user)
-               ?? await _client.Rest.GetUserAsync(user);
+            ?? await _client.Rest.GetUserAsync(user);
     }
 }

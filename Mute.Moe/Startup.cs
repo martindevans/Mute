@@ -152,14 +152,16 @@ public record Startup(Configuration Configuration)
             if (Configuration.LLM.SelfHost.ChatLanguageModel is { } cm)
             {
                 var api = new TornadoApi(new Uri(cm.Endpoint), cm.Key);
-                var ep = new ChatModelEndpoint(api, new(cm.ModelName, LLmProviders.Custom), true);
+
+                var ep = new ChatModelEndpoint(api, new(cm.ModelName, LLmProviders.Custom, cm.ContextSize), true);
                 services.AddSingleton(ep);
             }
 
             if (Configuration.LLM.SelfHost.VisionLanguageModel is { } vm)
             {
                 var api = new TornadoApi(new Uri(vm.Endpoint), vm.Key);
-                var ep = new ImageAnalysisModelEndpoint(api, new ChatModel(vm.ModelName, LLmProviders.Custom), true);
+
+                var ep = new ImageAnalysisModelEndpoint(api, new ChatModel(vm.ModelName, LLmProviders.Custom, vm.ContextSize), true);
                 services.AddSingleton(ep);
 
                 services.AddTransient<IImageAnalyser, TornadoAnalyser>();
@@ -172,13 +174,14 @@ public record Startup(Configuration Configuration)
             if (Configuration.LLM.SelfHost.EmbeddingModel is { } em)
             {
                 var api = new TornadoApi(new Uri(em.Endpoint), em.Key);
-                var ep = new EmbeddingModelEndpoint(api, new EmbeddingModel(em.ModelName, LLmProviders.Custom, em.EmbeddingContext, em.EmbeddingDims), true);
+                
+                var ep = new EmbeddingModelEndpoint(api, new EmbeddingModel(em.ModelName, LLmProviders.Custom, em.ContextSize, em.EmbeddingDims), true);
                 services.AddSingleton(ep);
             }
 
             if (Configuration.LLM.SelfHost.RerankingModel is { } rm)
             {
-                var ep = new RerankModelEndpoint(rm.Endpoint, new RerankModel(rm.ModelName, LLmProviders.Custom), true);
+                var ep = new RerankModelEndpoint(rm.Endpoint, new RerankModel(rm.ModelName, LLmProviders.Custom), rm.ContextSize, true);
                 services.AddSingleton(ep);
 
                 services.AddTransient<IReranking, LlamaServerReranking>();
@@ -228,5 +231,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, DiceRollToolProvider>();
         services.AddSingleton<IToolProvider, PythonToolProvider>();
         services.AddSingleton<IToolProvider, SubAgentCreationToolProvider>();
+        services.AddSingleton<IToolProvider, UserInfoToolProvider>();
+        services.AddSingleton<IToolProvider, GuildInfoToolProvider>();
     }
 }

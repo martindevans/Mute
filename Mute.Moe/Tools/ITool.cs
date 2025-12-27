@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Discord;
 using LlmTornado.Infra;
 
 namespace Mute.Moe.Tools;
@@ -32,7 +33,13 @@ public interface ITool
     /// <summary>
     /// Try to execute this tool with the given parameters
     /// </summary>
-    /// <param name="arguments"></param>
+    /// <param name="context">Context of where this tool call is being made</param>
+    /// <param name="arguments">Arguments from the model</param>
     /// <returns></returns>
-    Task<(bool success, object result)> Execute(IReadOnlyDictionary<string, object?> arguments);
+    Task<(bool success, object result)> Execute(CallContext context, IReadOnlyDictionary<string, object?> arguments);
+
+    /// <summary>
+    /// Context info about where a tool call was made
+    /// </summary>
+    public record CallContext(IMessageChannel Channel);
 }

@@ -434,8 +434,12 @@ public class BaseModule
     }
     #endregion
 
+    /// <inheritdoc />
     protected override void BeforeExecute(CommandInfo command)
     {
+        // Get all of the attributes tagged onto this module and the called method which derive
+        // from `BaseExecuteContextAttribute` and call `StartExecute` on them. Store the disposables
+        // returned by that call.
         var method = command.Attributes.OfType<BaseExecuteContextAttribute>();
         var module = GetType().GetCustomAttributes(typeof(BaseExecuteContextAttribute), true).Cast<BaseExecuteContextAttribute>();
         _afterExecuteDisposals = method.Concat(module).Select(eca => eca.StartExecute(Context)).ToArray();
@@ -443,8 +447,10 @@ public class BaseModule
         base.BeforeExecute(command);
     }
 
+    /// <inheritdoc />
     protected override void AfterExecute(CommandInfo command)
     {
+        // Clean up disposables created during the execution of this module.
         if (_afterExecuteDisposals != null)
             foreach (var item in _afterExecuteDisposals)
                 item.EndExecute().GetAwaiter().GetResult();
