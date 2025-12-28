@@ -54,7 +54,6 @@ public class PythonToolProvider
 
         var initialFuel = python.Fuel;
         var delay = 1;
-        var startTime = DateTime.UtcNow;
         try
         {
             python.Execute();
@@ -87,13 +86,13 @@ public class PythonToolProvider
         }
 
         var fuelUsed = initialFuel - python.Fuel;
+        var fuelUsedPercentage = (double)fuelUsed / initialFuel * 100;
 
         return new
         {
-            FuelUsed = fuelUsed,
-            ElapsedMs = (DateTime.UtcNow - startTime).TotalMilliseconds,
+            FuelUsed = $"{fuelUsedPercentage:F1}%",
             StdOut = MemoryStreamToString(stdOut),
-            StdErr = MemoryStreamToString(stdOut)
+            StdErr = MemoryStreamToString(stdErr)
         };
     }
 

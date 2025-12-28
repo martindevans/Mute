@@ -117,9 +117,15 @@ public partial class Chat
         {
             var responded = false;
 
-            for (var i = threadMessagesLogged - 1; i < conversation.Messages.Count; i++)
+            for (var i = threadMessagesLogged; i < conversation.Messages.Count; i++)
             {
                 var message = conversation.Messages[i];
+
+                // Log tool calls
+                if (message is { Role: ChatMessageRoles.Tool })
+                    await thread.SendLongMessageAsync($"**Tool call result**: `{message.GetMessageContent()}`");
+
+                // Ignore nn-assistant messages
                 if (message.Role != null && message.Role != ChatMessageRoles.Assistant)
                     continue;
 
@@ -128,7 +134,6 @@ public partial class Chat
                 if (reasoning != null)
                     await thread.SendLongMessageAsync(reasoning);
 
-                // Log tools
                 if (message.ToolCalls != null)
                 {
                     foreach (var call in message.ToolCalls)
@@ -137,8 +142,7 @@ public partial class Chat
                         {
                             await thread.SendLongMessageAsync(
                                 $"**Tool Call: '{call.FunctionCall.Name}'**\n" +
-                                $"Args: {call.FunctionCall.Arguments}\n" +
-                                $"Result: {call.FunctionCall?.Result?.Content ?? "{}"}"
+                                $"Args: {call.FunctionCall.Arguments}\n"
                             );
                         }
                     }
