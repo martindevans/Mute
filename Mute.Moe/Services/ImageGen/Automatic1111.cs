@@ -42,7 +42,12 @@ public class Automatic1111
     private const InterrogateModel _model = InterrogateModel.DeepDanbooru;
     string IImageAnalyser.ModelName => _model.ToString();
     bool IImageAnalyser.IsLocal => true;
-
+    
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="backends"></param>
     public Automatic1111(Configuration config, StableDiffusionBackendCache backends)
     {
         _backends = backends;

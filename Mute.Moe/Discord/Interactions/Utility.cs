@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Serilog;
 
 namespace Mute.Moe.Discord.Interactions;
 

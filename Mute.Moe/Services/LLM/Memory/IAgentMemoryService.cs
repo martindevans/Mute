@@ -6,9 +6,14 @@
 public interface IAgentMemoryService
 {
     /// <summary>
-    /// Create a new memory
+    /// Propose creation of a new memory
     /// </summary>
-    public void ProposeMemory(ulong context, string claim, Subject subject, Category category, string evidence, float confidence);
+    /// <param name="context">ID for the context this memory is valid in</param>
+    /// <param name="claim">The factual claim this memory makes</param>
+    /// <param name="subject">Subject of this claim</param>
+    /// <param name="evidence">Evidence for this memory, e.g. a quote from a conversation</param>
+    /// <param name="confidence">Confidence level of this memory</param>
+    public void ProposeMemory(ulong context, string claim, Subject subject, string evidence, Confidence confidence);
 
     public struct Subject
     {
@@ -25,24 +30,10 @@ public interface IAgentMemoryService
         World
     }
 
-    public enum Category
+    public enum Confidence
     {
-        UserPreference,
-        UserTrait,
-
-        InteractionPattern,
-
-        Commitment,
-
-        SelfPreference,
-        SelfTrait,
-
-        NarrativeEvent
-    }
-
-    public enum Lifetime
-    {
-        Ephemeral,
-        Permanent,
+        Low,
+        Medium,
+        High,
     }
 }

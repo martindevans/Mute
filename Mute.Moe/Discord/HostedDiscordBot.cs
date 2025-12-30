@@ -89,6 +89,8 @@ public class HostedDiscordBot
         // Hook up interactions
         Client.InteractionCreated += async interaction =>
         {
+            Log.Information("InteractionCreated Start: {0}", interaction.Id);
+
             var ctx = new SocketInteractionContext(Client, interaction);
             try
             {
@@ -101,10 +103,16 @@ public class HostedDiscordBot
             }
             catch (Exception ex)
             {
+                Log.Error("InteractionCreated Error: {0}: {1}", interaction.Id, ex);
+
                 if (ctx.Interaction.HasResponded)
                     await ctx.Interaction.ModifyOriginalResponseAsync(props => props.Content = ex.Message);
                 else
                     await ctx.Interaction.RespondAsync(ex.Message);
+            }
+            finally
+            {
+                Log.Information("InteractionCreated End: {0}", interaction.Id);
             }
         };
 
@@ -263,6 +271,7 @@ public class HostedDiscordBot
         var client = new DiscordSocketClient(new DiscordSocketConfig {
             AlwaysDownloadUsers = true,
             GatewayIntents = GatewayIntents.All,
+            UseInteractionSnowflakeDate = false
         });
 
         services.AddSingleton(new InteractionService(client.Rest, new InteractionServiceConfig

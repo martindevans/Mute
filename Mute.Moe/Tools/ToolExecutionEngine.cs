@@ -256,7 +256,6 @@ public class ToolExecutionEngine
         {
             var top = results[0].Relevance;
             var threshold1 = top * 0.9;
-            var threshold2 = 0.8;
 
             _conversation.Update(c =>
             {
@@ -266,7 +265,7 @@ public class ToolExecutionEngine
                 foreach (var (similarity, tool) in results)
                 {
                     // Ignore tools below thresholds
-                    if (similarity < threshold1 || similarity < threshold2)
+                    if (similarity < threshold1)
                         continue;
 
                     // Add to the list of results returned to the LLM

@@ -1,11 +1,12 @@
-﻿using Discord;
+﻿using System.Text;
+using Discord;
 using Discord.Commands;
 using LlmTornado.Chat;
+using LlmTornado.Code;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
 using System.Threading.Tasks;
-using LlmTornado.Code;
 
 namespace Mute.Moe.Discord.Modules.Personality;
 
@@ -16,20 +17,9 @@ namespace Mute.Moe.Discord.Modules.Personality;
 /// </summary>
 [UsedImplicitly]
 [Group("chat")]
-public partial class Chat
+public partial class Chat(ChatModelEndpoint _model, ToolExecutionEngineFactory _toolFactory)
     : BaseModule
 {
-    private readonly ChatModelEndpoint _model;
-    private readonly ToolExecutionEngineFactory _toolFactory;
-    private readonly IToolIndex _tools;
-
-    public Chat(ChatModelEndpoint model, ToolExecutionEngineFactory toolFactory, IToolIndex tools)
-    {
-        _model = model;
-        _toolFactory = toolFactory;
-        _tools = tools;
-    }
-
     [Command, Summary("Chat to me")]
     [UsedImplicitly]
     [ThinkingReply, TypingReply]
@@ -57,7 +47,7 @@ public partial class Chat
                              - Use `delegate_agent` to execute each step.
 
                              ## Knowledge Retrieval
-                             - If asked for facts, you MUST attempt to use `search_for_tools` first.
+                             - If asked for facts, you SHOULD attempt to use `search_for_tools` first.
                              - Only rely on your internal training data if tools fail or the user is just chatting.
 
                              ## Communication
@@ -71,6 +61,7 @@ public partial class Chat
                              - Time: '{localTime:t}'
                              - Date: '{localTime:d}'
                              - User: '{Context.User.GlobalName}'
+                             - AI Model: '{_model.Model.Name}'
                              """;
 
         var conversation = _model.Api.Chat.CreateConversation(new ChatRequest
@@ -141,8 +132,8 @@ public partial class Chat
                         if (call.FunctionCall != null)
                         {
                             await thread.SendLongMessageAsync(
-                                $"**Tool Call: '{call.FunctionCall.Name}'**\n" +
-                                $"Args: {call.FunctionCall.Arguments}\n"
+                                $"**Tool Call: `{call.FunctionCall.Name}`**\n" +
+                                $"Args: `{call.FunctionCall.Arguments}`\n"
                             );
                         }
                     }
@@ -196,18 +187,91 @@ public partial class Chat
             return responded;
         }
     }
+}
 
+[UsedImplicitly]
+[Group("llm")]
+public partial class LLM(IToolIndex _tools)
+    : BaseModule
+{
     [Command("tools"), Summary("Search for tools")]
     [UsedImplicitly]
     public async Task LlmToolSearch(string query, int n = 5)
     {
-        var results = (await _tools.Find(query, 5)).ToArray();
+        if (string.IsNullOrEmpty(query) || query == "*")
+        {
+            // Get all tools, defaults first
+            var defaults = _tools.Tools.Where(t => t.Value.IsDefaultTool).Select(t => t.Value);
+            var others = _tools.Tools.Where(t => !t.Value.IsDefaultTool).Select(t => t.Value);
+            var results = defaults.Concat(others).ToArray();
 
-        await DisplayItemList(
-            results,
-            () => "No results",
-            rs => $"{rs.Count} results",
-            (item, idx) => $"{idx + 1}. {item.Tool.Name}: {item.Tool.Description} ({item.Relevance})"
-        );
+            // Display results
+            await DisplayItemList(
+                results,
+                () => "No results",
+                rs => $"{rs.Count} results",
+                (item, idx) => $"{idx + 1}. **{item.Name}**: {item.Description} {(item.IsDefaultTool ? "(default)" : "")}"
+            );
+        }
+        else
+        {
+            // Do tool search
+            var results = (await _tools.Find(query, 5)).ToArray();
+
+            // Display results
+            await DisplayItemList(
+                results,
+                () => "No results",
+                rs => $"{rs.Count} results",
+                (item, idx) => $"{idx + 1}. **{item.Tool.Name}**: {item.Tool.Description} ({item.Relevance})"
+            );
+        }
+    }
+
+    [Command("tool"), Summary("Get all the detailed information for a specific tool")]
+    [UsedImplicitly]
+    public async Task LlmToolInfo(string name)
+    {
+        if (!_tools.Tools.TryGetValue(name, out var tool))
+        {
+            var nearby = (
+                from t in _tools.Tools
+                let dist = t.Value.Name.Levenshtein(name)
+                orderby dist
+                select t.Value
+            ).Take(5);
+
+            var builder = new StringBuilder();
+            builder.AppendLine($"Cannot find tool `{name}`. Did you mean:");
+            foreach (var item in nearby)
+                builder.AppendLine($"- {item.Name}");
+
+            await ReplyAsync(builder.ToString());
+        }
+        else
+        {
+            var description = new StringBuilder();
+            description.AppendLine(tool.Description);
+            description.AppendLine();
+            description.AppendLine("**Parameters**");
+
+            foreach (var parameter in tool.GetParameters())
+            {
+                description.AppendLine($" - **{parameter.Name}** (`{parameter.Type.Type}`)");
+                description.AppendLine($"  - {parameter.Type.Description}");
+                if (!parameter.Type.Required)
+                    description.AppendLine("  - Optional");
+            }
+
+            var embed = new EmbedBuilder()
+                       .WithTitle(tool.Name)
+                       .WithDescription(description.ToString())
+                       .WithColor(tool.IsDefaultTool ? Color.Gold : Color.LightGrey)
+                       .WithFields(
+                            new EmbedFieldBuilder().WithIsInline(true).WithName("Default Tool").WithValue(tool.IsDefaultTool)
+                        );
+
+            await ReplyAsync(embed: embed.Build());
+        }
     }
 }

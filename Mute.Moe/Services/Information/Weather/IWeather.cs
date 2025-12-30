@@ -12,8 +12,8 @@ public interface IWeather
     /// <summary>
     /// Get the weather report for a given location
     /// </summary>
-    /// <param name="latitude">Longitude</param>
-    /// <param name="longitude">Latitude</param>
+    /// <param name="latitude">Latitude of query location</param>
+    /// <param name="longitude">Longitude of query location</param>
     /// <returns></returns>
     public Task<IWeatherReport?> GetCurrentWeather(float latitude, float longitude);
 }
