@@ -9,6 +9,13 @@ namespace Mute.Moe.Extensions;
 /// </summary>
 public static class IAsyncEnumerableExtensions
 {
+    /// <summary>
+    /// Buffer items from a source until a certain amount of time has passed, and then return that batch in one go.
+    /// </summary>
+    /// <typeparam name="TSource"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="timeSpan"></param>
+    /// <returns></returns>
     public static async IAsyncEnumerable<IList<TSource>> BufferByTime<TSource>(this IAsyncEnumerable<TSource> source, TimeSpan timeSpan)
     {
         var buffer = new List<TSource>();

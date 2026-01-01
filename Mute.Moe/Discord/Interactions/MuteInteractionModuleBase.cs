@@ -5,10 +5,20 @@ using Discord;
 
 namespace Mute.Moe.Discord.Interactions;
 
-public class MuteInteractionModuleBase
+/// <summary>
+/// Base class for *Mute interactive modules (slash commands etc)
+/// </summary>
+public abstract class MuteInteractionModuleBase
     : InteractionModuleBase
 {
     #region send reply
+    /// <summary>
+    /// Either respond or followup, depending on which is needed
+    /// </summary>
+    /// <param name="text"></param>
+    /// <param name="embeds"></param>
+    /// <param name="ephemeral"></param>
+    /// <returns></returns>
     protected async Task ReplyAsync2(string? text = null, Embed[]? embeds = null, bool ephemeral = false)
     {
         if (!Context.Interaction.HasResponded)
@@ -93,6 +103,15 @@ public class MuteInteractionModuleBase
         }
     }
 
+    /// <summary>
+    /// Display a list of items. Will use different formats for none, few and many items.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="items">The list of items to speak</param>
+    /// <param name="nothing">Generate a string for no items</param>
+    /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
+    /// <param name="itemToString">Convert a single item (of many) to a string</param>
+    /// <returns></returns>
     protected Task DisplayItemList<T>(IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
     {
         return DisplayItemList(
@@ -156,6 +175,16 @@ public class MuteInteractionModuleBase
         }
     }
 
+    /// <summary>
+    /// Display a list of items. Will use different formats for none, few and many items.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="items">The list of items to speak</param>
+    /// <param name="nothing">A string for no items</param>
+    /// <param name="singleItem">Display a summary for a single item</param>
+    /// <param name="manyPrelude">Generate a string to say before speaking many results</param>
+    /// <param name="itemToString">Convert a single item (of many) to a string</param>
+    /// <returns></returns>
     protected Task DisplayItemList<T>(IReadOnlyList<T> items, string nothing, Func<T, string>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
     {
         return DisplayItemList(items, () => nothing, singleItem, manyPrelude, itemToString);

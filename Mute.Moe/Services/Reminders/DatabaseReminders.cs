@@ -24,9 +24,16 @@ public class DatabaseReminders
 
     private readonly IDatabaseService _database;
 
+    /// <inheritdoc />
     public event Action<Reminder>? ReminderCreated;
+
+    /// <inheritdoc />
     public event Action<uint>? ReminderDeleted;
 
+    /// <summary>
+    /// Create a new reminder service that stores reminders in the given database
+    /// </summary>
+    /// <param name="database"></param>
     public DatabaseReminders(IDatabaseService database)
     {
         _database = database;

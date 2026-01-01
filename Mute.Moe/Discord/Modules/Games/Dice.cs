@@ -15,7 +15,7 @@ namespace Mute.Moe.Discord.Modules.Games;
 [UsedImplicitly]
 [HelpGroup("games")]
 public class Dice
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly IDiceRoller _dice;
     private readonly IMacroResolver _macros;
@@ -70,7 +70,7 @@ public class Dice
 [UsedImplicitly]
 [Group("macro")]
 public class Macro
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly IMacroStorage _macros;
 

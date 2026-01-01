@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.UrbanDictionary;
 
+/// <inheritdoc />
 public class UrbanDictionaryApi
     : IUrbanDictionary
 {
@@ -15,18 +16,24 @@ public class UrbanDictionaryApi
     private readonly FluidCache<CacheEntry> _definitionCache;
     private readonly IIndex<string, CacheEntry> _definitionsByWord;
 
+    /// <summary>
+    /// Create new UrbanDictionaryApi
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="http"></param>
     public UrbanDictionaryApi(Configuration config,  IHttpClientFactory http)
     {
         _http = http.CreateClient();
         _definitionCache = new FluidCache<CacheEntry>(
             (int)(config.UrbanDictionary?.CacheSize ?? 128),
-            TimeSpan.FromSeconds(config.UrbanDictionary?.CacheMinTimeSeconds ?? 30),
+            TimeSpan.FromSeconds(1),
             TimeSpan.FromSeconds(config.UrbanDictionary?.CacheMaxTimeSeconds ?? 3600),
             () => DateTime.UtcNow
         );
         _definitionsByWord = _definitionCache.AddIndex("byWord", a => a.Word);
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<IUrbanDefinition>> SearchTermAsync(string term)
     {
         var urlTerm = HttpUtility.UrlEncode(term);

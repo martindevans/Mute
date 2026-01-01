@@ -10,7 +10,7 @@ namespace Mute.Moe.Discord.Modules;
 [UsedImplicitly]
 [Group("rss")]
 public class Rss(IRssNotifications _rss, DiscordSocketClient _client)
-        : BaseModule
+        : MuteBaseModule
 {
     [Command("subscribe"), Summary("I will subscribe this channel to RSS updates")]
     [UsedImplicitly]

@@ -16,7 +16,7 @@ namespace Mute.Moe.Discord.Modules.Payment;
 [TypingReply]
 [Summary("Administration for IOU system")]
 public class PaymentAdministration
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly IPendingTransactions _pending;
     private readonly IUserService _users;

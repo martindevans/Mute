@@ -142,10 +142,10 @@ public class Pictures
     [UsedImplicitly]
     public Task MidjourneyButton()
     {
-        return MidjourneyButtonWithIndex(MidjourneyStyleImageGenerationButtons.RedoButtonId, "0");
+        return MidjourneyButtonWithIndex(MidjourneyStyleImageGenerationButtons.RedoButtonPrefix, "0");
     }
 
-    [ComponentInteraction($"{MidjourneyStyleImageGenerationButtons.IdPrefix}*_*", ignoreGroupNames:true)]
+    [ComponentInteraction($"{MidjourneyStyleImageGenerationButtons.CommonPrefix}*_*", ignoreGroupNames:true)]
     [UsedImplicitly]
     public async Task MidjourneyButtonWithIndex(string buttonType, string buttonIndex)
     {
@@ -163,17 +163,17 @@ public class Pictures
                       ?? await LegacyConfig(args);
 
             // Nothing needs doing for redo button, config fetched from storage is already correct
-            if (buttonType != MidjourneyStyleImageGenerationButtons.RedoButtonId)
+            if (buttonType != MidjourneyStyleImageGenerationButtons.RedoButtonPrefix)
             {
                 // Get the attachment the button wants to work on
                 config.ReferenceImageUrl = (await GetAttachment(args, parsedButtonIndex))?.Url;
 
                 // Pick generation type
-                if (buttonType.StartsWith(MidjourneyStyleImageGenerationButtons.VariantButtonId))
+                if (buttonType.StartsWith(MidjourneyStyleImageGenerationButtons.VariantButtonPrefix))
                     config.Type = ImageGenerationType.Generate;
-                else if (buttonType.StartsWith(MidjourneyStyleImageGenerationButtons.UpscaleButtonId))
+                else if (buttonType.StartsWith(MidjourneyStyleImageGenerationButtons.UpscaleButtonPrefix))
                     config.Type = ImageGenerationType.Upscale;
-                else if (buttonType.StartsWith(MidjourneyStyleImageGenerationButtons.OutpaintButtonId))
+                else if (buttonType.StartsWith(MidjourneyStyleImageGenerationButtons.OutpaintButtonPrefix))
                     config.Type = ImageGenerationType.Outpaint;
                 else
                     throw new InvalidOperationException($"Unknown button type: {buttonType}");

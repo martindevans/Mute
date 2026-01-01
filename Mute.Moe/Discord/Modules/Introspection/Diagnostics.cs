@@ -14,7 +14,7 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 
 [UsedImplicitly]
 public class Diagnostics
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly IUptime _uptime;
     private readonly Status _status;

@@ -12,7 +12,7 @@ public static class ITransactionsExtensions
     /// </summary>
     /// <param name="primaryUser"></param>
     /// <param name="transactions"></param>
-    private static async Task<IReadOnlyList<IBalance>> TransactionsToBalances(ulong primaryUser,  IAsyncEnumerable<ITransaction> transactions)
+    private static async Task<IReadOnlyList<IBalance>> TransactionsToBalances(ulong primaryUser, IAsyncEnumerable<ITransaction> transactions)
     {
         // Accumulate a lookup table of user -> unit -> amount
         //user in this case is always the secondary user (the other is implicitly the primary user)
@@ -106,6 +106,9 @@ public static class ITransactionsExtensions
     }
 }
 
+/// <summary>
+/// Service for storing transactions from one user to another
+/// </summary>
 public interface ITransactions
 {
     /// <summary>

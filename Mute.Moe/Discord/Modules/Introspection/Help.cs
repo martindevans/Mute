@@ -11,7 +11,7 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 
 [HelpGroup("help")]
 public class Help
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly CommandService _commands;
     private readonly IServiceProvider _services;

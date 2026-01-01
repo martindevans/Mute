@@ -23,8 +23,17 @@ public interface IDatabaseService
     DbCommand CreateCommand();
 }
 
+/// <summary>
+/// Extensions for <see cref="IDatabaseService"/>
+/// </summary>
 public static class IDatabaseServiceExtensions
 {
+    /// <summary>
+    /// Immediately execute some non-query SQL and return the count
+    /// </summary>
+    /// <param name="db"></param>
+    /// <param name="sql"></param>
+    /// <returns></returns>
     public static int Exec(this IDatabaseService db, string sql)
     {
         using var cmd = db.CreateCommand();
@@ -33,6 +42,10 @@ public static class IDatabaseServiceExtensions
     }
 }
 
+/// <summary>
+/// Provides results from an SQL query as an <see cref="IAsyncEnumerable{TItem}"/>
+/// </summary>
+/// <typeparam name="TItem"></typeparam>
 public class SqlAsyncResult<TItem>
     : IAsyncEnumerable<TItem>
 {
@@ -40,6 +53,12 @@ public class SqlAsyncResult<TItem>
     private readonly Func<IDatabaseService, DbCommand> _prepare;
     private readonly Func<DbDataReader, TItem> _read;
 
+    /// <summary>
+    /// Create a new <see cref="SqlAsyncResult{TItem}"/>
+    /// </summary>
+    /// <param name="database">Database to query from</param>
+    /// <param name="prepare">Prepare a <see cref="DbCommand"/> which will provide results</param>
+    /// <param name="read">Read a single item from a <see cref="DbDataReader"/></param>
     protected internal SqlAsyncResult(IDatabaseService database, Func<IDatabaseService, DbCommand> prepare, Func<DbDataReader, TItem> read)
     {
         _database = database;
@@ -47,27 +66,15 @@ public class SqlAsyncResult<TItem>
         _read = read;
     }
 
-        
     IAsyncEnumerator<TItem> IAsyncEnumerable<TItem>.GetAsyncEnumerator(CancellationToken ct)
     {
         return new AsyncEnumerator(_prepare(_database), _read, ct);
     }
 
-    private class AsyncEnumerator
+    private class AsyncEnumerator(DbCommand _query, Func<DbDataReader, TItem> _read, CancellationToken _cancellation)
         : IAsyncEnumerator<TItem>
     {
-        private readonly DbCommand _query;
-        private readonly Func<DbDataReader, TItem> _read;
-        private readonly CancellationToken _cancellation;
-
         private DbDataReader? _reader;
-
-        public AsyncEnumerator(DbCommand query, Func<DbDataReader, TItem> read, CancellationToken cancellation)
-        {
-            _query = query;
-            _read = read;
-            _cancellation = cancellation;
-        }
 
         public async ValueTask<bool> MoveNextAsync()
         {

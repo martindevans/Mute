@@ -13,6 +13,10 @@ public class ComponentActionService
 
     private readonly DiscordSocketClient _client;
 
+    /// <summary>
+    /// Create a new <see cref="ComponentActionService"/>
+    /// </summary>
+    /// <param name="client"></param>
     public ComponentActionService(DiscordSocketClient client)
     {
         _client = client;
@@ -36,6 +40,10 @@ public class ComponentActionService
         return _waiters.GetOrAdd(id, _ => new()).Task;
     }
 
+    /// <summary>
+    /// Destroy the awaiter with the given ID
+    /// </summary>
+    /// <param name="id"></param>
     public void DestroyWaiter(string id)
     {
         _waiters.Remove(id, out _);

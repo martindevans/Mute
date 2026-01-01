@@ -26,23 +26,64 @@ public interface IAnimeInfo
     IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search, int limit);
 }
 
+/// <summary>
+/// Information about an anime series
+/// </summary>
 public interface IAnime
 {
+    /// <summary>
+    /// Unique ID of this series
+    /// </summary>
     string Id { get; }
+
+    /// <summary>
+    /// Series title in English
+    /// </summary>
     string? TitleEnglish { get; }
+
+    /// <summary>
+    /// Series title in Japanese
+    /// </summary>
     string? TitleJapanese { get; }
+
+    /// <summary>
+    /// Description of the series
+    /// </summary>
     string Description { get; }
+
+    /// <summary>
+    /// URL with more info about this series
+    /// </summary>
     string Url { get; }
 
+    /// <summary>
+    /// Start date of broadcast
+    /// </summary>
     DateTimeOffset? StartDate { get; }
+
+    /// <summary>
+    /// End date of broadcast
+    /// </summary>
     DateTimeOffset? EndDate { get; }
-        
+
+    /// <summary>
+    /// Is this an adult-only/NSFW series
+    /// </summary>
     bool Adult { get; }
 
+    /// <summary>
+    /// URL for an image related to this series (e.g. banner or title splash)
+    /// </summary>
     string ImageUrl { get; }
 
+    /// <summary>
+    /// List of genres of this series
+    /// </summary>
     IReadOnlyList<string> Genres { get; }
 
+    /// <summary>
+    /// Total number of episodes
+    /// </summary>
     uint? TotalEpisodes { get; }
 }
 

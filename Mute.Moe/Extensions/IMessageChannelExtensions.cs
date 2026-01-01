@@ -3,6 +3,9 @@ using Discord;
 
 namespace Mute.Moe.Extensions;
 
+/// <summary>
+/// Extensions for <see cref="IMessageChannel"/>
+/// </summary>
 public static class IMessageChannelExtensions
 {
     private const float WordsPerMinute = 360;
@@ -10,6 +13,15 @@ public static class IMessageChannelExtensions
 
     private static readonly TimeSpan SoftMaxDelay = TimeSpan.FromSeconds(2.0);
 
+    /// <summary>
+    /// Show the typing state, and then send a message after some delay. As if it was typed.
+    /// </summary>
+    /// <param name="channel"></param>
+    /// <param name="message"></param>
+    /// <param name="isTTS"></param>
+    /// <param name="embed"></param>
+    /// <param name="options"></param>
+    /// <returns></returns>
     public static async Task<IUserMessage> TypingReplyAsync(this IMessageChannel channel, string message, bool isTTS = false, Embed? embed = null, RequestOptions? options = null)
     {
         using (channel.EnterTypingState())
@@ -32,8 +44,12 @@ public static class IMessageChannelExtensions
         return SoftMaxDelay + TimeSpan.FromSeconds(Math.Pow((delay - SoftMaxDelay).TotalSeconds, 0.25f));
     }
 
-
-
+    /// <summary>
+    /// Send a long message in a channel, splitting it up to avoid the length limit
+    /// </summary>
+    /// <param name="channel"></param>
+    /// <param name="content"></param>
+    /// <returns></returns>
     public static async Task<IReadOnlyList<IUserMessage>> SendLongMessageAsync(this IMessageChannel channel, string content)
     {
         var messages = new List<IUserMessage>();

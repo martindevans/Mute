@@ -18,6 +18,9 @@ public class OpenWeatherMapService
     private readonly FluidCache<IWeatherReport?> _currentWeatherCache;
     private readonly IIndex<(float Lat, float Lon), IWeatherReport?> _currentWeatherByLocation;
 
+    private readonly FluidCache<IReadOnlyList<IWeatherForecast>?> _forecastWeatherCache;
+    private readonly IIndex<(float, float), IReadOnlyList<IWeatherForecast>?> _forecastWeatherByLocation;
+
     /// <summary>
     /// Construct a new <see cref="OpenWeatherMapService"/>
     /// </summary>
@@ -39,11 +42,28 @@ public class OpenWeatherMapService
 
         _currentWeatherCache = new FluidCache<IWeatherReport?>(
             config.OpenWeatherMap.CacheSize,
-            TimeSpan.FromSeconds(config.OpenWeatherMap.CacheMinAgeSeconds),
+            TimeSpan.FromSeconds(1),
             TimeSpan.FromSeconds(config.OpenWeatherMap.CacheMaxAgeSeconds),
             () => DateTime.UtcNow
         );
         _currentWeatherByLocation = _currentWeatherCache.AddIndex("ByLocation", a => (a?.Latitude ?? 0, a?.Longitude ?? 0));
+
+        _forecastWeatherCache = new FluidCache<IReadOnlyList<IWeatherForecast>?>(
+            config.OpenWeatherMap.CacheSize,
+            TimeSpan.FromSeconds(1),
+            TimeSpan.FromSeconds(config.OpenWeatherMap.CacheMaxAgeSeconds),
+            () => DateTime.UtcNow
+        );
+        _forecastWeatherByLocation = _forecastWeatherCache.AddIndex("ByLocation", a => (a?[0].Latitude ?? 0, a?[0].Longitude ?? 0));
+    }
+
+    /// <summary>
+    /// Clear all cached data
+    /// </summary>
+    public void Clear()
+    {
+        _currentWeatherCache.Clear();
+        _forecastWeatherCache.Clear();
     }
 
     /// <inheritdoc />
@@ -68,6 +88,30 @@ public class OpenWeatherMapService
         return new WeatherReport(json);
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<IWeatherForecast>?> GetWeatherForecast(float latitude, float longitude)
+    {
+        return await _forecastWeatherByLocation.GetItem((latitude, longitude), GetForecastWeatherUncached);
+    }
+
+    private async Task<IReadOnlyList<IWeatherForecast>?> GetForecastWeatherUncached((float latitude, float longitude) loc)
+    {
+        var latitude = loc.latitude;
+        var longitude = loc.longitude;
+
+        var result = await _http.GetAsync($"https://api.openweathermap.org/data/2.5/forecast?lat={latitude}&lon={longitude}&units=metric&appid={_apiKey}");
+        if (!result.IsSuccessStatusCode)
+            return null;
+
+        var json = JsonSerializer.Deserialize<WeatherForecastResponse>(await result.Content.ReadAsStreamAsync(), _serializer);
+
+        return json?
+            .List
+            .Select(a => new WeatherForecast(a, latitude, longitude))
+            .ToArray();
+    }
+
+    #region report
     private class WeatherResponse
     {
         public required WeatherResponsePos Coord { get; init; }
@@ -112,4 +156,67 @@ public class OpenWeatherMapService
         public float Latitude => _weather.Coord.Lat;
         public float Longitude => _weather.Coord.Lon;
     }
+    #endregion
+
+    #region forecast
+    private class WeatherForecastResponse
+    {
+        public required WeatherForecastResponseListItem[] List { get; init; }
+    }
+
+    private class WeatherForecastResponseListItem
+    {
+        [JsonPropertyName("dt")]
+        public required ulong UnixTimestamp { get; init; }
+
+        [JsonPropertyName("main")]
+        public required WeatherForecastResponseMain Main { get; init; }
+
+        [JsonPropertyName("weather")]
+        public required WeatherForecastResponseWeatherItem[] Weather { get; init; }
+
+        [JsonPropertyName("pop")]
+        public required float ProbabilityOfPrecipitation { get; init; }
+
+        public DateTime Timestamp => UnixTimestamp.FromUnixTimestamp();
+    }
+
+    private record WeatherForecastResponseMain(
+        [property: JsonPropertyName("temp")] float Temp,
+        [property: JsonPropertyName("feels_like")] float FeelsLike,
+        [property: JsonPropertyName("temp_min")] float MinForecastTemp,
+        [property: JsonPropertyName("temp_max")] float MaxForecastTemp
+    );
+
+    private record WeatherForecastResponseWeatherItem(
+        [property: JsonPropertyName("description")] string Description,
+        [property: JsonPropertyName("main")] string Main
+    );
+
+    private class WeatherForecast
+        : IWeatherForecast
+    {
+        private readonly WeatherForecastResponseListItem _weather;
+
+        public float Latitude { get; }
+        public float Longitude { get; }
+
+        public WeatherForecast(WeatherForecastResponseListItem weather, float lat, float lon)
+        {
+            _weather = weather;
+
+            Latitude = lat;
+            Longitude = lon;
+
+            Description = string.Join(", ", weather.Weather.Select(a => a.Description));
+        }
+
+        public string Description { get; }
+
+        public float TemperatureCelsius => _weather.Main.Temp;
+        public float? TemperatureCelsiusFeelsLike => _weather.Main.FeelsLike;
+
+        public float ProbabilityOfPrecipitation => _weather.ProbabilityOfPrecipitation;
+    }
+    #endregion
 }

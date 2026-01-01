@@ -11,7 +11,7 @@ namespace Mute.Moe.Discord.Modules.Search;
 
 [UsedImplicitly]
 public class Define
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly IWikipedia _wikipedia;
     private readonly IUrbanDictionary _urban;

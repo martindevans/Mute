@@ -24,7 +24,7 @@ public class AlphaVantageStockSearch
         _key = config.AlphaAdvantage.Key ?? throw new ArgumentNullException(nameof(config.AlphaAdvantage.Key));
         _http = http.CreateClient();
 
-        _infoCache = new FluidCache<IStockInfo>(config.AlphaAdvantage.CacheSize, TimeSpan.FromDays(1), TimeSpan.FromDays(7), () => DateTime.UtcNow);
+        _infoCache = new FluidCache<IStockInfo>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(1), TimeSpan.FromDays(7), () => DateTime.UtcNow);
         _infoBySymbol = _infoCache.AddIndex("BySymbol", a => a.Symbol);
     }
 

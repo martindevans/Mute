@@ -123,7 +123,7 @@ public abstract class BaseMikibotSearchService<TSearchItem, TItem>
 
     protected BaseMikibotSearchService()
     {
-        _cache = new FluidCache<TItem>(1024, TimeSpan.FromHours(1), TimeSpan.FromDays(7), () => DateTime.UtcNow);
+        _cache = new FluidCache<TItem>(128, TimeSpan.FromSeconds(1), TimeSpan.FromHours(1), () => DateTime.UtcNow);
         _itemById = _cache.AddIndex("id", ExtractId);
     }
 

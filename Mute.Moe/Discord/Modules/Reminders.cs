@@ -14,7 +14,7 @@ namespace Mute.Moe.Discord.Modules;
 
 [UsedImplicitly]
 public class Reminders(IReminders _reminders)
-    : BaseModule
+    : MuteBaseModule
 {
     private static readonly Color Color = Color.Purple;
 

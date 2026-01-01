@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Stocks;
 
-public class AlphaVantageStocks
+/// <inheritdoc />
+public class AlphaAdvantageStocks
     : IStockQuotes
 {
     private readonly HttpClient _http;
@@ -16,7 +17,7 @@ public class AlphaVantageStocks
 
     private readonly string _key;
 
-    public AlphaVantageStocks(Configuration config, IHttpClientFactory http)
+    public AlphaAdvantageStocks(Configuration config, IHttpClientFactory http)
     {
         if (config.AlphaAdvantage == null)
             throw new ArgumentNullException(nameof(config.AlphaAdvantage));
@@ -24,7 +25,7 @@ public class AlphaVantageStocks
         _key = config.AlphaAdvantage.Key ?? throw new ArgumentNullException(nameof(config.AlphaAdvantage));
         _http = http.CreateClient();
 
-        _quoteCache = new FluidCache<IStockQuote>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMaxAgeSeconds), () => DateTime.UtcNow);
+        _quoteCache = new FluidCache<IStockQuote>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMaxAgeSeconds), () => DateTime.UtcNow);
         _quoteBySymbol = _quoteCache.AddIndex("BySymbol", a => a.Symbol);
 
         

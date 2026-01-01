@@ -18,7 +18,7 @@ namespace Mute.Moe.Discord.Modules.Personality;
 [UsedImplicitly]
 [Group("chat")]
 public partial class Chat(ChatModelEndpoint _model, ToolExecutionEngineFactory _toolFactory)
-    : BaseModule
+    : MuteBaseModule
 {
     [Command, Summary("Chat to me")]
     [UsedImplicitly]
@@ -191,13 +191,16 @@ public partial class Chat(ChatModelEndpoint _model, ToolExecutionEngineFactory _
 
 [UsedImplicitly]
 [Group("llm")]
-public partial class LLM(IToolIndex _tools)
-    : BaseModule
+public partial class LLM(IToolIndex _tools, ChatModelEndpoint _chat)
+    : MuteBaseModule
 {
     [Command("tools"), Summary("Search for tools")]
     [UsedImplicitly]
     public async Task LlmToolSearch(string query, int n = 5)
     {
+        // Ensure we can't exceed a sensible number
+        n = Math.Min(10, n);
+
         if (string.IsNullOrEmpty(query) || query == "*")
         {
             // Get all tools, defaults first
@@ -210,20 +213,20 @@ public partial class LLM(IToolIndex _tools)
                 results,
                 () => "No results",
                 rs => $"{rs.Count} results",
-                (item, idx) => $"{idx + 1}. **{item.Name}**: {item.Description} {(item.IsDefaultTool ? "(default)" : "")}"
+                (item, idx) => $"{idx + 1}. **{item.Name}**"
             );
         }
         else
         {
             // Do tool search
-            var results = (await _tools.Find(query, 5)).ToArray();
+            var results = (await _tools.Find(query, n)).ToArray();
 
             // Display results
             await DisplayItemList(
                 results,
                 () => "No results",
                 rs => $"{rs.Count} results",
-                (item, idx) => $"{idx + 1}. **{item.Tool.Name}**: {item.Tool.Description} ({item.Relevance})"
+                (item, idx) => $"{idx + 1}. **{item.Tool.Name}**: {item.Relevance}"
             );
         }
     }
@@ -234,6 +237,7 @@ public partial class LLM(IToolIndex _tools)
     {
         if (!_tools.Tools.TryGetValue(name, out var tool))
         {
+            // Failed to find tool, find similar names
             var nearby = (
                 from t in _tools.Tools
                 let dist = t.Value.Name.Levenshtein(name)
@@ -273,5 +277,39 @@ public partial class LLM(IToolIndex _tools)
 
             await ReplyAsync(embed: embed.Build());
         }
+    }
+
+    [Command("model"), Summary("Get detailed model info")]
+    [UsedImplicitly]
+    public async Task LlmModelInfo()
+    {
+        var models = await _chat.Api.Models.GetModels(LLmProviders.Custom);
+        if (models == null)
+        {
+            await ReplyAsync("Cannot fetch model list from backend");
+            return;
+        }
+
+        var model = models.FirstOrDefault(a => string.Equals(a.Id, _chat.Model.Name, StringComparison.OrdinalIgnoreCase) || string.Equals(a.Name, _chat.Model.Name, StringComparison.OrdinalIgnoreCase));
+        if (model == null)
+        {
+            await ReplyAsync("Cannot find chat model in backend");
+            return;
+        }
+
+        var embed = new EmbedBuilder()
+                   .WithTitle(model.Name ?? model.Id);
+
+        if (model.Description != null)
+            embed.WithDescription(model.Description ?? "");
+
+        var fields = new List<EmbedFieldBuilder>();
+
+        if (model.ContextLength != null)
+            fields.Add(new EmbedFieldBuilder().WithIsInline(true).WithName("Context").WithValue(model.ContextLength));
+
+        embed.WithFields(fields);
+
+        await ReplyAsync(embed: embed);
     }
 }

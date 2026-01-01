@@ -4,7 +4,10 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Extensions;
 
-public static class SocketUserMessageExtensions
+/// <summary>
+/// Extensions for <see cref="IUserMessage"/>
+/// </summary>
+public static class IUserMessageExtensions
 {
     /// <summary>
     /// Get all image attachments from this message or the message it references

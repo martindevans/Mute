@@ -13,7 +13,7 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 
 [UsedImplicitly]
 public class UserInfo
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly IUserService _users;
     private readonly HttpClient _http;

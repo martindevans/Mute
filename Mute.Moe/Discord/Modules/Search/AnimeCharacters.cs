@@ -10,7 +10,7 @@ namespace Mute.Moe.Discord.Modules.Search;
 
 [UsedImplicitly]
 public class AnimeCharacters
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly ICharacterInfo _characters;
 

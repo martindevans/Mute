@@ -91,8 +91,8 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
         services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
         services.AddSingleton<IUptime>(new UtcDifferenceUptime());
-        services.AddSingleton<IStockQuotes, AlphaVantageStocks>();
-        services.AddSingleton<IForexInfo, AlphaVantageForex>();
+        services.AddSingleton<IStockQuotes, AlphaAdvantageStocks>();
+        services.AddSingleton<IForexInfo, AlphaAdvantageForex>();
         services.AddSingleton<IStockSearch, AlphaVantageStockSearch>();
         services.AddSingleton<IGroups, DatabaseGroupService>();
         services.AddSingleton<IReminders, DatabaseReminders>();

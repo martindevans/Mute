@@ -34,12 +34,12 @@ public class ProCoinMarketCapCrypto
         _key = config.CoinMarketCap?.Key ?? throw new ArgumentNullException(nameof(config.CoinMarketCap.Key));
         _http = http.CreateClient();
             
-        _currencyCache = new FluidCache<ICurrency>(config.CoinMarketCap.CacheSize, TimeSpan.FromSeconds(config.CoinMarketCap.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.CoinMarketCap.CacheMaxAgeSeconds), () => DateTime.UtcNow);
+        _currencyCache = new FluidCache<ICurrency>(config.CoinMarketCap.CacheSize, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(config.CoinMarketCap.CacheMaxAgeSeconds), () => DateTime.UtcNow);
         _currencyById = _currencyCache.AddIndex("IndexByUniqueId", a => a.Id);
         _currencyByName = _currencyCache.AddIndex("IndexByName", a => a.Name);
         _currencyBySymbol = _currencyCache.AddIndex("IndexBySymbol", a => a.Symbol);
 
-        _tickerCache = new FluidCache<ITicker>(config.CoinMarketCap.CacheSize, TimeSpan.FromSeconds(config.CoinMarketCap.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.CoinMarketCap.CacheMaxAgeSeconds), () => DateTime.UtcNow);
+        _tickerCache = new FluidCache<ITicker>(config.CoinMarketCap.CacheSize, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(config.CoinMarketCap.CacheMaxAgeSeconds), () => DateTime.UtcNow);
         _tickerBySymbol = _tickerCache.AddIndex("IndexBySymbol", a => a.Currency.Symbol);
     }
 

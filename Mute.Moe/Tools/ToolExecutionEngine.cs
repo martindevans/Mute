@@ -92,8 +92,25 @@ public class ToolExecutionEngine
             if (allowToolSearch)
             {
                 c.Tools.Add(new Tool([
-                    new ToolParam("query", "A detailed natural language query describing the functionality of the tool required.", ToolParamAtomicTypes.String)
-                ], "search_for_tools", "Performs an approximate/fuzzy search for tools through embedding vector similarity. If no results are found, try rewording your query."));
+                    new ToolParam(
+                        "query",
+                        """
+                        Describe the abstract capabilities required from a tool to satisfy the user’s request.
+                        
+                        Should be a short description including the following fields:
+                        - Capability
+                        - Inputs
+                        - Outputs
+                        
+                        Rules:
+                        - Describe general functionality, not a specific task instance
+                        - Do NOT include proper nouns, dates, times, quantities, or user-specific details
+                        - Focus on what the tool can do, as if describing an API or function signature
+                        - Do NOT phrase the output as a question or instruction
+                        """,
+                        ToolParamAtomicTypes.String
+                    )
+                ], "search_for_tools", "Performs an approximate/fuzzy search for tools through vector embeddings. If no results are found, try rewording your query."));
             }
 
             // Add default tools

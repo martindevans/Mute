@@ -2,8 +2,16 @@
 
 namespace Mute.Moe.Services.Reminders;
 
+/// <summary>
+/// Extensions related to reminders
+/// </summary>
 public static class IReminderExtensions
 {
+    /// <summary>
+    /// Given a string, attempt to extract a datetime for when it should be sent as a reminder
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
     public static DateTime? TryParseReminderMoment(this string message)
     {
         // Parse a moment from message

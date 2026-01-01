@@ -11,9 +11,15 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Modules;
 
-public class BaseModule
+/// <summary>
+/// Base class for all *Mute modules
+/// </summary>
+public abstract class MuteBaseModule
     : InteractiveBase
 {
+    /// <summary>
+    /// The command context for the currently running command
+    /// </summary>
     protected new MuteCommandContext Context => (MuteCommandContext)base.Context;
 
     private IEndExecute[]? _afterExecuteDisposals;
@@ -173,11 +179,27 @@ public class BaseModule
         Task<bool> ICriterion<SocketReaction>.JudgeAsync(SocketCommandContext sourceContext, SocketReaction parameter) => Task.FromResult(parameter.UserId == sourceContext.User.Id);
     }
 
+    /// <summary>
+    /// Display a list of items as pages. Items are only loaded from the enumerable as each page is shown.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="title"></param>
+    /// <param name="pagesEnumerable"></param>
+    /// <param name="build"></param>
+    /// <returns></returns>
     protected Task DisplayLazyPaginatedReply<T>(string title, IEnumerable<T> pagesEnumerable, Action<T, EmbedBuilder>? build = null)
     {
         return DisplayLazyPaginatedReply(title, pagesEnumerable.ToAsyncEnumerable());
     }
 
+    /// <summary>
+    /// Display a list of items as pages. Items are only loaded from the async enumerable as each page is shown.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="title"></param>
+    /// <param name="pagesEnumerable"></param>
+    /// <param name="build"></param>
+    /// <returns></returns>
     protected async Task DisplayLazyPaginatedReply<T>(string title, IAsyncEnumerable<T> pagesEnumerable, Action<T, EmbedBuilder>? build = null)
     {
         build ??= (i, b) => b.Description = i?.ToString() ?? "";
@@ -276,6 +298,15 @@ public class BaseModule
         }
     }
 
+    /// <summary>
+    /// Display a list of items
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="items"></param>
+    /// <param name="nothing"></param>
+    /// <param name="manyPrelude"></param>
+    /// <param name="itemToString"></param>
+    /// <returns></returns>
     protected Task DisplayItemList<T>(IReadOnlyList<T> items, Func<string> nothing, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
     {
         return DisplayItemList(
@@ -339,6 +370,16 @@ public class BaseModule
         }
     }
 
+    /// <summary>
+    /// Display a list of items
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="items"></param>
+    /// <param name="nothing"></param>
+    /// <param name="singleItem"></param>
+    /// <param name="manyPrelude"></param>
+    /// <param name="itemToString"></param>
+    /// <returns></returns>
     protected Task DisplayItemList<T>(IReadOnlyList<T> items, string nothing, Func<T, Task>? singleItem, Func<IReadOnlyList<T>, string>? manyPrelude, Func<T, int, string> itemToString)
     {
         return DisplayItemList(items, () => nothing, singleItem, manyPrelude, itemToString);
@@ -346,6 +387,14 @@ public class BaseModule
     #endregion
 
     #region reply
+    /// <summary>
+    /// Display a reply that takes time to appear, as if typed by a person
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="isTTS"></param>
+    /// <param name="embed"></param>
+    /// <param name="options"></param>
+    /// <returns></returns>
     protected Task<IUserMessage> TypingReplyAsync(string message, bool isTTS = false, Embed? embed = null, RequestOptions? options = null)
     {
         return Context.Channel.TypingReplyAsync(message, isTTS, embed, options);
@@ -423,11 +472,22 @@ public class BaseModule
         }
     }
 
+    /// <summary>
+    /// Reply with an embed
+    /// </summary>
+    /// <param name="embed"></param>
+    /// <param name="options"></param>
+    /// <returns></returns>
     protected Task<IUserMessage> ReplyAsync(EmbedBuilder embed, RequestOptions? options = null)
     {
         return ReplyAsync("", false, embed.Build(), options);
     }
 
+    /// <summary>
+    /// Send a really long message, which is split into multiple messages if necessary to avoid the length limit.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
     protected Task<IReadOnlyList<IUserMessage>> LongReplyAsync(string message)
     {
         return Context.Channel.SendLongMessageAsync(message);

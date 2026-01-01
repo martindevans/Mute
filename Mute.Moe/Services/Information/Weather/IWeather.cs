@@ -10,12 +10,26 @@ namespace Mute.Moe.Services.Information.Weather;
 public interface IWeather
 {
     /// <summary>
-    /// Get the weather report for a given location
+    /// Provides current weather conditions for a specified geographic location. Including temperature, precipitation and wind speed.<br />
+    /// - Capability: weather data retrieval.<br />
+    /// - Inputs: geographic location.<br />
+    /// - Outputs: current conditions. Temperature, precipitation, wind.
     /// </summary>
     /// <param name="latitude">Latitude of query location</param>
     /// <param name="longitude">Longitude of query location</param>
     /// <returns></returns>
     public Task<IWeatherReport?> GetCurrentWeather(float latitude, float longitude);
+
+    /// <summary>
+    /// Provides a weather forecast for a specified geographic location. Including temperature and chance of precipitation.
+    /// - Capability: weather forecast retrieval.<br />
+    /// - Inputs: geographic location.<br />
+    /// - Outputs: Predicted conditions. Temperature, precipitation chance.
+    /// </summary>
+    /// <param name="latitude"></param>
+    /// <param name="longitude"></param>
+    /// <returns></returns>
+    public Task<IReadOnlyList<IWeatherForecast>?> GetWeatherForecast(float latitude, float longitude);
 }
 
 /// <summary>
@@ -65,6 +79,42 @@ public interface IWeatherReport
 }
 
 /// <summary>
+/// Weather forecast for a location
+/// </summary>
+public interface IWeatherForecast
+{
+    /// <summary>
+    /// Latitude for this forecast
+    /// </summary>
+    public float Latitude { get; }
+
+    /// <summary>
+    /// Longitude for this forecast
+    /// </summary>
+    public float Longitude { get; }
+
+    /// <summary>
+    /// Human readable description of this forecast
+    /// </summary>
+    public string Description { get; }
+
+    /// <summary>
+    /// Predicted temperature (C)
+    /// </summary>
+    public float TemperatureCelsius { get; }
+
+    /// <summary>
+    /// Human perception of predicted temperature (C)
+    /// </summary>
+    public float? TemperatureCelsiusFeelsLike { get; }
+
+    /// <summary>
+    /// Probability of precipitation (0 to 1)
+    /// </summary>
+    public float ProbabilityOfPrecipitation { get; }
+}
+
+/// <summary>
 /// Provide weather related tools for LLMs
 /// </summary>
 public class WeatherToolProvider
@@ -81,7 +131,7 @@ public class WeatherToolProvider
     {
         Tools =
         [
-            new AutoTool("get_weather", false, weather.GetCurrentWeather),
+            new AutoTool("get_current_weather", false, weather.GetCurrentWeather),
         ];
     }
 }

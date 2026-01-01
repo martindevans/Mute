@@ -17,7 +17,7 @@ namespace Mute.Moe.Discord.Modules;
 [Group("image")]
 [ThinkingReply(EmojiLookup.ArtistPalette)]
 public class Pictures(IImageAnalyser _analyser, HttpClient _http)
-    : BaseModule
+    : MuteBaseModule
 {
     [Command("generate"), Alias("diffusion", "imagine"), Summary("I will generate a picture")]
     [RateLimit("B05D7AF4-C797-45C9-93C9-062FDDA14760", 10, "Please wait a bit before generating more images")]

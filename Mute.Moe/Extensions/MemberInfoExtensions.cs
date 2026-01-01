@@ -24,22 +24,39 @@ public static partial class MemberInfoExtensions
     /// <returns>The summary documentation, or null if not found.</returns>
     public static string? GetDocumentation(this MemberInfo memberInfo)
     {
-        // Get the lines of text
-        var r = GetMemberXmlElement(memberInfo)
-              ?.Element("summary")
-              ?.Nodes()
-               .OfType<XText>()
-               .Select(x => x.Value)
-               .Aggregate(string.Concat)
-               .Trim();
-
-        if (r == null)
+        var summary = GetMemberXmlElement(memberInfo)?.Element("summary");
+        if (summary == null)
             return null;
 
-        // Find all patterns of "<newline>      " and replace with a single space " "
-        r = NewlineAndFollowingSpaces().Replace(r, " ");
+        // Get string of summary
+        var summaryTxt = summary.ToString();
 
-        return r;
+        // Normalise newlines
+        summaryTxt = summaryTxt.Replace("\r\n", "\n");
+        summaryTxt = summaryTxt.Replace("\n\r", "\n");
+
+        // Remove tags
+        summaryTxt = summaryTxt.Replace("<summary>", "");
+        summaryTxt = summaryTxt.Replace("</summary>", "");
+
+        // Get all the lines
+        var lines = (
+            from line in summaryTxt.Split("\n")
+            where !string.IsNullOrWhiteSpace(line)
+            select line
+        ).ToArray();
+
+        // Remove the common indent from all lines
+        var indent = lines.MinimumCommonWhitespacePrefix();
+        for (var i = 0; i < lines.Length; i++)
+            lines[i] = lines[i].Substring(indent);
+
+        // Replace <br /> with newlines
+        for (var i = 0; i < lines.Length; i++)
+            lines[i] = lines[i].Replace("<br />", "\n");
+
+        var result = string.Join("", lines);
+        return result;
     }
 
     /// <summary>

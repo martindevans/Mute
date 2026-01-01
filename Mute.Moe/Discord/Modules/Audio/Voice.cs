@@ -12,7 +12,7 @@ namespace Mute.Moe.Discord.Modules.Audio;
 
 [UsedImplicitly]
 public class Voice
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly IGuildSpeechQueueCollection _queueCollection;
     private readonly ITextToSpeech _tts;

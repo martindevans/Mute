@@ -15,7 +15,7 @@ namespace Mute.Moe.Discord.Modules.Search;
 [HelpGroup("finance")]
 [ThinkingReply]
 public class Finance
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly ICryptocurrencyInfo _crypto;
     private readonly IStockQuotes _stocks;

@@ -19,6 +19,11 @@ public class GameService
     private readonly DiscordSocketClient _client;
     private readonly IDatabaseService _database;
 
+    /// <summary>
+    /// Create a new <see cref="GameService"/>
+    /// </summary>
+    /// <param name="client"></param>
+    /// <param name="database"></param>
     public GameService(DiscordSocketClient client, IDatabaseService database)
     {
         _client = client;

@@ -12,7 +12,7 @@ namespace Mute.Moe.Discord.Modules;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 public class Python(PythonBuilder _builder)
-    : BaseModule
+    : MuteBaseModule
 {
     [Command("python"), Summary("I will run a block of Python code and print the output")]
     [UsedImplicitly]

@@ -38,11 +38,21 @@ public static class StringExtensions
         }
     }
 
+    /// <summary>
+    /// Try to get the symbol for a currency. e.g. GBP => £
+    /// </summary>
+    /// <param name="isoCurrencySymbol"></param>
+    /// <returns></returns>
     public static string TryGetCurrencySymbol(this string isoCurrencySymbol)
     {
         return CurrencyNameToSymbol.GetValueOrDefault(isoCurrencySymbol.ToLowerInvariant(), defaultValue: isoCurrencySymbol);
     }
 
+    /// <summary>
+    /// Try to get the ISO name of a currency. e.g. £ => GBP
+    /// </summary>
+    /// <param name="symbol"></param>
+    /// <returns></returns>
     public static string? TryGetCurrencyIsoName(this string symbol)
     {
         return CurrencySymbolToName.GetValueOrDefault(symbol);
@@ -166,5 +176,19 @@ public static class StringExtensions
             return str[..maxLength];
 
         return str[..(maxLength - 1)] + '…';
+    }
+
+    /// <summary>
+    /// Get just the first line of a string
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public static string FirstLine(this string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        var index = input.IndexOfAny([ '\r', '\n' ]);
+        return index == -1 ? input : input[..index];
     }
 }

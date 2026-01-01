@@ -17,7 +17,7 @@ namespace Mute.Moe.Discord.Modules.Payment;
 [WarnDebugger]
 [TypingReply]
 public class Uoi
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly IPendingTransactions _pending;
     private readonly IUserService _users;

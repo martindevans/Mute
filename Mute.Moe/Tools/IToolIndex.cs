@@ -132,7 +132,7 @@ public class DatabaseToolIndex
             return results;
 
         // Rerank the tools based on the query and their description
-        var reranking = await _reranking.Rerank(query, results.Select(a => a.tool.Description).ToArray());
+        var reranking = await _reranking.Rerank($"Tools which are suitable for providing: {query}", results.Select(a => a.tool.Description).ToArray());
 
         // New list of results
         var rerankedResults = new List<(float, ITool)>();

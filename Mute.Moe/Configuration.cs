@@ -73,7 +73,14 @@ public class AvatarConfig
 /// </summary>
 public class AuthConfig
 {
+    /// <summary>
+    /// Discord API token
+    /// </summary>
     [UsedImplicitly] public string? Token;
+
+    /// <summary>
+    /// Discord API client ID
+    /// </summary>
     [UsedImplicitly] public string? ClientId;
 }
 
@@ -82,10 +89,19 @@ public class AuthConfig
 /// </summary>
 public class AlphaAdvantageConfig
 {
+    /// <summary>
+    /// Key for Alpha Advantage API
+    /// </summary>
     [UsedImplicitly] public string? Key;
 
+    /// <summary>
+    /// Number of items to store in cache
+    /// </summary>
     [UsedImplicitly] public int CacheSize = 128;
-    [UsedImplicitly] public int CacheMinAgeSeconds = (int)TimeSpan.FromMinutes(5).TotalSeconds;
+
+    /// <summary>
+    /// Maximum age before items timeout from the cache.
+    /// </summary>
     [UsedImplicitly] public int CacheMaxAgeSeconds = (int)TimeSpan.FromHours(6).TotalSeconds;
 }
 
@@ -94,10 +110,19 @@ public class AlphaAdvantageConfig
 /// </summary>
 public class CoinMarketCapConfig
 {
+    /// <summary>
+    /// Key for Coin Market Cap API
+    /// </summary>
     [UsedImplicitly] public string? Key;
 
-    [UsedImplicitly] public int CacheSize = 4096;
-    [UsedImplicitly] public int CacheMinAgeSeconds = (int)TimeSpan.FromMinutes(5).TotalSeconds;
+    /// <summary>
+    /// Number of items to store in cache
+    /// </summary>
+    [UsedImplicitly] public int CacheSize = 128;
+
+    /// <summary>
+    /// Maximum age before items timeout from the cache.
+    /// </summary>
     [UsedImplicitly] public int CacheMaxAgeSeconds = (int)TimeSpan.FromHours(6).TotalSeconds;
 }
 
@@ -117,8 +142,14 @@ public class DatabaseConfig
 /// </summary>
 public class UrbanDictionaryConfig
 {
+    /// <summary>
+    /// Number of items to store in cache
+    /// </summary>
     [UsedImplicitly] public uint CacheSize;
-    [UsedImplicitly] public uint CacheMinTimeSeconds;
+
+    /// <summary>
+    /// Maximum age before items timeout from the cache.
+    /// </summary>
     [UsedImplicitly] public uint CacheMaxTimeSeconds;
 }
 
@@ -127,11 +158,24 @@ public class UrbanDictionaryConfig
 /// </summary>
 public class STTConfig
 {
+    /// <summary>
+    /// Config for Whisper Speech-To-Text
+    /// </summary>
     [UsedImplicitly] public WhisperConfig? Whisper;
 
+    /// <summary>
+    /// Config for Whisper Speech-To-Text
+    /// </summary>
     public class WhisperConfig
     {
+        /// <summary>
+        /// Absolute path of the whisper model
+        /// </summary>
         [UsedImplicitly] public string? ModelPath;
+
+        /// <summary>
+        /// Number of threads to use
+        /// </summary>
         [UsedImplicitly] public uint? Threads;
     }
 }
@@ -141,42 +185,44 @@ public class STTConfig
 /// </summary>
 public class LLMConfig
 {
+    #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     [UsedImplicitly] public GoogleConfig? Google;
     [UsedImplicitly] public OpenAIConfig? OpenAI;
     [UsedImplicitly] public SelfHostConfig? SelfHost;
 
     public class GoogleConfig
     {
-        public string? Key;
+        [UsedImplicitly] public string? Key;
     }
 
     public class OpenAIConfig
     {
-        public string? Key;
+        [UsedImplicitly] public string? Key;
     }
 
     public class SelfHostConfig
     {
-        public LocalModelEndpoint? ChatLanguageModel = null;
-        public LocalModelEndpoint? VisionLanguageModel = null;
-        public LocalEmbeddingModelEndpoint? EmbeddingModel = null;
-        public LocalModelEndpoint? RerankingModel = null;
+        [UsedImplicitly] public LocalModelEndpoint? ChatLanguageModel = null;
+        [UsedImplicitly] public LocalModelEndpoint? VisionLanguageModel = null;
+        [UsedImplicitly] public LocalEmbeddingModelEndpoint? EmbeddingModel = null;
+        [UsedImplicitly] public LocalModelEndpoint? RerankingModel = null;
     }
 
     public class LocalModelEndpoint
     {
-        public required string Endpoint;
-        public required string Key;
-        public required string ModelName;
+        [UsedImplicitly] public required string Endpoint;
+        [UsedImplicitly] public required string Key;
+        [UsedImplicitly] public required string ModelName;
 
-        public required int ContextSize;
+        [UsedImplicitly] public required int ContextSize;
     }
 
     public class LocalEmbeddingModelEndpoint
         : LocalModelEndpoint
     {
-        public int EmbeddingDims;
+        [UsedImplicitly] public int EmbeddingDims;
     }
+    #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }
 
 /// <summary>
@@ -184,6 +230,7 @@ public class LLMConfig
 /// </summary>
 public class Automatic1111Config
 {
+    #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     [UsedImplicitly] public Backend[] Backends = null!;
 
     [UsedImplicitly] public string? Text2ImageSampler;
@@ -219,6 +266,7 @@ public class Automatic1111Config
         [UsedImplicitly] public int? FastTimeOutSeconds;
         [UsedImplicitly] public float? StepsMultiplier;
     }
+    #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }
 
 /// <summary>
@@ -262,11 +310,6 @@ public class OpenWeatherMapConfig
     /// Max items in cache
     /// </summary>
     [UsedImplicitly] public int CacheSize = 32;
-
-    /// <summary>
-    /// Min age of items before they can be culled
-    /// </summary>
-    [UsedImplicitly] public int CacheMinAgeSeconds = (int)TimeSpan.FromSeconds(30).TotalSeconds;
 
     /// <summary>
     /// Max age of items before they must be culled

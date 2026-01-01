@@ -10,7 +10,7 @@ namespace Mute.Moe.Discord.Modules.Games;
 [UsedImplicitly]
 [HelpGroup("games")]
 public class Flip
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly IDiceRoller _dice;
 

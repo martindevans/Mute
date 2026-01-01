@@ -10,12 +10,34 @@ namespace Mute.Moe.Services.Payment;
 /// </summary>
 public interface ITransaction
 {
+    /// <summary>
+    /// ID of the source user
+    /// </summary>
     ulong FromId { get; }
+
+    /// <summary>
+    /// ID of the destination user
+    /// </summary>
     ulong ToId { get; }
+
+    /// <summary>
+    /// Amount transferred
+    /// </summary>
     decimal Amount { get; }
+
+    /// <summary>
+    /// Exact time of transaction
+    /// </summary>
     DateTime Instant { get; }
 
+    /// <summary>
+    /// Unit of transaction (e.g. GBP)
+    /// </summary>
     string Unit { get; }
+
+    /// <summary>
+    /// A human readable note attached to this transaction
+    /// </summary>
     string? Note { get; }
 }
 

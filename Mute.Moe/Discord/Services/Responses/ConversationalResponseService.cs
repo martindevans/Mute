@@ -11,6 +11,9 @@ using IEnumerableExtensions = Mute.Moe.Extensions.IEnumerableExtensions;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
+/// <summary>
+/// Automatically responds to messages that aren't commands.
+/// </summary>
 public class ConversationalResponseService
 {
     private readonly DiscordSocketClient _client;
@@ -19,6 +22,12 @@ public class ConversationalResponseService
 
     private readonly ConcurrentDictionary<IUser, IConversation?> _conversations = new();
 
+    /// <summary>
+    /// Create a new <see cref="ConversationalResponseService"/>
+    /// </summary>
+    /// <param name="client"></param>
+    /// <param name="services"></param>
+    /// <param name="random"></param>
     public ConversationalResponseService(DiscordSocketClient client, IServiceProvider services, Random random)
     {
         _client = client;
@@ -35,6 +44,11 @@ public class ConversationalResponseService
             Log.Information("Loaded response generator: {0}", response.GetType().Name);
     }
 
+    /// <summary>
+    /// Try to respond to the given context
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
     public async Task Respond(MuteCommandContext context)
     {
         // Check if the bot is directly mentioned

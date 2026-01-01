@@ -2,9 +2,13 @@
 
 namespace Mute.Moe.Services.Randomness;
 
+/// <summary>
+/// Roll cryptographically strong dice
+/// </summary>
 public class CryptoDiceRoller
     : IDiceRoller
 {
+    /// <inheritdoc />
     public ulong Roll(ulong sides)
     {
         if (sides == 0)

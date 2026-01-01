@@ -15,11 +15,15 @@ public class WikipediaApi
     private readonly FluidCache<Tuple<string, IReadOnlyList<IDefinition>>> _cache;
     private readonly IIndex<string, Tuple<string, IReadOnlyList<IDefinition>>> _bySearchTerm;
 
+    /// <summary>
+    /// Create a new WikipediaApi
+    /// </summary>
+    /// <param name="client"></param>
     public WikipediaApi(IHttpClientFactory client)
     {
         _client = client;
 
-        _cache = new FluidCache<Tuple<string, IReadOnlyList<IDefinition>>>(1024, TimeSpan.FromMinutes(5), TimeSpan.FromDays(1), () => DateTime.UtcNow);
+        _cache = new FluidCache<Tuple<string, IReadOnlyList<IDefinition>>>(128, TimeSpan.FromSeconds(1), TimeSpan.FromHours(1), () => DateTime.UtcNow);
         _bySearchTerm = _cache.AddIndex("bySearchTerm", a => a.Item1);
     }
 

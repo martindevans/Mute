@@ -15,7 +15,7 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 [UsedImplicitly]
 [RequireOwner]
 public class Administration
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly Configuration _config;
     private readonly DiscordSocketClient _client;

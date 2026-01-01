@@ -14,19 +14,64 @@ public interface IImageGenerationConfigStorage
 /// </summary>
 public class ImageGenerationConfig
 {
+    /// <summary>
+    /// Positive prompt
+    /// </summary>
     [JsonPropertyName("pos")] public required string Positive { get; set; }
+
+    /// <summary>
+    /// Negative prompt
+    /// </summary>
     [JsonPropertyName("neg")] public required string Negative { get; set; }
 
+    /// <summary>
+    /// Positive prompt for face
+    /// </summary>
     [JsonPropertyName("fpos")] public string? FacePositive { get; set; }
+
+    /// <summary>
+    /// Negative prompt for face
+    /// </summary>
     [JsonPropertyName("fneg")] public string? FaceNegative { get; set; }
+
+    /// <summary>
+    /// Positive prompt for hands
+    /// </summary>
     [JsonPropertyName("hpos")] public string? HandPositive { get; set; }
+
+    /// <summary>
+    /// Negative prompt for hands
+    /// </summary>
     [JsonPropertyName("hneg")] public string? HandNegative { get; set; }
+
+    /// <summary>
+    /// Positive prompt for eyes
+    /// </summary>
     [JsonPropertyName("epos")] public string? EyePositive { get; set; }
+
+    /// <summary>
+    /// Negative prompt for eyes
+    /// </summary>
     [JsonPropertyName("eneg")] public string? EyeNegative { get; set; }
 
+    /// <summary>
+    /// Url for reference image, if this is img2img
+    /// </summary>
     [JsonPropertyName("iurl")] public required string? ReferenceImageUrl { get; set; }
+
+    /// <summary>
+    /// Indicates if this image was generated in a private context
+    /// </summary>
     [JsonPropertyName("priv")] public required bool IsPrivate { get; set; }
+
+    /// <summary>
+    /// Type of image generation
+    /// </summary>
     [JsonPropertyName("type")] public required ImageGenerationType Type { get; set; }
+
+    /// <summary>
+    /// How many images to generate in the batch
+    /// </summary>
     [JsonPropertyName("bat")] public required int BatchSize { get; set; }
 
     /// <summary>

@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Forex;
 
-public class AlphaVantageForex
+/// <inheritdoc />
+public class AlphaAdvantageForex
     : IForexInfo
 {
     private readonly HttpClient _http;
@@ -15,15 +16,16 @@ public class AlphaVantageForex
     private readonly FluidCache<IForexQuote> _cache;
     private readonly IIndex<KeyValuePair<string, string>, IForexQuote> _bySymbolPair;
         
-    public AlphaVantageForex(Configuration config, IHttpClientFactory http)
+    public AlphaAdvantageForex(Configuration config, IHttpClientFactory http)
     {
         _key = config.AlphaAdvantage?.Key ?? throw new ArgumentNullException(nameof(config.AlphaAdvantage.Key));
         _http = http.CreateClient();
 
-        _cache = new FluidCache<IForexQuote>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMinAgeSeconds), TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMaxAgeSeconds), () => DateTime.UtcNow);
+        _cache = new FluidCache<IForexQuote>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMaxAgeSeconds), () => DateTime.UtcNow);
         _bySymbolPair = _cache.AddIndex("BySymbolPair", a => new KeyValuePair<string, string>(a.FromCode, a.ToCode));
     }
 
+    /// <inheritdoc />
     public async Task<IForexQuote?> GetExchangeRate(string fromSymbol, string toSymbol)
     {
         var cached = await _bySymbolPair.GetItem(new KeyValuePair<string, string>(fromSymbol, toSymbol));
@@ -66,7 +68,7 @@ public class AlphaVantageForex
         public string? ErrorMessage => _error;
     }
 
-    public class ExchangeRateResponse
+    private class ExchangeRateResponse
         : IForexQuote
     {
 #pragma warning disable IDE0044 // Add readonly modifier

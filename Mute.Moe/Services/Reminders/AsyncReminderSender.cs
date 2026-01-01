@@ -66,35 +66,35 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
 
     private async Task<BaseEventAction> WaitForCreation(CancellationToken ct)
     {
-        //Create a task which will complete when a new reminder is created
+        // Create a task which will complete when a new reminder is created
         var tcs = new TaskCompletionSource<Reminder>();
         _reminders.ReminderCreated += tcs.SetResult;
 
-        //If the wait task is cancelled cancel the inner task and unregister the event handler
+        // If the wait task is cancelled cancel the inner task and unregister the event handler
         ct.Register(() => tcs.TrySetCanceled());
         ct.Register(() => _reminders.ReminderCreated -= tcs.SetResult);
 
-        //Now wait for something to happen...
+        // Now wait for something to happen...
         var reminder = await tcs.Task;
 
-        //If something happened, return the reminder
+        // If something happened, return the reminder
         return new EventCreatedAction(reminder);
     }
 
     private async Task<BaseEventAction> WaitForDeletion(CancellationToken ct)
     {
-        //Create a task which will complete when a reminder is deleted
+        // Create a task which will complete when a reminder is deleted
         var tcs = new TaskCompletionSource<uint>();
         _reminders.ReminderDeleted += tcs.SetResult;
 
-        //If the wait task is cancelled cancel the inner task and unregister the event handler
+        // If the wait task is cancelled cancel the inner task and unregister the event handler
         ct.Register(() => tcs.TrySetCanceled());
         ct.Register(() => _reminders.ReminderDeleted -= tcs.SetResult);
 
-        //Now wait for something to happen...
+        // Now wait for something to happen...
         var id = await tcs.Task;
 
-        //If something happened, return the reminder
+        // If something happened, return the reminder
         return new EventDeletedAction(id);
     }
 

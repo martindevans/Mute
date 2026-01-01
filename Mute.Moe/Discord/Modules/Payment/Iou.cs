@@ -19,7 +19,7 @@ namespace Mute.Moe.Discord.Modules.Payment;
 [TypingReply]
 [Summary("Record and query how much you owe people")]
 public class Iou
-    : BaseModule
+    : MuteBaseModule
 {
     private readonly ITransactions _transactions;
     private readonly IUserService _users;
@@ -80,7 +80,7 @@ public class Iou
         }
     }
 
-    internal static async Task<bool> CheckUnit(string unit, BaseModule module, MuteCommandContext context)
+    internal static async Task<bool> CheckUnit(string unit, MuteBaseModule module, MuteCommandContext context)
     {
         if (!string.Equals(unit, "gbp", StringComparison.OrdinalIgnoreCase))
         {

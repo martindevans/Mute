@@ -12,7 +12,7 @@ namespace Mute.Moe.Discord.Modules;
 [UsedImplicitly]
 [Group("role"), Alias("roles"), RequireContext(ContextType.Guild)]
 public class Roles(IGroups _groups, IUserService _users)
-    : BaseModule
+    : MuteBaseModule
 {
     [Command("id"), Summary("I will type out the ID of the specified role")]
     [UsedImplicitly]
