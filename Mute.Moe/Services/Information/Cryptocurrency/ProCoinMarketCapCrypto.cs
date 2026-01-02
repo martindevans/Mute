@@ -26,6 +26,12 @@ public class ProCoinMarketCapCrypto
     private readonly HttpClient _http;
     private readonly string _key;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="http"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public ProCoinMarketCapCrypto(Configuration config, IHttpClientFactory http)
     {
         if (config.CoinMarketCap == null)
@@ -43,6 +49,7 @@ public class ProCoinMarketCapCrypto
         _tickerBySymbol = _tickerCache.AddIndex("IndexBySymbol", a => a.Currency.Symbol);
     }
 
+    /// <inheritdoc />
     public Task<ICurrency?> FindBySymbol(string symbol)
     {
         symbol = Uri.EscapeDataString(symbol.ToUpperInvariant());
@@ -50,11 +57,11 @@ public class ProCoinMarketCapCrypto
         return GetOrDownload<string, ICurrency, CmcCurrencyResponse>(symbol, _currencyCache, _currencyBySymbol, _ => _http.GetAsync(url), a => a.Data.Values);
     }
 
-    public Task<ICurrency?> FindById(uint id)
-    {
-        var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?CMC_PRO_API_KEY={_key}&id={id}";
-        return GetOrDownload<uint, ICurrency, CmcCurrencyResponse>(id, _currencyCache, _currencyById, _ => _http.GetAsync(url), a => a.Data.Values);
-    }
+    //public Task<ICurrency?> FindById(uint id)
+    //{
+    //    var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?CMC_PRO_API_KEY={_key}&id={id}";
+    //    return GetOrDownload<uint, ICurrency, CmcCurrencyResponse>(id, _currencyCache, _currencyById, _ => _http.GetAsync(url), a => a.Data.Values);
+    //}
 
     private static async Task<TItem?> GetOrDownload<TKey, TItem, TResponse>(TKey key, FluidCache<TItem> cache, IIndex<TKey, TItem> index, Func<TKey, Task<HttpResponseMessage>> download, Func<TResponse, IEnumerable<TItem>?> extract)
         where TItem : class
@@ -92,6 +99,7 @@ public class ProCoinMarketCapCrypto
         return await index.GetItem(key);
     }
 
+    /// <inheritdoc />
     public async Task<ICurrency?> FindByName(string name)
     {
         // Try to get cached data
@@ -125,6 +133,7 @@ public class ProCoinMarketCapCrypto
         return null;
     }
 
+    /// <inheritdoc />
     public async Task<ICurrency?> FindBySymbolOrName(string symbolOrName)
     {
         //Consult caches first
@@ -145,6 +154,7 @@ public class ProCoinMarketCapCrypto
         return await FindByName(symbolOrName);
     }
 
+    /// <inheritdoc />
     public Task<ITicker?> GetTicker(ICurrency currency)
     {
         return GetOrDownload<string, ITicker, CmcTickerResponse>(currency.Symbol, _tickerCache, _tickerBySymbol, Download, r => r.Data.Values);

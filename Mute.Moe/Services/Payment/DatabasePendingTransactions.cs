@@ -6,6 +6,9 @@ using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Payment;
 
+/// <summary>
+/// Store pending transactions in the database
+/// </summary>
 public class DatabasePendingTransactions
     : IPendingTransactions
 {
@@ -52,7 +55,13 @@ public class DatabasePendingTransactions
     private readonly IDatabaseService _database;
 
     // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
-    public DatabasePendingTransactions( IDatabaseService database,  ITransactions dbTransactions)
+    /// <summary>
+    /// Create a new <see cref="DatabasePendingTransactions"/>
+    /// </summary>
+    /// <param name="database"></param>
+    /// <param name="dbTransactions"></param>
+    /// <exception cref="ArgumentException"></exception>
+    public DatabasePendingTransactions(IDatabaseService database, ITransactions dbTransactions)
     {
         if (dbTransactions is not DatabaseTransactions)
             throw new ArgumentException("Transactions service paired with `DatabasePendingTransactions` must be `DatabaseTransactions`");
@@ -62,6 +71,7 @@ public class DatabasePendingTransactions
         _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_PendingTransactions` (`FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT NOT NULL, `Pending` TEXT NOT NULL);");
     }
 
+    /// <inheritdoc />
     public async Task<uint> CreatePending(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
     {
         if (amount < 0)
@@ -84,6 +94,7 @@ public class DatabasePendingTransactions
         return (uint)(long)(await cmd.ExecuteScalarAsync())!;
     }
 
+    /// <inheritdoc />
     public IAsyncEnumerable<IPendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
         return new SqlAsyncResult<IPendingTransaction>(_database, PrepareQuery, ParsePendingTransaction);
@@ -141,6 +152,7 @@ public class DatabasePendingTransactions
         }
     }
 
+    /// <inheritdoc />
     public async Task<ConfirmResult> ConfirmPending(uint debtId)
     {
         var result = await UpdatePending(debtId, ConfirmPendingTransaction);
@@ -155,6 +167,7 @@ public class DatabasePendingTransactions
         };
     }
 
+    /// <inheritdoc />
     public async Task<DenyResult> DenyPending(uint debtId)
     {
         var result = await UpdatePending(debtId, DenyPendingTransaction);

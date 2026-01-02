@@ -34,5 +34,6 @@ public record ImageAnalysisModelEndpoint(TornadoApi Api, ChatModel Model, bool I
 /// </summary>
 /// <param name="BaseUrl"></param>
 /// <param name="Model"></param>
+/// <param name="ContextSize"></param>
 /// <param name="IsLocal">Indicates if this model is locally/privately hosted</param>
 public record RerankModelEndpoint(string BaseUrl, RerankModel Model, int ContextSize, bool IsLocal);

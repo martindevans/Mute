@@ -4,20 +4,52 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Information.Stocks;
 
+/// <summary>
+/// Fetch stock price quotes
+/// </summary>
 public interface IStockQuotes
 {
+    /// <summary>
+    /// Get a quote for a stock symbol (e.g. MSFT)
+    /// </summary>
+    /// <param name="symbol"></param>
+    /// <returns></returns>
     Task<IStockQuote?> GetQuote(string symbol);
 }
 
+/// <summary>
+/// A price quote for a stock
+/// </summary>
 public interface IStockQuote
 {
+    /// <summary>
+    /// Symbol of the stock
+    /// </summary>
     string Symbol { get; }
 
+    /// <summary>
+    /// Open price
+    /// </summary>
     decimal Open { get; }
+
+    /// <summary>
+    /// High price
+    /// </summary>
     decimal High { get; }
+
+    /// <summary>
+    /// Low price
+    /// </summary>
     decimal Low { get; }
+
+    /// <summary>
+    /// Current price
+    /// </summary>
     decimal Price { get; }
 
+    /// <summary>
+    /// Trading volume
+    /// </summary>
     long Volume { get; }
 }
 

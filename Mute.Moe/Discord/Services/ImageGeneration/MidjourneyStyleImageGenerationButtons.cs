@@ -1,7 +1,11 @@
 ﻿namespace Mute.Moe.Discord.Services.ImageGeneration;
 
 /// <summary>
-/// ID strings for *MuteJourney buttons
+/// ID strings for *MuteJourney buttons.
+///
+/// These buttons have an ID like: [Common][Button]_[Index]
+/// - Handlers for all *MuteJourney buttons can be setup by binding on [Common]*
+/// - Handlers which inject the index can be setup by binding on [Common]*_*
 /// </summary>
 public static class MidjourneyStyleImageGenerationButtons
 {
@@ -30,10 +34,27 @@ public static class MidjourneyStyleImageGenerationButtons
     /// </summary>
     public const string RedoButtonFullId = CommonPrefix + RedoButtonPrefix;
 
+
+    /// <summary>
+    /// Middle bit of the variant button ID
+    /// </summary>
     public const string VariantButtonPrefix = "VariantButtonId";
+
+    /// <summary>
+    /// Middle bit of the outpaint button ID
+    /// </summary>
     public const string OutpaintButtonPrefix = "OutpaintButtonId";
+
+    /// <summary>
+    /// Middle bit of the upscale button ID
+    /// </summary>
     public const string UpscaleButtonPrefix = "UpscaleButtonId";
+
+    /// <summary>
+    /// Middle bit of the redo button ID
+    /// </summary>
     public const string RedoButtonPrefix = "RedoButtonId";
+
 
     /// <summary>
     /// Get the ID for the outpaint button

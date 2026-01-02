@@ -5,6 +5,9 @@ using NAudio.Wave.SampleProviders;
 
 namespace Mute.Moe.Services.Audio.Mixing;
 
+/// <summary>
+/// Mix together multiple audio channels into one
+/// </summary>
 public class MultiChannelMixer
     : IWaveProvider
 {
@@ -16,8 +19,12 @@ public class MultiChannelMixer
     private readonly MixingSampleProvider _inputs;
     private readonly IWaveProvider _output;
 
+    /// <inheritdoc />
     public WaveFormat WaveFormat => _output.WaveFormat;
 
+    /// <summary>
+    /// Indicates if this mixer is currently playing any audio
+    /// </summary>
     public bool IsPlaying => _inputMap.Keys.Any(a => a.IsPlaying);
 
     public MultiChannelMixer()
@@ -34,12 +41,20 @@ public class MultiChannelMixer
         return _output.Read(buffer, offset, count);
     }
 
+    /// <summary>
+    /// A new input to the mix
+    /// </summary>
+    /// <param name="input"></param>
     public void Add(IMixerInput input)
     {
         var samples = _inputMap.GetOrAdd(input, static (_, i) => i.ToMono().Resample(MixingFormat.SampleRate), input);
         _inputs.AddMixerInput(samples);
     }
 
+    /// <summary>
+    /// Remove an input from the mix
+    /// </summary>
+    /// <param name="input"></param>
     public void Remove(IMixerInput input)
     {
         if (_inputMap.TryRemove(input, out var value))

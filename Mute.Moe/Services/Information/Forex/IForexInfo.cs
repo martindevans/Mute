@@ -18,14 +18,34 @@ public interface IForexInfo
     Task<IForexQuote?> GetExchangeRate(string fromSymbol, string toSymbol);
 }
 
+/// <summary>
+/// A foreign exchange quote
+/// </summary>
 public interface IForexQuote
 {
+    /// <summary>
+    /// Currency code converting from
+    /// </summary>
     string FromCode { get; }
+
+    /// <summary>
+    /// Currency name converting from
+    /// </summary>
     string FromName { get; }
 
+    /// <summary>
+    /// Currency code converting to
+    /// </summary>
     string ToCode { get; }
+
+    /// <summary>
+    /// Currency name converting to
+    /// </summary>
     string ToName { get; }
 
+    /// <summary>
+    /// Exchange rate for this pair
+    /// </summary>
     decimal ExchangeRate { get; }
 }
 

@@ -30,8 +30,17 @@ public interface IBalance
     decimal Amount { get; }
 }
 
+/// <summary>
+/// Extensions to <see cref="IBalance"/>
+/// </summary>
 public static class IBalanceExtensions
 {
+    /// <summary>
+    /// Convert a balance between 2 users into a string
+    /// </summary>
+    /// <param name="balance"></param>
+    /// <param name="users"></param>
+    /// <returns></returns>
     public static async Task<string> Format(this IBalance balance, IUserService users)
     {
         var a = await users.Name(balance.UserA);
@@ -43,19 +52,5 @@ public static class IBalanceExtensions
     }
 }
 
-internal class Balance
-    : IBalance
-{
-    public string Unit { get; }
-    public ulong UserA { get; }
-    public ulong UserB { get; }
-    public decimal Amount { get; }
-
-    public Balance(string unit, ulong a, ulong b, decimal amount)
-    {
-        Unit = unit;
-        UserA = a;
-        UserB = b;
-        Amount = amount;
-    }
-}
+internal record Balance(string Unit, ulong UserA, ulong UserB, decimal Amount)
+    : IBalance;

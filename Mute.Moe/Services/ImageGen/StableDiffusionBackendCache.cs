@@ -5,12 +5,19 @@ using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.ImageGen;
 
+/// <summary>
+/// Stores Automatic111 backends
+/// </summary>
 public class StableDiffusionBackendCache
 {
     private readonly IReadOnlyList<BackendStatus> _backends;
 
     private readonly TimeSpan RecheckDeadBackendTime;
 
+    /// <summary>
+    /// Create a new backend cache
+    /// </summary>
+    /// <param name="config"></param>
     public StableDiffusionBackendCache(Configuration config)
     {
         var timeoutSlow = config.Automatic1111?.GenerationTimeOutSeconds ?? 120;
@@ -34,6 +41,10 @@ public class StableDiffusionBackendCache
         }
     }
 
+    /// <summary>
+    /// Try to get a live backend
+    /// </summary>
+    /// <returns></returns>
     public async Task<IBackendAccessor?> GetBackend()
     {
         var probablyLive = _backends.Where(a => a.IsResponsive).ToList();
@@ -82,6 +93,11 @@ public class StableDiffusionBackendCache
         return null;
     }
 
+    /// <summary>
+    /// Get all backends
+    /// </summary>
+    /// <param name="check">Do a liveness check right now</param>
+    /// <returns></returns>
     public async Task<IReadOnlyList<(string name, uint useCount, bool available)>> GetBackends(bool check)
     {
         if (check)
@@ -173,31 +189,46 @@ public class StableDiffusionBackendCache
         }
     }
 
+    /// <summary>
+    /// Provides access to a backend
+    /// </summary>
     public interface IBackendAccessor
     {
+        /// <summary>
+        /// Lock this backend, preventing any other requests from interacting with it
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public Task<BackendScope> Lock(CancellationToken token);
     }
 
-    public readonly struct BackendScope
+    /// <summary>
+    /// Scope of a locked Automatic1111 backend
+    /// </summary>
+    public readonly struct BackendScope(IStableDiffusion backend, IDisposable scope, float stepsMultiplier)
         : IDisposable
     {
-        public IStableDiffusion Backend { get; }
-        private readonly IDisposable _scope;
+        /// <summary>
+        /// The backend instance
+        /// </summary>
+        public IStableDiffusion Backend { get; } = backend;
 
-        public float StepsMultiplier { get; }
+        /// <summary>
+        /// The denoising steps modifier for this backend
+        /// </summary>
+        public float StepsMultiplier { get; } = stepsMultiplier;
 
-        public BackendScope(IStableDiffusion backend, IDisposable scope, float stepsMultiplier)
-        {
-            Backend = backend;
-            StepsMultiplier = stepsMultiplier;
-            _scope = scope;
-        }
-
+        /// <inheritdoc />
         public void Dispose()
         {
-            _scope.Dispose();
+            scope.Dispose();
         }
 
+        /// <summary>
+        /// Get the number of steps to use
+        /// </summary>
+        /// <param name="steps"></param>
+        /// <returns></returns>
         public int Steps(int steps)
         {
             return (int)Math.Max(1, Math.Round(StepsMultiplier * steps));

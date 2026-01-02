@@ -8,11 +8,16 @@ using Serilog;
 
 namespace Mute.Moe.Services.DiceLang.Macros;
 
+/// <inheritdoc />
 public class DatabaseMacroStorage
     : IMacroStorage
 {
     private readonly IDatabaseService _database;
 
+    /// <summary>
+    /// Create a new <see cref="DatabaseMacroStorage"/>
+    /// </summary>
+    /// <param name="database"></param>
     public DatabaseMacroStorage(IDatabaseService database)
     {
         _database = database;
@@ -71,17 +76,16 @@ public class DatabaseMacroStorage
     }
 
     /// <inheritdoc />
-    public async Task Delete(string ns, string name)
+    public async Task<bool> Delete(string ns, string name)
     {
         const string DeleteMacroSql = "DELETE FROM `DiceMacros` WHERE Namespace = @Namespace AND Name = @Name";
-
 
         await using var cmd = _database.CreateCommand();
         cmd.CommandText = DeleteMacroSql;
         cmd.Parameters.Add(new SQLiteParameter("@Namespace", System.Data.DbType.String) { Value = ns });
         cmd.Parameters.Add(new SQLiteParameter("@Name", System.Data.DbType.String) { Value = name });
 
-        await cmd.ExecuteNonQueryAsync();
+        return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
     private static MacroDefinition ParseMacroDefinition(DbDataReader reader)

@@ -69,11 +69,9 @@ public abstract class BaseMikibotMediaSearchService<TItem>
 
     protected abstract TItem WrapItem(IMedia media);
 
-    private class MediaDescriptionReplacement
+    private class MediaDescriptionReplacement(IMedia _media, string _desc)
         : IMedia
     {
-        private readonly IMedia _media;
-
         public int Id => _media.Id;
 
         public MediaType Type => _media.Type;
@@ -90,7 +88,7 @@ public abstract class BaseMikibotMediaSearchService<TItem>
 
         public string CoverImage => _media.CoverImage;
 
-        public string Description { get; }
+        public string Description { get; } = _desc;
 
         public int? Duration => _media.Duration;
 
@@ -105,12 +103,6 @@ public abstract class BaseMikibotMediaSearchService<TItem>
         public string Url => _media.Url;
 
         public int? Volumes => _media.Volumes;
-
-        public MediaDescriptionReplacement(IMedia media, string desc)
-        {
-            _media = media;
-            Description = desc;
-        }
     }
 }
 

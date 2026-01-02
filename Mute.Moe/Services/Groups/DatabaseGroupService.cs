@@ -21,6 +21,10 @@ public class DatabaseGroupService
 
     private readonly IDatabaseService _database;
 
+    /// <summary>
+    /// Create a new <see cref="DatabaseGroupService"/>
+    /// </summary>
+    /// <param name="database"></param>
     public DatabaseGroupService(IDatabaseService database)
     {
         _database = database;

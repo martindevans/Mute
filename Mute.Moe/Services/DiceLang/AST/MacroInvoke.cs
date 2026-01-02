@@ -45,6 +45,12 @@ public record MacroInvoke(string? Namespace, string Name, IReadOnlyList<IAstNode
 /// </summary>
 public interface IMacroResolver
 {
+    /// <summary>
+    /// Resolve a macro
+    /// </summary>
+    /// <param name="ns">Optional macro namespace</param>
+    /// <param name="name">Macro name</param>
+    /// <returns></returns>
     Task<MacroDefinition?> Find(string? ns, string name);
 }
 

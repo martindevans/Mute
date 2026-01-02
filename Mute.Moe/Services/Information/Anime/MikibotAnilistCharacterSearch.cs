@@ -4,6 +4,9 @@ using Miki.Anilist;
 
 namespace Mute.Moe.Services.Information.Anime;
 
+/// <summary>
+/// Searches for characters from Anilist
+/// </summary>
 public class MikibotAnilistCharacterSearch
     : BaseMikibotSearchService<ICharacterSearchResult, ICharacter>, ICharacterInfo
 {

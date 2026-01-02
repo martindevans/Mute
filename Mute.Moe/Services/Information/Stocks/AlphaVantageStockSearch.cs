@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Information.Stocks;
 
+/// <inheritdoc />
 public class AlphaVantageStockSearch
     : IStockSearch
 {
@@ -16,6 +17,12 @@ public class AlphaVantageStockSearch
     private readonly FluidCache<IStockInfo> _infoCache;
     private readonly IIndex<string, IStockInfo> _infoBySymbol;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="http"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public AlphaVantageStockSearch(Configuration config, IHttpClientFactory http)
     {
         if (config.AlphaAdvantage == null)
@@ -28,6 +35,7 @@ public class AlphaVantageStockSearch
         _infoBySymbol = _infoCache.AddIndex("BySymbol", a => a.Symbol);
     }
 
+    /// <inheritdoc />
     public async IAsyncEnumerable<IStockSearchResult> Search(string search)
     {
         //https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=g&apikey=demo

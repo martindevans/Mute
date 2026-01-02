@@ -41,8 +41,18 @@ public interface ITransaction
     string? Note { get; }
 }
 
+/// <summary>
+/// Extensions to <see cref="ITransaction"/>
+/// </summary>
 public static class ITransactionExtensions
 {
+    /// <summary>
+    /// Convert a transaction into a string
+    /// </summary>
+    /// <param name="transaction"></param>
+    /// <param name="users"></param>
+    /// <param name="mention"></param>
+    /// <returns></returns>
     public static Task<string> Format(this ITransaction transaction, IUserService users, bool mention = false)
     {
         return TransactionFormatting.FormatTransaction(
@@ -58,24 +68,5 @@ public static class ITransactionExtensions
     }
 }
 
-internal class Transaction
-    : ITransaction
-{
-    public ulong FromId { get; }
-    public ulong ToId { get; }
-    public decimal Amount { get; }
-    public DateTime Instant { get; }
-
-    public string Unit { get; }
-    public string? Note { get; }
-
-    public Transaction(ulong fromId, ulong toId, decimal amount,  string unit, string? note, DateTime instant)
-    {
-        FromId = fromId;
-        ToId = toId;
-        Amount = amount;
-        Unit = unit;
-        Note = note;
-        Instant = instant;
-    }
-}
+internal record Transaction(ulong FromId, ulong ToId, decimal Amount, string Unit, string? Note, DateTime Instant)
+    : ITransaction;

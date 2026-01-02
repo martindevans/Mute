@@ -26,6 +26,9 @@ public class AutoGainControl
     private int _rmsWriteHead;
     private readonly float[] _rmsBuffer;
 
+    /// <summary>
+    /// Current measured volume
+    /// </summary>
     public float Dbfs { get; private set; }
 
     /// <summary>

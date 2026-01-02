@@ -11,8 +11,10 @@ public partial class SoftClipSampleProvider(ISampleProvider upstream)
 {
     private readonly OpusSoftClip _clipper = new(upstream.WaveFormat.Channels);
 
+    /// <inheritdoc />
     public WaveFormat WaveFormat => upstream.WaveFormat;
 
+    /// <inheritdoc />
     public int Read(float[] buffer, int offset, int count)
     {
         var read = upstream.Read(buffer, offset, count);
@@ -27,6 +29,11 @@ public partial class SoftClipSampleProvider(ISampleProvider upstream)
     {
         private readonly float[] _memory;
 
+        /// <summary>
+        /// Create a new soft clip state
+        /// </summary>
+        /// <param name="channels"></param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         public OpusSoftClip(int channels = 1)
         {
             if (channels <= 0)
@@ -35,6 +42,10 @@ public partial class SoftClipSampleProvider(ISampleProvider upstream)
             _memory = new float[channels];
         }
 
+        /// <summary>
+        /// Apply soft clipping to a set of samples
+        /// </summary>
+        /// <param name="samples"></param>
         public void Clip(ArraySegment<float> samples)
         {
             unsafe

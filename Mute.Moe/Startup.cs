@@ -61,6 +61,10 @@ namespace Mute.Moe;
 /// <param name="Configuration"></param>
 public record Startup(Configuration Configuration)
 {
+    /// <summary>
+    /// Add services to the <see cref="IServiceCollection"/>.Does not have access to <see cref="Configuration"/>.
+    /// </summary>
+    /// <param name="services"></param>
     private static void ConfigureBaseServices(IServiceCollection services)
     {
         services.AddHttpClient();
@@ -134,6 +138,10 @@ public record Startup(Configuration Configuration)
         );
     }
 
+    /// <summary>
+    /// Add services to the <see cref="IServiceCollection"/>. Has access to <see cref="Configuration"/>.
+    /// </summary>
+    /// <param name="services"></param>
     public void ConfigureServices(IServiceCollection services)
     {
         ConfigureBaseServices(services);

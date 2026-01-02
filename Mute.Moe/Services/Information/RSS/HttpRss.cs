@@ -4,9 +4,11 @@ using System.Xml;
 
 namespace Mute.Moe.Services.Information.RSS;
 
+/// <inheritdoc />
 public class HttpRss
     : IRss
 {
+    /// <inheritdoc />
     public Task<IEnumerable<SyndicationItem>> Fetch(string url)
     {
         return Task.Run(() =>

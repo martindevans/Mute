@@ -8,11 +8,23 @@ using SixLabors.ImageSharp;
 
 namespace Mute.Moe.Services.ImageGen.Outpaint;
 
+/// <summary>
+/// Outpainter using autofocus library
+/// </summary>
 public class AutofocusTwoStepOutpainter
     : IImageOutpainter
 {
     private readonly TwoStepOutpainter _outpainter;
 
+    /// <summary>
+    /// Create new outpainter
+    /// </summary>
+    /// <param name="api"></param>
+    /// <param name="model"></param>
+    /// <param name="sampler"></param>
+    /// <param name="batchSize1"></param>
+    /// <param name="batchSize2"></param>
+    /// <param name="steps"></param>
     public AutofocusTwoStepOutpainter(IStableDiffusion api, IStableDiffusionModel model, ISampler sampler, int batchSize1, int batchSize2, int steps)
     {
         _outpainter = new TwoStepOutpainter(api, model, sampler)
@@ -24,6 +36,7 @@ public class AutofocusTwoStepOutpainter
         };
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyCollection<Image>> Outpaint(Image image, string positive, string negative, Func<ProgressReport, Task>? progressReporter = null)
     {
         progressReporter ??= _ => Task.CompletedTask;

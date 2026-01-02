@@ -5,37 +5,94 @@ using Mute.Moe.Tools.Providers;
 
 namespace Mute.Moe.Services.Information.Cryptocurrency;
 
+/// <summary>
+/// Get general info about cryptocurrencies
+/// </summary>
 public interface ICryptocurrencyInfo
 {
+    /// <summary>
+    /// Find a cryptocurrency by symbol (e.g. BTC)
+    /// </summary>
+    /// <param name="symbol"></param>
+    /// <returns></returns>
     Task<ICurrency?> FindBySymbol(string symbol);
 
+    /// <summary>
+    /// Find a cryptocurrency by name (e.g. Bitcoin)
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
     Task<ICurrency?> FindByName(string name);
 
+    /// <summary>
+    /// Find a cryptocurrency by name (e.g. BTC or Bitcoin)
+    /// </summary>
+    /// <param name="symbolOrName"></param>
+    /// <returns></returns>
     Task<ICurrency?> FindBySymbolOrName(string symbolOrName);
 
-    Task<ICurrency?> FindById(uint id);
-
+    /// <summary>
+    /// Get a ticker price for the given cryptocurrency
+    /// </summary>
+    /// <param name="currency"></param>
+    /// <returns></returns>
     Task<ITicker?> GetTicker(ICurrency currency);
 }
 
+/// <summary>
+/// A single price quote
+/// </summary>
 public interface IQuote
 {
+    /// <summary>
+    /// The price
+    /// </summary>
     decimal Price { get; }
+
+    /// <summary>
+    /// Volume traded in 24 hours
+    /// </summary>
     decimal? Volume24H { get; }
+
+    /// <summary>
+    /// Change in price over the last hour
+    /// </summary>
     decimal? PctChange1H { get; }
+
+    /// <summary>
+    /// Change in price over the last 24 hours
+    /// </summary>
     decimal? PctChange24H { get; }
+
+    /// <summary>
+    /// Change in price over the last 7 days
+    /// </summary>
     decimal? PctChange7D { get; }
 }
 
 /// <summary>
-/// Represents information about a currency
+/// Represents price information about a currency
 /// </summary>
 public interface ITicker
 {
+    /// <summary>
+    /// The currency this ticker is for
+    /// </summary>
     ICurrency Currency { get; }
 
+    /// <summary>
+    /// The approximate number of coins circulating for this cryptocurrency.
+    /// </summary>
     decimal? CirculatingSupply { get; }
+
+    /// <summary>
+    /// The approximate total amount of coins in existence right now (minus any coins that have been verifiably burned).
+    /// </summary>
     decimal? TotalSupply { get; }
+
+    /// <summary>
+    /// The expected maximum limit of coins ever to be available for this cryptocurrency.
+    /// </summary>
     decimal? MaxSupply { get; }
 
     /// <summary>
@@ -44,6 +101,9 @@ public interface ITicker
     IReadOnlyDictionary<string, IQuote> Quotes { get; }
 }
 
+/// <summary>
+/// A currency
+/// </summary>
 public interface ICurrency
 {
     /// <summary>

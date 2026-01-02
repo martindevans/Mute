@@ -36,6 +36,9 @@ public abstract class BaseImageGenerationContext
         _outpainter = outpainter;
     }
 
+    /// <summary>
+    /// Run the generation task
+    /// </summary>
     public async Task Run()
     {
         try
@@ -53,8 +56,17 @@ public abstract class BaseImageGenerationContext
     }
 
     #region event callbacks
+    /// <summary>
+    /// Modify the reply that was created in response to this generation job. Used to communicate status, progress and results.
+    /// </summary>
+    /// <param name="modify"></param>
+    /// <returns></returns>
     protected abstract Task ModifyReply(Action<MessageProperties> modify);
 
+    /// <summary>
+    /// Called just before generation starts
+    /// </summary>
+    /// <returns></returns>
     protected virtual Task OnStartingGeneration()
     {
         return Task.CompletedTask;

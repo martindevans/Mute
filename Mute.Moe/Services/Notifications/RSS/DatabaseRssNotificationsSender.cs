@@ -12,7 +12,9 @@ using System.Xml;
 
 namespace Mute.Moe.Services.Notifications.RSS;
 
-/// <inheritdoc />
+/// <summary>
+/// Send RSS notifications from subscriptions stored in the database
+/// </summary>
 public class DatabaseRssNotificationsSender
     : IRssNotificationsSender
 {
@@ -28,6 +30,13 @@ public class DatabaseRssNotificationsSender
 
     private static readonly TimeSpan PollDelay = TimeSpan.FromHours(1);
 
+    /// <summary>
+    /// Create new <see cref="DatabaseRssNotificationsSender"/>
+    /// </summary>
+    /// <param name="client"></param>
+    /// <param name="notifications"></param>
+    /// <param name="rss"></param>
+    /// <param name="database"></param>
     public DatabaseRssNotificationsSender(DiscordSocketClient client, IRssNotifications notifications, IRss rss, IDatabaseService database)
     {
         _database = database;

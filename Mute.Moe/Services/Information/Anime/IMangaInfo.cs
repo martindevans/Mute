@@ -25,20 +25,49 @@ public interface IMangaInfo
     IAsyncEnumerable<IManga> GetMangasInfoAsync(string search, int limit);
 }
 
+/// <summary>
+/// Information about a manga series
+/// </summary>
 public interface IManga
 {
+    /// <summary>
+    /// Unique ID of this manga
+    /// </summary>
     string Id { get; }
 
+    /// <summary>
+    /// Title in english
+    /// </summary>
     string? TitleEnglish { get; }
+
+    /// <summary>
+    /// Title in Japanese
+    /// </summary>
     string? TitleJapanese { get; }
 
+    /// <summary>
+    /// Description of this manga
+    /// </summary>
     string Description { get; }
 
+    /// <summary>
+    /// URL with more information about this manga
+    /// </summary>
     string Url { get; }
 
+    /// <summary>
+    /// Number of chapters
+    /// </summary>
     int? Chapters { get; }
+
+    /// <summary>
+    /// Number of volumes
+    /// </summary>
     int? Volumes { get; }
 
+    /// <summary>
+    /// URL with an image for this manga (e.g. book cover)
+    /// </summary>
     string ImageUrl { get; }
 }
 

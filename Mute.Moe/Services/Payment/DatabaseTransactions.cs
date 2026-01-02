@@ -6,6 +6,9 @@ using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Payment;
 
+/// <summary>
+/// Store transactions in the database
+/// </summary>
 public class DatabaseTransactions
     : ITransactions
 {
@@ -17,6 +20,10 @@ public class DatabaseTransactions
 
     private readonly IDatabaseService _database;
 
+    /// <summary>
+    /// See new <see cref="DatabaseTransactions"/>
+    /// </summary>
+    /// <param name="database"></param>
     public DatabaseTransactions(IDatabaseService database)
     {
         _database = database;
@@ -25,6 +32,7 @@ public class DatabaseTransactions
         _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_Transactions` (`FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT);");
     }
 
+    /// <inheritdoc />
     public async Task CreateTransaction(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
     {
         if (amount < 0)
@@ -47,6 +55,7 @@ public class DatabaseTransactions
         var id = await cmd.ExecuteScalarAsync();
     }
 
+    /// <inheritdoc />
     public IAsyncEnumerable<ITransaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
         return new SqlAsyncResult<ITransaction>(_database, PrepareQuery, ParseTransaction);

@@ -18,6 +18,7 @@ public class SocketMessageComponentGenerationContext
         _component = component;
     }
 
+    /// <inheritdoc />
     protected override async Task ModifyReply(Action<MessageProperties> modify)
     {
         await _component.ModifyOriginalResponseAsync(modify);

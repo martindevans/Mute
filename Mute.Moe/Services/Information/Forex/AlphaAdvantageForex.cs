@@ -16,6 +16,12 @@ public class AlphaAdvantageForex
     private readonly FluidCache<IForexQuote> _cache;
     private readonly IIndex<KeyValuePair<string, string>, IForexQuote> _bySymbolPair;
         
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="http"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public AlphaAdvantageForex(Configuration config, IHttpClientFactory http)
     {
         _key = config.AlphaAdvantage?.Key ?? throw new ArgumentNullException(nameof(config.AlphaAdvantage.Key));

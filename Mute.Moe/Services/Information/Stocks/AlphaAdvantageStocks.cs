@@ -17,6 +17,12 @@ public class AlphaAdvantageStocks
 
     private readonly string _key;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="http"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public AlphaAdvantageStocks(Configuration config, IHttpClientFactory http)
     {
         if (config.AlphaAdvantage == null)
@@ -65,7 +71,7 @@ public class AlphaAdvantageStocks
 #pragma warning restore 0649 // Field not assigned
     }
 
-    public class StockQuoteResponse
+    private class StockQuoteResponse
         : IStockQuote
     {
 #pragma warning disable IDE0044 // Add readonly modifier

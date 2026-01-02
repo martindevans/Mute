@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Notifications.RSS;
 
+/// <inheritdoc />
 public class DatabaseRssNotifications
     : IRssNotifications
 {
@@ -15,6 +16,10 @@ public class DatabaseRssNotifications
 
     private readonly IDatabaseService _database;
 
+    /// <summary>
+    /// Create a new <see cref="DatabaseRssNotifications"/>
+    /// </summary>
+    /// <param name="database"></param>
     public DatabaseRssNotifications(IDatabaseService database)
     {
         _database = database;
