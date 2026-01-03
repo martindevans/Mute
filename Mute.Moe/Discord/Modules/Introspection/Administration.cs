@@ -50,7 +50,14 @@ public class Administration
         {
             var embed = new EmbedBuilder()
                        .WithTitle($"Active Conversation for {conversation.Channel.Name}")
-                       .WithTimestamp(conversation.LastUpdated);
+                       .WithTimestamp(conversation.LastUpdated)
+                       .WithDescription(conversation.Summary ?? "No summary available");
+
+            embed.WithFields([
+                new EmbedFieldBuilder().WithName("Queue").WithValue(conversation.QueueCount.ToString()),
+                new EmbedFieldBuilder().WithName("State").WithValue(conversation.State.ToString()),
+            ]);
+
             await ReplyAsync(embed);
         }
     }

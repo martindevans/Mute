@@ -34,6 +34,21 @@ public class LlmChatConversation
     public DateTime LastUpdated { get; private set; }
 
     /// <summary>
+    /// Number of messages waiting for processing
+    /// </summary>
+    public int QueueCount => _messages.Reader.Count;
+
+    /// <summary>
+    /// The current state of the processing queue for this conversation
+    /// </summary>
+    public ProcessingState State { get; private set; }
+
+    /// <summary>
+    /// The last summary that was generated for this conversation
+    /// </summary>
+    public string? Summary { get; private set; }
+
+    /// <summary>
     /// Create a new <see cref="LlmChatConversation"/> for the given channel.
     /// </summary>
     /// <param name="conversation"></param>
@@ -70,8 +85,12 @@ public class LlmChatConversation
 
         try
         {
+            State = ProcessingState.WaitingForMessage;
+
             await foreach (var context in _messages.Reader.ReadAllAsync(_stopper.Token))
             {
+                State = ProcessingState.GeneratingResponse;
+
                 using (Channel.EnterTypingState())
                 {
                     // Add incoming message to conversation
@@ -94,27 +113,32 @@ public class LlmChatConversation
                     // Post it to the relevant channel
                     if (!string.IsNullOrEmpty(response))
                         await Channel.SendLongMessageAsync(response);
-
-                    // Clean up "buried" tool messages
-                    var removedTools = conversation.CleanToolMessages(3);
-                    if (removedTools > 0)
-                        Log.Information("Cleaned up {2} tool messages from conversation in channel {0} ({1})", Channel.Name, Channel.Id, removedTools);
-
-                    // Summarise the conversation if there's no work pending
-                    if (conversation.TotalTokens > LowCompressThreshold && _messages.Reader.Count == 0)
-                        await conversation.Summarise(_stopper.Token);
-
-                    // Summarise the conversation even if there's work pending
-                    else if (conversation.TotalTokens > MidCompressThreshold)
-                        await conversation.Summarise(_stopper.Token);
-
-                    // Summarisation failed, just clear the state.
-                    if (conversation.TotalTokens > HighCompressThreshold)
-                    {
-                        Log.Warning("Compression failed for conversation state in channel {0} ({1})", Channel.Name, Channel.Id);
-                        conversation.Clear();
-                    }
                 }
+
+                State = ProcessingState.Summarising;
+
+                // Clean up "buried" tool messages
+                var removedTools = conversation.CleanToolMessages(3);
+                if (removedTools > 0)
+                    Log.Information("Cleaned up {2} tool messages from conversation in channel {0} ({1})", Channel.Name, Channel.Id, removedTools);
+
+                // Summarise the conversation if there's no work pending
+                if (conversation.TotalTokens > LowCompressThreshold && _messages.Reader.Count == 0)
+                    Summary = await conversation.Summarise(_stopper.Token);
+
+                // Summarise the conversation even if there's work pending
+                else if (conversation.TotalTokens > MidCompressThreshold)
+                    Summary = await conversation.Summarise(_stopper.Token);
+
+                // Summarisation failed, just clear the state.
+                if (conversation.TotalTokens > HighCompressThreshold)
+                {
+                    Log.Warning("Compression failed for conversation state in channel {0} ({1})", Channel.Name, Channel.Id);
+                    conversation.Clear();
+                    Summary = null;
+                }
+
+                State = ProcessingState.WaitingForMessage;
             }
         }
         catch (Exception ex)
@@ -151,4 +175,25 @@ public class LlmChatConversation
     }
 
     private record struct MessageContext(IUser User, string Content);
+
+    /// <summary>
+    /// Current state of the processing task for this conversation
+    /// </summary>
+    public enum ProcessingState
+    {
+        /// <summary>
+        /// Waiting for a message to process
+        /// </summary>
+        WaitingForMessage,
+
+        /// <summary>
+        /// Generating an response using the LLM
+        /// </summary>
+        GeneratingResponse,
+
+        /// <summary>
+        /// Running context summarisation
+        /// </summary>
+        Summarising,
+    }
 }
