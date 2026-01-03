@@ -17,131 +17,9 @@ namespace Mute.Moe.Discord.Modules.Personality;
 /// </summary>
 [UsedImplicitly]
 [Group("chat")]
-public partial class Chat(ChatConversationFactory _chatFactory, ConversationalResponseService _conversations)
+public partial class Chat(ConversationalResponseService _conversations)
     : MuteBaseModule
 {
-    //[Command, Summary("Chat to me")]
-    //[UsedImplicitly]
-    //[ThinkingReply, TypingReply]
-    //[RateLimit("79E021A0-5CE0-4BA4-B7E7-6A84FE456C28", 5, "Please wait a while before chatting to me again")]
-    //public async Task ChatCmd([Remainder] string message)
-    //{
-    //    // Create conversation
-    //    var conversation = await _chatFactory.Create(Context.Channel);
-
-    //    // Add initial message
-    //    conversation.AddUserMessage(Context.User.GlobalName, message);
-
-    //    // Create a thread to contain reasoning trace
-    //    var thread = await ((ITextChannel)Context.Channel).CreateThreadAsync(
-    //        $"Reasoning Trace ({Context.Message.Id})",
-    //        autoArchiveDuration: ThreadArchiveDuration.OneHour,
-    //        message: Context.Message
-    //    );
-    //    var threadMessagesLogged = conversation.Conversation.Messages.Count;
-
-    //    // Keep pumping conversation until there's a response
-    //    var responded = false;
-    //    var turns = 0;
-    //    while (!responded && turns < 8)
-    //    {
-    //        turns++;
-    //        await conversation.Conversation.GetResponseRich(conversation.ToolExecutionEngine.ExecuteValueTask);
-    //        responded = await UpdateTrace();
-    //    }
-
-    //    // Failure notification
-    //    if (!responded)
-    //        await ReplyAsync("No response from model");
-
-    //    // Reasoning trace is complete, lock thread
-    //    await thread.ModifyAsync(t => t.Locked = true);
-
-    //    // Steps through conversation, logging out parts to Discord
-    //    async ValueTask<bool> UpdateTrace()
-    //    {
-    //        var responded = false;
-
-    //        for (var i = threadMessagesLogged; i < conversation.Conversation.Messages.Count; i++)
-    //        {
-    //            var message = conversation.Conversation.Messages[i];
-
-    //            // Log tool calls
-    //            if (message is { Role: ChatMessageRoles.Tool })
-    //                await thread.SendLongMessageAsync($"**Tool call result**: `{message.GetMessageContent()}`");
-
-    //            // Ignore nn-assistant messages
-    //            if (message.Role != null && message.Role != ChatMessageRoles.Assistant)
-    //                continue;
-
-    //            // Log reasoning
-    //            var reasoning = message.Reasoning ?? message.ReasoningContent;
-    //            if (reasoning != null)
-    //                await thread.SendLongMessageAsync(reasoning);
-
-    //            if (message.ToolCalls != null)
-    //            {
-    //                foreach (var call in message.ToolCalls)
-    //                {
-    //                    if (call.FunctionCall != null)
-    //                    {
-    //                        await thread.SendLongMessageAsync(
-    //                            $"**Tool Call: `{call.FunctionCall.Name}`**\n" +
-    //                            $"Args: `{call.FunctionCall.Arguments}`\n"
-    //                        );
-    //                    }
-    //                }
-    //            }
-
-    //            // Log actual response
-    //            if (message.Content != null)
-    //            {
-    //                await LongReplyAsync(message.Content);
-    //                responded = true;
-    //            }
-
-    //            // Handle the individual parts
-    //            if (message.Parts != null)
-    //            {
-    //                foreach (var part in message.Parts)
-    //                {
-    //                    switch (part.Type)
-    //                    {
-    //                        case ChatMessageTypes.Text:
-    //                            await LongReplyAsync(part.Text ?? "");
-    //                            responded = true;
-    //                            break;
-
-    //                        case ChatMessageTypes.Reasoning:
-    //                            await thread.SendLongMessageAsync(part.Reasoning?.Content ?? "");
-    //                            break;
-
-    //                        case ChatMessageTypes.Image:
-    //                        case ChatMessageTypes.Audio:
-    //                        case ChatMessageTypes.FileLink:
-    //                        case ChatMessageTypes.Document:
-    //                        case ChatMessageTypes.SearchResult:
-    //                        case ChatMessageTypes.Video:
-    //                        case ChatMessageTypes.ExecutableCode:
-    //                        case ChatMessageTypes.CodeExecutionResult:
-    //                        case ChatMessageTypes.ContainerUpload:
-    //                        case ChatMessageTypes.Reference:
-    //                            await thread.SendMessageAsync($"Message part type '{part.Type}' not handled yet");
-    //                            break;
-
-    //                        default:
-    //                            throw new ArgumentOutOfRangeException();
-    //                    }
-    //                }
-    //            }
-    //        }
-
-    //        threadMessagesLogged = conversation.Conversation.Messages.Count;
-
-    //        return responded;
-    //    }
-    //}
-
     [Command("state"), Summary("I will show the conversation state for the current channel")]
     [UsedImplicitly]
     public async Task ConversationState()
@@ -163,9 +41,23 @@ public partial class Chat(ChatConversationFactory _chatFactory, ConversationalRe
             embed.WithFields(
                 new EmbedFieldBuilder().WithIsInline(true).WithName("Queue Depth").WithValue(conversation.QueueCount.ToString()),
                 new EmbedFieldBuilder().WithIsInline(true).WithName("Message Count").WithValue(conversation.MessageCount.ToString()),
-                new EmbedFieldBuilder().WithIsInline(true).WithName("Context Usage").WithValue(conversation.ContextUsage.ToString("P:1", CultureInfo.InvariantCulture)),
+                new EmbedFieldBuilder().WithIsInline(true).WithName("Context Usage").WithValue(conversation.ContextUsage.ToString("P1", CultureInfo.InvariantCulture)),
                 new EmbedFieldBuilder().WithIsInline(true).WithName("Processing State").WithValue(conversation.State.ToString())
             );
+
+            (float r, float g, float b) color = conversation.ContextUsage switch
+            {
+                < 0.15f => (0.0f, 1.0f, 0.0f),   // green
+                < 0.22f => (0.0f, 0.8f, 0.4f),   // green-cyan
+                < 0.30f => (0.0f, 0.5f, 1.0f),   // blue
+                < 0.38f => (0.4f, 0.7f, 1.0f),   // light blue
+                < 0.46f => (1.0f, 1.0f, 0.0f),   // yellow
+                < 0.54f => (1.0f, 0.8f, 0.0f),   // yellow-orange
+                < 0.62f => (1.0f, 0.5f, 0.0f),   // orange
+                < 0.75f => (1.0f, 0.25f, 0.0f),  // deep orange
+                _       => (1.0f, 0.0f, 0.0f),   // red
+            };
+            embed.WithColor(color.r, color.g, color.b);
 
             await ReplyAsync(embed);
         }
