@@ -79,8 +79,8 @@ public class LlmChatConversation
         // - There's some work but the conversation is quite full
         // - The conversation is nearly overflowing
         var contextTokens = conversation.Model.Model.ContextTokens ?? 4096;
-        var LowCompressThreshold = (int)MathF.Floor(contextTokens * 0.7f);
-        var MidCompressThreshold = (int)MathF.Floor(contextTokens * 0.8f);
+        var LowCompressThreshold = (int)MathF.Floor(contextTokens * 0.5f);
+        var MidCompressThreshold = (int)MathF.Floor(contextTokens * 0.7f);
         var HighCompressThreshold = (int)MathF.Floor(contextTokens * 0.9f);
 
         try
