@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text.Json;
 using Discord;
 using Discord.WebSocket;
 using LlmTornado.Chat;
@@ -220,5 +221,27 @@ public class ChatConversation
         }
 
         return removed;
+    }
+
+    /// <summary>
+    /// Save the messages to a JSON string
+    /// </summary>
+    /// <returns></returns>
+    public string Save()
+    {
+        var json = JsonSerializer.Serialize(Conversation.Messages);
+        return json;
+    }
+
+    /// <summary>
+    /// Load messages from the JSON string
+    /// </summary>
+    /// <param name="json"></param>
+    public void Load(string json)
+    {
+        Conversation.Clear();
+
+        var messages = JsonSerializer.Deserialize<List<ChatMessage>>(json) ?? [];
+        Conversation.AddMessage(messages);
     }
 }

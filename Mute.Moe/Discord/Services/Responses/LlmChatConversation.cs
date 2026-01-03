@@ -1,11 +1,11 @@
-﻿using Mute.Moe.Discord.Context;
+﻿using Discord;
+using Discord.WebSocket;
+using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.LLM;
 using Serilog;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
@@ -22,6 +22,8 @@ public class LlmChatConversation
     private readonly CancellationTokenSource _stopper = new();
     private readonly Channel<MessageContext> _messages = System.Threading.Channels.Channel.CreateUnbounded<MessageContext>();
     private readonly string _username;
+
+    private readonly IConversationStateStorage _chatStorage;
 
     /// <summary>
     /// Indicates if this conversation is complete and should not be used again
@@ -49,15 +51,28 @@ public class LlmChatConversation
     public string? Summary { get; private set; }
 
     /// <summary>
+    /// Get the current number of messages in this conversation
+    /// </summary>
+    public int MessageCount { get; private set; }
+
+    /// <summary>
+    /// Get how much of the context is currently used (0 to 1)
+    /// </summary>
+    public float ContextUsage { get; private set; }
+
+    /// <summary>
     /// Create a new <see cref="LlmChatConversation"/> for the given channel.
     /// </summary>
     /// <param name="conversation"></param>
     /// <param name="channel"></param>
     /// <param name="client"></param>
-    public LlmChatConversation(ChatConversation conversation, ISocketMessageChannel channel, DiscordSocketClient client)
+    /// <param name="chatStorage"></param>
+    public LlmChatConversation(ChatConversation conversation, ISocketMessageChannel channel, DiscordSocketClient client, IConversationStateStorage chatStorage)
     {
         Channel = channel;    
+
         _username = $"@{client.CurrentUser.Username}";
+        _chatStorage = chatStorage;
 
         Task.Run(async () => await MessageConsumer(conversation));
     }
@@ -85,10 +100,20 @@ public class LlmChatConversation
 
         try
         {
-            State = ProcessingState.WaitingForMessage;
+            State = ProcessingState.Saving;
 
+            // Try to load conversation state
+            var state = await _chatStorage.Get(Channel.Id);
+            if (state != null)
+                conversation.Load(state.Json);
+
+            State = ProcessingState.WaitingForMessage;
             await foreach (var context in _messages.Reader.ReadAllAsync(_stopper.Token))
             {
+                // Update stats
+                MessageCount = conversation.MessageCount;
+                ContextUsage = (conversation.TotalTokens ?? 0) / (float)contextTokens;
+
                 State = ProcessingState.GeneratingResponse;
 
                 using (Channel.EnterTypingState())
@@ -138,8 +163,18 @@ public class LlmChatConversation
                     Summary = null;
                 }
 
+                State = ProcessingState.Saving;
+
+                // Store state in DB
+                await _chatStorage.Put(Channel.Id, new ConversationStateData(conversation.Save()));
+
                 State = ProcessingState.WaitingForMessage;
             }
+        }
+        catch (OperationCanceledException)
+        {
+            await _chatStorage.Put(Channel.Id, new ConversationStateData(conversation.Save()));
+            throw;
         }
         catch (Exception ex)
         {
@@ -195,5 +230,10 @@ public class LlmChatConversation
         /// Running context summarisation
         /// </summary>
         Summarising,
+
+        /// <summary>
+        /// Interacting with persistent storage
+        /// </summary>
+        Saving,
     }
 }

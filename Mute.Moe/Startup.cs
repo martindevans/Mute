@@ -137,6 +137,8 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolIndex, DatabaseToolIndex>(svc =>
             new DatabaseToolIndex(svc.GetServices<IToolProvider>(), svc.GetRequiredService<IDatabaseService>(), svc.GetRequiredService<IEmbeddings>(), svc.GetRequiredService<IReranking>())
         );
+
+        services.AddSingleton<IConversationStateStorage, ConversationStateStorage>();
     }
 
     /// <summary>

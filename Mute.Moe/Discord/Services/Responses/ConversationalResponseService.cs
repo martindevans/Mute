@@ -4,7 +4,6 @@ using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Utilities;
 using System.Threading.Tasks;
-using Serilog;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
@@ -15,6 +14,7 @@ public class ConversationalResponseService
 {
     private readonly DiscordSocketClient _client;
     private readonly ChatConversationFactory _chatFactory;
+    private readonly IConversationStateStorage _chatStorage;
 
     private readonly AsyncLock _lookupLock = new();
     private readonly Dictionary<ulong, LlmChatConversation> _conversationsByChannel = [ ];
@@ -24,10 +24,12 @@ public class ConversationalResponseService
     /// </summary>
     /// <param name="client"></param>
     /// <param name="chatFactory"></param>
-    public ConversationalResponseService(DiscordSocketClient client, ChatConversationFactory chatFactory)
+    /// <param name="chatStorage"></param>
+    public ConversationalResponseService(DiscordSocketClient client, ChatConversationFactory chatFactory, IConversationStateStorage chatStorage)
     {
         _client = client;
         _chatFactory = chatFactory;
+        _chatStorage = chatStorage;
     }
 
     /// <summary>
@@ -78,7 +80,6 @@ public class ConversationalResponseService
                 if (elapsed > TimeSpan.FromMinutes(15))
                 {
                     await conv.Stop();
-                    Save(channelId, conv);
                     _conversationsByChannel.Remove(channelId);
                 }
             }
@@ -86,24 +87,17 @@ public class ConversationalResponseService
             // Get or create conversation for channel
             if (!_conversationsByChannel.TryGetValue(context.Channel.Id, out var chat))
             {
-                chat = TryLoad(context.Channel.Id)
-                    ?? new LlmChatConversation(await _chatFactory.Create(context.Channel), context.Channel, _client);
+                chat = new LlmChatConversation(
+                    await _chatFactory.Create(context.Channel),
+                    context.Channel,
+                    _client,
+                    _chatStorage
+                );
 
                 _conversationsByChannel[context.Channel.Id] = chat;
             }
             return chat;
         }
-    }
-
-    private void Save(ulong channelId, LlmChatConversation conv)
-    {
-        Log.Information("todo: implement channel conversation saving persistence");
-    }
-
-    private LlmChatConversation? TryLoad(ulong channelId)
-    {
-        Log.Information("todo: implement channel conversation loading persistence");
-        return null;
     }
 
     /// <summary>
