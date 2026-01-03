@@ -16,13 +16,11 @@ public class Administration
     : MuteBaseModule
 {
     private readonly DiscordSocketClient _client;
-    private readonly ConversationalResponseService _conversations;
     private readonly IAvatarPicker _avatar;
 
-    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar)
+    public Administration(DiscordSocketClient client, IAvatarPicker avatar)
     {
         _client = client;
-        _conversations = conversations;
         _avatar = avatar;
     }
 
@@ -33,33 +31,6 @@ public class Administration
         channel ??= Context.Channel;
 
         await channel.TypingReplyAsync(message);
-    }
-
-    [Command("conversation-status"), Summary("I will show the status for the current channel")]
-    [UsedImplicitly]
-    public async Task ConversationState()
-    {
-        var channel = Context.Channel;
-        var conversation = await _conversations.GetConversation(channel);
-
-        if (conversation == null)
-        {
-            await ReplyAsync("No active conversation");
-        }
-        else
-        {
-            var embed = new EmbedBuilder()
-                       .WithTitle($"Active Conversation for {conversation.Channel.Name}")
-                       .WithTimestamp(conversation.LastUpdated)
-                       .WithDescription(conversation.Summary ?? "No summary available");
-
-            embed.WithFields([
-                new EmbedFieldBuilder().WithName("Queue").WithValue(conversation.QueueCount.ToString()),
-                new EmbedFieldBuilder().WithName("State").WithValue(conversation.State.ToString()),
-            ]);
-
-            await ReplyAsync(embed);
-        }
     }
 
     [Command("presence"), Summary("I will set my presence")]

@@ -7,6 +7,7 @@ using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
 using System.Threading.Tasks;
+using Mute.Moe.Discord.Services.Responses;
 
 namespace Mute.Moe.Discord.Modules.Personality;
 
@@ -17,7 +18,7 @@ namespace Mute.Moe.Discord.Modules.Personality;
 /// </summary>
 [UsedImplicitly]
 [Group("chat")]
-public partial class Chat(ChatConversationFactory _chatFactory)
+public partial class Chat(ChatConversationFactory _chatFactory, ConversationalResponseService _conversations)
     : MuteBaseModule
 {
     [Command, Summary("Chat to me")]
@@ -139,6 +140,33 @@ public partial class Chat(ChatConversationFactory _chatFactory)
             threadMessagesLogged = conversation.Conversation.Messages.Count;
 
             return responded;
+        }
+    }
+
+    [Command("state"), Summary("I will show the conversation state for the current channel")]
+    [UsedImplicitly]
+    public async Task ConversationState()
+    {
+        var channel = Context.Channel;
+        var conversation = await _conversations.GetConversation(channel);
+
+        if (conversation == null)
+        {
+            await ReplyAsync("No active conversation");
+        }
+        else
+        {
+            var embed = new EmbedBuilder()
+                       .WithTitle($"Active Conversation for {conversation.Channel.Name}")
+                       .WithTimestamp(conversation.LastUpdated)
+                       .WithDescription(conversation.Summary ?? "No summary available");
+
+            embed.WithFields([
+                new EmbedFieldBuilder().WithName("Queue").WithValue(conversation.QueueCount.ToString()),
+                new EmbedFieldBuilder().WithName("State").WithValue(conversation.State.ToString()),
+            ]);
+
+            await ReplyAsync(embed);
         }
     }
 }
