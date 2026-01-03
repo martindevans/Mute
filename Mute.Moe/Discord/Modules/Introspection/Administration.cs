@@ -50,14 +50,20 @@ public class Administration
         user ??= Context.Message.Author as IGuildUser;
 
         if (user == null)
+        {
             await TypingReplyAsync("No user!");
+        }
         else
         {
             var c = _conversations.GetConversation(user);
             if (c == null)
+            {
                 await TypingReplyAsync("No active conversation");
+            }
             else if (c.IsComplete)
+            {
                 await TypingReplyAsync($"Conversation is complete `{c.GetType()}`");
+            }
             else
             {
                 await TypingReplyAsync($"Conversation is active `{c.GetType()}`...");

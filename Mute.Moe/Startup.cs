@@ -1,4 +1,5 @@
-﻿using Discord.Addons.Interactive;
+﻿using System.IO;
+using Discord.Addons.Interactive;
 using Discord.WebSocket;
 using LlmTornado;
 using LlmTornado.Chat.Models;
@@ -154,74 +155,80 @@ public record Startup(Configuration Configuration)
         if (Configuration.Auth == null)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
-        // Create API
-        if (Configuration.LLM?.SelfHost != null)
+        // Create LLM stuff
+        services.AddSingleton<ChatConversationFactory>();
+        if (Configuration.LLM != null)
         {
-            if (Configuration.LLM.SelfHost.ChatLanguageModel is { } cm)
+            services.AddSingleton(new ChatConversationSystemPrompt(File.ReadAllText(Configuration.LLM.ChatSystemPromptPath)));
+
+            if (Configuration.LLM?.SelfHost != null)
             {
-                var api = new TornadoApi(new Uri(cm.Endpoint), cm.Key);
+                if (Configuration.LLM.SelfHost.ChatLanguageModel is { } cm)
+                {
+                    var api = new TornadoApi(new Uri(cm.Endpoint), cm.Key);
 
-                var ep = new ChatModelEndpoint(api, new(cm.ModelName, LLmProviders.Custom, cm.ContextSize), true);
-                services.AddSingleton(ep);
-            }
+                    var ep = new ChatModelEndpoint(api, new(cm.ModelName, LLmProviders.Custom, cm.ContextSize), true);
+                    services.AddSingleton(ep);
+                }
 
-            if (Configuration.LLM.SelfHost.VisionLanguageModel is { } vm)
-            {
-                var api = new TornadoApi(new Uri(vm.Endpoint), vm.Key);
+                if (Configuration.LLM.SelfHost.VisionLanguageModel is { } vm)
+                {
+                    var api = new TornadoApi(new Uri(vm.Endpoint), vm.Key);
 
-                var ep = new ImageAnalysisModelEndpoint(api, new ChatModel(vm.ModelName, LLmProviders.Custom, vm.ContextSize), true);
-                services.AddSingleton(ep);
+                    var ep = new ImageAnalysisModelEndpoint(api, new ChatModel(vm.ModelName, LLmProviders.Custom, vm.ContextSize), true);
+                    services.AddSingleton(ep);
 
-                services.AddTransient<IImageAnalyser, TornadoAnalyser>();
+                    services.AddTransient<IImageAnalyser, TornadoAnalyser>();
+                }
+                else
+                {
+                    services.AddTransient<IImageAnalyser, Automatic1111>();
+                }
+
+                if (Configuration.LLM.SelfHost.EmbeddingModel is { } em)
+                {
+                    var api = new TornadoApi(new Uri(em.Endpoint), em.Key);
+
+                    var ep = new EmbeddingModelEndpoint(api, new EmbeddingModel(em.ModelName, LLmProviders.Custom, em.ContextSize, em.EmbeddingDims), true);
+                    services.AddSingleton(ep);
+                }
+
+                if (Configuration.LLM.SelfHost.RerankingModel is { } rm)
+                {
+                    var ep = new RerankModelEndpoint(rm.Endpoint, new RerankModel(rm.ModelName, LLmProviders.Custom), rm.ContextSize, true);
+                    services.AddSingleton(ep);
+
+                    services.AddTransient<IReranking, LlamaServerReranking>();
+                }
+                else
+                {
+                    services.AddTransient<IReranking, NullRerank>();
+                }
             }
             else
             {
+                var providers = new List<ProviderAuthentication>();
+                if (Configuration.LLM?.Google?.Key != null)
+                    providers.Add(new ProviderAuthentication(LLmProviders.Google, Configuration.LLM.Google.Key));
+                if (Configuration.LLM?.OpenAI?.Key != null)
+                    providers.Add(new ProviderAuthentication(LLmProviders.OpenAi, Configuration.LLM.OpenAI.Key));
+                var api = new TornadoApi(providers);
+
+                services.AddSingleton(new ChatModelEndpoint(
+                    api,
+                    ChatModel.Google.Gemini.Gemini25Flash,
+                    IsLocal: false
+                ));
+
+                services.AddSingleton(new EmbeddingModelEndpoint(
+                    api,
+                    EmbeddingModel.Google.Gemini.GeminiEmbedding001,
+                    IsLocal: false
+                ));
+
                 services.AddTransient<IImageAnalyser, Automatic1111>();
-            }
-
-            if (Configuration.LLM.SelfHost.EmbeddingModel is { } em)
-            {
-                var api = new TornadoApi(new Uri(em.Endpoint), em.Key);
-                
-                var ep = new EmbeddingModelEndpoint(api, new EmbeddingModel(em.ModelName, LLmProviders.Custom, em.ContextSize, em.EmbeddingDims), true);
-                services.AddSingleton(ep);
-            }
-
-            if (Configuration.LLM.SelfHost.RerankingModel is { } rm)
-            {
-                var ep = new RerankModelEndpoint(rm.Endpoint, new RerankModel(rm.ModelName, LLmProviders.Custom), rm.ContextSize, true);
-                services.AddSingleton(ep);
-
-                services.AddTransient<IReranking, LlamaServerReranking>();
-            }
-            else
-            {
                 services.AddTransient<IReranking, NullRerank>();
             }
-        }
-        else
-        {
-            var providers = new List<ProviderAuthentication>();
-            if (Configuration.LLM?.Google?.Key != null)
-                providers.Add(new ProviderAuthentication(LLmProviders.Google, Configuration.LLM.Google.Key));
-            if (Configuration.LLM?.OpenAI?.Key != null)
-                providers.Add(new ProviderAuthentication(LLmProviders.OpenAi, Configuration.LLM.OpenAI.Key));
-            var api = new TornadoApi(providers);
-
-            services.AddSingleton(new ChatModelEndpoint(
-                api,
-                ChatModel.Google.Gemini.Gemini25Flash,
-                IsLocal: false
-            ));
-
-            services.AddSingleton(new EmbeddingModelEndpoint(
-                api,
-                EmbeddingModel.Google.Gemini.GeminiEmbedding001,
-                IsLocal: false
-            ));
-
-            services.AddTransient<IImageAnalyser, Automatic1111>();
-            services.AddTransient<IReranking, NullRerank>();
         }
     }
 

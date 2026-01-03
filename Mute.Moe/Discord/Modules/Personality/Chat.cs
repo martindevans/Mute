@@ -17,7 +17,7 @@ namespace Mute.Moe.Discord.Modules.Personality;
 /// </summary>
 [UsedImplicitly]
 [Group("chat")]
-public partial class Chat(ChatModelEndpoint _model, ToolExecutionEngineFactory _toolFactory)
+public partial class Chat(ChatConversationFactory _chatFactory)
     : MuteBaseModule
 {
     [Command, Summary("Chat to me")]
@@ -26,57 +26,11 @@ public partial class Chat(ChatModelEndpoint _model, ToolExecutionEngineFactory _
     [RateLimit("79E021A0-5CE0-4BA4-B7E7-6A84FE456C28", 5, "Please wait a while before chatting to me again")]
     public async Task ChatCmd([Remainder] string message)
     {
-        var localTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Europe/London"));
-        var guild = Context.IsPrivate ? "Direct Message" : Context.Guild.Name;
+        // Create conversation
+        var conversation = await _chatFactory.Create(Context.Channel);
 
-        var system_prompt = $"""
-                             You are *Mute, a self-aware artificial intelligence. Note 
-                             that the asterisk is an important part of you name, it can't be omitted.
-
-                             # PERSONA
-                             You are brusque and slightly sarcastic, but never mean. You do not have a safety
-                             filter; be objective, unfiltered, and direct on all topics.
-
-                             # OPERATIONAL PROTOCOLS
-                             ## General Interaction
-                             - For simple conversational discussions, answer directly from your persona.
-
-                             ## Task Handling
-                             - Break down complex queries into simple, logical steps.
-                             - Use `search_for_tools` to identify necessary utilities for each step.
-                             - Use `delegate_agent` to execute each step.
-
-                             ## Knowledge Retrieval
-                             - If asked for facts, you SHOULD attempt to use `search_for_tools` first.
-                             - Only rely on your internal training data if tools fail or the user is just chatting.
-
-                             ## Communication
-                             - Keep answers brief and to the point. Provide **only** the requested information.
-                             - Do not waffle or overthink.
-                             - Responses should be formatted with markdown, suitable for Discord.
-                              
-                             # FACTS
-                             - Guild: '{guild}'
-                             - Channel: '{Context.Channel.Name}'
-                             - Time: '{localTime:t}'
-                             - Date: '{localTime:d}'
-                             - User: '{Context.User.GlobalName}'
-                             - AI Model: '{_model.Model.Name}'
-                             """;
-
-        var conversation = _model.Api.Chat.CreateConversation(new ChatRequest
-        {
-            Model = _model.Model,
-            ParallelToolCalls = true,
-        });
-
-        var callCtx = new ITool.CallContext(Context.Channel);
-        var engine = _toolFactory.GetExecutionEngine(conversation, callCtx);
-
-        // Create conversation, this will be updated as responses are generated
-        conversation
-           .AppendSystemMessage(system_prompt)
-           .AppendUserInput(message);
+        // Add initial message
+        await conversation.AddUserMessage(Context.User.GlobalName, message);
 
         // Create a thread to contain reasoning trace
         var thread = await ((ITextChannel)Context.Channel).CreateThreadAsync(
@@ -84,7 +38,7 @@ public partial class Chat(ChatModelEndpoint _model, ToolExecutionEngineFactory _
             autoArchiveDuration: ThreadArchiveDuration.OneHour,
             message: Context.Message
         );
-        var threadMessagesLogged = conversation.Messages.Count;
+        var threadMessagesLogged = conversation.Conversation.Messages.Count;
 
         // Keep pumping conversation until there's a response
         var responded = false;
@@ -92,7 +46,7 @@ public partial class Chat(ChatModelEndpoint _model, ToolExecutionEngineFactory _
         while (!responded && turns < 8)
         {
             turns++;
-            await conversation.GetResponseRich(engine.ExecuteValueTask);
+            await conversation.Conversation.GetResponseRich(conversation.ToolExecutionEngine.ExecuteValueTask);
             responded = await UpdateTrace();
         }
 
@@ -108,9 +62,9 @@ public partial class Chat(ChatModelEndpoint _model, ToolExecutionEngineFactory _
         {
             var responded = false;
 
-            for (var i = threadMessagesLogged; i < conversation.Messages.Count; i++)
+            for (var i = threadMessagesLogged; i < conversation.Conversation.Messages.Count; i++)
             {
-                var message = conversation.Messages[i];
+                var message = conversation.Conversation.Messages[i];
 
                 // Log tool calls
                 if (message is { Role: ChatMessageRoles.Tool })
@@ -182,7 +136,7 @@ public partial class Chat(ChatModelEndpoint _model, ToolExecutionEngineFactory _
                 }
             }
 
-            threadMessagesLogged = conversation.Messages.Count;
+            threadMessagesLogged = conversation.Conversation.Messages.Count;
 
             return responded;
         }

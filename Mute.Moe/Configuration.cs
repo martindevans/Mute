@@ -190,6 +190,8 @@ public class LLMConfig
     [UsedImplicitly] public OpenAIConfig? OpenAI;
     [UsedImplicitly] public SelfHostConfig? SelfHost;
 
+    [UsedImplicitly] public required string ChatSystemPromptPath;
+
     public class GoogleConfig
     {
         [UsedImplicitly] public string? Key;
