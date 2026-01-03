@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.IO;
+using Discord;
 using Discord.WebSocket;
 using LlmTornado.Chat;
 using LlmTornado.Code;
@@ -117,11 +118,11 @@ public class ChatConversation
     /// </summary>
     /// <param name="name"></param>
     /// <param name="message"></param>
-    public Task AddUserMessage(string name, string message)
+    public Guid AddUserMessage(string name, string message)
     {
         Conversation.AddUserMessage($"[{name}]: {message}");
 
-        return Task.CompletedTask;
+        return Conversation.Messages[^1].Id;
     }
 
     /// <summary>
@@ -166,7 +167,7 @@ public class ChatConversation
     public async Task<string> Summarise(CancellationToken cancellation)
     {
         // Generate summary
-        await AddUserMessage(
+        AddUserMessage(
             "SELF",
             "Summarise the conversation so far as a bullet point list. No more than 10 items, preferably fewer. Discard all information which is not necessary to continue the current conversation topic."
         );
@@ -180,7 +181,7 @@ public class ChatConversation
 
         // Insert the summary
         if (summary != null)
-            await AddUserMessage("SUMMARY", summary);
+            AddUserMessage("SUMMARY", summary);
 
         return summary ?? "";
     }

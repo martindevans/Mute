@@ -1,49 +1,33 @@
-﻿using System.Collections.Concurrent;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord.Context;
+using Mute.Moe.Services.LLM;
+using Mute.Moe.Utilities;
+using System.Threading.Tasks;
 using Serilog;
-using IEnumerableExtensions = Mute.Moe.Extensions.IEnumerableExtensions;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
 /// <summary>
-/// Automatically responds to messages that aren't commands.
+/// Maintains an LLM conversation thread per channel.
 /// </summary>
 public class ConversationalResponseService
 {
     private readonly DiscordSocketClient _client;
-    private readonly Random _random;
-    private readonly List<IResponse> _responses = [ ];
+    private readonly ChatConversationFactory _chatFactory;
 
-    private readonly ConcurrentDictionary<IUser, IConversation?> _conversations = new();
+    private readonly AsyncLock _lookupLock = new();
+    private readonly Dictionary<ulong, LlmChatConversation> _conversationsByChannel = [ ];
 
     /// <summary>
     /// Create a new <see cref="ConversationalResponseService"/>
     /// </summary>
     /// <param name="client"></param>
-    /// <param name="services"></param>
-    /// <param name="random"></param>
-    public ConversationalResponseService(DiscordSocketClient client, IServiceProvider services, Random random)
+    /// <param name="chatFactory"></param>
+    public ConversationalResponseService(DiscordSocketClient client, ChatConversationFactory chatFactory)
     {
         _client = client;
-        _random = random;
-
-        // Get every type that implements IResponse
-        _responses.AddRange(from t in Assembly.GetExecutingAssembly().GetTypes()
-            where t.IsClass
-            where typeof(IResponse).IsAssignableFrom(t)
-            let i = ActivatorUtilities.CreateInstance(services, t) as IResponse
-            where i != null
-            select i
-        );
-
-        foreach (var response in _responses)
-            Log.Information("Loaded response generator: {0}", response.GetType().Name);
+        _chatFactory = chatFactory;
     }
 
     /// <summary>
@@ -56,67 +40,80 @@ public class ConversationalResponseService
         // Check if the bot is directly mentioned
         var mentionsBot = ((IMessage)context.Message).MentionedUserIds.Contains(_client.CurrentUser.Id);
 
-        // Get a conversation with this user (either continued from before, or starting with a new one)
+        // Ignore messages that don't mention the bot directly
+        if (!mentionsBot)
+            return;
+
+        // Get the conversation for this channel
         var conversation = await GetOrCreateConversation(context, mentionsBot);
 
         // If we have a conversation, use it to respond
         if (conversation != null)
-        {
-            var response = await conversation.Respond(context, mentionsBot, CancellationToken.None);
-            if (response != null)
-                await context.Channel.TypingReplyAsync(response);
-        }
+            await conversation.Enqueue(context);
     }
 
-    private async Task<IConversation?> GetOrCreateConversation(MuteCommandContext context, bool mentionsBot)
+    private async Task<LlmChatConversation?> GetOrCreateConversation(MuteCommandContext context, bool mentionsBot)
     {
-        // Try to get the existing conversation
-        if (_conversations.TryGetValue(context.User, out var conversation) && conversation != null && !conversation.IsComplete)
-            return conversation;
-
-        // Insert new conversation
-        var newConv = await TryCreateConversation(context, mentionsBot);
-        _conversations[context.User] = newConv;
-        return newConv;
-    }
-
-    private async Task<IConversation?> TryCreateConversation(MuteCommandContext context, bool mentionsBot)
-    {
-        // Find generators which can respond to this message
-        var random = new Random(context.Message.Id.GetHashCode());
-        var candidates = new List<IConversation>();
-        foreach (var generator in _responses)
-        {
-            try
-            {
-                var conversation = await generator.TryRespond(context, mentionsBot);
-                if (conversation == null)
-                    continue;
-
-                var rand = random.NextDouble();
-                if ((mentionsBot && rand < generator.MentionedChance) || (!mentionsBot && rand < generator.BaseChance))
-                    candidates.Add(conversation);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Response generator {0} failed with exception", generator.GetType().Name);
-            }
-        }
-
-        if (candidates.Count == 0)
+        // Ignore messages not addressed to bot
+        if (!mentionsBot)
             return null;
 
-        // If there are several pick a random one
-        return IEnumerableExtensions.Random(candidates, _random);
+        // Only allow one user of the map at once
+        using (await _lookupLock.LockAsync())
+        {
+            // Remove dead conversations
+            foreach (var (channelId, conv) in _conversationsByChannel)
+            {
+                if (conv.IsComplete)
+                {
+                    await conv.Stop();
+                    _conversationsByChannel.Remove(channelId);
+                }
+            }
+
+            // Unload conversations which haven't been used for a while
+            foreach (var (channelId, conv) in _conversationsByChannel)
+            {
+                var elapsed = DateTime.UtcNow - conv.LastUpdated;
+                if (elapsed > TimeSpan.FromMinutes(15))
+                {
+                    await conv.Stop();
+                    Save(channelId, conv);
+                    _conversationsByChannel.Remove(channelId);
+                }
+            }
+
+            // Get or create conversation for channel
+            if (!_conversationsByChannel.TryGetValue(context.Channel.Id, out var chat))
+            {
+                chat = TryLoad(context.Channel.Id)
+                    ?? new LlmChatConversation(await _chatFactory.Create(context.Channel), context.Channel, _client);
+
+                _conversationsByChannel[context.Channel.Id] = chat;
+            }
+            return chat;
+        }
+    }
+
+    private void Save(ulong channelId, LlmChatConversation conv)
+    {
+        Log.Information("todo: implement channel conversation saving persistence");
+    }
+
+    private LlmChatConversation? TryLoad(ulong channelId)
+    {
+        Log.Information("todo: implement channel conversation loading persistence");
+        return null;
     }
 
     /// <summary>
-    /// Get the conversation the current user is in
+    /// Get the conversation in the given channel
     /// </summary>
-    /// <param name="user"></param>
+    /// <param name="channel"></param>
     /// <returns></returns>
-    public IConversation? GetConversation(IGuildUser user)
+    public async Task<LlmChatConversation?> GetConversation(ISocketMessageChannel channel)
     {
-        return _conversations.GetValueOrDefault(user);
+        using (await _lookupLock.LockAsync())
+            return _conversationsByChannel.GetValueOrDefault(channel.Id);
     }
 }

@@ -4,9 +4,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
-using Mute.Moe.Discord.Services.ComponentActions;
 using Mute.Moe.Discord.Services.Responses;
-using Mute.Moe.Services.Information.Weather;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 
@@ -17,21 +15,15 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 public class Administration
     : MuteBaseModule
 {
-    private readonly Configuration _config;
     private readonly DiscordSocketClient _client;
     private readonly ConversationalResponseService _conversations;
     private readonly IAvatarPicker _avatar;
-    private readonly ComponentActionService _actions;
-    private readonly IWeather _weather;
 
-    public Administration(Configuration config, DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar, ComponentActionService actions, IWeather weather)
+    public Administration(DiscordSocketClient client, ConversationalResponseService conversations, IAvatarPicker avatar)
     {
-        _config = config;
         _client = client;
         _conversations = conversations;
         _avatar = avatar;
-        _actions = actions;
-        _weather = weather;
     }
 
     [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -43,32 +35,23 @@ public class Administration
         await channel.TypingReplyAsync(message);
     }
 
-    [Command("conversation-status"), Summary("I will show the status of my current conversation with a user")]
+    [Command("conversation-status"), Summary("I will show the status for the current channel")]
     [UsedImplicitly]
-    public async Task ConversationState(IGuildUser? user = null)
+    public async Task ConversationState()
     {
-        user ??= Context.Message.Author as IGuildUser;
+        var channel = Context.Channel;
+        var conversation = await _conversations.GetConversation(channel);
 
-        if (user == null)
+        if (conversation == null)
         {
-            await TypingReplyAsync("No user!");
+            await ReplyAsync("No active conversation");
         }
         else
         {
-            var c = _conversations.GetConversation(user);
-            if (c == null)
-            {
-                await TypingReplyAsync("No active conversation");
-            }
-            else if (c.IsComplete)
-            {
-                await TypingReplyAsync($"Conversation is complete `{c.GetType()}`");
-            }
-            else
-            {
-                await TypingReplyAsync($"Conversation is active `{c.GetType()}`...");
-                await ReplyAsync(c.ToString());
-            }
+            var embed = new EmbedBuilder()
+                       .WithTitle($"Active Conversation for {conversation.Channel.Name}")
+                       .WithTimestamp(conversation.LastUpdated);
+            await ReplyAsync(embed);
         }
     }
 

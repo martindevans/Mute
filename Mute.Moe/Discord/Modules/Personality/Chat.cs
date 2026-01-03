@@ -30,7 +30,7 @@ public partial class Chat(ChatConversationFactory _chatFactory)
         var conversation = await _chatFactory.Create(Context.Channel);
 
         // Add initial message
-        await conversation.AddUserMessage(Context.User.GlobalName, message);
+        conversation.AddUserMessage(Context.User.GlobalName, message);
 
         // Create a thread to contain reasoning trace
         var thread = await ((ITextChannel)Context.Channel).CreateThreadAsync(
