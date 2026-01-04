@@ -164,7 +164,7 @@ public class Administration
             return;
         }
 
-        var count = kvs.Count();
+        var count = await kvs.Count();
         await kvs.Clear();
 
         await ReplyAsync($"Deleted {count} items from blob store");

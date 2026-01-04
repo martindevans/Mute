@@ -123,9 +123,9 @@ public class LlmChatConversation
             {
                 State = ProcessingState.Waiting;
 
-                // Wait for a message to arrive, or some time to pass
+                // Wait for a message to arrive, or some time to pass with no messages
                 var readTask = reader.ReadAsync(_stopper.Token).AsTask();
-                var delayTask = Task.Delay(summaryNeeded ? TimeSpan.FromMinutes(2) : TimeSpan.FromMinutes(60), _stopper.Token);
+                var delayTask = Task.Delay(summaryNeeded ? TimeSpan.FromMinutes(2) : TimeSpan.FromDays(1), _stopper.Token);
                 var completed = await Task.WhenAny(readTask, delayTask);
 
                 // Break out of loop if cancelled
@@ -215,11 +215,7 @@ public class LlmChatConversation
         void UpdateStats()
         {
             MessageCount = conversation.MessageCount;
-
-            var tokens = conversation.TotalTokens
-                      ?? conversation.Conversation.Messages.Select(a => a.GetMessageTokens()).Sum();
-
-            ContextUsage = tokens / (float)contextTokens;
+            ContextUsage = conversation.EstimateTokenCount() / (float)contextTokens;
         }
 
         async ValueTask<bool> Cleanup()

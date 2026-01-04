@@ -18,7 +18,7 @@ public interface IKeyValueStorage
     /// Count the total number of items
     /// </summary>
     /// <returns></returns>
-    public Task<int> Count();
+    public Task<long> Count();
 
     /// <summary>
     /// Delete all items

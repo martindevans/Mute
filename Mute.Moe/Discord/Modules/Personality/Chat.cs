@@ -38,7 +38,7 @@ public partial class Chat(ConversationalResponseService _conversations)
                    .WithDescription(conversation.Summary ?? "No summary available");
 
         embed.WithFields(
-            new EmbedFieldBuilder().WithIsInline(true).WithName("Queue Depth").WithValue(conversation.QueueCount.ToString()),
+            new EmbedFieldBuilder().WithIsInline(true).WithName("Event Queue").WithValue(conversation.QueueCount.ToString()),
             new EmbedFieldBuilder().WithIsInline(true).WithName("Message Count").WithValue(conversation.MessageCount.ToString()),
             new EmbedFieldBuilder().WithIsInline(true).WithName("Context Usage").WithValue(conversation.ContextUsage.ToString("P1", CultureInfo.InvariantCulture)),
             new EmbedFieldBuilder().WithIsInline(true).WithName("Processing State").WithValue(conversation.State.ToString())
@@ -62,7 +62,7 @@ public partial class Chat(ConversationalResponseService _conversations)
         // Action buttons
         var buttonRow = new ActionRowBuilder();
         buttonRow.AddComponent(ButtonBuilder.CreateDangerButton("Destroy State", ChatInteractions.InteractionIdClearConversationState));
-        buttonRow.AddComponent(ButtonBuilder.CreateSecondaryButton("Force Summary", ChatInteractions.InteractionIdSummariseConversationState));
+        buttonRow.AddComponent(ButtonBuilder.CreateSecondaryButton("Force Summarisation", ChatInteractions.InteractionIdSummariseConversationState));
         var components = new ComponentBuilder();
         components.AddRow(buttonRow);
 

@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Discord;
 using Discord.WebSocket;
 using LlmTornado.Chat;
@@ -88,24 +87,38 @@ public class ChatConversationFactory
 /// </summary>
 public class ChatConversation
 {
+    /// <summary>
+    /// The model used for this conversation
+    /// </summary>
     public ChatModelEndpoint Model { get; }
-    public Conversation Conversation { get; }
-    public ToolExecutionEngine ToolExecutionEngine { get; }
 
     /// <summary>
-    /// Total tokens in the conversation state
+    /// The tool execution engine used for this conversation
+    /// </summary>
+    public ToolExecutionEngine ToolExecutionEngine { get; }
+
+    private readonly Conversation _conversation;
+    
+    /// <summary>
+    /// Total tokens in the conversation state. Only available once a request has been made.
     /// </summary>
     public int? TotalTokens { get; private set; }
 
     /// <summary>
     /// Total number of messages
     /// </summary>
-    public int MessageCount => Conversation.Messages.Count;
+    public int MessageCount => _conversation.Messages.Count;
 
+    /// <summary>
+    /// Create a new conversation object
+    /// </summary>
+    /// <param name="conversation"></param>
+    /// <param name="model"></param>
+    /// <param name="toolEngine"></param>
     public ChatConversation(Conversation conversation, ChatModelEndpoint model, ToolExecutionEngine toolEngine)
     {
         Model = model;
-        Conversation = conversation;
+        _conversation = conversation;
         ToolExecutionEngine = toolEngine;
     }
 
@@ -116,12 +129,12 @@ public class ChatConversation
     /// <param name="message"></param>
     public Guid AddUserMessage(string name, string message)
     {
-        Conversation.AddMessage(new ChatMessage(ChatMessageRoles.User, message)
+        _conversation.AddMessage(new ChatMessage(ChatMessageRoles.User, $"[{name}]: {message}")
         {
             Name = name
         });
 
-        return Conversation.Messages[^1].Id;
+        return _conversation.Messages[^1].Id;
     }
 
     /// <summary>
@@ -130,7 +143,7 @@ public class ChatConversation
     /// <returns></returns>
     public async Task GenerateResponse(CancellationToken ct)
     {
-        var response = await Conversation.GetResponseRich(ToolExecutionEngine.ExecuteValueTask, ct);
+        var response = await _conversation.GetResponseRich(ToolExecutionEngine.ExecuteValueTask, ct);
         TotalTokens = response.Usage?.TotalTokens;
     }
 
@@ -140,7 +153,7 @@ public class ChatConversation
     /// <returns></returns>
     public string? GetLastAssistantResponse()
     {
-        var last = Conversation.Messages[^1];
+        var last = _conversation.Messages[^1];
         if (last.Role == ChatMessageRoles.Assistant)
             return last.GetMessageContent();
 
@@ -152,11 +165,11 @@ public class ChatConversation
     /// </summary>
     public void Clear(bool removeFirst = false)
     {
-        var sys = Conversation.Messages[0];
-        Conversation.Clear();
+        var sys = _conversation.Messages[0];
+        _conversation.Clear();
 
         if (!removeFirst)
-            Conversation.AddMessage(sys);
+            _conversation.AddMessage(sys);
     }
 
     /// <summary>
@@ -199,12 +212,12 @@ public class ChatConversation
     /// <returns></returns>
     public string? FindSummaryMessage()
     {
-        var summary = Conversation.Messages.Where(a => a.Name == "SUMMARY").Select(a => a.GetMessageContent()).FirstOrDefault();
+        var summary = _conversation.Messages.Where(a => a.Name == "SUMMARY").Select(a => a.GetMessageContent()).FirstOrDefault();
         return summary;
     }
 
     /// <summary>
-    /// Remove tool messages which are "buried" until a certain number of subsequent (non tool) messages
+    /// Remove tool messages which are "buried" under a certain number of subsequent (non tool) messages
     /// </summary>
     /// <param name="depth"></param>
     /// <returns>Number of messages removed</returns>
@@ -212,9 +225,9 @@ public class ChatConversation
     {
         var removed = 0;
 
-        for (var i = Conversation.Messages.Count - 1; i >= 0; i--)
+        for (var i = _conversation.Messages.Count - 1; i >= 0; i--)
         {
-            var message = Conversation.Messages[i];
+            var message = _conversation.Messages[i];
 
             switch (message.Role)
             {
@@ -223,7 +236,7 @@ public class ChatConversation
                 {
                     if (depth <= 0)
                     {
-                        Conversation.RemoveMessage(message);
+                        _conversation.RemoveMessage(message);
                         removed++;
                     }
 
@@ -245,7 +258,7 @@ public class ChatConversation
     /// <returns></returns>
     public string Save()
     {
-        var json = JsonSerializer.Serialize(Conversation.Messages);
+        var json = JsonSerializer.Serialize(_conversation.Messages);
         return json;
     }
 
@@ -257,17 +270,26 @@ public class ChatConversation
     public void Load(string json, bool overwriteSystemPrompt = false)
     {
         // Get the system prompt
-        var sys = Conversation.Messages.Count > 0 ? Conversation.Messages[0] : null;
+        var sys = _conversation.Messages.Count > 0 ? _conversation.Messages[0] : null;
 
         // Remove all messages
-        Conversation.Clear();
+        _conversation.Clear();
 
         // Load messages
         var messages = JsonSerializer.Deserialize<List<ChatMessage>>(json) ?? [];
-        Conversation.AddMessage(messages);
+        _conversation.AddMessage(messages);
 
         // Restore system prompt
         if (sys != null && !overwriteSystemPrompt)
-            Conversation.SetSystemMessage(sys.GetMessageContent());
+            _conversation.SetSystemMessage(sys.GetMessageContent());
+    }
+
+    /// <summary>
+    /// Get the estimated number of tokens in this conversation
+    /// </summary>
+    /// <returns></returns>
+    public int EstimateTokenCount()
+    {
+        return TotalTokens ?? _conversation.Messages.Select(a => a.GetMessageTokens()).Sum();
     }
 }

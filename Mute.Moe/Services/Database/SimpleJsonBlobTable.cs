@@ -133,15 +133,15 @@ public abstract class SimpleJsonBlobTable<TBlob>
     }
 
     /// <inheritdoc />
-    public async Task<int> Count()
+    public async Task<long> Count()
     {
         try
         {
             await using (var cmd = _database.CreateCommand())
             {
                 cmd.CommandText = _countSql;
-                var count = (int?)await cmd.ExecuteScalarAsync();
-                return count ?? 0;
+                var count = Convert.ToInt64(await cmd.ExecuteScalarAsync());
+                return count;
             }
         }
         catch (Exception e)
