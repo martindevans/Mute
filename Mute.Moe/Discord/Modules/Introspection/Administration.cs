@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System.Reflection;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Discord.Services.Responses;
+using Mute.Moe.Services.Database;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Discord.Modules.Introspection;
 
@@ -17,11 +19,13 @@ public class Administration
 {
     private readonly DiscordSocketClient _client;
     private readonly IAvatarPicker _avatar;
+    private readonly IServiceProvider _services;
 
-    public Administration(DiscordSocketClient client, IAvatarPicker avatar)
+    public Administration(DiscordSocketClient client, IAvatarPicker avatar, IServiceProvider services)
     {
         _client = client;
         _avatar = avatar;
+        _services = services;
     }
 
     [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -128,5 +132,41 @@ public class Administration
     {
         var msg = await Context.Channel.GetMessageAsync(ulong.Parse(id));
         await msg.DeleteAsync();
+    }
+
+    [Command("nuke-blob-store")]
+    [UsedImplicitly]
+    public async Task NukeBlobStore(string typeName)
+    {
+        var type = Type.GetType(typeName);
+        if (type == null)
+        {
+            await ReplyAsync($"Cannot find type `{typeName}`");
+
+            var maybe = Assembly.GetExecutingAssembly().DefinedTypes.FirstOrDefault(a => a.Name.Equals(typeName));
+            if (maybe != null)
+                await ReplyAsync($"Did you mean: `{maybe.FullName}`");
+
+            return;
+        }
+
+        var svc = _services.GetService(type);
+        if (svc == null)
+        {
+            await ReplyAsync($"Cannot find service of type `{typeName}`");
+            return;
+        }
+
+        var kvs = svc as IKeyValueStorage;
+        if (kvs == null)
+        {
+            await ReplyAsync($"Cannot convert service object to `IKeyValueStorage`");
+            return;
+        }
+
+        var count = kvs.Count();
+        await kvs.Clear();
+
+        await ReplyAsync($"Deleted {count} items from blob store");
     }
 }

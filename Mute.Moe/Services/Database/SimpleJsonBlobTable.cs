@@ -17,6 +17,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
     private readonly string _putSql;
     private readonly string _getSql;
     private readonly string _deleteSql;
+    private readonly string _clearSql;
     private readonly string _countSql;
     private readonly string _randomSql;
 
@@ -36,6 +37,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
         _putSql = $"INSERT OR REPLACE into {tableName} (ID, Json) values(@ID, @Json)";
         _getSql = $"SELECT Json FROM {tableName} WHERE ID = @ID";
         _deleteSql = $"DELETE FROM {tableName} WHERE ID = @ID";
+        _clearSql = $"DELETE FROM {tableName}";
         _countSql = $"SELECT COUNT(*) FROM {tableName}";
         _randomSql = $"SELECT * FROM {tableName} ORDER BY RANDOM() LIMIT 1;";
 
@@ -108,6 +110,24 @@ public abstract class SimpleJsonBlobTable<TBlob>
         catch (Exception e)
         {
             Log.Error(e, "DELETE from SimpleJsonBlobTable '{0}' failed. Key={1}.", _tableName, id);
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task Clear()
+    {
+        try
+        {
+            await using (var cmd = _database.CreateCommand())
+            {
+                cmd.CommandText = _clearSql;
+                var count = await cmd.ExecuteNonQueryAsync();
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "CLEAR SimpleJsonBlobTable '{0}' failed.", _tableName);
             throw;
         }
     }

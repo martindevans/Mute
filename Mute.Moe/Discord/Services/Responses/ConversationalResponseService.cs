@@ -47,19 +47,14 @@ public class ConversationalResponseService
             return;
 
         // Get the conversation for this channel
-        var conversation = await GetOrCreateConversation(context, mentionsBot);
+        var conversation = await GetOrCreateConversation(context.Channel);
 
-        // If we have a conversation, use it to respond
-        if (conversation != null)
-            await conversation.Enqueue(context);
+        // Use it to respond
+        await conversation.Enqueue(context);
     }
 
-    private async Task<LlmChatConversation?> GetOrCreateConversation(MuteCommandContext context, bool mentionsBot)
+    private async Task<LlmChatConversation> GetOrCreateConversation(IMessageChannel channel)
     {
-        // Ignore messages not addressed to bot
-        if (!mentionsBot)
-            return null;
-
         // Only allow one user of the map at once
         using (await _lookupLock.LockAsync())
         {
@@ -85,16 +80,16 @@ public class ConversationalResponseService
             }
 
             // Get or create conversation for channel
-            if (!_conversationsByChannel.TryGetValue(context.Channel.Id, out var chat))
+            if (!_conversationsByChannel.TryGetValue(channel.Id, out var chat))
             {
                 chat = new LlmChatConversation(
-                    await _chatFactory.Create(context.Channel),
-                    context.Channel,
+                    await _chatFactory.Create(channel),
+                    channel,
                     _client,
                     _chatStorage
                 );
 
-                _conversationsByChannel[context.Channel.Id] = chat;
+                _conversationsByChannel[channel.Id] = chat;
             }
             return chat;
         }
@@ -105,9 +100,8 @@ public class ConversationalResponseService
     /// </summary>
     /// <param name="channel"></param>
     /// <returns></returns>
-    public async Task<LlmChatConversation?> GetConversation(ISocketMessageChannel channel)
+    public async Task<LlmChatConversation> GetConversation(IMessageChannel channel)
     {
-        using (await _lookupLock.LockAsync())
-            return _conversationsByChannel.GetValueOrDefault(channel.Id);
+        return await GetOrCreateConversation(channel);
     }
 }

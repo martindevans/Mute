@@ -250,5 +250,6 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, SubAgentCreationToolProvider>();
         services.AddSingleton<IToolProvider, UserInfoToolProvider>();
         services.AddSingleton<IToolProvider, GuildInfoToolProvider>();
+        services.AddSingleton<IToolProvider, ClockProvider>();
     }
 }

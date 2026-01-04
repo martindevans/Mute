@@ -75,11 +75,6 @@ public class ChatConversationFactory
         promptStr = promptStr.Replace("{{guild}}", guild);
         promptStr = promptStr.Replace("{{channel}}", channel);
 
-        // Time
-        var localTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Europe/London"));
-        promptStr = promptStr.Replace("{{localTime}}", localTime.ToShortTimeString());
-        promptStr = promptStr.Replace("{{localDate}}", localTime.ToShortDateString());
-
         // Self awareness
         promptStr = promptStr.Replace("{{self_name}}", _client.CurrentUser?.Username ?? "*null");
         promptStr = promptStr.Replace("{{llm_model_name}}", _model.Model.Name);
@@ -121,7 +116,10 @@ public class ChatConversation
     /// <param name="message"></param>
     public Guid AddUserMessage(string name, string message)
     {
-        Conversation.AddUserMessage($"[{name}]: {message}");
+        Conversation.AddMessage(new ChatMessage(ChatMessageRoles.User, message)
+        {
+            Name = name
+        });
 
         return Conversation.Messages[^1].Id;
     }
@@ -165,13 +163,21 @@ public class ChatConversation
     /// Summarise the current conversation, clear all messages (except the system prompt) and insert the summary as a message.
     /// </summary>
     /// <returns></returns>
-    public async Task<string> Summarise(CancellationToken cancellation)
+    public async Task<string> AutoSummarise(CancellationToken cancellation)
     {
+        const string prompt = """
+                              Summarise the conversation so far as a list of bullet points.
+                              Each bullet must be a concise factual statement.
+                              Include only facts necessary to continue the discussion. Do not store obsolete information.
+                              Do not include assistant reasoning, instructions, bookkeeping, negative statements, or meta commentary.
+                              When information conflicts retain only the most recent version.
+                              Do not restate the assistant's explanations, except where they define constraints, decisions, or agreed approaches.
+                              Exclude examples, speculation, repetition, meta commentary, and stylistic language.
+                              Use the minimum number of bullet points necessary, with a hard maximum of 10.
+                              """;
+
         // Generate summary
-        AddUserMessage(
-            "SELF",
-            "Summarise the conversation so far as a bullet point list. No more than 10 items, preferably fewer. Discard all information which is not necessary to continue the current conversation topic."
-        );
+        AddUserMessage("SELF", prompt);
         await GenerateResponse(cancellation);
 
         // Extract summary
@@ -185,6 +191,16 @@ public class ChatConversation
             AddUserMessage("SUMMARY", summary);
 
         return summary ?? "";
+    }
+
+    /// <summary>
+    /// If there is one, find the summary message
+    /// </summary>
+    /// <returns></returns>
+    public string? FindSummaryMessage()
+    {
+        var summary = Conversation.Messages.Where(a => a.Name == "SUMMARY").Select(a => a.GetMessageContent()).FirstOrDefault();
+        return summary;
     }
 
     /// <summary>
@@ -237,11 +253,21 @@ public class ChatConversation
     /// Load messages from the JSON string
     /// </summary>
     /// <param name="json"></param>
-    public void Load(string json)
+    /// <param name="overwriteSystemPrompt"></param>
+    public void Load(string json, bool overwriteSystemPrompt = false)
     {
+        // Get the system prompt
+        var sys = Conversation.Messages.Count > 0 ? Conversation.Messages[0] : null;
+
+        // Remove all messages
         Conversation.Clear();
 
+        // Load messages
         var messages = JsonSerializer.Deserialize<List<ChatMessage>>(json) ?? [];
         Conversation.AddMessage(messages);
+
+        // Restore system prompt
+        if (sys != null && !overwriteSystemPrompt)
+            Conversation.SetSystemMessage(sys.GetMessageContent());
     }
 }
