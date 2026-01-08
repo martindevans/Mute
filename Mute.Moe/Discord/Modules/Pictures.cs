@@ -77,9 +77,8 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
 
             success = true;
 
-            var localTag = _analyser.IsLocal ? " (local)" : "";
             var embed = new EmbedBuilder()
-                       .WithFooter($"🧠 {_analyser.ModelName}{localTag}")
+                       .WithFooter($"🧠 {_analyser.ModelName}")
                        .WithDescription(desc)
                        .WithTitle(title)
                        .Build();

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.LLM.Rerank;
 
@@ -9,7 +10,7 @@ public class NullRerank
     : IReranking
 {
     /// <inheritdoc />
-    public Task<List<RerankResult>> Rerank(string query, IReadOnlyList<string> documents)
+    public Task<List<RerankResult>> Rerank(string query, IReadOnlyList<string> documents, CancellationToken cancellation = default)
     {
         var results = new List<RerankResult>(documents.Count);
 

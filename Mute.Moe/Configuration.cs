@@ -185,44 +185,37 @@ public class STTConfig
 /// </summary>
 public class LLMConfig
 {
-    #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-    [UsedImplicitly] public GoogleConfig? Google;
-    [UsedImplicitly] public OpenAIConfig? OpenAI;
-    [UsedImplicitly] public SelfHostConfig? SelfHost;
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+    [UsedImplicitly] public required LLamaServerEndpoint[] Endpoints;
+
+    [UsedImplicitly] public required LocalModel ChatLanguageModel;
+    [UsedImplicitly] public required LocalModel VisionLanguageModel;
+    [UsedImplicitly] public required LocalEmbeddingModel EmbeddingModel;
+    [UsedImplicitly] public required LocalModel RerankingModel;
 
     [UsedImplicitly] public required string ChatSystemPromptPath;
 
-    public class GoogleConfig
+    public class LocalModel
     {
-        [UsedImplicitly] public string? Key;
-    }
-
-    public class OpenAIConfig
-    {
-        [UsedImplicitly] public string? Key;
-    }
-
-    public class SelfHostConfig
-    {
-        [UsedImplicitly] public LocalModelEndpoint? ChatLanguageModel = null;
-        [UsedImplicitly] public LocalModelEndpoint? VisionLanguageModel = null;
-        [UsedImplicitly] public LocalEmbeddingModelEndpoint? EmbeddingModel = null;
-        [UsedImplicitly] public LocalModelEndpoint? RerankingModel = null;
-    }
-
-    public class LocalModelEndpoint
-    {
-        [UsedImplicitly] public required string Endpoint;
-        [UsedImplicitly] public required string Key;
         [UsedImplicitly] public required string ModelName;
-
         [UsedImplicitly] public required int ContextSize;
     }
 
-    public class LocalEmbeddingModelEndpoint
-        : LocalModelEndpoint
+    public class LocalEmbeddingModel
+        : LocalModel
     {
         [UsedImplicitly] public int EmbeddingDims;
+    }
+
+    public class LLamaServerEndpoint
+    {
+        [UsedImplicitly] public required string ID;
+        [UsedImplicitly] public required string Endpoint;
+        [UsedImplicitly] public required string Key;
+
+        [UsedImplicitly] public int Slots = 4;
+        [UsedImplicitly] public string HealthCheck = "health";
     }
     #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.LLM.Embedding;
 
@@ -11,15 +12,17 @@ public interface IEmbeddings
     /// Embed a single item
     /// </summary>
     /// <param name="text"></param>
+    /// <param name="cancellation"></param>
     /// <returns></returns>
-    Task<EmbeddingResult?> Embed(string text);
+    Task<EmbeddingResult?> Embed(string text, CancellationToken cancellation = default);
 
     /// <summary>
     /// Embed many items in one request
     /// </summary>
     /// <param name="text"></param>
+    /// <param name="cancellation"></param>
     /// <returns></returns>
-    Task<IReadOnlyList<EmbeddingResult>?> Embed(params string[] text);
+    Task<IReadOnlyList<EmbeddingResult>?> Embed(string[] text, CancellationToken cancellation = default);
 
     /// <summary>
     /// The name of model used for embeddings generation

@@ -1,10 +1,10 @@
 ﻿using LlmTornado.Chat;
+using LlmTornado.Code;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Services.LLM;
 using Serilog;
 using System.Text;
 using System.Threading.Tasks;
-using LlmTornado.Code;
 
 namespace Mute.Moe.Tools.Providers;
 
@@ -14,7 +14,8 @@ namespace Mute.Moe.Tools.Providers;
 public class SubAgentCreationToolProvider
     : IToolProvider
 {
-    private readonly ChatModelEndpoint _model;
+    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
+    private readonly LlmChatModel _model;
     private readonly IServiceProvider _services;
 
     /// <inheritdoc />
@@ -28,11 +29,13 @@ public class SubAgentCreationToolProvider
     /// <summary>
     /// Create <see cref="SubAgentCreationToolProvider"/>
     /// </summary>
-    /// <param name="chat">LLM and API to use</param>
+    /// <param name="endpoints"></param>
     /// <param name="services"></param>
-    public SubAgentCreationToolProvider(ChatModelEndpoint chat, IServiceProvider services)
+    /// <param name="model"></param>
+    public SubAgentCreationToolProvider(LlmChatModel model, MultiEndpointProvider<LLamaServerEndpoint> endpoints, IServiceProvider services)
     {
-        _model = chat;
+        _model = model;
+        _endpoints = endpoints;
         _services = services;
 
         Tools =
@@ -61,7 +64,14 @@ public class SubAgentCreationToolProvider
     /// <returns></returns>
     private async Task<object> DelegateAgent(ITool.CallContext callContext, string task, string context, string[] facts, string[] tools)
     {
-        var conversation = _model.Api.Chat.CreateConversation(new ChatRequest
+        // Get a backend
+        using var endpoint = await _endpoints.GetEndpoint(default);
+        if (endpoint == null)
+            return new { error = "Failed to acquire suitable execution backend" };
+        var api = endpoint.Endpoint.TornadoApi;
+
+        // Create conversation object
+        var conversation = api.Chat.CreateConversation(new ChatRequest
         {
             Model = _model.Model,
             MaxTokens = _model.Model.ContextTokens ?? 4096,
@@ -69,7 +79,7 @@ public class SubAgentCreationToolProvider
 
         // Create an execution engine
         var toolFactory = _services.GetRequiredService<ToolExecutionEngineFactory>();
-        var engine = toolFactory.GetExecutionEngine(conversation, toolSearch:true, defaultTools:true, context: callContext);
+        var engine = toolFactory.GetExecutionEngine(conversation.RequestParameters, toolSearch:true, defaultTools:true, context: callContext);
 
         // Do not allow agents to delegate to new agents
         await engine.BanTool("delegate_agent");

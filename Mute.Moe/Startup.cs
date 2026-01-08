@@ -1,9 +1,8 @@
-﻿using System.IO;
-using Discord.Addons.Interactive;
+﻿using Discord.Addons.Interactive;
 using Discord.WebSocket;
-using LlmTornado;
-using LlmTornado.Chat.Models;
 using LlmTornado.Code;
+using LlmTornado.Embedding.Models;
+using LlmTornado.Rerank.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
 using Mute.Moe.Discord.Commands;
@@ -33,6 +32,8 @@ using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.LLM;
+using Mute.Moe.Services.LLM.Embedding;
+using Mute.Moe.Services.LLM.Rerank;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Services.Notifications.RSS;
 using Mute.Moe.Services.Payment;
@@ -43,16 +44,14 @@ using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Tools;
+using Mute.Moe.Tools.Providers;
 using Serpent;
 using Serpent.Loading;
+using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
-using LlmTornado.Embedding.Models;
-using LlmTornado.Rerank.Models;
-using Mute.Moe.Tools.Providers;
+using LlmTornado.Chat.Models;
 using Wasmtime;
-using Mute.Moe.Services.LLM.Embedding;
-using Mute.Moe.Services.LLM.Rerank;
 
 namespace Mute.Moe;
 
@@ -161,76 +160,34 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<ChatConversationFactory>();
         if (Configuration.LLM != null)
         {
-            services.AddSingleton(new ChatConversationSystemPrompt(File.ReadAllText(Configuration.LLM.ChatSystemPromptPath)));
+            var llm = Configuration.LLM;
 
-            if (Configuration.LLM?.SelfHost != null)
+            // Load system prompt for chat
+            services.AddSingleton(new ChatConversationSystemPrompt(File.ReadAllText(llm.ChatSystemPromptPath)));
+
+            // Create endpoints for llama-server
+            var endpoints = new List<MultiEndpointProvider<LLamaServerEndpoint>.EndpointConfig>();
+            foreach (var endpoint in llm.Endpoints)
             {
-                if (Configuration.LLM.SelfHost.ChatLanguageModel is { } cm)
-                {
-                    var api = new TornadoApi(new Uri(cm.Endpoint), cm.Key);
-
-                    var ep = new ChatModelEndpoint(api, new(cm.ModelName, LLmProviders.Custom, cm.ContextSize), true);
-                    services.AddSingleton(ep);
-                }
-
-                if (Configuration.LLM.SelfHost.VisionLanguageModel is { } vm)
-                {
-                    var api = new TornadoApi(new Uri(vm.Endpoint), vm.Key);
-
-                    var ep = new ImageAnalysisModelEndpoint(api, new ChatModel(vm.ModelName, LLmProviders.Custom, vm.ContextSize), true);
-                    services.AddSingleton(ep);
-
-                    services.AddTransient<IImageAnalyser, TornadoAnalyser>();
-                }
-                else
-                {
-                    services.AddTransient<IImageAnalyser, Automatic1111>();
-                }
-
-                if (Configuration.LLM.SelfHost.EmbeddingModel is { } em)
-                {
-                    var api = new TornadoApi(new Uri(em.Endpoint), em.Key);
-
-                    var ep = new EmbeddingModelEndpoint(api, new EmbeddingModel(em.ModelName, LLmProviders.Custom, em.ContextSize, em.EmbeddingDims), true);
-                    services.AddSingleton(ep);
-                }
-
-                if (Configuration.LLM.SelfHost.RerankingModel is { } rm)
-                {
-                    var ep = new RerankModelEndpoint(rm.Endpoint, new RerankModel(rm.ModelName, LLmProviders.Custom), rm.ContextSize, true);
-                    services.AddSingleton(ep);
-
-                    services.AddTransient<IReranking, LlamaServerReranking>();
-                }
-                else
-                {
-                    services.AddTransient<IReranking, NullRerank>();
-                }
-            }
-            else
-            {
-                var providers = new List<ProviderAuthentication>();
-                if (Configuration.LLM?.Google?.Key != null)
-                    providers.Add(new ProviderAuthentication(LLmProviders.Google, Configuration.LLM.Google.Key));
-                if (Configuration.LLM?.OpenAI?.Key != null)
-                    providers.Add(new ProviderAuthentication(LLmProviders.OpenAi, Configuration.LLM.OpenAI.Key));
-                var api = new TornadoApi(providers);
-
-                services.AddSingleton(new ChatModelEndpoint(
-                    api,
-                    ChatModel.Google.Gemini.Gemini25Flash,
-                    IsLocal: false
+                endpoints.Add(new MultiEndpointProvider<LLamaServerEndpoint>.EndpointConfig(
+                    new LLamaServerEndpoint(endpoint.ID, endpoint.Endpoint, endpoint.Key), endpoint.Slots, new(new(endpoint.Endpoint), endpoint.HealthCheck)
                 ));
-
-                services.AddSingleton(new EmbeddingModelEndpoint(
-                    api,
-                    EmbeddingModel.Google.Gemini.GeminiEmbedding001,
-                    IsLocal: false
-                ));
-
-                services.AddTransient<IImageAnalyser, Automatic1111>();
-                services.AddTransient<IReranking, NullRerank>();
             }
+            services.AddSingleton<MultiEndpointProvider<LLamaServerEndpoint>>(provider => new(
+                provider.GetRequiredService<IHttpClientFactory>(),
+                endpoints.ToArray()
+            ));
+
+            // Define models to use
+            services.AddSingleton(new LlmChatModel(new ChatModel(llm.ChatLanguageModel.ModelName, LLmProviders.Custom, llm.ChatLanguageModel.ContextSize)));
+            services.AddSingleton(new LlmEmbeddingModel(new EmbeddingModel(llm.EmbeddingModel.ModelName, LLmProviders.Custom, llm.EmbeddingModel.ContextSize, llm.EmbeddingModel.EmbeddingDims)));
+            services.AddSingleton(new LlmVisionModel(new ChatModel(llm.VisionLanguageModel.ModelName, LLmProviders.Custom, llm.VisionLanguageModel.ContextSize)));
+            services.AddSingleton(new LlmRerankModel(new RerankModel(llm.RerankingModel.ModelName, LLmProviders.Custom)));
+
+            // Other LLM services
+            services.AddTransient<IImageAnalyser, TornadoImageAnalyser>();
+            services.AddTransient<IEmbeddings, TornadoEmbeddings>();
+            services.AddTransient<IReranking, LlamaServerReranking>();
         }
     }
 

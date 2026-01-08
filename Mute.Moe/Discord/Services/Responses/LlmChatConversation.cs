@@ -259,7 +259,7 @@ public class LlmChatConversation
         async ValueTask<string?> GenerateResponse(BaseProcessEvent.Message context)
         {
             // Add incoming message to conversation
-            conversation.AddUserMessage(context.User.GlobalName, context.Content);
+            conversation.AddUserMessage(context.User.GlobalName ?? context.User.Username, context.Content);
 
             // Generate a response. This takes a long time, since it's making the call to the LLM
             // Keep pumping the system until an assistant response is generated

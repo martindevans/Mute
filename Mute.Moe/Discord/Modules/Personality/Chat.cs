@@ -1,13 +1,12 @@
 ﻿using Discord;
 using Discord.Commands;
-using LlmTornado.Code;
+using Mute.Moe.Discord.Interactions;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
 using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
-using Mute.Moe.Discord.Interactions;
 
 namespace Mute.Moe.Discord.Modules.Personality;
 
@@ -72,7 +71,7 @@ public partial class Chat(ConversationalResponseService _conversations)
 
 [UsedImplicitly]
 [Group("llm")]
-public partial class LLM(IToolIndex _tools, ChatModelEndpoint _chat)
+public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEndpoint> _backends)
     : MuteBaseModule
 {
     [Command("tools"), Summary("Search for tools")]
@@ -160,37 +159,42 @@ public partial class LLM(IToolIndex _tools, ChatModelEndpoint _chat)
         }
     }
 
-    [Command("model"), Summary("Get detailed model info")]
-    [UsedImplicitly]
-    public async Task LlmModelInfo()
+    [Command("backend"), Summary("List all available LLM backends and their current status")]
+    public async Task LlmBackendStatus()
     {
-        var models = await _chat.Api.Models.GetModels(LLmProviders.Custom);
-        if (models == null)
+        var results = await _backends.GetStatus();
+
+        var count = 0;
+        var desc = new StringBuilder();
+        foreach (var result in results)
         {
-            await ReplyAsync("Cannot fetch model list from backend");
-            return;
+            desc.AppendLine($"**{result.Endpoint.ID}**");
+
+            if (result.Healthy)
+                desc.AppendLine(" - Online 🟢");
+            else
+                desc.AppendLine(" - Offline 🔴");
+
+            desc.AppendLine($" - Available: {result.AvailableSlots}/{result.MaxSlots}");
+            desc.AppendLine($" - Latency: {result.Latency.TotalMilliseconds:##.#}ms");
+
+            if (result.Healthy)
+                count++;
         }
 
-        var model = models.FirstOrDefault(a => string.Equals(a.Id, _chat.Model.Name, StringComparison.OrdinalIgnoreCase) || string.Equals(a.Name, _chat.Model.Name, StringComparison.OrdinalIgnoreCase));
-        if (model == null)
+        var color = count switch
         {
-            await ReplyAsync("Cannot find chat model in backend");
-            return;
-        }
+            <= 0 => Color.Red,
+               1 => Color.Orange,
+             > 1 => Color.Green,
+        };
 
         var embed = new EmbedBuilder()
-                   .WithTitle(model.Name ?? model.Id);
+            .WithTitle("LLM Backend Status")
+            .WithDescription(desc.ToString())
+            .WithColor(color)
+            .WithFooter("🧠 AI Cluster");
 
-        if (model.Description != null)
-            embed.WithDescription(model.Description ?? "");
-
-        var fields = new List<EmbedFieldBuilder>();
-
-        if (model.ContextLength != null)
-            fields.Add(new EmbedFieldBuilder().WithIsInline(true).WithName("Context").WithValue(model.ContextLength));
-
-        embed.WithFields(fields);
-
-        await ReplyAsync(embed: embed);
+        await ReplyAsync(embed: embed.Build());
     }
 }

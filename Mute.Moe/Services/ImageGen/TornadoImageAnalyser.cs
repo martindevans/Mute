@@ -1,9 +1,9 @@
 ﻿using LlmTornado.Chat;
-using LlmTornado.Chat.Models;
 using LlmTornado.Code;
 using Mute.Moe.Services.LLM;
 using SixLabors.ImageSharp;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.ImageGen
@@ -11,35 +11,43 @@ namespace Mute.Moe.Services.ImageGen
     /// <summary>
     /// Analyse images and provide a description of them using vision language models
     /// </summary>
-    public class TornadoAnalyser
+    public class TornadoImageAnalyser
         : IImageAnalyser
     {
-        private readonly ImageAnalysisModelEndpoint _model;
+        private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
+        private readonly LlmVisionModel _model;
 
         string IImageAnalyser.ModelName => _model.Model.Name;
-        bool IImageAnalyser.IsLocal => _model.IsLocal;
 
         /// <summary>
         /// Create new image analyser, describing images using VLM
         /// </summary>
         /// <param name="model">Model to use, must be a VLM</param>
-        public TornadoAnalyser(ImageAnalysisModelEndpoint model)
+        /// <param name="endpoints"></param>
+        public TornadoImageAnalyser(LlmVisionModel model, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
         {
             _model = model;
+            _endpoints = endpoints;
         }
 
         /// <inheritdoc />
-        public async Task<ImageAnalysisResult?> GetImageDescription(Stream imageStream)
+        public async Task<ImageAnalysisResult?> GetImageDescription(Stream imageStream, CancellationToken cancellation = default)
         {
+            // Get an API backend
+            using var endpoint = await _endpoints.GetEndpoint(cancellation);
+            if (endpoint == null)
+                return null;
+            var api = endpoint.Endpoint.TornadoApi;
+
             // Convert image to base64
-            var image = await Image.LoadAsync(imageStream);
+            var image = await Image.LoadAsync(imageStream, cancellation);
             var mem = new MemoryStream();
-            await image.SaveAsPngAsync(mem);
+            await image.SaveAsPngAsync(mem, cancellation);
             var buffer = mem.ToArray();
             var base64 = Convert.ToBase64String(buffer);
 
             // Create conversation
-            var conversation = _model.Api.Chat.CreateConversation(new ChatRequest
+            var conversation = api.Chat.CreateConversation(new ChatRequest
             {
                 Model = _model.Model,
                 MaxTokens = 1024,
@@ -53,13 +61,13 @@ namespace Mute.Moe.Services.ImageGen
                                     "explaining visual humour) when it's strongly suggested.");
 
             conversation.AppendUserInput([ new ChatMessagePart(new ChatImage($"data:image/png;base64,{base64}", "image/png")) ]);
-            var description = await conversation.GetResponse();
+            var description = await conversation.GetResponse(cancellation);
 
             if (string.IsNullOrWhiteSpace(description))
                 return null;
 
             conversation.AppendUserInput("Suggest a title for this image (1-5 words)");
-            var title = await conversation.GetResponse();
+            var title = await conversation.GetResponse(cancellation);
 
             return new ImageAnalysisResult(title, description);
         }

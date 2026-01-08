@@ -6,34 +6,27 @@ using LlmTornado.Rerank.Models;
 namespace Mute.Moe.Services.LLM;
 
 /// <summary>
-/// The chat model and associated API accessor to use
+/// A llama-server API endpoint
 /// </summary>
-/// <param name="Api"></param>
-/// <param name="Model"></param>
-/// <param name="IsLocal">Indicates if this model is locally/privately hosted</param>
-public record ChatModelEndpoint(TornadoApi Api, ChatModel Model, bool IsLocal);
+/// <param name="ID">Unique ID for this backend (may be displayed in the UI)</param>
+/// <param name="Url">Endpoint URL</param>
+/// <param name="Key">Secret API key</param>
+public record LLamaServerEndpoint(string ID, string Url, string Key)
+{
+    /// <summary>
+    /// Get a <see cref="TornadoApi"/> wrapping this endpoint
+    /// </summary>
+    public TornadoApi TornadoApi
+    {
+        get
+        {
+            field ??= new TornadoApi(new Uri(Url), Key);
+            return field;
+        }
+    }
+}
 
-/// <summary>
-/// The embedding model and asspciated API accessor to use
-/// </summary>
-/// <param name="Api"></param>
-/// <param name="Model"></param>
-/// <param name="IsLocal">Indicates if this model is locally/privately hosted</param>
-public record EmbeddingModelEndpoint(TornadoApi Api, EmbeddingModel Model, bool IsLocal);
-
-/// <summary>
-/// The chat model with vision capabilities and associated API accessor to use
-/// </summary>
-/// <param name="Api"></param>
-/// <param name="Model"></param>
-/// <param name="IsLocal">Indicates if this model is locally/privately hosted</param>
-public record ImageAnalysisModelEndpoint(TornadoApi Api, ChatModel Model, bool IsLocal);
-
-/// <summary>
-/// The reranking model and associated endpoint to use
-/// </summary>
-/// <param name="BaseUrl"></param>
-/// <param name="Model"></param>
-/// <param name="ContextSize"></param>
-/// <param name="IsLocal">Indicates if this model is locally/privately hosted</param>
-public record RerankModelEndpoint(string BaseUrl, RerankModel Model, int ContextSize, bool IsLocal);
+public record LlmChatModel(ChatModel Model);
+public record LlmEmbeddingModel(EmbeddingModel Model);
+public record LlmVisionModel(ChatModel Model);
+public record LlmRerankModel(RerankModel Model);

@@ -1,6 +1,7 @@
-﻿using System.IO;
+﻿using SixLabors.ImageSharp.Formats.Png;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
-using SixLabors.ImageSharp.Formats.Png;
 
 namespace Mute.Moe.Services.ImageGen;
 
@@ -15,29 +16,26 @@ public interface IImageAnalyser
     public string ModelName { get; }
 
     /// <summary>
-    /// Indicates if this image analyser is using a local/private model, or a remote service
-    /// </summary>
-    public bool IsLocal { get; }
-
-    /// <summary>
     /// Given an image, describe it.
     /// </summary>
     /// <param name="image"></param>
+    /// <param name="cancellation"></param>
     /// <returns></returns>
-    public Task<ImageAnalysisResult?> GetImageDescription(Stream image);
+    public Task<ImageAnalysisResult?> GetImageDescription(Stream image, CancellationToken cancellation = default);
 
     /// <summary>
     /// Given an image, describe it
     /// </summary>
     /// <param name="image"></param>
+    /// <param name="cancellation"></param>
     /// <returns></returns>
-    public async Task<ImageAnalysisResult?> GetImageDescription(SixLabors.ImageSharp.Image image)
+    public async Task<ImageAnalysisResult?> GetImageDescription(SixLabors.ImageSharp.Image image, CancellationToken cancellation = default)
     {
         var mem = new MemoryStream();
-        await image.SaveAsync(mem, new PngEncoder());
+        await image.SaveAsync(mem, new PngEncoder(), cancellation);
         mem.Position = 0;
 
-        return await GetImageDescription(mem);
+        return await GetImageDescription(mem, cancellation);
     }
 }
 

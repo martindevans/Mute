@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Mute.Moe.Tools;
 
 /// <summary>
-/// Creates a <see cref="ToolExecutionEngine"/> bound to a single <see cref="Conversation"/>
+/// Creates a <see cref="ToolExecutionEngine"/> bound to a single <see cref="ChatRequest"/>
 /// </summary>
 public class ToolExecutionEngineFactory
 {
@@ -34,16 +34,16 @@ public class ToolExecutionEngineFactory
     }
 
     /// <summary>
-    /// Create a new <see cref="ToolExecutionEngineFactory"/> for the given conversation
+    /// Create a new <see cref="ToolExecutionEngineFactory"/> for the given chat request parameters
     /// </summary>
-    /// <param name="conversation"></param>
+    /// <param name="requestParameters"></param>
     /// <param name="context"></param>
     /// <param name="toolSearch"></param>
     /// <param name="defaultTools"></param>
     /// <returns></returns>
-    public ToolExecutionEngine GetExecutionEngine(Conversation conversation, ITool.CallContext context, bool toolSearch = true, bool defaultTools = true)
+    public ToolExecutionEngine GetExecutionEngine(ChatRequest requestParameters, ITool.CallContext context, bool toolSearch = true, bool defaultTools = true)
     {
-        var engine = new ToolExecutionEngine(conversation, _toolsIndex, toolSearch, defaultTools, context);
+        var engine = new ToolExecutionEngine(requestParameters, _toolsIndex, toolSearch, defaultTools, context);
         return engine;
     }
 }
@@ -53,7 +53,7 @@ public class ToolExecutionEngineFactory
 /// </summary>
 public class ToolExecutionEngine
 {
-    private readonly Conversation _conversation;
+    private readonly ChatRequest _requestParameters;
     private readonly IToolIndex _allTools;
     private readonly ITool.CallContext _context;
     private readonly Dictionary<string, ITool> _availableTools = [ ];
@@ -73,59 +73,56 @@ public class ToolExecutionEngine
     /// <summary>
     /// Create a new execution engine, adds the `search_for_tools` meta tool and all default tools
     /// </summary>
-    /// <param name="conversation"></param>
+    /// <param name="requestParameters"></param>
     /// <param name="tools"></param>
     /// <param name="allowToolSearch"></param>
     /// <param name="addDefaultTools"></param>
     /// <param name="context"></param>
-    public ToolExecutionEngine(Conversation conversation, IToolIndex tools, bool allowToolSearch, bool addDefaultTools, ITool.CallContext context)
+    public ToolExecutionEngine(ChatRequest requestParameters, IToolIndex tools, bool allowToolSearch, bool addDefaultTools, ITool.CallContext context)
     {
-        _conversation = conversation;
+        _requestParameters = requestParameters;
         _allTools = tools;
         _context = context;
 
-        conversation.Update(c =>
+        _requestParameters.Tools ??= [ ];
+
+        // Add the `search_for_tools` meta tool
+        if (allowToolSearch)
         {
-            c.Tools ??= [];
+            _requestParameters.Tools.Add(new Tool([
+                new ToolParam(
+                    "query",
+                    """
+                    Describe the abstract capabilities required from a tool to satisfy the user’s request.
+                    
+                    Should be a short description including the following fields:
+                    - Capability
+                    - Inputs
+                    - Outputs
+                    
+                    Rules:
+                    - Describe general functionality, not a specific task instance
+                    - Do NOT include proper nouns, dates, times, quantities, or user-specific details
+                    - Focus on what the tool can do, as if describing an API or function signature
+                    - Do NOT phrase the output as a question or instruction
+                    """,
+                    ToolParamAtomicTypes.String
+                )
+            ], "search_for_tools", "Performs an approximate/fuzzy search for tools through vector embeddings. If no results are found, try rewording your query."));
+        }
 
-            // Add the `search_for_tools` meta tool
-            if (allowToolSearch)
+        // Add default tools
+        if (addDefaultTools)
+        {
+            foreach (var (key, tool) in _allTools.Tools)
             {
-                c.Tools.Add(new Tool([
-                    new ToolParam(
-                        "query",
-                        """
-                        Describe the abstract capabilities required from a tool to satisfy the user’s request.
-                        
-                        Should be a short description including the following fields:
-                        - Capability
-                        - Inputs
-                        - Outputs
-                        
-                        Rules:
-                        - Describe general functionality, not a specific task instance
-                        - Do NOT include proper nouns, dates, times, quantities, or user-specific details
-                        - Focus on what the tool can do, as if describing an API or function signature
-                        - Do NOT phrase the output as a question or instruction
-                        """,
-                        ToolParamAtomicTypes.String
-                    )
-                ], "search_for_tools", "Performs an approximate/fuzzy search for tools through vector embeddings. If no results are found, try rewording your query."));
-            }
-
-            // Add default tools
-            if (addDefaultTools)
-            {
-                foreach (var (key, tool) in _allTools.Tools)
+                if (tool.IsDefaultTool)
                 {
-                    if (tool.IsDefaultTool)
-                    {
-                        c.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
-                        _availableTools.Add(key, tool);
-                    }
+                    _requestParameters.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
+                    _availableTools.Add(key, tool);
                 }
             }
-        });
+        }
     }
 
     /// <summary>
@@ -142,11 +139,8 @@ public class ToolExecutionEngine
         // Add it to the conversation
         if (_availableTools.TryAdd(tool.Name, tool))
         {
-            _conversation.Update(c =>
-            {
-                c.Tools ??= [ ];
-                c.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
-            });
+            _requestParameters.Tools ??= [ ];
+            _requestParameters.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
         }
 
         return true;
@@ -164,11 +158,8 @@ public class ToolExecutionEngine
         if (!_availableTools.ContainsKey(name))
             return false;
         
-        _conversation.Update(c =>
-        {
-            c.Tools ??= [];
-            c.Tools.RemoveAll(a => name.Equals(a.Function?.Name));
-        });
+        _requestParameters.Tools ??= [];
+        _requestParameters.Tools.RemoveAll(a => name.Equals(a.Function?.Name));
 
         return true;
 
@@ -274,25 +265,22 @@ public class ToolExecutionEngine
             var top = results[0].Relevance;
             var threshold1 = top * 0.9;
 
-            _conversation.Update(c =>
+            // Ensure tools list is not null before we add to it
+            _requestParameters.Tools ??= [];
+
+            foreach (var (similarity, tool) in results)
             {
-                // Ensure tools list is not null before we add to it
-                c.Tools ??= [];
+                // Ignore tools below thresholds
+                if (similarity < threshold1)
+                    continue;
 
-                foreach (var (similarity, tool) in results)
-                {
-                    // Ignore tools below thresholds
-                    if (similarity < threshold1)
-                        continue;
+                // Add to the list of results returned to the LLM
+                matches.Add(tool.Name);
 
-                    // Add to the list of results returned to the LLM
-                    matches.Add(tool.Name);
-
-                    // Add new tools to the conversation
-                    if (_availableTools.TryAdd(tool.Name, tool))
-                        c.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
-                }
-            });
+                // Add new tools to the conversation
+                if (_availableTools.TryAdd(tool.Name, tool))
+                    _requestParameters.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
+            }
         }
 
         return (true, matches);

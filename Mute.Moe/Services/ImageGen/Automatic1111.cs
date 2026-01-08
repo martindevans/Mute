@@ -41,8 +41,7 @@ public class Automatic1111
 
     private const InterrogateModel _model = InterrogateModel.DeepDanbooru;
     string IImageAnalyser.ModelName => _model.ToString();
-    bool IImageAnalyser.IsLocal => true;
-    
+
     /// <summary>
     /// 
     /// </summary>
@@ -261,17 +260,17 @@ public class Automatic1111
     }
 
     /// <inheritdoc />
-    public async Task<ImageAnalysisResult?> GetImageDescription(Stream image)
+    public async Task<ImageAnalysisResult?> GetImageDescription(Stream image, CancellationToken cancellation = default)
     {
         // Get the backend and lock it for the duration of this operation
         using var scope = await (await GetBackend()).Lock(default);
         var backend = scope.Backend;
 
         var mem = new MemoryStream();
-        await image.CopyToAsync(mem);
+        await image.CopyToAsync(mem, cancellation);
         var buffer = mem.ToArray();
 
-        var analysis = await backend.Interrogate(new Base64EncodedImage(buffer), _model);
+        var analysis = await backend.Interrogate(new Base64EncodedImage(buffer), _model, cancellation);
 
         var desc = analysis.Caption.Replace("\\(", "(").Replace("\\)", ")");
 

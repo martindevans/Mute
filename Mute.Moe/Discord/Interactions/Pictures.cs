@@ -98,10 +98,9 @@ public class Pictures
         var desc = analysis?.Description ?? "Something went wrong analysing that image";
         var title = analysis?.Title ?? attachment.Title ?? "Image Analysis";
 
-        var localTag = _analyser.IsLocal ? " (local)" : "";
         var embed = new EmbedBuilder()
                    .WithImageUrl(attachment.Url)
-                   .WithFooter($"{_analyser.ModelName}{localTag}")
+                   .WithFooter($"{_analyser.ModelName}")
                    .WithDescription(desc)
                    .WithTitle(title)
                    .Build();

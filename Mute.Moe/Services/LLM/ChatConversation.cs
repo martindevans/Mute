@@ -1,11 +1,12 @@
-﻿using System.Text.Json;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 using LlmTornado.Chat;
 using LlmTornado.Code;
 using Mute.Moe.Tools;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace Mute.Moe.Services.LLM;
 
@@ -21,9 +22,10 @@ public record ChatConversationSystemPrompt(string Prompt);
 public class ChatConversationFactory
 {
     private readonly ChatConversationSystemPrompt _prompt;
-    private readonly ChatModelEndpoint _model;
+    private readonly LlmChatModel _model;
     private readonly ToolExecutionEngineFactory _toolFactory;
     private readonly DiscordSocketClient _client;
+    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
 
     /// <summary>
     /// Create a new <see cref="ChatConversationFactory"/>
@@ -32,12 +34,20 @@ public class ChatConversationFactory
     /// <param name="model"></param>
     /// <param name="toolFactory"></param>
     /// <param name="client"></param>
-    public ChatConversationFactory(ChatConversationSystemPrompt prompt, ChatModelEndpoint model, ToolExecutionEngineFactory toolFactory, DiscordSocketClient client)
+    /// <param name="endpoints"></param>
+    public ChatConversationFactory(
+        ChatConversationSystemPrompt prompt,
+        LlmChatModel model,
+        ToolExecutionEngineFactory toolFactory,
+        DiscordSocketClient client,
+        MultiEndpointProvider<LLamaServerEndpoint> endpoints
+    )
     {
         _prompt = prompt;
         _model = model;
         _toolFactory = toolFactory;
         _client = client;
+        _endpoints = endpoints;
     }
 
     /// <summary>
@@ -51,19 +61,18 @@ public class ChatConversationFactory
         var guild = channel is IDMChannel ? "Direct Message" : ((IGuildChannel)channel).Guild.Name;
         var prompt = FormatPrompt(guild, channel.Name);
 
-        // Create conversation object
-        var conversation = _model.Api.Chat.CreateConversation(new ChatRequest
+        // Setup tool execution engine
+        var request = new ChatRequest
         {
             Model = _model.Model,
             ParallelToolCalls = true,
-        });
-        conversation.AddSystemMessage(prompt);
-
-        // Setup tool execution engine
+        };
         var callCtx = new ITool.CallContext(channel);
-        var engine = _toolFactory.GetExecutionEngine(conversation, callCtx);
+        var engine = _toolFactory.GetExecutionEngine(request, callCtx);
 
-        return new ChatConversation(conversation, _model, engine);
+        var conv = new ChatConversation(request, _model, engine, _endpoints);
+        conv.ReplaceSystemPrompt(prompt);
+        return conv;
     }
 
     private string FormatPrompt(string guild, string channel)
@@ -90,15 +99,17 @@ public class ChatConversation
     /// <summary>
     /// The model used for this conversation
     /// </summary>
-    public ChatModelEndpoint Model { get; }
+    public LlmChatModel Model { get; }
 
     /// <summary>
     /// The tool execution engine used for this conversation
     /// </summary>
     public ToolExecutionEngine ToolExecutionEngine { get; }
 
-    private readonly Conversation _conversation;
-    
+    private readonly ChatRequest _request;
+    private readonly List<ChatMessage> _messages = [ ];
+    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
+
     /// <summary>
     /// Total tokens in the conversation state. Only available once a request has been made.
     /// </summary>
@@ -107,19 +118,21 @@ public class ChatConversation
     /// <summary>
     /// Total number of messages
     /// </summary>
-    public int MessageCount => _conversation.Messages.Count;
+    public int MessageCount => _messages.Count;
 
     /// <summary>
     /// Create a new conversation object
     /// </summary>
-    /// <param name="conversation"></param>
+    /// <param name="request"></param>
     /// <param name="model"></param>
     /// <param name="toolEngine"></param>
-    public ChatConversation(Conversation conversation, ChatModelEndpoint model, ToolExecutionEngine toolEngine)
+    /// <param name="endpoints"></param>
+    public ChatConversation(ChatRequest request, LlmChatModel model, ToolExecutionEngine toolEngine, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
     {
         Model = model;
-        _conversation = conversation;
+        _request = request;
         ToolExecutionEngine = toolEngine;
+        _endpoints = endpoints;
     }
 
     /// <summary>
@@ -129,12 +142,12 @@ public class ChatConversation
     /// <param name="message"></param>
     public Guid AddUserMessage(string name, string message)
     {
-        _conversation.AddMessage(new ChatMessage(ChatMessageRoles.User, $"[{name}]: {message}")
+        _messages.Add(new ChatMessage(ChatMessageRoles.User, $"{name}: {message}")
         {
             Name = name
         });
 
-        return _conversation.Messages[^1].Id;
+        return _messages[^1].Id;
     }
 
     /// <summary>
@@ -143,8 +156,21 @@ public class ChatConversation
     /// <returns></returns>
     public async Task GenerateResponse(CancellationToken ct)
     {
-        var response = await _conversation.GetResponseRich(ToolExecutionEngine.ExecuteValueTask, ct);
+        using var endpoint = await _endpoints.GetEndpoint(ct);
+        if (endpoint == null)
+            return;
+        var api = endpoint.Endpoint.TornadoApi;
+
+        Log.Information("Chat selected LLM Backend: {0}", endpoint.Endpoint.Url);
+
+        var conversation = api.Chat.CreateConversation(_request);
+        conversation.AddMessage(_messages);
+
+        var response = await conversation.GetResponseRich(ToolExecutionEngine.ExecuteValueTask, ct);
         TotalTokens = response.Usage?.TotalTokens;
+
+        for (var i = _messages.Count; i < conversation.Messages.Count; i++)
+            _messages.Add(conversation.Messages[i]);
     }
 
     /// <summary>
@@ -153,7 +179,7 @@ public class ChatConversation
     /// <returns></returns>
     public string? GetLastAssistantResponse()
     {
-        var last = _conversation.Messages[^1];
+        var last = _messages[^1];
         if (last.Role == ChatMessageRoles.Assistant)
             return last.GetMessageContent();
 
@@ -165,11 +191,11 @@ public class ChatConversation
     /// </summary>
     public void Clear(bool removeFirst = false)
     {
-        var sys = _conversation.Messages[0];
-        _conversation.Clear();
+        var sys = _messages[0];
+        _messages.Clear();
 
         if (!removeFirst)
-            _conversation.AddMessage(sys);
+            _messages.Add(sys);
     }
 
     /// <summary>
@@ -212,7 +238,10 @@ public class ChatConversation
     /// <returns></returns>
     public string? FindSummaryMessage()
     {
-        var summary = _conversation.Messages.Where(a => a.Name == "SUMMARY").Select(a => a.GetMessageContent()).FirstOrDefault();
+        var summary = _messages
+            .Where(a => a.Name == "SUMMARY")
+            .Select(a => a.GetMessageContent())
+            .FirstOrDefault();
         return summary;
     }
 
@@ -225,9 +254,9 @@ public class ChatConversation
     {
         var removed = 0;
 
-        for (var i = _conversation.Messages.Count - 1; i >= 0; i--)
+        for (var i = _messages.Count - 1; i >= 0; i--)
         {
-            var message = _conversation.Messages[i];
+            var message = _messages[i];
 
             switch (message.Role)
             {
@@ -236,7 +265,7 @@ public class ChatConversation
                 {
                     if (depth <= 0)
                     {
-                        _conversation.RemoveMessage(message);
+                        _messages.RemoveAt(i);
                         removed++;
                     }
 
@@ -258,7 +287,7 @@ public class ChatConversation
     /// <returns></returns>
     public string Save()
     {
-        var json = JsonSerializer.Serialize(_conversation.Messages);
+        var json = JsonSerializer.Serialize(_messages);
         return json;
     }
 
@@ -270,18 +299,18 @@ public class ChatConversation
     public void Load(string json, bool overwriteSystemPrompt = false)
     {
         // Get the system prompt
-        var sys = _conversation.Messages.Count > 0 ? _conversation.Messages[0] : null;
+        var sys = _messages.Count > 0 ? _messages[0] : null;
 
         // Remove all messages
-        _conversation.Clear();
+        _messages.Clear();
 
         // Load messages
         var messages = JsonSerializer.Deserialize<List<ChatMessage>>(json) ?? [];
-        _conversation.AddMessage(messages);
+        _messages.AddRange(messages);
 
         // Restore system prompt
         if (sys != null && !overwriteSystemPrompt)
-            _conversation.SetSystemMessage(sys.GetMessageContent());
+            ReplaceSystemPrompt(sys.GetMessageContent());
     }
 
     /// <summary>
@@ -290,6 +319,23 @@ public class ChatConversation
     /// <returns></returns>
     public int EstimateTokenCount()
     {
-        return TotalTokens ?? _conversation.Messages.Select(a => a.GetMessageTokens()).Sum();
+        return TotalTokens ?? _messages.Select(a => a.GetMessageTokens()).Sum();
+    }
+
+    /// <summary>
+    /// Replace the system prompt message
+    /// </summary>
+    /// <param name="prompt"></param>
+    public void ReplaceSystemPrompt(string prompt)
+    {
+        if (_messages.Count == 0)
+        {
+            _messages.Add(new ChatMessage(ChatMessageRoles.System, prompt));
+        }
+        else
+        {
+            _messages.RemoveAt(0);
+            _messages.Insert(0, new ChatMessage(ChatMessageRoles.System, prompt));
+        }
     }
 }
