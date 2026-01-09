@@ -5,6 +5,7 @@ using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
+using Mute.Moe.Services.LLM.Embedding;
 using Mute.Moe.Tools;
 using Newtonsoft.Json;
 using Serilog;
@@ -37,6 +38,8 @@ public static class Program
         var startup = new Startup(config);
         startup.ConfigureServices(collection);
         var provider = collection.BuildServiceProvider();
+
+        var e = await provider.GetRequiredService<IEmbeddings>().Embed("Hello");
 
         // Run some service setup stuff
         await provider.GetRequiredService<IToolIndex>().Update();

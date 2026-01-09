@@ -1,6 +1,7 @@
 ﻿using LlmTornado.Embedding.Models;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -54,7 +55,7 @@ public class LLamaServerEmbedding
         if (endpoint == null)
             return null;
 
-        // Create request
+        // Create content
         var json = JsonSerializer.Serialize(new
         {
             input = text,
@@ -62,14 +63,14 @@ public class LLamaServerEmbedding
             encoding_format = "float"
         });
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
-        content.Headers.Add("Bearer", endpoint.Endpoint.Key);
+
+        // Create request
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new(endpoint.Endpoint.Url), "/v1/embeddings"));
+        request.Content = content;
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", endpoint.Endpoint.Key);
 
         // Send request
-        using var res = await _http.PostAsync(
-            new Uri(new(endpoint.Endpoint.Url), "/v1/embeddings"),
-            content,
-            cancellation
-        );
+        using var res = await _http.SendAsync(request, cancellation);
         res.EnsureSuccessStatusCode();
 
         // Read response

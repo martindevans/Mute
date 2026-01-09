@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -40,7 +41,7 @@ public sealed class LlamaServerReranking
         if (endpoint == null)
             return await new NullRerank().Rerank(query, documents, cancellation);
 
-        // Create request
+        // Create content
         var json = JsonSerializer.Serialize(new
         {
             model = _model,
@@ -51,12 +52,13 @@ public sealed class LlamaServerReranking
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
         content.Headers.Add("Bearer", endpoint.Endpoint.Key);
 
+        // Create request
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new(endpoint.Endpoint.Url), "/v1/rerank"));
+        request.Content = content;
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", endpoint.Endpoint.Key);
+
         // Send request
-        using var res = await _http.PostAsync(
-            new Uri(new(endpoint.Endpoint.Url), "/v1/rerank"),
-            content,
-            cancellation
-        );
+        using var res = await _http.SendAsync(request, cancellation);
         res.EnsureSuccessStatusCode();
 
         // Read response
