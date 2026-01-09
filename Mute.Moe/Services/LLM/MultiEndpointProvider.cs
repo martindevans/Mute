@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Serilog;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,7 +38,7 @@ public sealed class MultiEndpointProvider<TEndpoint>
     {
         // Start a health check on every backend
         var pending = (from backend in _backends
-                      let task = _healthCheckClient.GetAsync(backend.HealthCheck, cancellation)
+                      let task = backend.CheckHealth(_healthCheckClient, cancellation)
                       select (backend, task)).ToList();
 
         // Live backends
@@ -49,7 +50,7 @@ public sealed class MultiEndpointProvider<TEndpoint>
         {
             // Ignore items that fail the health check
             var response = await task;
-            if (!response.IsSuccessStatusCode)
+            if (!response)
                 continue;
 
             // Backend is alive!
@@ -71,7 +72,7 @@ public sealed class MultiEndpointProvider<TEndpoint>
             foreach (var backend in live)
             {
                 // Do another health check
-                if (!(await _healthCheckClient.GetAsync(backend.HealthCheck, cancellation)).IsSuccessStatusCode)
+                if (!await backend.CheckHealth(_healthCheckClient, cancellation))
                 {
                     remove.Add(backend);
                     continue;
@@ -167,6 +168,24 @@ public sealed class MultiEndpointProvider<TEndpoint>
         {
             _semaphore.Release();
         }
+
+        public async Task<bool> CheckHealth(HttpClient client, CancellationToken cancellation)
+        {
+            try
+            {
+                var result = await client.GetAsync(HealthCheck, cancellation);
+                return result.IsSuccessStatusCode;
+            }
+            catch (TaskCanceledException)
+            {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Health check exception");
+                return false;
+            }
+        }
     }
 
     /// <summary>
@@ -243,9 +262,20 @@ public sealed class MultiEndpointProvider<TEndpoint>
         var pending = _backends.Select(async backend =>
         {
             var timer = Stopwatch.StartNew();
-            var result = await _healthCheckClient.GetAsync(backend.HealthCheck);
+
+            bool result;
+            try
+            {
+                result = await backend.CheckHealth(_healthCheckClient, default);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Health check exception");
+                result = false;
+            }
+
             timer.Stop();
-            return new Status(backend.Endpoint, backend.AvailableSlots, backend.TotalSlots, result.IsSuccessStatusCode, timer.Elapsed);
+            return new Status(backend.Endpoint, backend.AvailableSlots, backend.TotalSlots, result, timer.Elapsed);
         }).ToList();
 
         return await Task.WhenAll(pending);

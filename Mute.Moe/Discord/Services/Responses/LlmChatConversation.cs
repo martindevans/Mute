@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using LlmTornado.Chat;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.LLM;
 using Serilog;

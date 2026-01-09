@@ -1,5 +1,4 @@
-﻿using LlmTornado.Chat;
-using Mute.Moe.Services.Database;
+﻿using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Discord.Services.Responses;
 

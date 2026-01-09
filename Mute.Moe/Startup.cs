@@ -132,7 +132,10 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<ToolExecutionEngineFactory>();
         AddToolProviders(services);
 
-        services.AddSingleton<IEmbeddings, TornadoEmbeddings>();
+        services.AddTransient<IImageAnalyser, TornadoImageAnalyser>();
+        services.AddTransient<IEmbeddings, LLamaServerEmbedding>();
+        services.AddTransient<IReranking, LlamaServerReranking>();
+
         services.AddSingleton<IToolIndex, DatabaseToolIndex>(svc =>
             new DatabaseToolIndex(svc.GetServices<IToolProvider>(), svc.GetRequiredService<IDatabaseService>(), svc.GetRequiredService<IEmbeddings>(), svc.GetRequiredService<IReranking>())
         );
@@ -183,11 +186,6 @@ public record Startup(Configuration Configuration)
             services.AddSingleton(new LlmEmbeddingModel(new EmbeddingModel(llm.EmbeddingModel.ModelName, LLmProviders.Custom, llm.EmbeddingModel.ContextSize, llm.EmbeddingModel.EmbeddingDims)));
             services.AddSingleton(new LlmVisionModel(new ChatModel(llm.VisionLanguageModel.ModelName, LLmProviders.Custom, llm.VisionLanguageModel.ContextSize)));
             services.AddSingleton(new LlmRerankModel(new RerankModel(llm.RerankingModel.ModelName, LLmProviders.Custom)));
-
-            // Other LLM services
-            services.AddTransient<IImageAnalyser, TornadoImageAnalyser>();
-            services.AddTransient<IEmbeddings, TornadoEmbeddings>();
-            services.AddTransient<IReranking, LlamaServerReranking>();
         }
     }
 

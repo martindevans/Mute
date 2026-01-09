@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -37,7 +38,7 @@ public sealed class LlamaServerReranking
         // Get an endpoint
         using var endpoint = await _endpoints.GetEndpoint(cancellation);
         if (endpoint == null)
-            return await new NullRerank().Rerank(query, documents);
+            return await new NullRerank().Rerank(query, documents, cancellation);
 
         // Create request
         var json = JsonSerializer.Serialize(new
@@ -48,7 +49,7 @@ public sealed class LlamaServerReranking
             documents
         });
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
-        content.Headers.Add("Authorization", $"Bearer {endpoint.Endpoint.Key}");
+        content.Headers.Add("Bearer", endpoint.Endpoint.Key);
 
         // Send request
         using var res = await _http.PostAsync(
@@ -64,9 +65,9 @@ public sealed class LlamaServerReranking
                   ?? throw new InvalidDataException("Invalid rerank response");
 
         // Convert to result type
-        var results = new List<RerankResult>(result.results.Length);
-        foreach (var r in result.results)
-            results.Add(new RerankResult(r.index, r.relevance_score));
+        var results = new List<RerankResult>(result.Results.Length);
+        foreach (var r in result.Results)
+            results.Add(new RerankResult(r.Index, r.RelevanceScore));
 
         // Sort into order, highest relevance first
         return results.OrderByDescending(a => a.Relevance).ToList();
@@ -74,12 +75,16 @@ public sealed class LlamaServerReranking
 
     private sealed class RerankResponse
     {
-        public RerankItem[] results { get; set; } = [ ];
+        [JsonPropertyName("results")]
+        public RerankItem[] Results { get; set; } = [ ];
     }
 
     private sealed class RerankItem
     {
-        public int index { get; set; }
-        public float relevance_score { get; set; }
+        [JsonPropertyName("index")]
+        public int Index { get; set; }
+
+        [JsonPropertyName("relevance_score")]
+        public float RelevanceScore { get; set; }
     }
 }

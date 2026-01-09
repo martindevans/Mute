@@ -159,7 +159,8 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
         }
     }
 
-    [Command("backend"), Summary("List all available LLM backends and their current status")]
+    [Command("status"), Summary("List all available LLM backends and their current status")]
+    [UsedImplicitly]
     public async Task LlmBackendStatus()
     {
         var results = await _backends.GetStatus();
@@ -171,12 +172,15 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
             desc.AppendLine($"**{result.Endpoint.ID}**");
 
             if (result.Healthy)
-                desc.AppendLine(" - Online 🟢");
+            {
+                desc.AppendLine($" - Online 🟢");
+                desc.AppendLine($" - Available: {result.AvailableSlots}/{result.MaxSlots}");
+                desc.AppendLine($" - Latency: {result.Latency.TotalMilliseconds:##.#}ms");
+            }
             else
+            {
                 desc.AppendLine(" - Offline 🔴");
-
-            desc.AppendLine($" - Available: {result.AvailableSlots}/{result.MaxSlots}");
-            desc.AppendLine($" - Latency: {result.Latency.TotalMilliseconds:##.#}ms");
+            }
 
             if (result.Healthy)
                 count++;
@@ -193,7 +197,7 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
             .WithTitle("LLM Backend Status")
             .WithDescription(desc.ToString())
             .WithColor(color)
-            .WithFooter("🧠 AI Cluster");
+            .WithFooter("🧠 Mugunghwa AI Cluster");
 
         await ReplyAsync(embed: embed.Build());
     }
