@@ -129,7 +129,16 @@ public class LlmChatConversation
 
                 // Break out of loop if cancelled
                 if (_stopper.IsCancellationRequested)
+                {
+                    Log.Warning("conversation processor for channel {0} ({1}): Cancellation requested", Channel.Name, Channel.Id);
                     break;
+                }
+
+                if (reader.Completion.IsCompleted)
+                {
+                    Log.Warning("conversation processor for channel {0} ({1}): Reader completed", Channel.Name, Channel.Id);
+                    break;
+                }
 
                 // Check if we're here due to the timeout or a message event
                 if (completed == delayTask)
@@ -146,8 +155,8 @@ public class LlmChatConversation
                 }
                 else
                 {
-                    // Using `Result` is ok here, the task was awaited above
-                    var @event = readTask.Result;
+                    // Extract the task value. We already know this task is completed.
+                    var @event = await readTask;
 
                     switch (@event)
                     {
@@ -257,7 +266,7 @@ public class LlmChatConversation
             Summary = await conversation.AutoSummarise(_stopper.Token);
         }
 
-        async ValueTask<string?> GenerateResponse(BaseProcessEvent.Message context, int maxIters = 5, CancellationToken cancellation = default)
+        async ValueTask<string?> GenerateResponse(BaseProcessEvent.Message context, int maxIters = 8, CancellationToken cancellation = default)
         {
             conversation.AddUserMessage(
                 context.User.GlobalName ?? context.User.Username,

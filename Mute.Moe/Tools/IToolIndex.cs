@@ -131,8 +131,18 @@ public class DatabaseToolIndex
         if (_reranking is NullRerank)
             return results;
 
+        var rerankPrompt = $"""
+                           Task: Score how appropriate each tool is for accomplishing the user’s goal.
+                           User goal: {query}
+                           Instructions:
+                            - Score high tools that help accomplish the goal
+                            - Score low tools that are irrelevant
+                            - Consider the functionality of the tool
+                            - Prefer tools that directly enable the action
+                           """;
+
         // Rerank the tools based on the query and their description
-        var reranking = await _reranking.Rerank($"Tools which are suitable for providing: {query}", results.Select(a => a.tool.Description).ToArray());
+        var reranking = await _reranking.Rerank(rerankPrompt, results.Select(a => a.tool.Description).ToArray());
 
         // New list of results
         var rerankedResults = new List<(float, ITool)>();

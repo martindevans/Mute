@@ -4,6 +4,7 @@ using LlmTornado.Common;
 using LlmTornado.Infra;
 using Mute.Moe.Tools.Providers;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace Mute.Moe.Tools;
 
@@ -255,6 +256,8 @@ public class ToolExecutionEngine
         if (!call.GetArguments().GetToolParameterString("query", out var query, out var error))
             return (false, error);
 
+        Log.Information("Tool search: {0}", query);
+
         // Find all tools, ordered by similarity to query embedding
         var results = (await _allTools.Find(query, limit: 5)).Where(x => !_bannedTools.Contains(x.Tool.Name)).ToList();
 
@@ -282,6 +285,8 @@ public class ToolExecutionEngine
                     _requestParameters.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
             }
         }
+
+        Log.Information("Tool search results: [{0}]", string.Join(", ", matches));
 
         return (true, matches);
     }

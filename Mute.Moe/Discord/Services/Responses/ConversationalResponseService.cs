@@ -39,18 +39,27 @@ public class ConversationalResponseService
     /// <returns></returns>
     public async Task Respond(MuteCommandContext context)
     {
+        // Don't ever respond to self!
+        if (context.User.Id == _client.CurrentUser.Id)
+            return;
+
+        // Is this a DM channel?
+        var isDirectMessage = context.Channel.GetChannelType() == ChannelType.DM;
+
         // Check if the bot is directly mentioned
         var mentionsBot = ((IMessage)context.Message).MentionedUserIds.Contains(_client.CurrentUser.Id);
 
-        // Ignore messages that don't mention the bot directly
-        if (!mentionsBot)
-            return;
+        // Respond to:
+        // - All messages in DMs
+        // - Direct mentions in other channels
+        if (isDirectMessage || mentionsBot)
+        {
+            // Get the conversation for this channel
+            var conversation = await GetOrCreateConversation(context.Channel);
 
-        // Get the conversation for this channel
-        var conversation = await GetOrCreateConversation(context.Channel);
-
-        // Use it to respond
-        await conversation.Enqueue(context);
+            // Use it to respond
+            await conversation.Enqueue(context);
+        }
     }
 
     private async Task<LlmChatConversation> GetOrCreateConversation(IMessageChannel channel)
