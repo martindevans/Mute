@@ -71,6 +71,9 @@ public class ConversationalResponseService
             // Unload conversations which haven't been used for a while
             foreach (var (channelId, conv) in _conversationsByChannel)
             {
+                if (channelId == channel.Id)
+                    continue;
+
                 var elapsed = DateTime.UtcNow - conv.LastUpdated;
                 if (elapsed > TimeSpan.FromMinutes(15))
                 {

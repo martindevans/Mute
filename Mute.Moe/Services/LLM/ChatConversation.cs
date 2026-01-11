@@ -2,11 +2,12 @@
 using Discord.WebSocket;
 using LlmTornado.Chat;
 using LlmTornado.Code;
+using Microsoft.VisualBasic;
 using Mute.Moe.Tools;
+using Serilog;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog;
 
 namespace Mute.Moe.Services.LLM;
 
@@ -151,12 +152,24 @@ public class ChatConversation
     }
 
     /// <summary>
+    /// Append a user message with no name metadata
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    public Guid AddAnonymousUserMessage(string message)
+    {
+        _messages.Add(new ChatMessage(ChatMessageRoles.User, message));
+
+        return _messages[^1].Id;
+    }
+
+    /// <summary>
     /// Generate an assistant response and append it to the conversation
     /// </summary>
     /// <returns></returns>
     public async Task GenerateResponse(CancellationToken ct)
     {
-        using var endpoint = await _endpoints.GetEndpoint(ct);
+        using var endpoint = await _endpoints.GetEndpoint([ Model.Model.Name ],ct);
         if (endpoint == null)
             return;
         var api = endpoint.Endpoint.TornadoApi;
@@ -171,6 +184,31 @@ public class ChatConversation
 
         for (var i = _messages.Count; i < conversation.Messages.Count; i++)
             _messages.Add(conversation.Messages[i]);
+    }
+
+    /// <summary>
+    /// Keep generating responses until an assistant response is generated.
+    /// </summary>
+    /// <param name="maxSteps"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    public async ValueTask<string?> GenerateResponseMultiStep(int maxSteps = 5, CancellationToken ct = default)
+    {
+        // Generate a response. This takes a long time, since it's making the call to the LLM
+        // Keep pumping the system until an assistant response is generated
+        string? response = null;
+        for (var i = 0; i < maxSteps; i++)
+        {
+            // Generate a response. This takes a long time, since it's making the call to the LLM
+            await GenerateResponse(ct);
+
+            // Extract the response
+            response = GetLastAssistantResponse();
+            if (response != null)
+                break;
+        }
+
+        return response;
     }
 
     /// <summary>

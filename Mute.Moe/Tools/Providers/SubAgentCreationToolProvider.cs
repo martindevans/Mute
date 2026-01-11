@@ -1,5 +1,4 @@
 ﻿using LlmTornado.Chat;
-using LlmTornado.Code;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Services.LLM;
 using Serilog;
@@ -64,22 +63,22 @@ public class SubAgentCreationToolProvider
     /// <returns></returns>
     private async Task<object> DelegateAgent(ITool.CallContext callContext, string task, string context, string[] facts, string[] tools)
     {
-        // Get a backend
-        using var endpoint = await _endpoints.GetEndpoint(default);
-        if (endpoint == null)
-            return new { error = "Failed to acquire suitable execution backend" };
-        var api = endpoint.Endpoint.TornadoApi;
-
-        // Create conversation object
-        var conversation = api.Chat.CreateConversation(new ChatRequest
+        // Create tool execution engine
+        var request = new ChatRequest()
         {
             Model = _model.Model,
-            MaxTokens = _model.Model.ContextTokens ?? 4096,
-        });
-
-        // Create an execution engine
+            ParallelToolCalls = true,
+        };
         var toolFactory = _services.GetRequiredService<ToolExecutionEngineFactory>();
-        var engine = toolFactory.GetExecutionEngine(conversation.RequestParameters, toolSearch:true, defaultTools:true, context: callContext);
+        var engine = toolFactory.GetExecutionEngine(request, toolSearch: true, defaultTools: true, context: callContext);
+
+        // Create conversation
+        var conversation = new ChatConversation(
+            request,
+            _model,
+            engine,
+            _endpoints
+        );
 
         // Do not allow agents to delegate to new agents
         await engine.BanTool("delegate_agent");
@@ -111,39 +110,27 @@ public class SubAgentCreationToolProvider
 
         Log.Information("Spawning LLM Agent. Prompt: {0}", prompt);
 
-        // Create the conversation
-        conversation
-           .AppendSystemMessage(SubAgentPrompt)
-           .AppendUserInput(prompt.ToString());
+        // Setup conversation
+        conversation.ReplaceSystemPrompt(SubAgentPrompt);
+        conversation.AddAnonymousUserMessage(prompt.ToString());
 
-        // Get response
-        var toolCalls = new HashSet<string>();
-        for (var i = 0; i < 5; i++)
+        // Pump for multiple turns to generate a response
+        const int STEPS = 9;
+        var response = await conversation.GenerateResponseMultiStep(STEPS);
+
+        if (response != null)
         {
-            await conversation.GetResponseRich(async calls =>
+            return new
             {
-                foreach (var call in calls)
-                    toolCalls.Add(call.Name);
-
-                await engine.Execute(calls);
-            });
-
-            // Return result as soon as the assistant generates a message
-            if (conversation.Messages[^1].Role == ChatMessageRoles.Assistant)
-            {
-                return new
-                {
-                    ToolsUsed = toolCalls.ToArray(),
-                    Response = conversation.Messages[^1].Content ?? "",
-                };
-            }
+                Tools = engine.ToolCalls.Select(a => a.Name).ToArray(),
+                Response = response,
+            };
         }
 
-        // We went multiple turns without generating a response
         return new
         {
-            ToolsUsed = toolCalls.ToArray(),
-            Response = "Failed."
+            Tools = engine.ToolCalls.Select(a => a.Name).ToArray(),
+            Error = "Sub agent failed to complete task"
         };
     }
 }

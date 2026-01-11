@@ -34,7 +34,7 @@ namespace Mute.Moe.Services.ImageGen
         public async Task<ImageAnalysisResult?> GetImageDescription(Stream imageStream, CancellationToken cancellation = default)
         {
             // Get an API backend
-            using var endpoint = await _endpoints.GetEndpoint(cancellation);
+            using var endpoint = await _endpoints.GetEndpoint([ _model.Model.Name ], cancellation);
             if (endpoint == null)
                 return null;
             var api = endpoint.Endpoint.TornadoApi;

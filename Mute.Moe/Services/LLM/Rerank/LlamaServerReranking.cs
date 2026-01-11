@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using LlmTornado.Models;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -37,7 +38,7 @@ public sealed class LlamaServerReranking
     public async Task<List<RerankResult>> Rerank(string query, IReadOnlyList<string> documents, CancellationToken cancellation = default)
     {
         // Get an endpoint
-        using var endpoint = await _endpoints.GetEndpoint(cancellation);
+        using var endpoint = await _endpoints.GetEndpoint([ _model ], cancellation);
         if (endpoint == null)
             return await new NullRerank().Rerank(query, documents, cancellation);
 

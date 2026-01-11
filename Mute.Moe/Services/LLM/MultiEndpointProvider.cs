@@ -12,6 +12,7 @@ namespace Mute.Moe.Services.LLM;
 /// </summary>
 public sealed class MultiEndpointProvider<TEndpoint>
 {
+    private readonly IEndpointFilter _filter;
     private readonly IReadOnlyList<Backend> _backends;
     private readonly HttpClient _healthCheckClient;
 
@@ -19,9 +20,11 @@ public sealed class MultiEndpointProvider<TEndpoint>
     /// Create a new provider
     /// </summary>
     /// <param name="http"></param>
+    /// <param name="filter"></param>
     /// <param name="endpoints">Endpoints, in order of preference</param>
-    public MultiEndpointProvider(IHttpClientFactory http, params EndpointConfig[] endpoints)
+    public MultiEndpointProvider(IHttpClientFactory http, IEndpointFilter filter, params EndpointConfig[] endpoints)
     {
+        _filter = filter;
         _backends = endpoints.Select(a => new Backend(a.Endpoint, a.Slots, a.HealthCheck)).ToArray();
 
         // Create a client with a short timeout, for health checks
@@ -30,11 +33,33 @@ public sealed class MultiEndpointProvider<TEndpoint>
     }
 
     /// <summary>
-    /// Get an available endpoint which is healthy and take an available slot
+    /// Filter endpoints based on string filters.
+    /// </summary>
+    /// <param name="endpoint"></param>
+    /// <param name="filters"></param>
+    /// <returns>true, to allow endpoint.</returns>
+    private ValueTask<bool> FilterEndpoint(TEndpoint endpoint, string[] filters)
+    {
+        return _filter.FilterEndpoint(endpoint, filters);
+    }
+
+    /// <summary>
+    /// Get an available endpoint which is healthy and take an available slot.
     /// </summary>
     /// <param name="cancellation"></param>
     /// <returns></returns>
-    public async Task<IScope?> GetEndpoint(CancellationToken cancellation)
+    public Task<IScope?> GetEndpoint(CancellationToken cancellation)
+    {
+        return GetEndpoint([ ], cancellation);
+    }
+
+    /// <summary>
+    /// Get an available endpoint which is healthy and take an available slot. Filters out endpoints based on provided strings.
+    /// </summary>
+    /// <param name="filters"></param>
+    /// <param name="cancellation"></param>
+    /// <returns></returns>
+    public async Task<IScope?> GetEndpoint(string[] filters, CancellationToken cancellation)
     {
         // Start a health check on every backend
         var pending = (from backend in _backends
@@ -51,6 +76,11 @@ public sealed class MultiEndpointProvider<TEndpoint>
             // Ignore items that fail the health check
             var response = await task;
             if (!response)
+                continue;
+
+            // Check if the backend is suitable
+            var ok = await FilterEndpoint(backend.Endpoint, filters);
+            if (!ok)
                 continue;
 
             // Backend is alive!
@@ -290,4 +320,31 @@ public sealed class MultiEndpointProvider<TEndpoint>
     /// <param name="Healthy"></param>
     /// <param name="Latency"></param>
     public record Status(TEndpoint Endpoint, int AvailableSlots, int MaxSlots, bool Healthy, TimeSpan Latency);
+
+    /// <summary>
+    /// Filters endpoints based on string tags
+    /// </summary>
+    public interface IEndpointFilter
+    {
+        /// <summary>
+        /// Given and endpoint and a set of filters, return if the endpoint is allowed
+        /// </summary>
+        /// <param name="endpoint"></param>
+        /// <param name="filters"></param>
+        /// <returns></returns>
+        ValueTask<bool> FilterEndpoint(TEndpoint endpoint, string[] filters);
+    }
+
+    /// <summary>
+    /// Always accepts
+    /// </summary>
+    public class DefaultFilter
+        : IEndpointFilter
+    {
+        /// <inheritdoc />
+        public ValueTask<bool> FilterEndpoint(TEndpoint endpoint, string[] filters)
+        {
+            return new ValueTask<bool>(true);
+        }
+    }
 }

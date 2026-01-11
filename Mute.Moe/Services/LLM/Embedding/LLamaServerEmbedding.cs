@@ -51,7 +51,7 @@ public class LLamaServerEmbedding
     public async Task<IReadOnlyList<EmbeddingResult>?> Embed(string[] text, CancellationToken cancellation = default)
     {
         // Get an endpoint
-        using var endpoint = await _endpoints.GetEndpoint(cancellation);
+        using var endpoint = await _endpoints.GetEndpoint([ Model ], cancellation);
         if (endpoint == null)
             return null;
 
@@ -82,33 +82,36 @@ public class LLamaServerEmbedding
         return results;
     }
 
+    [UsedImplicitly]
     private class EmbeddingResponse
     {
         [JsonPropertyName("data")]
-        public required EmbeddingItem[] Data { get; set; }
+        public required EmbeddingItem[] Data { get; init; }
 
         [JsonPropertyName("model")]
-        public required string Model { get; set; }
+        public required string Model { get; init; }
 
         [JsonPropertyName("usage")]
-        public required EmbeddingUsage Usage { get; set; }
+        public required EmbeddingUsage Usage { get; init; }
     }
 
+    [UsedImplicitly]
     private class EmbeddingItem
     {
         [JsonPropertyName("embedding")]
-        public required float[] Embedding { get; set; }
+        public required float[] Embedding { get; init; }
 
         [JsonPropertyName("index")]
-        public required int Index { get; set; }
+        public required int Index { get; init; }
     }
 
+    [UsedImplicitly]
     private class EmbeddingUsage
     {
         [JsonPropertyName("prompt_tokens")]
-        public int PromptTokens { get; set; }
+        public int PromptTokens { get; init; }
 
         [JsonPropertyName("total_tokens")]
-        public int TotalTokens { get; set; }
+        public int TotalTokens { get; init; }
     }
 }

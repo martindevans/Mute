@@ -39,8 +39,6 @@ public static class Program
         startup.ConfigureServices(collection);
         var provider = collection.BuildServiceProvider();
 
-        var e = await provider.GetRequiredService<IEmbeddings>().Embed("Hello");
-
         // Run some service setup stuff
         await provider.GetRequiredService<IToolIndex>().Update();
 

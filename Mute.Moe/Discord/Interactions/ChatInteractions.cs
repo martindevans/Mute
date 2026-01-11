@@ -1,6 +1,7 @@
 ﻿using Discord.Interactions;
 using Mute.Moe.Discord.Services.Responses;
 using System.Threading.Tasks;
+using Discord;
 
 namespace Mute.Moe.Discord.Interactions;
 
@@ -20,6 +21,21 @@ public partial class ChatInteractions(ConversationalResponseService _conversatio
     /// ID for forcing summarisation of the conversation state in the current channel
     /// </summary>
     public const string InteractionIdSummariseConversationState = nameof(ChatInteractions) + nameof(InteractionIdSummariseConversationState);
+
+    /// <summary>
+    /// ID for refreshing an existing embed
+    /// </summary>
+    private const string InteractionIdRefreshEmbedConversationState = nameof(ChatInteractions) + nameof(InteractionIdRefreshEmbedConversationState);
+
+    /// <summary>
+    /// Get the ID for an itneraction that refreshes the chat state embed in the target message
+    /// </summary>
+    /// <param name="target"></param>
+    /// <returns></returns>
+    public static string GetInteractionRefreshId(IMessage target)
+    {
+        return $"{InteractionIdRefreshEmbedConversationState}_{target.Id}";
+    }
 
     /// <summary>
     /// Clear the conversation state in this channel
@@ -53,5 +69,29 @@ public partial class ChatInteractions(ConversationalResponseService _conversatio
 
         await FollowupAsync($"Summarisation completed:\n{conv.Summary}");
         await DeleteOriginalResponseAsync();
+    }
+
+    /// <summary>
+    /// Update the embed in the message this interaction came from
+    /// </summary>
+    /// <returns></returns>
+    [ComponentInteraction(InteractionIdRefreshEmbedConversationState + "_*", ignoreGroupNames: true)]
+    [UsedImplicitly]
+    public async Task RefreshStateEmbedInMessage(ulong messageId)
+    {
+        await DeferAsync();
+
+        var message = await Context.Channel.GetMessageAsync(messageId) as IUserMessage;
+        if (message == null)
+        {
+            await RespondAsync("Cannot find message to update", ephemeral: true);
+            return;
+        }
+
+        var embed = await Context.Channel.GetConversationStateEmbed(_conversations);
+        await message.ModifyAsync(ctx =>
+        {
+            ctx.Embed = embed.Build();
+        });
     }
 }

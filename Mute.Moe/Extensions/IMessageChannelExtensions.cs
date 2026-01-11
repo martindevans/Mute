@@ -1,5 +1,10 @@
-﻿using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
+using LlmTornado.Chat;
+using Mute.Moe.Discord.Interactions;
+using Mute.Moe.Discord.Services.Responses;
+using System.Globalization;
+using System.Threading.Tasks;
+using static Mute.Moe.Services.DiceLang.AST.IAstNode;
 
 namespace Mute.Moe.Extensions;
 
@@ -29,19 +34,19 @@ public static class IMessageChannelExtensions
             await Task.Delay(Delay(message));
             return await channel.SendMessageAsync(message, isTTS, embed, options).ConfigureAwait(false);
         }
-    }
 
-    private static TimeSpan Delay(string message)
-    {
-        var wordTime = message.Count(c => c == ' ') / WordsPerMinute;
-        var symbTime = (message.Length - message.Count(char.IsLetter)) / (CharactersPerSecond * 180);
+        static TimeSpan Delay(string message)
+        {
+            var wordTime = message.Count(c => c == ' ') / WordsPerMinute;
+            var symbTime = (message.Length - message.Count(char.IsLetter)) / (CharactersPerSecond * 180);
 
-        var delay = TimeSpan.FromMinutes(wordTime + symbTime);
-        if (delay <= SoftMaxDelay)
-            return delay;
+            var delay = TimeSpan.FromMinutes(wordTime + symbTime);
+            if (delay <= SoftMaxDelay)
+                return delay;
 
-        //Beyond the soft max only increase the delay very slowly
-        return SoftMaxDelay + TimeSpan.FromSeconds(Math.Pow((delay - SoftMaxDelay).TotalSeconds, 0.25f));
+            // Beyond the soft max only increase the delay very slowly
+            return SoftMaxDelay + TimeSpan.FromSeconds(Math.Pow((delay - SoftMaxDelay).TotalSeconds, 0.25f));
+        }
     }
 
     /// <summary>
@@ -68,33 +73,74 @@ public static class IMessageChannelExtensions
         }
 
         return messages;
-    }
 
-    private static IEnumerable<string> SplitOnSpaces(string content, int maxLength = 1950)
-    {
-        if (content.Length <= maxLength)
+        static IEnumerable<string> SplitOnSpaces(string content, int maxLength = 1950)
         {
-            yield return content;
-            yield break;
-        }
-
-        var remainder = content.AsMemory();
-        while (remainder.Length > 0)
-        {
-            if (remainder.Length <= maxLength)
+            if (content.Length <= maxLength)
             {
-                yield return new string(remainder.Span);
+                yield return content;
                 yield break;
             }
 
-            var idx = content[..maxLength].LastIndexOf(' ');
-            if (idx < 0)
-                idx = maxLength;
-            
-            var slice = remainder[..idx];
-            remainder = remainder[idx..];
+            var remainder = content.AsMemory();
+            while (remainder.Length > 0)
+            {
+                if (remainder.Length <= maxLength)
+                {
+                    yield return new string(remainder.Span);
+                    yield break;
+                }
 
-            yield return new string(slice.Span);
+                var idx = content[..maxLength].LastIndexOf(' ');
+                if (idx < 0)
+                    idx = maxLength;
+
+                var slice = remainder[..idx];
+                remainder = remainder[idx..];
+
+                yield return new string(slice.Span);
+            }
         }
+}
+
+    /// <summary>
+    /// Get an embed with info about the conversation state in this channel
+    /// </summary>
+    /// <returns></returns>
+    public static async Task<EmbedBuilder> GetConversationStateEmbed(this IMessageChannel channel, ConversationalResponseService conversations)
+    {
+        // Get the conversation. If it's loading wait a little bit, hopefully we get better stats that way.
+        var conversation = await conversations.GetConversation(channel);
+        if (conversation.State == LlmChatConversation.ProcessingState.Loading)
+            await Task.Delay(250);
+
+        var embed = new EmbedBuilder()
+                   .WithTitle($"Conversation for {conversation.Channel.Name}")
+                   .WithCurrentTimestamp()
+                   .WithDescription(conversation.Summary ?? "No summary available");
+
+        embed.WithFields(
+            new EmbedFieldBuilder().WithIsInline(true).WithName("Event Queue").WithValue(conversation.QueueCount.ToString()),
+            new EmbedFieldBuilder().WithIsInline(true).WithName("Message Count").WithValue(conversation.MessageCount.ToString()),
+            new EmbedFieldBuilder().WithIsInline(true).WithName("Context Usage").WithValue(conversation.ContextUsage.ToString("P1", CultureInfo.InvariantCulture)),
+            new EmbedFieldBuilder().WithIsInline(true).WithName("Processing State").WithValue(conversation.State.ToString())
+        );
+
+        // Color ramp based on context usage
+        (float r, float g, float b) color = conversation.ContextUsage switch
+        {
+            < 0.15f => (0.0f, 1.0f, 0.0f),   // green
+            < 0.22f => (0.0f, 0.8f, 0.4f),   // green-cyan
+            < 0.30f => (0.0f, 0.5f, 1.0f),   // blue
+            < 0.38f => (0.4f, 0.7f, 1.0f),   // light blue
+            < 0.46f => (1.0f, 1.0f, 0.0f),   // yellow
+            < 0.54f => (1.0f, 0.8f, 0.0f),   // yellow-orange
+            < 0.62f => (1.0f, 0.5f, 0.0f),   // orange
+            < 0.75f => (1.0f, 0.25f, 0.0f),  // deep orange
+            _ => (1.0f, 0.0f, 0.0f),         // red
+        };
+        embed.WithColor(color.r, color.g, color.b);
+
+        return embed;
     }
 }

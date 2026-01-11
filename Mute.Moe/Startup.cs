@@ -178,6 +178,7 @@ public record Startup(Configuration Configuration)
             }
             services.AddSingleton<MultiEndpointProvider<LLamaServerEndpoint>>(provider => new(
                 provider.GetRequiredService<IHttpClientFactory>(),
+                new LlamaServerModelCapabilityEndpointFilter(provider.GetRequiredService<IHttpClientFactory>()),
                 endpoints.ToArray()
             ));
 

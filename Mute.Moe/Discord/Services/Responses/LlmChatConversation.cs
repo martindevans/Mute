@@ -157,10 +157,12 @@ public class LlmChatConversation
                             using (Channel.EnterTypingState())
                             {
                                 State = ProcessingState.Generating;
-                                var response = await GenerateResponse(message);
+                                var response = await GenerateResponse(message, cancellation:_stopper.Token);
                                 summaryNeeded = true;
                                 if (!string.IsNullOrWhiteSpace(response))
                                     await Channel.SendLongMessageAsync(response);
+                                else
+                                    Log.Warning("LLM conversation failed to generate response");
                                 State = ProcessingState.Waiting;
                             }
 
@@ -255,26 +257,14 @@ public class LlmChatConversation
             Summary = await conversation.AutoSummarise(_stopper.Token);
         }
 
-        async ValueTask<string?> GenerateResponse(BaseProcessEvent.Message context)
+        async ValueTask<string?> GenerateResponse(BaseProcessEvent.Message context, int maxIters = 5, CancellationToken cancellation = default)
         {
-            // Add incoming message to conversation
-            conversation.AddUserMessage(context.User.GlobalName ?? context.User.Username, context.Content);
+            conversation.AddUserMessage(
+                context.User.GlobalName ?? context.User.Username,
+                context.Content
+            );
 
-            // Generate a response. This takes a long time, since it's making the call to the LLM
-            // Keep pumping the system until an assistant response is generated
-            string? response = null;
-            for (var i = 0; i < 5; i++)
-            {
-                // Generate a response. This takes a long time, since it's making the call to the LLM
-                await conversation.GenerateResponse(_stopper.Token);
-
-                // Extract the response
-                response = conversation.GetLastAssistantResponse();
-                if (response != null)
-                    break;
-            }
-
-            return response;
+            return await conversation.GenerateResponseMultiStep(maxIters, cancellation);
         }
     }
 

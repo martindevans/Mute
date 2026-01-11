@@ -4,7 +4,6 @@ using Mute.Moe.Discord.Interactions;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
-using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,48 +23,20 @@ public partial class Chat(ConversationalResponseService _conversations)
     [UsedImplicitly]
     public async Task ConversationState()
     {
-        var channel = Context.Channel;
-
-        // Get the conversation. If it's loading wait a little bit, hopefully we get better stats that way.
-        var conversation = await _conversations.GetConversation(channel);
-        if (conversation.State == LlmChatConversation.ProcessingState.Loading)
-            await Task.Delay(250);
-
-        var embed = new EmbedBuilder()
-                   .WithTitle($"Active Conversation for {conversation.Channel.Name}")
-                   .WithTimestamp(conversation.LastUpdated)
-                   .WithDescription(conversation.Summary ?? "No summary available");
-
-        embed.WithFields(
-            new EmbedFieldBuilder().WithIsInline(true).WithName("Event Queue").WithValue(conversation.QueueCount.ToString()),
-            new EmbedFieldBuilder().WithIsInline(true).WithName("Message Count").WithValue(conversation.MessageCount.ToString()),
-            new EmbedFieldBuilder().WithIsInline(true).WithName("Context Usage").WithValue(conversation.ContextUsage.ToString("P1", CultureInfo.InvariantCulture)),
-            new EmbedFieldBuilder().WithIsInline(true).WithName("Processing State").WithValue(conversation.State.ToString())
-        );
-
-        // Color ramp based on context usage
-        (float r, float g, float b) color = conversation.ContextUsage switch
-        {
-            < 0.15f => (0.0f, 1.0f, 0.0f),   // green
-            < 0.22f => (0.0f, 0.8f, 0.4f),   // green-cyan
-            < 0.30f => (0.0f, 0.5f, 1.0f),   // blue
-            < 0.38f => (0.4f, 0.7f, 1.0f),   // light blue
-            < 0.46f => (1.0f, 1.0f, 0.0f),   // yellow
-            < 0.54f => (1.0f, 0.8f, 0.0f),   // yellow-orange
-            < 0.62f => (1.0f, 0.5f, 0.0f),   // orange
-            < 0.75f => (1.0f, 0.25f, 0.0f),  // deep orange
-            _       => (1.0f, 0.0f, 0.0f),   // red
-        };
-        embed.WithColor(color.r, color.g, color.b);
+        // Send message with embed
+        var embed = await Context.Channel.GetConversationStateEmbed(_conversations);
+        var message = await ReplyAsync(embed: embed.Build());
 
         // Action buttons
         var buttonRow = new ActionRowBuilder();
-        buttonRow.AddComponent(ButtonBuilder.CreateDangerButton("Destroy State", ChatInteractions.InteractionIdClearConversationState));
-        buttonRow.AddComponent(ButtonBuilder.CreateSecondaryButton("Force Summarisation", ChatInteractions.InteractionIdSummariseConversationState));
+        buttonRow.AddComponent(ButtonBuilder.CreateDangerButton("Destroy", ChatInteractions.InteractionIdClearConversationState));
+        buttonRow.AddComponent(ButtonBuilder.CreateSecondaryButton("Summarise", ChatInteractions.InteractionIdSummariseConversationState));
+        buttonRow.AddComponent(ButtonBuilder.CreateSecondaryButton("Update", ChatInteractions.GetInteractionRefreshId(message)));
         var components = new ComponentBuilder();
         components.AddRow(buttonRow);
 
-        await ReplyAsync(embed:embed.Build(), components:components.Build());
+        // Edit in action buttons
+        await message.ModifyAsync(ctx => ctx.Components = components.Build());
     }
 }
 
@@ -180,6 +151,7 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
             else
             {
                 desc.AppendLine(" - Offline 🔴");
+                desc.AppendLine($" - Available: 0/{result.MaxSlots}");
             }
 
             if (result.Healthy)
