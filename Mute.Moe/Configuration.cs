@@ -216,6 +216,8 @@ public class LLMConfig
 
         [UsedImplicitly] public int Slots = 4;
         [UsedImplicitly] public string HealthCheck = "health";
+
+        [UsedImplicitly] public string[] ModelsBlacklist = [ ];
     }
     #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

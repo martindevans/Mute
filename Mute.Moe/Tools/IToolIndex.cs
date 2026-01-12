@@ -132,8 +132,8 @@ public class DatabaseToolIndex
             return results;
 
         var rerankPrompt = $"""
-                           Task: Score how appropriate each tool is for accomplishing the user’s goal.
-                           User goal: {query}
+                           Task: Score how appropriate each tool is for accomplishing the goal.
+                           Goal: {query}
                            Instructions:
                             - Score high tools that help accomplish the goal
                             - Score low tools that are irrelevant
@@ -229,11 +229,11 @@ public class DatabaseToolIndex
 
     private class ToolDescriptionEmbedding
     {
-        public required string Name { get; set; }
+        public required string Name { get; init; }
 
-        public required string Description { get; set; }
-        public required string Model { get; set; }
+        public required string Description { get; init; }
+        public required string Model { get; init; }
 
-        public byte[] Embedding { get; set; } = [ ];
+        public byte[] Embedding { get; init; } = [ ];
     }
 }

@@ -173,7 +173,7 @@ public record Startup(Configuration Configuration)
             foreach (var endpoint in llm.Endpoints)
             {
                 endpoints.Add(new MultiEndpointProvider<LLamaServerEndpoint>.EndpointConfig(
-                    new LLamaServerEndpoint(endpoint.ID, endpoint.Endpoint, endpoint.Key), endpoint.Slots, new(new(endpoint.Endpoint), endpoint.HealthCheck)
+                    new LLamaServerEndpoint(endpoint.ID, endpoint.Endpoint, endpoint.Key, endpoint.ModelsBlacklist.ToHashSet()), endpoint.Slots, new(new(endpoint.Endpoint), endpoint.HealthCheck)
                 ));
             }
             services.AddSingleton<MultiEndpointProvider<LLamaServerEndpoint>>(provider => new(

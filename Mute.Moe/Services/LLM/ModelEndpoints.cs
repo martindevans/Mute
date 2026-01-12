@@ -11,7 +11,8 @@ namespace Mute.Moe.Services.LLM;
 /// <param name="ID">Unique ID for this backend (may be displayed in the UI)</param>
 /// <param name="Url">Endpoint URL</param>
 /// <param name="Key">Secret API key</param>
-public record LLamaServerEndpoint(string ID, string Url, string Key)
+/// <param name="ModelsBlacklist">Models that should not be accessed through this endpoint</param>
+public record LLamaServerEndpoint(string ID, string Url, string Key, IReadOnlySet<string> ModelsBlacklist)
 {
     /// <summary>
     /// Get a <see cref="TornadoApi"/> wrapping this endpoint

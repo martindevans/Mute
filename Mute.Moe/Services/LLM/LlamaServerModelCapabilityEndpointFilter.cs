@@ -32,8 +32,15 @@ public class LlamaServerModelCapabilityEndpointFilter
     /// <inheritdoc />
     public async ValueTask<bool> FilterEndpoint(LLamaServerEndpoint endpoint, string[] filters)
     {
+        // Check blacklist doesn't ban any of the requested items
+        foreach (var filter in filters)
+            if (endpoint.ModelsBlacklist.Contains(filter))
+                return false;
+
+        // Get backend models list
         var models = await _modelsByBackendId.GetItem(endpoint.ID, _ => GetBackendModelList(endpoint));
 
+        // Check if backend is missing any of the requested models
         foreach (var filter in filters)
             if (!models.Models.Contains(filter))
                 return false;
