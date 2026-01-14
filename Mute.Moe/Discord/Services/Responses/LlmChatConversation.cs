@@ -112,26 +112,20 @@ public class LlmChatConversation
             {
                 State = ProcessingState.Waiting;
 
-                // Wait for a message to arrive, or some time to pass with no messages
-                var readTask = reader.ReadAsync(_stopper.Token).AsTask();
-                var delayTask = Task.Delay(summaryNeeded ? TimeSpan.FromMinutes(2) : TimeSpan.FromDays(1), _stopper.Token);
-                var completed = await Task.WhenAny(readTask, delayTask);
+                // Wait for an event:
+                // - Something is ready to read
+                // - Timeout to auto summary
+                // - Cancellation (_stopper throws an exception)
+                var waitResult = await reader.WaitToReadWithTimeout(summaryNeeded ? TimeSpan.FromMinutes(2) : TimeSpan.FromDays(1), _stopper.Token);
 
-                // Break out of loop if cancelled
-                if (_stopper.IsCancellationRequested)
+                // Check if no more messages will ever arrive: break out of loop.
+                if (waitResult == ChannelReaderExtensions.WaitToReadResult.EndOfStream)
                 {
-                    Log.Warning("conversation processor for channel {0} ({1}): Cancellation requested", Channel.Name, Channel.Id);
                     break;
                 }
 
-                if (reader.Completion.IsCompleted)
-                {
-                    Log.Warning("conversation processor for channel {0} ({1}): Reader completed", Channel.Name, Channel.Id);
-                    break;
-                }
-
-                // Check if we're here due to the timeout or a message event
-                if (completed == delayTask)
+                // Check if the timeout occured: auto summarise
+                if (waitResult == ChannelReaderExtensions.WaitToReadResult.Timeout)
                 {
                     Log.Information("LLM conversation auto summarisation for '{0}'", Channel.Name);
 
@@ -143,11 +137,13 @@ public class LlmChatConversation
                         State = ProcessingState.Waiting;
                     }
 
+                    continue;
                 }
-                else
+
+                if (waitResult == ChannelReaderExtensions.WaitToReadResult.ReadyToRead)
                 {
-                    // Extract the task value. We already know this task is completed.
-                    var @event = await readTask;
+                    // We know the channel is ready to be read from, read now.
+                    var @event = await reader.ReadAsync(_stopper.Token);
 
                     switch (@event)
                     {
@@ -157,7 +153,7 @@ public class LlmChatConversation
                             using (Channel.EnterTypingState())
                             {
                                 State = ProcessingState.Generating;
-                                var response = await GenerateResponse(message, cancellation:_stopper.Token);
+                                var response = await GenerateResponse(message, cancellation: _stopper.Token);
                                 summaryNeeded = true;
                                 if (!string.IsNullOrWhiteSpace(response))
                                     await Channel.SendLongMessageAsync(response);
@@ -210,6 +206,7 @@ public class LlmChatConversation
         }
         finally
         {
+            Log.Warning("Conversation processor marked IsComplete=true for channel {0} ({1})", Channel.Name, Channel.Id);
             IsComplete = true;
         }
 

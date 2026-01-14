@@ -3,6 +3,8 @@ using Discord.WebSocket;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Utilities;
+using Serilog;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Discord.Services.Responses;
@@ -69,12 +71,18 @@ public class ConversationalResponseService
         {
             // Remove dead conversations
             foreach (var (channelId, conv) in _conversationsByChannel)
+            {
                 if (conv.IsComplete)
+                {
+                    Log.Warning("Removing conversation for channel: {0}", channelId);
                     _conversationsByChannel.Remove(channelId);
+                }
+            }
 
             // Get or create conversation for channel
             if (!_conversationsByChannel.TryGetValue(channel.Id, out var chat))
             {
+                Log.Warning("Creating new chat conversation for channel: {0} ({1})", channel.Name, channel.Id);
                 chat = new LlmChatConversation(
                     await _chatFactory.Create(channel),
                     channel,
