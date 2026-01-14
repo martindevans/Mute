@@ -61,6 +61,9 @@ public class ToolExecutionEngine
     private readonly HashSet<string> _bannedTools = [ ];
     private readonly List<(string Name, string Json)> _calls = [ ];
 
+    private readonly bool _allowToolSearch;
+    private readonly bool _addDefaultTools;
+
     /// <summary>
     /// All tools which have been made available to this conversation so far
     /// </summary>
@@ -85,22 +88,30 @@ public class ToolExecutionEngine
         _allTools = tools;
         _context = context;
 
-        _requestParameters.Tools ??= [ ];
+        // Add the initial toolset
+        _allowToolSearch = allowToolSearch;
+        _addDefaultTools = addDefaultTools;
+        InitialiseTools();
+    }
+
+    private void InitialiseTools()
+    {
+        _requestParameters.Tools ??= [];
 
         // Add the `search_for_tools` meta tool
-        if (allowToolSearch)
+        if (_allowToolSearch)
         {
             _requestParameters.Tools.Add(new Tool([
                 new ToolParam(
                     "query",
                     """
                     Describe the abstract capabilities required from a tool to satisfy the user’s request.
-                    
+
                     Should be a short description including the following fields:
                     - Capability
                     - Inputs
                     - Outputs
-                    
+
                     Rules:
                     - Describe general functionality, not a specific task instance
                     - Do NOT include proper nouns, dates, times, quantities, or user-specific details
@@ -113,11 +124,11 @@ public class ToolExecutionEngine
         }
 
         // Add default tools
-        if (addDefaultTools)
+        if (_addDefaultTools)
         {
             foreach (var (key, tool) in _allTools.Tools)
             {
-                if (tool.IsDefaultTool)
+                if (tool.IsDefaultTool && !_bannedTools.Contains(key))
                 {
                     _requestParameters.Tools.Add(new Tool(tool.GetParameters().ToList(), tool.Name, tool.Description, strict: true));
                     _availableTools.Add(key, tool);
@@ -164,6 +175,21 @@ public class ToolExecutionEngine
 
         return true;
 
+    }
+
+    /// <summary>
+    /// Remove all tools except for the basics
+    /// </summary>
+    public void Clear()
+    {
+        // Remove all tools from parameters
+        _requestParameters.Tools = [ ];
+
+        // Clear the associated set of available tools
+        _availableTools.Clear();
+
+        // Re-add the basic tools
+        InitialiseTools();
     }
 
     /// <summary>

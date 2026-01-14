@@ -1,6 +1,7 @@
 ﻿using Mute.Moe.Tools;
 using Mute.Moe.Tools.Providers;
 using System.Threading.Tasks;
+using Mute.Anilist;
 
 
 namespace Mute.Moe.Services.Information.Anime;
@@ -34,7 +35,7 @@ public interface IAnime
     /// <summary>
     /// Unique ID of this series
     /// </summary>
-    string Id { get; }
+    long Id { get; }
 
     /// <summary>
     /// Series title in English

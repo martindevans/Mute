@@ -48,11 +48,6 @@ public class Manga
             else if (manga.TitleEnglish is not null ^ manga.TitleJapanese is not null)
                 builder = builder.WithTitle(manga.TitleEnglish ?? manga.TitleJapanese);
 
-            if (manga.Volumes.HasValue)
-                builder = builder.WithFields(new EmbedFieldBuilder().WithName("Volumes").WithValue(manga.Volumes.Value));
-            if (manga.Chapters.HasValue)
-                builder = builder.WithFields(new EmbedFieldBuilder().WithName("Chapters").WithValue(manga.Chapters.Value));
-
             await ReplyAsync(builder);
         }
     }

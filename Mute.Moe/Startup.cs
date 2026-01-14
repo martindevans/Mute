@@ -88,11 +88,15 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddSingleton<HttpClient, HttpClient>();
         services.AddSingleton<IDatabaseService, SqliteDatabase>();
-        services.AddSingleton<IAnimeInfo, MikibotAnilistAnimeSearch>();
-        services.AddSingleton<IMangaInfo, MikibotAnilistMangaSearch>();
-        services.AddSingleton<ICharacterInfo, MikibotAnilistCharacterSearch>();
+
+        services.AddSingleton<MuteAnilistInfoService>();
+        services.AddSingleton<IAnimeInfo>(svc => svc.GetRequiredService<MuteAnilistInfoService>());
+        services.AddSingleton<IMangaInfo>(svc => svc.GetRequiredService<MuteAnilistInfoService>());
+        services.AddSingleton<ICharacterInfo>(svc => svc.GetRequiredService<MuteAnilistInfoService>());
+
         services.AddSingleton<ITransactions, DatabaseTransactions>();
         services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
+
         services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
         services.AddSingleton<IUptime>(new UtcDifferenceUptime());
         services.AddSingleton<IStockQuotes, AlphaAdvantageStocks>();

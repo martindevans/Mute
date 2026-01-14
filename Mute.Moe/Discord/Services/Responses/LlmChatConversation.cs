@@ -21,7 +21,7 @@ public class LlmChatConversation
 
     private readonly CancellationTokenSource _stopper = new();
     private readonly Channel<BaseProcessEvent> _messages = System.Threading.Channels.Channel.CreateUnbounded<BaseProcessEvent>();
-    private readonly string _username;
+    private readonly string _selfUsername;
 
     private readonly IConversationStateStorage _chatStorage;
 
@@ -71,20 +71,10 @@ public class LlmChatConversation
     {
         Channel = channel;    
 
-        _username = $"@{client.CurrentUser.Username}";
+        _selfUsername = $"@{client.CurrentUser.Username}";
         _chatStorage = chatStorage;
 
         Task.Run(async () => await MessageConsumer(conversation));
-    }
-
-    /// <summary>
-    /// Stop the processing loop for this conversation
-    /// </summary>
-    /// <returns></returns>
-    public async Task Stop()
-    {
-        _messages.Writer.TryComplete();
-        await _stopper.CancelAsync();
     }
 
     private async Task MessageConsumer(ChatConversation conversation)
@@ -152,6 +142,7 @@ public class LlmChatConversation
                         summaryNeeded = false;
                         State = ProcessingState.Waiting;
                     }
+
                 }
                 else
                 {
@@ -205,12 +196,12 @@ public class LlmChatConversation
                 UpdateStats();
 
                 // Always save state
-                await _chatStorage.Put(Channel.Id, new ConversationStateData(conversation.Save()));
+                await _chatStorage.Put(Channel.Id, new(conversation.Save()));
             }
         }
         catch (OperationCanceledException)
         {
-            await _chatStorage.Put(Channel.Id, new ConversationStateData(conversation.Save()));
+            await _chatStorage.Put(Channel.Id, new(conversation.Save()));
             throw;
         }
         catch (Exception ex)
@@ -293,7 +284,7 @@ public class LlmChatConversation
             .Message
             .Resolve(userHandling: TagHandling.Name)
             .Trim()
-            .TrimStart(_username)
+            .TrimStart(_selfUsername)
             .TrimStart();
 
         // Enqueue work

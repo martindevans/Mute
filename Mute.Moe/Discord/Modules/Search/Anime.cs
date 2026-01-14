@@ -54,7 +54,7 @@ public class Anime
             .GetAnimesInfoAsync(term, int.MaxValue)
             .Where(a => !a.Adult || nsfwOk)
             .Select(a => {
-                var title = $"{(a.Adult ? "⚠" : "")} {a.TitleEnglish ?? a.TitleJapanese ?? a.Id}".LimitLength(60);
+                var title = $"{(a.Adult ? "⚠" : "")} {a.TitleEnglish ?? a.TitleJapanese ?? a.Id.ToString()}".LimitLength(60);
                 return $"[{title}]({a.Url})";
             })
             .Buffer(12)

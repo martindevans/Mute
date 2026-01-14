@@ -33,7 +33,7 @@ public interface IManga
     /// <summary>
     /// Unique ID of this manga
     /// </summary>
-    string Id { get; }
+    long Id { get; }
 
     /// <summary>
     /// Title in english
@@ -54,16 +54,6 @@ public interface IManga
     /// URL with more information about this manga
     /// </summary>
     string Url { get; }
-
-    /// <summary>
-    /// Number of chapters
-    /// </summary>
-    int? Chapters { get; }
-
-    /// <summary>
-    /// Number of volumes
-    /// </summary>
-    int? Volumes { get; }
 
     /// <summary>
     /// URL with an image for this manga (e.g. book cover)

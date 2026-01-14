@@ -69,27 +69,8 @@ public class ConversationalResponseService
         {
             // Remove dead conversations
             foreach (var (channelId, conv) in _conversationsByChannel)
-            {
                 if (conv.IsComplete)
-                {
-                    await conv.Stop();
                     _conversationsByChannel.Remove(channelId);
-                }
-            }
-
-            // Unload conversations which haven't been used for a while
-            foreach (var (channelId, conv) in _conversationsByChannel)
-            {
-                if (channelId == channel.Id)
-                    continue;
-
-                var elapsed = DateTime.UtcNow - conv.LastUpdated;
-                if (elapsed > TimeSpan.FromMinutes(15))
-                {
-                    await conv.Stop();
-                    _conversationsByChannel.Remove(channelId);
-                }
-            }
 
             // Get or create conversation for channel
             if (!_conversationsByChannel.TryGetValue(channel.Id, out var chat))

@@ -2,7 +2,6 @@
 using Discord.WebSocket;
 using LlmTornado.Chat;
 using LlmTornado.Code;
-using Microsoft.VisualBasic;
 using Mute.Moe.Tools;
 using Serilog;
 using System.Text.Json;
@@ -229,11 +228,16 @@ public class ChatConversation
     /// </summary>
     public void Clear(bool removeFirst = false)
     {
+        // Remove all messages
         var sys = _messages[0];
         _messages.Clear();
 
+        // Add the first message back in if necessary
         if (!removeFirst)
             _messages.Add(sys);
+
+        // Clear all except for the default tools
+        ToolExecutionEngine.Clear();
     }
 
     /// <summary>
@@ -266,6 +270,9 @@ public class ChatConversation
         // Insert the summary
         if (summary != null)
             AddUserMessage("SUMMARY", summary);
+
+        // Clear token count, it'll be filled next time a request is made
+        TotalTokens = null;
 
         return summary ?? "";
     }

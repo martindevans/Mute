@@ -1,5 +1,4 @@
-﻿using LlmTornado.Models;
-using System.IO;
+﻿using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -76,18 +75,22 @@ public sealed class LlamaServerReranking
         return results.OrderByDescending(a => a.Relevance).ToList();
     }
 
+    #region JSON model
+    [UsedImplicitly]
     private sealed class RerankResponse
     {
         [JsonPropertyName("results")]
-        public RerankItem[] Results { get; set; } = [ ];
+        public RerankItem[] Results { get; init; } = [ ];
     }
 
+    [UsedImplicitly]
     private sealed class RerankItem
     {
         [JsonPropertyName("index")]
-        public int Index { get; set; }
+        public int Index { get; init; }
 
         [JsonPropertyName("relevance_score")]
-        public float RelevanceScore { get; set; }
+        public float RelevanceScore { get; init; }
     }
+    #endregion
 }

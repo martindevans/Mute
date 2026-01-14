@@ -30,7 +30,7 @@ public interface ICharacter
     /// <summary>
     /// Unique ID for this character
     /// </summary>
-    string Id { get; }
+    long Id { get; }
 
     /// <summary>
     /// Given name for this character
