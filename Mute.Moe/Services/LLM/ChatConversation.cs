@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.Text;
+using Discord;
 using Discord.WebSocket;
 using LlmTornado.Chat;
 using LlmTornado.Code;
@@ -7,14 +8,11 @@ using Serilog;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using LlmTornado.ChatFunctions;
+using LlmTornado.Common;
 
 namespace Mute.Moe.Services.LLM;
 
-/// <summary>
-/// System prompt for LLM chat
-/// </summary>
-/// <param name="Prompt"></param>
-public record ChatConversationSystemPrompt(string Prompt);
 
 /// <summary>
 /// Create <see cref="ChatConversation"/> objects on demand
@@ -57,10 +55,6 @@ public class ChatConversationFactory
     /// <returns></returns>
     public async Task<ChatConversation> Create(IMessageChannel channel)
     {
-        // Build the prompt
-        var guild = channel is IDMChannel ? "Direct Message" : ((IGuildChannel)channel).Guild.Name;
-        var prompt = FormatPrompt(guild, channel.Name);
-
         // Setup tool execution engine
         var request = new ChatRequest
         {
@@ -69,6 +63,13 @@ public class ChatConversationFactory
         };
         var callCtx = new ITool.CallContext(channel);
         var engine = _toolFactory.GetExecutionEngine(request, callCtx);
+
+        // Sampling parameters
+        _model.Sampling?.Apply(request);
+
+        // Build the prompt
+        var guild = channel is IDMChannel ? "Direct Message" : ((IGuildChannel)channel).Guild.Name;
+        var prompt = FormatPrompt(guild, channel.Name);
 
         var conv = new ChatConversation(request, _model, engine, _endpoints);
         conv.ReplaceSystemPrompt(prompt);
@@ -99,12 +100,12 @@ public class ChatConversation
     /// <summary>
     /// The model used for this conversation
     /// </summary>
-    public LlmChatModel Model { get; }
+    public ILlmModel Model { get; }
 
     /// <summary>
     /// The tool execution engine used for this conversation
     /// </summary>
-    public ToolExecutionEngine ToolExecutionEngine { get; }
+    public ToolExecutionEngine? ToolExecutionEngine { get; }
 
     private readonly ChatRequest _request;
     private readonly List<ChatMessage> _messages = [ ];
@@ -127,7 +128,7 @@ public class ChatConversation
     /// <param name="model"></param>
     /// <param name="toolEngine"></param>
     /// <param name="endpoints"></param>
-    public ChatConversation(ChatRequest request, LlmChatModel model, ToolExecutionEngine toolEngine, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
+    public ChatConversation(ChatRequest request, ILlmModel model, ToolExecutionEngine? toolEngine, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
     {
         Model = model;
         _request = request;
@@ -178,11 +179,24 @@ public class ChatConversation
         var conversation = api.Chat.CreateConversation(_request);
         conversation.AddMessage(_messages);
 
-        var response = await conversation.GetResponseRich(ToolExecutionEngine.ExecuteValueTask, ct);
+        var response = await conversation.GetResponseRich(ExecuteTools, ct);
         TotalTokens = response.Usage?.TotalTokens;
 
         for (var i = _messages.Count; i < conversation.Messages.Count; i++)
             _messages.Add(conversation.Messages[i]);
+
+        async ValueTask ExecuteTools(List<FunctionCall> calls)
+        {
+            if (ToolExecutionEngine != null)
+            {
+                await ToolExecutionEngine.ExecuteValueTask(calls);
+            }
+            else
+            {
+                foreach (var call in calls)
+                    call.Result = new FunctionResult(call, new { error = "Tools calling is not available" }, false);
+            }
+        }
     }
 
     /// <summary>
@@ -237,9 +251,10 @@ public class ChatConversation
             _messages.Add(sys);
 
         // Clear all except for the default tools
-        ToolExecutionEngine.Clear();
+        ToolExecutionEngine?.Clear();
     }
 
+    #region Summarisation
     /// <summary>
     /// Summarise the current conversation, clear all messages (except the system prompt) and insert the summary as a message.
     /// </summary>
@@ -289,13 +304,15 @@ public class ChatConversation
             .FirstOrDefault();
         return summary;
     }
+    #endregion
 
+    #region Tool Cleanup
     /// <summary>
     /// Remove tool messages which are "buried" under a certain number of subsequent (non tool) messages
     /// </summary>
     /// <param name="depth"></param>
     /// <returns>Number of messages removed</returns>
-    public int CleanToolMessages(int depth)
+    public int CleanBuriedToolMessages(int depth)
     {
         var removed = 0;
 
@@ -303,29 +320,63 @@ public class ChatConversation
         {
             var message = _messages[i];
 
-            switch (message.Role)
+            if (IsToolMessage(message))
             {
-                case ChatMessageRoles.Assistant when message.ToolCalls != null:
-                case ChatMessageRoles.Tool:
+                if (depth <= 0)
                 {
-                    if (depth <= 0)
-                    {
-                        _messages.RemoveAt(i);
-                        removed++;
-                    }
-
-                    break;
+                    _messages.RemoveAt(i);
+                    removed++;
                 }
-
-                case ChatMessageRoles.User or ChatMessageRoles.Assistant:
-                    depth--;
-                    break;
+            }
+            else
+            {
+                depth--;
             }
         }
 
         return removed;
     }
 
+    /// <summary>
+    /// Remove tool messages (oldest first) until the total context size is below the target
+    /// </summary>
+    /// <param name="contextSize"></param>
+    public bool SweepToolMessages(int contextSize)
+    {
+        while (EstimateTokenCount() > contextSize)
+        {
+            if (!RemoveFirstToolMessage())
+                break;
+        }
+
+        return EstimateTokenCount() <= contextSize;
+
+        bool RemoveFirstToolMessage()
+        {
+            for (var i = 0; i < _messages.Count; i++)
+            {
+                var message = _messages[i];
+
+                if (IsToolMessage(message))
+                {
+                    _messages.RemoveAt(i);
+                    TotalTokens = null;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    private static bool IsToolMessage(ChatMessage message)
+    {
+        return message.Role == ChatMessageRoles.Tool
+            || message is { Role: ChatMessageRoles.Assistant, ToolCalls: not null };
+    }
+    #endregion
+
+    #region save/load
     /// <summary>
     /// Save the messages to a JSON string
     /// </summary>
@@ -357,6 +408,7 @@ public class ChatConversation
         if (sys != null && !overwriteSystemPrompt)
             ReplaceSystemPrompt(sys.GetMessageContent());
     }
+    #endregion
 
     /// <summary>
     /// Get the estimated number of tokens in this conversation
@@ -382,5 +434,61 @@ public class ChatConversation
             _messages.RemoveAt(0);
             _messages.Insert(0, new ChatMessage(ChatMessageRoles.System, prompt));
         }
+    }
+
+    /// <summary>
+    /// Replace a message with a new message, using the same role
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="content"></param>
+    /// <returns></returns>
+    public bool ReplaceMessage(Guid id, string content)
+    {
+        for (var i = 0; i < _messages.Count; i++)
+        {
+            if (_messages[i].Id == id)
+            {
+                _messages[i] = new ChatMessage(
+                    _messages[i].Role ?? ChatMessageRoles.User,
+                    content
+                );
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Extract a transcript of this conversation
+    /// </summary>
+    /// <param name="assistantName"></param>
+    /// <returns></returns>
+    public string Transcript(string assistantName)
+    {
+        var builder = new StringBuilder();
+
+        foreach (var message in _messages)
+        {
+            switch (message.Role)
+            {
+                case ChatMessageRoles.User:
+                {
+                    if (message.Name == null)
+                        builder.Append("Anon: ");
+                    builder.AppendLine(message.Content);
+                    break;
+                }
+
+                case ChatMessageRoles.Assistant:
+                {
+                    builder.Append($"{assistantName}: ");
+                    builder.AppendLine(message.GetMessageContent());
+                    break;
+                }
+            }
+        }
+
+        return builder.ToString();
     }
 }

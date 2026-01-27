@@ -1,7 +1,8 @@
-﻿using Mute.Moe.Tools;
+﻿using Mute.Anilist;
+using Mute.Moe.Tools;
 using Mute.Moe.Tools.Providers;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Mute.Anilist;
 
 
 namespace Mute.Moe.Services.Information.Anime;
@@ -25,6 +26,17 @@ public interface IAnimeInfo
     /// <param name="limit">Maximum number of results to return</param>
     /// <returns></returns>
     IAsyncEnumerable<IAnime> GetAnimesInfoAsync(string search, int limit);
+
+    /// <summary>
+    /// Provides a list of all the anime airing in a specific season.<br />
+    /// - Capability: Anime season listing.<br />
+    /// - Inputs: Year and Season.<br />
+    /// - Outputs: List of all anime airing in the given season.
+    /// </summary>
+    /// <param name="year">The year</param>
+    /// <param name="season">The season (0=Winter, 1=Spring, 2=Summer, 3=Fall)</param>
+    /// <returns></returns>
+    IAsyncEnumerable<IAnime> GetSeasonAnimes(int year, int season);
 }
 
 /// <summary>
@@ -91,9 +103,11 @@ public interface IAnime
 /// <summary>
 /// Provides manga related tools to LLMs
 /// </summary>
-public class AnimeToolProvider
+public partial class AnimeToolProvider
     : IToolProvider
 {
+    private readonly IAnimeInfo _info;
+
     /// <inheritdoc />
     public IReadOnlyList<ITool> Tools { get; }
 
@@ -103,10 +117,52 @@ public class AnimeToolProvider
     /// <param name="info"></param>
     public AnimeToolProvider(IAnimeInfo info)
     {
+        _info = info;
+
         Tools =
         [
             new AutoTool("anime_info", false, info.GetAnimeInfoAsync),
             new AutoTool("anime_search", false, info.GetAnimesInfoAsync, postprocess: AutoTool.AsyncEnumerableToEnumerable<IAnime>),
+            new AutoTool("anime_season", false, GetSeasonAnimes),
         ];
     }
+
+    /// <summary>
+    /// Provides a list of all the anime airing in a specific season.<br />
+    /// - Capability: Anime season listing.<br />
+    /// - Inputs: Year and Season.<br />
+    /// - Outputs: List of all anime airing in the given season.
+    /// </summary>
+    /// <param name="year">The year</param>
+    /// <param name="season">The season (0=Winter, 1=Spring, 2=Summer, 3=Fall)</param>
+    /// <returns></returns>
+    private IAsyncEnumerable<string> GetSeasonAnimes(int year, int season)
+    {
+        return _info
+            .GetSeasonAnimes(year, season)
+            .Select(a => a.TitleEnglish ?? a.TitleJapanese)
+            .Where(a => a != null)
+            .Select(CleanupTitle);
+
+        static string CleanupTitle(string? title)
+        {
+            // Season N -> SN
+            title = SeasonReplacer().Replace(title!, "S$1");
+
+            // Part N -> PN
+            title = PartReplacer().Replace(title, "P$1");
+
+            // Trim to max length limit
+            if (title.Length >= 100)
+                title = $"{title[..90]}…";
+
+            return title;
+        }
+    }
+
+    [GeneratedRegex(@"\bSeason\s+(\d+)\b", RegexOptions.IgnoreCase, "en-GB")]
+    private static partial Regex SeasonReplacer();
+
+    [GeneratedRegex(@"\bPart\s+(\d+)\b", RegexOptions.IgnoreCase, "en-GB")]
+    private static partial Regex PartReplacer();
 }

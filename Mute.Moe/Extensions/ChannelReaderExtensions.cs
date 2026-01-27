@@ -17,7 +17,7 @@ public static class ChannelReaderExtensions
     /// <param name="timeout"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    /// <exception cref="TaskCanceledException">Thrown if the cancellationToken is cancelled</exception>
+    /// <exception cref="OperationCanceledException">Thrown if the cancellationToken is cancelled</exception>
     public static async ValueTask<WaitToReadResult> WaitToReadWithTimeout<T>(this ChannelReader<T> reader, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -33,7 +33,7 @@ public static class ChannelReaderExtensions
                  ? WaitToReadResult.ReadyToRead
                  : WaitToReadResult.EndOfStream;
         }
-        catch (TaskCanceledException)
+        catch (OperationCanceledException)
         {
             // There are 2 ways we can get here. Either the timeout occured, or the root cancellation token
             // was cancelled. We want to handle them differently.

@@ -10,10 +10,13 @@ namespace Mute.Tests.Services.Database
         [TestMethod]
         public void CreateDatabase()
         {
-            var db = new SqliteDatabase(new Configuration {
-                Database = new DatabaseConfig {
+            var db = new SqliteDatabase(new Configuration
+            {
+                Database = new DatabaseConfig
+                {
                     ConnectionString = "Data Source=:memory:"
-                }
+                },
+                Agent = null!
             });
 
             using (var cmd = db.CreateCommand())
@@ -29,7 +32,8 @@ namespace Mute.Tests.Services.Database
             var db = new SqliteDatabase(new Configuration {
                 Database = new DatabaseConfig {
                     ConnectionString = "Data Source=:memory:"
-                }
+                },
+                Agent = null!
             });
 
             db.Exec("CREATE TABLE `test` (`foo` TEXT NOT NULL)");

@@ -10,12 +10,14 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Add a <see cref="IHostedService"/> implementation as a singleton
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TConcrete"></typeparam>
     /// <param name="collection"></param>
-    public static void AddHostedService<T>(this IServiceCollection collection)
-        where T : class, IHostedService
+    public static void AddHostedService<TConcrete>(this IServiceCollection collection)
+        where TConcrete : class, IHostedService
     {
-        collection.AddSingleton<IHostedService, T>();
+        collection.AddSingleton<TConcrete>();
+
+        collection.AddSingleton<IHostedService, TConcrete>(a => a.GetRequiredService<TConcrete>());
     }
 
     /// <summary>

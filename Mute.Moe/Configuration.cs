@@ -1,4 +1,6 @@
-﻿namespace Mute.Moe;
+﻿using Mute.Moe.Services.LLM;
+
+namespace Mute.Moe;
 
 /// <summary>
 /// Bot configuration, loaded from config.json file
@@ -14,6 +16,7 @@ public class Configuration
     [UsedImplicitly] public UrbanDictionaryConfig? UrbanDictionary;
     [UsedImplicitly] public STTConfig? STT;
     [UsedImplicitly] public LLMConfig? LLM;
+    [UsedImplicitly] public required AgentConfig Agent;
     [UsedImplicitly] public Automatic1111Config? Automatic1111;
     [UsedImplicitly] public GlobalImageGenerationConfig? ImageGeneration;
     [UsedImplicitly] public LocationConfig? Location;
@@ -190,6 +193,7 @@ public class LLMConfig
     [UsedImplicitly] public required LLamaServerEndpoint[] Endpoints;
 
     [UsedImplicitly] public required LocalModel ChatLanguageModel;
+    [UsedImplicitly] public required LocalModel FactLanguageModel;
     [UsedImplicitly] public required LocalModel VisionLanguageModel;
     [UsedImplicitly] public required LocalEmbeddingModel EmbeddingModel;
     [UsedImplicitly] public required LocalModel RerankingModel;
@@ -200,6 +204,8 @@ public class LLMConfig
     {
         [UsedImplicitly] public required string ModelName;
         [UsedImplicitly] public required int ContextSize;
+
+        [UsedImplicitly] public SamplingParameters? Sampling;
     }
 
     public class LocalEmbeddingModel
@@ -220,6 +226,30 @@ public class LLMConfig
         [UsedImplicitly] public string[] ModelsBlacklist = [ ];
     }
     #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+}
+
+/// <summary>
+/// Config for agent stuff
+/// </summary>
+public class AgentConfig
+{
+    public required MemoryDecayConfig MemoryDecay;
+    public required FactExtractionConfig FactExtraction;
+
+    public class MemoryDecayConfig
+    {
+        [UsedImplicitly] public int? Hour;
+        [UsedImplicitly] public int? Minute;
+        [UsedImplicitly] public int? Second;
+
+        [UsedImplicitly] public float? Threshold;
+        [UsedImplicitly] public float? Factor;
+    }
+
+    public class FactExtractionConfig
+    {
+        [UsedImplicitly] public required string SystemPromptFacts;
+    }
 }
 
 /// <summary>

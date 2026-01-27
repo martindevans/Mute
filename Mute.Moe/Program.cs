@@ -1,14 +1,13 @@
-﻿using System.IO;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Discord.Interactions;
+﻿using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
-using Mute.Moe.Services.LLM.Embedding;
 using Mute.Moe.Tools;
 using Newtonsoft.Json;
 using Serilog;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Mute.Moe;
 

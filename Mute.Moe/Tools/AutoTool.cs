@@ -1,6 +1,9 @@
 ﻿using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
+using Discord;
 using LlmTornado.Infra;
 
 namespace Mute.Moe.Tools;
@@ -228,6 +231,18 @@ public class AutoTool
         if (_postprocessAsync != null)
             result = await _postprocessAsync.Invoke(result);
 
+        // If the result is an async enumerable, convert it to a normal enumerable
+        // This produces a task, so it must go above the result=Task handling
+        if (IsAsyncEnumerable(result, out var asyncEnumerableElementType))
+        {
+            // Get the helper method in this class
+            var method = typeof(AutoTool).GetMethod(nameof(AsyncEnumerableToArray), BindingFlags.NonPublic | BindingFlags.Static);
+            var generic = method!.MakeGenericMethod(asyncEnumerableElementType);
+
+            // Call it, to produce a task
+            result = generic.Invoke(null, [result]);
+        }
+
         // If the result is a task, await and then extract the actual result
         if (result is Task t)
         {
@@ -251,6 +266,34 @@ public class AutoTool
 
         // Success!
         return (true, result);
+    }
+
+    private static bool IsAsyncEnumerable(object? obj, [NotNullWhen(true)] out Type? elementType)
+    {
+        elementType = null;
+        if (obj is null)
+            return false;
+
+        var type = obj.GetType();
+
+        // Check interfaces for IAsyncEnumerable<T>
+        foreach (var iface in type.GetInterfaces())
+        {
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IAsyncEnumerable<>))
+            {
+                elementType = iface.GetGenericArguments()[0];
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static async Task<T[]> AsyncEnumerableToArray<T>(object? obj)
+    {
+        if (obj is not IAsyncEnumerable<T> enumerable)
+            return [ ];
+        return await enumerable.Take(1024).ToArrayAsync();
     }
 
     /// <summary>

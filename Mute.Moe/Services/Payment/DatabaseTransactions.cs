@@ -28,7 +28,7 @@ public class DatabaseTransactions
     {
         _database = database;
 
-        //Create debts table and indices
+        // Create debts table and indices
         _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_Transactions` (`FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT);");
     }
 

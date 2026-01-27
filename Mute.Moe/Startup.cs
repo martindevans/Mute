@@ -1,5 +1,6 @@
 ﻿using Discord.Addons.Interactive;
 using Discord.WebSocket;
+using LlmTornado.Chat.Models;
 using LlmTornado.Code;
 using LlmTornado.Embedding.Models;
 using LlmTornado.Rerank.Models;
@@ -33,6 +34,7 @@ using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.LLM.Embedding;
+using Mute.Moe.Services.LLM.Memory;
 using Mute.Moe.Services.LLM.Rerank;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Services.Notifications.RSS;
@@ -50,7 +52,7 @@ using Serpent.Loading;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
-using LlmTornado.Chat.Models;
+using Mute.Moe.Services.LLM.Memory.Extraction;
 using Wasmtime;
 
 namespace Mute.Moe;
@@ -74,6 +76,7 @@ public record Startup(Configuration Configuration)
 
         services.AddTransient<Random>();
         services.AddTransient<IDiceRoller, CryptoDiceRoller>();
+
         services.AddTransient<ITextToSpeech, NullTextToSpeech>();
         services.AddTransient<ISpeechToText, WhisperSpeechToText>();
 
@@ -83,6 +86,10 @@ public record Startup(Configuration Configuration)
         services.AddTransient<IImageOutpainter, Automatic1111>();
         services.AddSingleton<StableDiffusionBackendCache>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
+
+        services.AddSingleton<IAgentMemoryStorage, DatabaseAgentMemoryStorage>();
+        services.AddHostedService<AgentMemoryConfidenceDecayOverTime>();
+        services.AddSingleton<FactExtractionService>();
 
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddSingleton<IFileSystem, FileSystem>();
@@ -145,6 +152,8 @@ public record Startup(Configuration Configuration)
         );
 
         services.AddSingleton<IConversationStateStorage, ConversationStateStorage>();
+
+        services.AddSingleton<IAgentMemoryStorage, DatabaseAgentMemoryStorage>();
     }
 
     /// <summary>
@@ -169,8 +178,9 @@ public record Startup(Configuration Configuration)
         {
             var llm = Configuration.LLM;
 
-            // Load system prompt for chat
+            // Load system prompts
             services.AddSingleton(new ChatConversationSystemPrompt(File.ReadAllText(llm.ChatSystemPromptPath)));
+            services.AddSingleton(new AgentFactExtractionSystemPrompt(File.ReadAllText(Configuration.Agent.FactExtraction.SystemPromptFacts)));
 
             // Create endpoints for llama-server
             var endpoints = new List<MultiEndpointProvider<LLamaServerEndpoint>.EndpointConfig>();
@@ -183,11 +193,18 @@ public record Startup(Configuration Configuration)
             services.AddSingleton<MultiEndpointProvider<LLamaServerEndpoint>>(provider => new(
                 provider.GetRequiredService<IHttpClientFactory>(),
                 new LlamaServerModelCapabilityEndpointFilter(provider.GetRequiredService<IHttpClientFactory>()),
-                endpoints.ToArray()
+                [ ..endpoints ]
             ));
 
             // Define models to use
-            services.AddSingleton(new LlmChatModel(new ChatModel(llm.ChatLanguageModel.ModelName, LLmProviders.Custom, llm.ChatLanguageModel.ContextSize)));
+            services.AddSingleton(new LlmChatModel(
+                new ChatModel(llm.ChatLanguageModel.ModelName, LLmProviders.Custom, llm.ChatLanguageModel.ContextSize),
+                llm.ChatLanguageModel.Sampling
+            ));
+            services.AddSingleton(new LlmFactModel(
+                new ChatModel(llm.FactLanguageModel.ModelName, LLmProviders.Custom, llm.FactLanguageModel.ContextSize),
+                llm.FactLanguageModel.Sampling
+            ));
             services.AddSingleton(new LlmEmbeddingModel(new EmbeddingModel(llm.EmbeddingModel.ModelName, LLmProviders.Custom, llm.EmbeddingModel.ContextSize, llm.EmbeddingModel.EmbeddingDims)));
             services.AddSingleton(new LlmVisionModel(new ChatModel(llm.VisionLanguageModel.ModelName, LLmProviders.Custom, llm.VisionLanguageModel.ContextSize)));
             services.AddSingleton(new LlmRerankModel(new RerankModel(llm.RerankingModel.ModelName, LLmProviders.Custom)));

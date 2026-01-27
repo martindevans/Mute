@@ -22,6 +22,19 @@ public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMes
     private readonly ConcurrentDictionary<Type, Task> _resources = [ ];
     private readonly List<Func<MuteCommandContext, Task>> _completions = [ ];
 
+    /// <summary>
+    /// Get the context ID to use for memories
+    /// </summary>
+    public ulong MemoryContextId
+    {
+        get
+        {
+            if (Guild != null)
+                return Guild.Id;
+            return Channel.Id;
+        }
+    }
+
     #region context
     /// <summary>
     /// Try to get context of type T that was previously attached. Null if nothing has attached this context

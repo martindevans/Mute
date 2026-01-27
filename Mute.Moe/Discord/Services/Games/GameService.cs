@@ -53,7 +53,7 @@ public class GameService
 
             if (count > 0)
             {
-                //Get `unlimited-bot-works` channel
+                // Get `unlimited-bot-works` channel
                 var c = _client.GetGuild(415655090842763265).GetChannel(445018769622958091);
                 await ((ISocketMessageChannel)c).SendMessageAsync($"{user.Username} is playing a new game: `{activity.Name}`");
             }

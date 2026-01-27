@@ -191,4 +191,11 @@ public static class StringExtensions
         var index = input.IndexOfAny([ '\r', '\n' ]);
         return index == -1 ? input : input[..index];
     }
+
+    public static ReadOnlySpan<char> TrimStartCaseInsensitive(this ReadOnlySpan<char> span, ReadOnlySpan<char> trim)
+    {
+        while (span.StartsWith(trim, StringComparison.OrdinalIgnoreCase))
+            span = span[trim.Length..];
+        return span;
+    }
 }

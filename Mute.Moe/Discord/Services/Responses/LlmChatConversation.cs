@@ -121,6 +121,7 @@ public class LlmChatConversation
                 // Check if no more messages will ever arrive: break out of loop.
                 if (waitResult == ChannelReaderExtensions.WaitToReadResult.EndOfStream)
                 {
+                    Log.Warning("EndOfStream for conversation processor for channel {0} ({1})", Channel.Name, Channel.Id);
                     break;
                 }
 
@@ -197,6 +198,7 @@ public class LlmChatConversation
         }
         catch (OperationCanceledException)
         {
+            Log.Warning("Conversation processor OperationCanceledException for channel {0} ({1})", Channel.Name, Channel.Id);
             await _chatStorage.Put(Channel.Id, new(conversation.Save()));
             throw;
         }
@@ -221,7 +223,7 @@ public class LlmChatConversation
             var summarised = false;
 
             // Clean up "buried" tool messages
-            conversation.CleanToolMessages(3);
+            conversation.CleanBuriedToolMessages(3);
 
             // Summarise the conversation if there's no work pending
             if (conversation.TotalTokens > LowCompressThreshold && _messages.Reader.Count == 0)
@@ -237,12 +239,21 @@ public class LlmChatConversation
                 await Summarise();
             }
 
+            // Summarisation failed, try to sweep up tool messages. Removing them oldest first until
+            // We're below the target size.
+            if (conversation.TotalTokens > HighCompressThreshold)
+            {
+                conversation.SweepToolMessages(HighCompressThreshold);
+            }
+
             // Summarisation failed, just clear the state.
             if (conversation.TotalTokens > HighCompressThreshold)
             {
                 Log.Warning("Compression failed for conversation state in channel {0} ({1})", Channel.Name, Channel.Id);
                 conversation.Clear();
                 Summary = null;
+
+                // Technically we didn't summarise, but we did something even more aggressive so return true
                 summarised = true;
             }
 

@@ -6,6 +6,7 @@ using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
 using System.Text;
 using System.Threading.Tasks;
+using Mute.Moe.Services.LLM.Memory;
 
 namespace Mute.Moe.Discord.Modules.Personality;
 
@@ -42,7 +43,7 @@ public partial class Chat(ConversationalResponseService _conversations)
 
 [UsedImplicitly]
 [Group("llm")]
-public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEndpoint> _backends)
+public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEndpoint> _backends, IAgentMemoryStorage _memory)
     : MuteBaseModule
 {
     [Command("tools"), Summary("Search for tools")]
@@ -172,5 +173,24 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
             .WithFooter("🧠 Mugunghwa AI Cluster");
 
         await ReplyAsync(embed: embed.Build());
+    }
+
+    [Command("memory"), Summary("Search for memories similar to the query string")]
+    [UsedImplicitly]
+    public async Task MemorySearch(string query)
+    {
+        var items = (await _memory.FindSimilar(Context.MemoryContextId, query, 16)).ToList();
+
+        if (items.Count == 0)
+        {
+            await ReplyAsync("No relevant memories found");
+            return;
+        }
+
+        var builder = new StringBuilder();
+        foreach (var item in items)
+            builder.AppendLine($" - {item}");
+        await LongReplyAsync(builder.ToString());
+
     }
 }

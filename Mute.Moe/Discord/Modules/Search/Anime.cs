@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Mute.Anilist;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Information.Anime;
 
@@ -61,5 +62,20 @@ public class Anime
             .Select(a => string.Join("\n", a));
 
         return DisplayLazyPaginatedReply($"Anime Search `{term}`", animes);
+    }
+
+    [Command("season"), Summary("I will list all of the anime airing in a given season")]
+    public async Task AnimeSeason(int year, MediaSeason season)
+    {
+        var animes = await _animeSearch.GetSeasonAnimes(year, (int)season)
+                                 .Select(a => a.TitleEnglish ?? a.TitleJapanese ?? a.Id.ToString())
+                                 .ToArrayAsync();
+
+        await DisplayItemList(
+            animes,
+            () => "Nothing is airing in that season",
+            list => $"{list.Count} airing anime:",
+            (a, i) => $"{i + 1}. {a}"
+        );
     }
 }

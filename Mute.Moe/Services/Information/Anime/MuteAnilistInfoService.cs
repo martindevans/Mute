@@ -14,11 +14,11 @@ public class MuteAnilistInfoService
 {
     private readonly AniListClient _client;
 
-    private readonly FluidCache<Media> _mediaCache;
-    private readonly IIndex<int, Media> _mediaById;
+    private readonly FluidCache<MediaCacheItem> _mediaCache;
+    private readonly IIndex<long, MediaCacheItem> _mediaById;
 
-    private readonly FluidCache<Character> _characterCache;
-    private readonly IIndex<int, Character> _characterById;
+    private readonly FluidCache<CharacterCacheItem> _characterCache;
+    private readonly IIndex<long, CharacterCacheItem> _characterById;
 
     /// <summary>
     /// 
@@ -28,10 +28,10 @@ public class MuteAnilistInfoService
     {
         _client = new AniListClient(http.CreateClient());
 
-        _mediaCache = new FluidCache<Media>(1024, TimeSpan.Zero, TimeSpan.FromDays(1), () => DateTime.UtcNow);
+        _mediaCache = new FluidCache<MediaCacheItem>(1024, TimeSpan.Zero, TimeSpan.FromDays(1), () => DateTime.UtcNow);
         _mediaById = _mediaCache.AddIndex("byId", media => media.Id);
 
-        _characterCache = new FluidCache<Character>(1024, TimeSpan.Zero, TimeSpan.FromDays(1), () => DateTime.UtcNow);
+        _characterCache = new FluidCache<CharacterCacheItem>(1024, TimeSpan.Zero, TimeSpan.FromDays(1), () => DateTime.UtcNow);
         _characterById = _characterCache.AddIndex("byId", character => character.Id);
     }
 
@@ -53,6 +53,48 @@ public class MuteAnilistInfoService
             .Select(CacheMedia)
             .Where(a => a.Type == type)
             .Take(limit);
+    }
+
+    /// <summary>
+    /// Get an anime item by ID
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<IAnime?> GetAnimeInfoAsync(long id)
+    {
+        var item = await _mediaById.GetItem(id, GetMediaItemUncached);
+
+        if (item?.Item == null)
+            return null;
+        if (item.Item.Type != MediaType.Anime)
+            return null;
+
+        return new AnimeMedia(item.Item);
+    }
+
+    /// <summary>
+    /// Get a manga item by ID
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<IManga?> GetMangaInfoAsync(long id)
+    {
+        var item = await _mediaById.GetItem(id, GetMediaItemUncached);
+
+        if (item?.Item == null)
+            return null;
+        if (item.Item.Type != MediaType.Manga)
+            return null;
+
+        return new MangaMedia(item.Item);
+    }
+
+    private async Task<MediaCacheItem> GetMediaItemUncached(long key)
+    {
+        return new MediaCacheItem(
+            key,
+            await _client.GetMediaByIdAsync(checked((int)key))
+        );
     }
 
     /// <inheritdoc />
@@ -89,14 +131,35 @@ public class MuteAnilistInfoService
            .Select(a => new MangaMedia(a));
     }
 
+    /// <inheritdoc />
+    public IAsyncEnumerable<IAnime> GetSeasonAnimes(int year, int season)
+    {
+        var mediaSeason = season switch
+        {
+            0 => MediaSeason.Winter,
+            1 => MediaSeason.Spring,
+            2 => MediaSeason.Summer,
+            3 => MediaSeason.Fall,
+            _ => throw new ArgumentOutOfRangeException(nameof(season), "Season must be 0 to 3 (inclusive)"),
+        };
+
+        return _client
+            .GetSeasonalMediaAsync(mediaSeason, year)
+            .Select(CacheMedia)
+            .Select(a => new AnimeMedia(a));
+    }
+
     private async ValueTask<Media> CacheMedia(Media media, CancellationToken cancellation)
     {
+        // Get the item from the cache
         var cachedMedia = await _mediaById.GetItem(media.Id);
-        if (cachedMedia != null)
-            return cachedMedia;
+        if (cachedMedia?.Item != null)
+            return cachedMedia.Item;
 
-        _mediaCache.Add(media);
+        // Add the media item to the cache
+        _mediaCache.Add(new MediaCacheItem(media.Id, media));
 
+        // Cache each of the characters referred to by this media
         foreach (var edge in media.Characters?.Edges ?? [ ])
         {
             if (edge.Node == null)
@@ -126,14 +189,19 @@ public class MuteAnilistInfoService
         : IAnime
     {
         public long Id => media.Id;
+
         public string? TitleEnglish => media.Title?.English ?? media.Title?.Romaji;
         public string? TitleJapanese => media.Title?.Romaji ?? media.Title?.Native;
+
         public string Description => media.Description ?? "";
+        public bool Adult => media.IsAdult;
+
         public string Url => media.SiteUrl ?? "";
+        public string ImageUrl => media.CoverImage?.LargeUrl ?? media.CoverImage?.MediumUrl ?? media.CoverImage?.ExtraLargeUrl ?? "";
+
         public DateTimeOffset? StartDate => media.StartDate?.ToDateTimeOffset();
         public DateTimeOffset? EndDate => media.EndDate?.ToDateTimeOffset();
-        public bool Adult => media.IsAdult;
-        public string ImageUrl => media.CoverImage?.LargeUrl ?? media.CoverImage?.MediumUrl ?? media.CoverImage?.ExtraLargeUrl ?? "";
+
         public IReadOnlyList<string> Genres => media.Genres ?? [ ];
         public uint? TotalEpisodes => (uint?)media.Episodes;
     }
@@ -151,6 +219,29 @@ public class MuteAnilistInfoService
     #endregion
 
     #region Characters
+    /// <summary>
+    /// Get info about a character by their ID
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<ICharacter?> GetCharacterInfoAsync(long id)
+    {
+        var item = await _characterById.GetItem(id, GetCharacterInfoUncached);
+
+        if (item?.Item == null)
+            return null;
+
+        return new CharacterWrap(item.Item);
+    }
+
+    private async Task<CharacterCacheItem> GetCharacterInfoUncached(long key)
+    {
+        return new CharacterCacheItem(
+            key,
+            await _client.GetCharacterByIdAsync((int)key)
+        );
+    }
+
     /// <inheritdoc />
     public async Task<ICharacter?> GetCharacterInfoAsync(string search)
     {
@@ -178,9 +269,9 @@ public class MuteAnilistInfoService
     {
         var cachedCharacter = await _characterById.GetItem(character.Id);
         if (cachedCharacter != null)
-            return cachedCharacter;
+            return cachedCharacter.Item!;
 
-        _characterCache.Add(character);
+        _characterCache.Add(new CharacterCacheItem(character.Id, character));
         return character;
     }
 
@@ -217,4 +308,7 @@ public class MuteAnilistInfoService
         public string ImageUrl => character.Image?.Large ?? character.Image?.Medium ?? "";
     }
     #endregion
+
+    private record MediaCacheItem(long Id, Media? Item);
+    private record CharacterCacheItem(long Id, Character? Item);
 }

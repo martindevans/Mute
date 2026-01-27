@@ -4,7 +4,6 @@ using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Utilities;
 using Serilog;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Discord.Services.Responses;

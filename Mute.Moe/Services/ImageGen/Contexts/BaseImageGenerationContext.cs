@@ -206,8 +206,17 @@ public abstract class BaseImageGenerationContext
     #endregion
 }
 
+/// <summary>
+/// Extensions on <see cref="MuteCommandContext"/> related to image generation
+/// </summary>
 public static class ContextImageGenerationExtensions
 {
+    /// <summary>
+    /// Begin generating an image based on the given prompt.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="prompt"></param>
+    /// <returns></returns>
     public static async Task GenerateImage(this MuteCommandContext context, string prompt)
     {
         // Get dependencies
