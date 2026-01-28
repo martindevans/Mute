@@ -5,6 +5,7 @@ using System.Data;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Mute.Moe.Services.LLM.Embedding;
+using Serilog;
 
 namespace Mute.Moe.Services.LLM.Memory;
 
@@ -155,7 +156,10 @@ public class DatabaseAgentMemoryStorage
     {
         var queryEmbedding = await _embeddings.Embed(query);
         if (queryEmbedding == null)
-            return [];
+        {
+            Log.Warning("Failed to embed memory query string");
+            return [ ];
+        }
 
         const string SQL = """
                            SELECT t.*

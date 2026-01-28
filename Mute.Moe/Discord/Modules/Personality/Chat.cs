@@ -7,6 +7,7 @@ using Mute.Moe.Tools;
 using System.Text;
 using System.Threading.Tasks;
 using Mute.Moe.Services.LLM.Memory;
+using Serilog;
 
 namespace Mute.Moe.Discord.Modules.Personality;
 
@@ -179,6 +180,8 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
     [UsedImplicitly]
     public async Task MemorySearch(string query)
     {
+        Log.Information("Search for memories in context: {0}", Context.AgentMemoryContextId);
+
         var items = (await _memory.FindSimilar(Context.AgentMemoryContextId, query, 16)).ToList();
 
         if (items.Count == 0)
