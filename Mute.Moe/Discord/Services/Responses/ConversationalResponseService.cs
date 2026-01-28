@@ -5,6 +5,7 @@ using Mute.Moe.Services.LLM;
 using Mute.Moe.Utilities;
 using Serilog;
 using System.Threading.Tasks;
+using Mute.Moe.Services.LLM.Memory.Extraction;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
@@ -16,6 +17,7 @@ public class ConversationalResponseService
     private readonly DiscordSocketClient _client;
     private readonly ChatConversationFactory _chatFactory;
     private readonly IConversationStateStorage _chatStorage;
+    private readonly IMemoryExtractAndStoreQueue _memory;
 
     private readonly AsyncLock _lookupLock = new();
     private readonly Dictionary<ulong, LlmChatConversation> _conversationsByChannel = [ ];
@@ -26,11 +28,13 @@ public class ConversationalResponseService
     /// <param name="client"></param>
     /// <param name="chatFactory"></param>
     /// <param name="chatStorage"></param>
-    public ConversationalResponseService(DiscordSocketClient client, ChatConversationFactory chatFactory, IConversationStateStorage chatStorage)
+    /// <param name="memory"></param>
+    public ConversationalResponseService(DiscordSocketClient client, ChatConversationFactory chatFactory, IConversationStateStorage chatStorage, IMemoryExtractAndStoreQueue memory)
     {
         _client = client;
         _chatFactory = chatFactory;
         _chatStorage = chatStorage;
+        _memory = memory;
     }
 
     /// <summary>
@@ -83,10 +87,12 @@ public class ConversationalResponseService
             {
                 Log.Warning("Creating new chat conversation for channel: {0} ({1})", channel.Name, channel.Id);
                 chat = new LlmChatConversation(
+                    channel.GetAgentMemoryContextId(),
                     await _chatFactory.Create(channel),
                     channel,
                     _client,
-                    _chatStorage
+                    _chatStorage,
+                    _memory
                 );
 
                 _conversationsByChannel[channel.Id] = chat;

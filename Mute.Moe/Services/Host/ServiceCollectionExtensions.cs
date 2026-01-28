@@ -27,8 +27,8 @@ public static class ServiceCollectionExtensions
     /// <typeparam name="TConcrete"></typeparam>
     /// <param name="collection"></param>
     public static void AddHostedService<TInterface, TConcrete>(this IServiceCollection collection)
-        where TInterface : class, IHostedService
-        where TConcrete : class, TInterface
+        where TInterface : class
+        where TConcrete : class, TInterface, IHostedService
     {
         collection.AddSingleton<TConcrete>();
 

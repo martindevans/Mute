@@ -1,5 +1,7 @@
-﻿using Humanizer;
+﻿using System.Threading.Tasks;
+using Humanizer;
 using Mute.Moe.Services.Introspection.Uptime;
+using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
 using Mute.Moe.Tools.Providers;
 
@@ -13,6 +15,7 @@ public class ServerStatusToolProvider
 {
     private readonly IUptime _uptime;
     private readonly Status _status;
+    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
 
     /// <inheritdoc />
     public IReadOnlyList<ITool> Tools { get; }
@@ -22,21 +25,24 @@ public class ServerStatusToolProvider
     /// </summary>
     /// <param name="uptime"></param>
     /// <param name="status"></param>
-    public ServerStatusToolProvider(IUptime uptime, Status status)
+    /// <param name="endpoints"></param>
+    public ServerStatusToolProvider(IUptime uptime, Status status, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
     {
         _uptime = uptime;
         _status = status;
+        _endpoints = endpoints;
 
         Tools =
         [
             new AutoTool("get_self_uptime", false, GetUptime),
             new AutoTool("get_self_latency", false, GetLatency),
             new AutoTool("get_self_memory", false, GetMemory),
+            new AutoTool("get_llm_cluster_status", false, GetLlmClusterStatus),
         ];
     }
 
     /// <summary>
-    /// Get the total amount of time that this process has been running for.
+    /// Get the total amount of time that this process (i.e. the bot/assistant) has been running for.
     /// </summary>
     /// <returns></returns>
     private object GetUptime()
@@ -53,7 +59,7 @@ public class ServerStatusToolProvider
     }
 
     /// <summary>
-    /// Get the current response time (i.e. latency) of the Discord API.
+    /// Get the current response time (i.e. latency) of the Discord API to this process (i.e. the bot/assistant).
     /// </summary>
     /// <returns></returns>
     private object GetLatency()
@@ -65,7 +71,7 @@ public class ServerStatusToolProvider
     }
 
     /// <summary>
-    /// Get the current memory usage of this process (hosting the bot). This Includes working set (the total bytes of physical memory mapped) and
+    /// Get the current memory usage of this process (i.e. the bot/assistant). This Includes working set (the total bytes of physical memory mapped) and
     /// total GC memory (the heap size in bytes, excluding fragmentation).
     /// </summary>
     /// <returns></returns>
@@ -76,5 +82,37 @@ public class ServerStatusToolProvider
             MemoryWorkingSet = _status.MemoryWorkingSet,
             TotalGCMemory = _status.TotalGCMemory
         };
+    }
+
+    /// <summary>
+    /// Get the current status of the cluster of LLM (large language model) servers which serve as the backend for the bot/assistant.
+    ///
+    /// Includes:<br />
+    /// - ID<br />
+    /// - Availability check<br />
+    /// - Latency (milliseconds)<br />
+    /// - Current usage
+    /// </summary>
+    /// <returns></returns>
+    private async Task<object> GetLlmClusterStatus()
+    {
+        var results = new Dictionary<string, object>();
+
+        foreach (var endpoint in await _endpoints.GetStatus())
+        {
+            var load = (endpoint.MaxSlots - endpoint.AvailableSlots) / (float)endpoint.MaxSlots;
+
+            results.Add(endpoint.Endpoint.ID, new
+            {
+                id = endpoint.Endpoint.ID,
+
+                available = endpoint.Healthy,
+
+                latency_ms = endpoint.Healthy ? (double?)endpoint.Latency.TotalMilliseconds : null,
+                system_load = endpoint.Healthy ? load.ToString("P1") : null,
+            });
+        }
+
+        return results;
     }
 }

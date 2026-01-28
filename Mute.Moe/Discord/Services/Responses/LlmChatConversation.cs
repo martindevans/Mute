@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.LLM;
+using Mute.Moe.Services.LLM.Memory.Extraction;
 using Serilog;
 using System.Threading;
 using System.Threading.Channels;
@@ -23,7 +24,9 @@ public class LlmChatConversation
     private readonly Channel<BaseProcessEvent> _messages = System.Threading.Channels.Channel.CreateUnbounded<BaseProcessEvent>();
     private readonly string _selfUsername;
 
+    private readonly ulong _memoryContext;
     private readonly IConversationStateStorage _chatStorage;
+    private readonly IMemoryExtractAndStoreQueue _memory;
 
     /// <summary>
     /// Indicates if this conversation is complete and should not be used again
@@ -63,16 +66,19 @@ public class LlmChatConversation
     /// <summary>
     /// Create a new <see cref="LlmChatConversation"/> for the given channel.
     /// </summary>
+    /// <param name="memoryContext"></param>
     /// <param name="conversation"></param>
     /// <param name="channel"></param>
     /// <param name="client"></param>
     /// <param name="chatStorage"></param>
-    public LlmChatConversation(ChatConversation conversation, IMessageChannel channel, DiscordSocketClient client, IConversationStateStorage chatStorage)
+    public LlmChatConversation(ulong memoryContext, ChatConversation conversation, IMessageChannel channel, DiscordSocketClient client, IConversationStateStorage chatStorage, IMemoryExtractAndStoreQueue memory)
     {
         Channel = channel;    
 
         _selfUsername = $"@{client.CurrentUser.Username}";
+        _memoryContext = memoryContext;
         _chatStorage = chatStorage;
+        _memory = memory;
 
         Task.Run(async () => await MessageConsumer(conversation));
     }
@@ -262,6 +268,9 @@ public class LlmChatConversation
 
         async ValueTask Summarise()
         {
+            var transcript = conversation.Transcript("Assistant");
+            await _memory.Enqueue(_memoryContext, transcript);
+
             Summary = await conversation.AutoSummarise(_stopper.Token);
         }
 

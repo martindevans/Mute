@@ -179,7 +179,7 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
     [UsedImplicitly]
     public async Task MemorySearch(string query)
     {
-        var items = (await _memory.FindSimilar(Context.MemoryContextId, query, 16)).ToList();
+        var items = (await _memory.FindSimilar(Context.AgentMemoryContextId, query, 16)).ToList();
 
         if (items.Count == 0)
         {
@@ -189,7 +189,8 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
 
         var builder = new StringBuilder();
         foreach (var item in items)
-            builder.AppendLine($" - {item}");
+            builder.AppendLine($" - '{item.Text}' ({item.ConfidenceLogit.LogitToProbability():P2})");
+
         await LongReplyAsync(builder.ToString());
 
     }

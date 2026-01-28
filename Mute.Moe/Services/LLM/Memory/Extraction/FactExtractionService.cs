@@ -5,7 +5,7 @@ using LlmTornado.Chat;
 namespace Mute.Moe.Services.LLM.Memory.Extraction;
 
 /// <summary>
-/// Extracts SPO facts from LLM conversations
+/// Extracts facts from conversation transcript
 /// </summary>
 public class FactExtractionService
 {

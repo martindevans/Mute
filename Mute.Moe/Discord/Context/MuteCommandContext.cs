@@ -25,15 +25,7 @@ public sealed class MuteCommandContext(DiscordSocketClient client, SocketUserMes
     /// <summary>
     /// Get the context ID to use for memories
     /// </summary>
-    public ulong MemoryContextId
-    {
-        get
-        {
-            if (Guild != null)
-                return Guild.Id;
-            return Channel.Id;
-        }
-    }
+    public ulong AgentMemoryContextId => Channel.GetAgentMemoryContextId();
 
     #region context
     /// <summary>

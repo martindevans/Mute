@@ -1,10 +1,7 @@
 ﻿using Discord;
-using LlmTornado.Chat;
-using Mute.Moe.Discord.Interactions;
 using Mute.Moe.Discord.Services.Responses;
 using System.Globalization;
 using System.Threading.Tasks;
-using static Mute.Moe.Services.DiceLang.AST.IAstNode;
 
 namespace Mute.Moe.Extensions;
 
@@ -142,5 +139,17 @@ public static class IMessageChannelExtensions
         embed.WithColor(color.r, color.g, color.b);
 
         return embed;
+    }
+
+    /// <summary>
+    /// Get the context ID to use for memory storage and retrieval in this channel
+    /// </summary>
+    /// <param name="channel"></param>
+    /// <returns></returns>
+    public static ulong GetAgentMemoryContextId(this IMessageChannel channel)
+    {
+        if (channel is IGuildChannel gc)
+            return gc.GuildId;
+        return channel.Id;
     }
 }
