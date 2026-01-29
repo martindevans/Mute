@@ -164,15 +164,15 @@ public class DatabaseAgentMemoryStorage
         const string SQL = """
                            SELECT t.*
                            FROM AgentMemorys as t
-                           JOIN vector_quantize_scan(
+                           JOIN vector_quantize_scan_stream(
                                'AgentMemorys',
                                'Embedding',
-                               @QueryEmbedding,
-                               @TopK
+                               @QueryEmbedding
                            ) AS v
                            ON t.rowid = v.rowid
                            WHERE Context = @Context
-                           ORDER BY v.distance ASC;
+                           ORDER BY v.distance ASC
+                           LIMIT @TopK;
                            """;
 
         var result = _database.Connection.Query<AgentMemory>(SQL, new
