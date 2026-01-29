@@ -71,7 +71,15 @@ public class LlmChatConversation
     /// <param name="channel"></param>
     /// <param name="client"></param>
     /// <param name="chatStorage"></param>
-    public LlmChatConversation(ulong memoryContext, ChatConversation conversation, IMessageChannel channel, DiscordSocketClient client, IConversationStateStorage chatStorage, IMemoryExtractAndStoreQueue memory)
+    /// <param name="memory"></param>
+    public LlmChatConversation(
+        ulong memoryContext,
+        ChatConversation conversation,
+        IMessageChannel channel,
+        DiscordSocketClient client,
+        IConversationStateStorage chatStorage,
+        IMemoryExtractAndStoreQueue memory
+    )
     {
         Channel = channel;    
 

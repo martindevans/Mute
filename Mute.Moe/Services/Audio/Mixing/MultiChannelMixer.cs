@@ -27,6 +27,9 @@ public class MultiChannelMixer
     /// </summary>
     public bool IsPlaying => _inputMap.Keys.Any(a => a.IsPlaying);
 
+    /// <summary>
+    /// Create a new mixer that combines multiple channels
+    /// </summary>
     public MultiChannelMixer()
     {
         // Mix all inputs together
@@ -63,7 +66,7 @@ public class MultiChannelMixer
 }
 
 /// <summary>
-/// Provides a continuouss stream of samples
+/// Provides a continuous stream of samples to the audio mixer
 /// </summary>
 public interface IMixerInput
     : ISampleProvider
@@ -72,4 +75,16 @@ public interface IMixerInput
     /// Get a value indicating if this channel is playing audio
     /// </summary>
     bool IsPlaying { get; }
+}
+
+/// <summary>
+/// A channel that can be added to a mixer
+/// </summary>
+public interface IMixerChannel
+    : IMixerInput
+{
+    /// <summary>
+    /// Stop playing audio from this channel
+    /// </summary>
+    void Stop();
 }

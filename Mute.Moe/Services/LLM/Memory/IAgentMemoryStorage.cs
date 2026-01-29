@@ -105,6 +105,10 @@ public class DatabaseAgentMemoryStorage
         // Initialise the column as a vector store
         _database.Exec($"SELECT vector_init('AgentMemorys', 'Embedding', 'type=FLOAT32,dimension={_embeddings.Dimensions},distance=cosine');");
         _database.Exec("SELECT vector_quantize('AgentMemorys', 'Embedding')");
+
+        // Add indices
+        _database.Exec("CREATE INDEX IF NOT EXISTS `AgentMemorysByContext` ON `AgentMemorys` (`Context` ASC);");
+        _database.Exec("CREATE INDEX IF NOT EXISTS `AgentMemorysByConfidence` ON `AgentMemorys` (`ConfidenceLogit` ASC);");
     }
 
     /// <inheritdoc />

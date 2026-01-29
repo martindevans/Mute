@@ -12,6 +12,9 @@ using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen.Contexts;
 
+/// <summary>
+/// Context to use for image generation tasks
+/// </summary>
 public abstract class BaseImageGenerationContext
 {
     private readonly ImageGenerationConfig _config;
@@ -24,8 +27,20 @@ public abstract class BaseImageGenerationContext
 
     private float _latestProgress;
 
+    /// <summary>
+    /// Unique ID of this context
+    /// </summary>
     protected abstract ulong ID { get; }
 
+    /// <summary>
+    /// Create new context
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="storage"></param>
+    /// <param name="generator"></param>
+    /// <param name="upscaler"></param>
+    /// <param name="outpainter"></param>
+    /// <param name="http"></param>
     protected BaseImageGenerationContext(ImageGenerationConfig config, IImageGenerationConfigStorage storage, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http)
     {
         _config = config;
@@ -138,6 +153,11 @@ public abstract class BaseImageGenerationContext
     #endregion
 
     #region generation
+    /// <summary>
+    /// Generate an image
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
     protected async Task<IReadOnlyCollection<Image?>> Generate()
     {
         Image? referenceImage = null;

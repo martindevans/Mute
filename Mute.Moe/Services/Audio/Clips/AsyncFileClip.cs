@@ -15,6 +15,11 @@ public class AsyncFileClip
 
     private readonly Task<FileInfo> _fileLoading;
 
+    /// <summary>
+    /// Create new clip around async file
+    /// </summary>
+    /// <param name="file"></param>
+    /// <param name="name"></param>
     public AsyncFileClip(Task<FileInfo> file, string name)
     {
         _fileLoading = file;

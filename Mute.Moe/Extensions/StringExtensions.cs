@@ -192,6 +192,12 @@ public static class StringExtensions
         return index == -1 ? input : input[..index];
     }
 
+    /// <summary>
+    /// Remove the "trim" span from the start of another span, if present. Ignoring case (OrdinalIgnoreCase)
+    /// </summary>
+    /// <param name="span"></param>
+    /// <param name="trim"></param>
+    /// <returns></returns>
     public static ReadOnlySpan<char> TrimStartCaseInsensitive(this ReadOnlySpan<char> span, ReadOnlySpan<char> trim)
     {
         while (span.StartsWith(trim, StringComparison.OrdinalIgnoreCase))

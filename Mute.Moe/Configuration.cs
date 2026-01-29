@@ -233,21 +233,56 @@ public class LLMConfig
 /// </summary>
 public class AgentConfig
 {
-    public required MemoryDecayConfig MemoryDecay;
-    public required FactExtractionConfig FactExtraction;
+    /// <summary>
+    /// Memory decay over time settings
+    /// </summary>
+    [UsedImplicitly] public required MemoryDecayConfig MemoryDecay;
 
+    /// <summary>
+    /// Extracting facts from conversation transcripts
+    /// </summary>
+    [UsedImplicitly] public required FactExtractionConfig FactExtraction;
+
+    /// <summary>
+    /// Config for memory decay
+    /// </summary>
+    [UsedImplicitly]
     public class MemoryDecayConfig
     {
+        /// <summary>
+        /// Time of day (hour) to apply decay
+        /// </summary>
         [UsedImplicitly] public int? Hour;
+
+        /// <summary>
+        /// Time of day (minute) to apply decay
+        /// </summary>
         [UsedImplicitly] public int? Minute;
+
+        /// <summary>
+        /// Time of day (second) to apply decay
+        /// </summary>
         [UsedImplicitly] public int? Second;
 
+        /// <summary>
+        /// All memories with logit below this value will decay, must be &lt;= 0
+        /// </summary>
         [UsedImplicitly] public float? Threshold;
+
+        /// <summary>
+        /// Factor to decay logits by, must be > 1
+        /// </summary>
         [UsedImplicitly] public float? Factor;
     }
 
+    /// <summary>
+    /// Config for memory extraction
+    /// </summary>
     public class FactExtractionConfig
     {
+        /// <summary>
+        /// Path to the system prompt to use for fact extraction
+        /// </summary>
         [UsedImplicitly] public required string SystemPromptFacts;
     }
 }

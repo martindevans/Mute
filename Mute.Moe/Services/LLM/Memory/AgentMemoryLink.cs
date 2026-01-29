@@ -5,11 +5,24 @@
 /// </summary>
 public class AgentMemoryLink
 {
-    public long ID { get; init; }
+    /// <summary>
+    /// Unique ID of this link
+    /// </summary>
+    public int ID { get; init; }
 
-    public long MemorySrc { get; init; }
-    public long MemoryDst { get; init; }
+    /// <summary>
+    /// ID of the source memory
+    /// </summary>
+    public int MemorySrc { get; init; }
 
+    /// <summary>
+    /// ID of the destination memory
+    /// </summary>
+    public int MemoryDst { get; init; }
+
+    /// <summary>
+    /// Type of link
+    /// </summary>
     public LinkType Type { get; init; }
 }
 

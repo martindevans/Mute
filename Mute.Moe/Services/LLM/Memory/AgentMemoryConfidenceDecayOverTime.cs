@@ -10,6 +10,8 @@ namespace Mute.Moe.Services.LLM.Memory;
 /// Applies memory confidence decay once per day
 /// </summary>
 /// <param name="_config"></param>
+/// <param name="_store"></param>
+[UsedImplicitly]
 public class AgentMemoryConfidenceDecayOverTime(Configuration _config, IAgentMemoryStorage _store)
     : IHostedService
 {

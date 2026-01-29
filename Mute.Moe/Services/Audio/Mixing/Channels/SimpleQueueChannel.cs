@@ -6,15 +6,34 @@ using NAudio.Wave.SampleProviders;
 
 namespace Mute.Moe.Services.Audio.Mixing.Channels;
 
+/// <summary>
+/// A mixer channel that plays audio in order
+/// </summary>
+/// <typeparam name="TMetadata"></typeparam>
 public interface ISimpleQueueChannel<TMetadata>
     : IMixerChannel
 {
+    /// <summary>
+    /// Skip the rest of the currently playing audio clip
+    /// </summary>
     void Skip();
 
+    /// <summary>
+    /// Information about the currently playing clip (if any)
+    /// </summary>
     (TMetadata Metadata, Task Completion)? Playing { get; }
 
+    /// <summary>
+    /// The queue of items waiting to play
+    /// </summary>
     IEnumerable<TMetadata> Queue { get; }
 
+    /// <summary>
+    /// Add a new item to the end of the queue
+    /// </summary>
+    /// <param name="metadata"></param>
+    /// <param name="audio"></param>
+    /// <returns></returns>
     Task<Task> Enqueue(TMetadata metadata, ISampleProvider audio);
 }
 
@@ -24,18 +43,29 @@ public interface ISimpleQueueChannel<TMetadata>
 public class SimpleQueueChannel<T>
     : ISimpleQueueChannel<T>
 {
+    /// <inheritdoc />
     public WaveFormat WaveFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
 
     private readonly ConcurrentQueue<QueueClip> _queue = new();
     private QueueClip? _playing;
     private volatile bool _skip;
 
+    /// <inheritdoc />
     public bool IsPlaying => _queue.Count > 0 || _playing.HasValue;
 
+    /// <inheritdoc/>
     public (T Metadata, Task Completion)? Playing => _playing.HasValue ? (_playing.Value.Metadata, _playing.Value.Completion) : default;
 
+    /// <inheritdoc />
     public IEnumerable<T> Queue => _queue.Select(a => a.Metadata).ToArray();
 
+    /// <summary>
+    /// Add a new item to the end of the queue. Audio will be automatically disposed once played.
+    /// </summary>
+    /// <param name="metadata"></param>
+    /// <param name="audio"></param>
+    /// <typeparam name="TAudio"></typeparam>
+    /// <returns></returns>
     public Task<Task> Enqueue<TAudio>(T metadata, TAudio audio)
         where TAudio : ISampleProvider, IDisposable
     {
@@ -47,6 +77,7 @@ public class SimpleQueueChannel<T>
         return Task.FromResult(q.Completion);
     }
 
+    /// <inheritdoc />
     public Task<Task> Enqueue(T metadata, ISampleProvider audio)
     {
         var q = new QueueClip(metadata, new WdlResamplingSampleProvider(audio, WaveFormat.SampleRate).ToMono());
@@ -56,6 +87,7 @@ public class SimpleQueueChannel<T>
         return Task.FromResult(q.Completion);
     }
 
+    /// <inheritdoc />
     public int Read(float[] buffer, int offset, int count)
     {
         //Clear the buffer before reading into it
@@ -91,11 +123,13 @@ public class SimpleQueueChannel<T>
         return count;
     }
 
+    /// <inheritdoc />
     public void Skip()
     {
         _skip = true;
     }
 
+    /// <inheritdoc />
     public void Stop()
     {
         //Clear queue
