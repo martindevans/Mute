@@ -6,7 +6,7 @@ namespace Mute.Moe.Discord.Modules.Personality;
 
 [UsedImplicitly]
 [RequireOwner]
-public partial class Dev()
+public partial class Dev
     : MuteBaseModule
 {
 }

@@ -182,7 +182,7 @@ public class ThreadedGuildVoice
                     sampleCount -= mixed;
 
                     // Send the mixed audio buffer to discord
-                    await waveSink.WriteAsync(buffer, 0, mixed);
+                    await waveSink.WriteAsync(buffer.AsMemory(0, mixed));
                 
                     // If no audio was mixed early exit, this probably indicates the end of the stream
                     if (mixed == 0)

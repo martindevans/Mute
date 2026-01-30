@@ -51,7 +51,7 @@ public class SimpleQueueChannel<T>
     private volatile bool _skip;
 
     /// <inheritdoc />
-    public bool IsPlaying => _queue.Count > 0 || _playing.HasValue;
+    public bool IsPlaying => !_queue.IsEmpty || _playing.HasValue;
 
     /// <inheritdoc/>
     public (T Metadata, Task Completion)? Playing => _playing.HasValue ? (_playing.Value.Metadata, _playing.Value.Completion) : default;
@@ -140,20 +140,10 @@ public class SimpleQueueChannel<T>
         Skip();
     }
 
-    private readonly struct QueueClip
+    private readonly record struct QueueClip(T Metadata, ISampleProvider Samples)
         : IDisposable
     {
-        public readonly T Metadata;
-        public readonly ISampleProvider Samples;
-
-        private readonly TaskCompletionSource<bool> _onCompletion;
-
-        public QueueClip(T metadata, ISampleProvider samples)
-        {
-            Metadata = metadata;
-            Samples = samples;
-            _onCompletion = new TaskCompletionSource<bool>();
-        }
+        private readonly TaskCompletionSource<bool> _onCompletion = new();
 
         public Task Completion => _onCompletion.Task;
 

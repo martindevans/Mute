@@ -126,9 +126,19 @@ public class DatabaseMemoryExtractAndStoreQueue
         // Add facts and delete work item in one transaction
         using (var tsx = _database.Connection.BeginTransaction())
         {
-            // Store facts
+            // Store the transcript as evidence
+            var evidence = await _storage.CreateEvidence(job.Context, job.Transcript, tsx);
+
+            // Store facts, each linked to the transcript
             foreach (var fact in facts)
-                await _storage.CreateMemory(job.Context, fact.Text, confidenceLogit: rng.NextSingle(0.99f, 1.01f), tsx);
+            {
+                // Create memory
+                var memId = await _storage.CreateMemory(job.Context, fact.Text, confidenceLogit: rng.NextSingle(0.99f, 1.01f), tsx);
+
+                // Create evidence link
+                if (memId.HasValue)
+                    await _storage.CreateEvidenceLink(evidence, memId.Value);
+            }
 
             // Delete job
             await _database.Connection.DeleteAsync(job, tsx);

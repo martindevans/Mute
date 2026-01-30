@@ -7,7 +7,7 @@ namespace Mute.Moe.Services.Audio.Clips;
 /// <summary>
 /// An audio clip which loads from a file
 /// </summary>
-public class AsyncFileClip
+public sealed class AsyncFileClip
     : IAudioClip
 {
     /// <inheritdoc />

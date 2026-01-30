@@ -1,7 +1,8 @@
 ﻿using Mute.Moe.Services.Host;
+using Serilog;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog;
+using static System.Data.Entity.Infrastructure.Design.Executor;
 using ILogger = Serilog.ILogger;
 
 namespace Mute.Moe.Services.LLM.Memory;
@@ -36,19 +37,29 @@ public class AgentMemoryConfidenceDecayOverTime(Configuration _config, IAgentMem
 
     private async Task DecayLoop(CancellationToken cancellation)
     {
+        var config = _config.Agent.MemoryDecay;
+
         while (!cancellation.IsCancellationRequested)
         {
             await WaitForNextTime(
-                _config?.Agent?.MemoryDecay.Hour   ?? 04,
-                _config?.Agent?.MemoryDecay.Minute ?? 30,
-                _config?.Agent?.MemoryDecay.Second ?? 56,
+                config.Hour   ?? 11,
+                config.Minute ?? 11,
+                config.Second ?? 11,
                 cancellation
             );
 
-            await ApplyDecay(
-                _config?.Agent?.MemoryDecay.Threshold ?? 0,
-                _config?.Agent?.MemoryDecay.Factor ?? 1.1f
+            _logger.Information("Beginning memory maintenance cycle");
+
+            var deleted = await _store.DeleteMemoryWithoutEvidence();
+            _logger.Information("Deleted {0} invalid/dangling memory items", deleted);
+
+            var decayed = await ApplyDecay(
+                config.Threshold,
+                config.DecayValue
             );
+            _logger.Information("Decayed {0} memories", decayed);
+
+            _logger.Information("Completed memory maintenance cycle");
         }
     }
 
@@ -66,30 +77,17 @@ public class AgentMemoryConfidenceDecayOverTime(Configuration _config, IAgentMem
     /// <summary>
     /// Apply memory confidence decay to all memories below the given threshold
     /// </summary>
-    /// <param name="threshold"></param>
-    /// <param name="factor"></param>
+    /// <param name="threshold">Only effect memories with logit value below this value</param>
+    /// <param name="amount">Subtract this from logits</param>
     /// <returns></returns>
-    public async Task ApplyDecay(float threshold, float factor)
+    private async Task<int> ApplyDecay(float threshold, float amount)
     {
-        _logger.Information("Beginning memory confidence decay");
-
-        if (threshold > 0)
+        if (amount < 0)
         {
-            _logger.Error("Cannot use threshold > 0 for confidence decay");
-            threshold = 0;
+            Log.Error("Cannot apply logit decay, amount ({0}) must be positive", amount);
+            return 0;
         }
 
-        if (factor < 1)
-        {
-            _logger.Error("Cannot use factor < 1 for confidence decay");
-            factor = 1;
-        }
-
-        var updated = await _store.UpdateConfidenceDecay(
-            threshold,
-            factor
-        );
-
-        _logger.Information("Decayed {0} memories", updated);
+        return await _store.AddToConfidenceLogits(null, threshold, -amount);
     }
 }

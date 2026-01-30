@@ -265,14 +265,14 @@ public class AgentConfig
         [UsedImplicitly] public int? Second;
 
         /// <summary>
-        /// All memories with logit below this value will decay, must be &lt;= 0
+        /// All memories with logit below this value will decay
         /// </summary>
-        [UsedImplicitly] public float? Threshold;
+        [UsedImplicitly] public float Threshold;
 
         /// <summary>
-        /// Factor to decay logits by, must be > 1
+        /// Amount to decay logits by (additive)
         /// </summary>
-        [UsedImplicitly] public float? Factor;
+        [UsedImplicitly] public float DecayValue = 0.01f;
     }
 
     /// <summary>

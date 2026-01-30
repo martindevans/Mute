@@ -81,8 +81,7 @@ public partial class ChatInteractions(ConversationalResponseService _conversatio
     {
         await DeferAsync();
 
-        var message = await Context.Channel.GetMessageAsync(messageId) as IUserMessage;
-        if (message == null)
+        if (await Context.Channel.GetMessageAsync(messageId) is not IUserMessage message)
         {
             await RespondAsync("Cannot find message to update", ephemeral: true);
             return;

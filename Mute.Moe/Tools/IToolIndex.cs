@@ -6,6 +6,7 @@ using Dapper.Contrib.Extensions;
 using Mute.Moe.Tools.Providers;
 using Mute.Moe.Services.LLM.Embedding;
 using Mute.Moe.Services.LLM.Rerank;
+using Serilog;
 
 namespace Mute.Moe.Tools;
 
@@ -185,12 +186,14 @@ public class DatabaseToolIndex
         {
             foreach (var (name, tool) in Tools)
             {
+                // Check description validity
                 if (string.IsNullOrWhiteSpace(tool.Description))
                 {
                     await Console.Error.WriteLineAsync($"Tool '{name}' has empty/null description!");
                     continue;
                 }
 
+                // Get count of tools with this name
                 var count = await db.ExecuteScalarAsync<int>(
                     "SELECT Count(*) FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name)",
                     new
@@ -200,8 +203,11 @@ public class DatabaseToolIndex
                     }
                 );
 
+                // if there were not tools insert it now
                 if (0 == count)
                 {
+                    Log.Information("Inserting new tool: {0}", tool.Name);
+
                     var embedding = await _embeddings.Embed(tool.Description);
                     if (embedding == null)
                         continue;

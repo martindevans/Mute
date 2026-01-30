@@ -18,7 +18,7 @@ public interface IOpenAudioClip
 /// Wraps a <see cref="ISampleProvider"/>
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class OpenAudioClipSamplesWrapper<T>
+public sealed class OpenAudioClipSamplesWrapper<T>
     : IOpenAudioClip
     where T : class, ISampleProvider, IDisposable
 {
@@ -58,7 +58,7 @@ public class OpenAudioClipSamplesWrapper<T>
 /// Wraps an <see cref="IWaveProvider"/>
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class OpenAudioClipWaveWrapper<T>
+public sealed class OpenAudioClipWaveWrapper<T>
     : IOpenAudioClip
     where T : class, IWaveProvider, IDisposable
 {

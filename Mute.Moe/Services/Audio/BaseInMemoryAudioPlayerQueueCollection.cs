@@ -15,7 +15,7 @@ public abstract class BaseInMemoryAudioPlayerQueueCollection<TValue, TInterface>
     private readonly IGuildVoiceCollection _voice;
 
     private readonly AsyncLock _lookupLock = new();
-    private readonly Dictionary<ulong, TValue> _lookup = new();
+    private readonly Dictionary<ulong, TValue> _lookup = [];
 
     /// <summary>
     /// 
