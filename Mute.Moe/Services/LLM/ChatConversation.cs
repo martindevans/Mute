@@ -284,7 +284,7 @@ public class ChatConversation
 
         // Insert the summary
         if (summary != null)
-            AddUserMessage("SUMMARY", summary);
+            AddAnonymousUserMessage($"Summary of the salient points from the conversation so far:\n{summary}");
 
         // Clear token count, it'll be filled next time a request is made
         TotalTokens = null;

@@ -229,5 +229,6 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, UserInfoToolProvider>();
         services.AddSingleton<IToolProvider, GuildInfoToolProvider>();
         services.AddSingleton<IToolProvider, ClockProvider>();
+        services.AddSingleton<IToolProvider, MemoryManagementProvider>();
     }
 }

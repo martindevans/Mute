@@ -1,5 +1,4 @@
-﻿using Mute.Anilist;
-using Mute.Moe.Tools;
+﻿using Mute.Moe.Tools;
 using Mute.Moe.Tools.Providers;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;

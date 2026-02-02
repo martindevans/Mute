@@ -4,7 +4,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
-using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.Database;
 using System.Threading.Tasks;
 

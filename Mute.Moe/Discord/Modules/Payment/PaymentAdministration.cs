@@ -1,5 +1,4 @@
 ﻿using BalderHash;
-using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Users;

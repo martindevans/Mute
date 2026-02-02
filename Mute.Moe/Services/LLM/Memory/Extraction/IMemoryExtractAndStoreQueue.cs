@@ -132,6 +132,10 @@ public class DatabaseMemoryExtractAndStoreQueue
             // Store facts, each linked to the transcript
             foreach (var fact in facts)
             {
+                // Skip empty items
+                if (string.IsNullOrWhiteSpace(fact.Text))
+                    continue;
+
                 // Create memory
                 var memId = await _storage.CreateMemory(job.Context, fact.Text, confidenceLogit: rng.NextSingle(0.99f, 1.01f), tsx);
 

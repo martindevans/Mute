@@ -49,11 +49,8 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
 {
     [Command("tools"), Summary("Search for tools")]
     [UsedImplicitly]
-    public async Task LlmToolSearch(string query, int n = 5)
+    public async Task LlmToolSearch([Remainder] string query)
     {
-        // Ensure we can't exceed a sensible number
-        n = Math.Min(10, n);
-
         if (string.IsNullOrEmpty(query) || query == "*")
         {
             // Get all tools, defaults first
@@ -72,7 +69,7 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
         else
         {
             // Do tool search
-            var results = (await _tools.Find(query, n)).ToArray();
+            var results = (await _tools.Find(query, 5)).ToArray();
 
             // Display results
             await DisplayItemList(
@@ -86,7 +83,7 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
 
     [Command("tool"), Summary("Get all the detailed information for a specific tool")]
     [UsedImplicitly]
-    public async Task LlmToolInfo(string name)
+    public async Task LlmToolInfo([Remainder] string name)
     {
         if (!_tools.Tools.TryGetValue(name, out var tool))
         {
@@ -178,11 +175,13 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
 
     [Command("memory"), Summary("Search for memories similar to the query string")]
     [UsedImplicitly]
-    public async Task MemorySearch(string query)
+    public async Task MemorySearch([Remainder] string query)
     {
         Log.Information("Search for memories in context: {0}", Context.AgentMemoryContextId);
 
-        var items = (await _memory.FindSimilar(Context.AgentMemoryContextId, query, 16)).ToList();
+        var items = (await _memory.FindSimilar(Context.AgentMemoryContextId, query, 16))
+                   .OrderBy(a => a.Distance)
+                   .ToList();
 
         if (items.Count == 0)
         {
@@ -192,9 +191,42 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
 
         var builder = new StringBuilder();
         foreach (var item in items)
-            builder.AppendLine($" - '{item.Text}' ({item.ConfidenceLogit.LogitToProbability():P2})");
+        {
+            builder.AppendLine($" - '{item.Memory.Text}' (Conf:{item.Memory.ConfidenceLogit.LogitToProbability():P2}, Dist:{item.Distance:0.###})");
+        }
 
         await LongReplyAsync(builder.ToString());
 
+    }
+
+    [Command("delete-memory"), Summary("I will delete a specific memory (by ID)")]
+    [UsedImplicitly]
+    [RequireOwner]
+    public async Task DeleteMemory(int id)
+    {
+        var memory = await _memory.Get(id);
+        if (memory == null)
+        {
+            await ReplyAsync($"No memory with ID='{id}'");
+            return;
+        }
+
+        await ReplyAsync($"Really delete (y/n)?\n> {memory.Text}");
+        var next = await NextMessageAsync(fromSourceUser: true, inSourceChannel: true, timeout: TimeSpan.FromSeconds(30));
+
+        if (next == null)
+        {
+            await ReplyAsync("No confirmation detected, not deleting memory");
+            return;
+        }
+
+        if (!string.Equals(next.CleanContent, "y", StringComparison.OrdinalIgnoreCase))
+        {
+            await ReplyAsync("Confirmation message must be 'y' to confirm");
+            return;
+        }
+
+        await _memory.Delete(id);
+        await ReplyAsync($"Deleted memory ID='{id}'");
     }
 }

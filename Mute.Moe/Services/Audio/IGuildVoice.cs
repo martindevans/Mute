@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Mute.Moe.Services.Audio.Mixing;
-using Mute.Moe.Services.Audio.Mixing.Channels;
 
 namespace Mute.Moe.Services.Audio;
 

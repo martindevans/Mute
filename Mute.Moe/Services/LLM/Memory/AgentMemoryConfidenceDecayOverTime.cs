@@ -2,7 +2,6 @@
 using Serilog;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Data.Entity.Infrastructure.Design.Executor;
 using ILogger = Serilog.ILogger;
 
 namespace Mute.Moe.Services.LLM.Memory;
@@ -50,7 +49,7 @@ public class AgentMemoryConfidenceDecayOverTime(Configuration _config, IAgentMem
 
             _logger.Information("Beginning memory maintenance cycle");
 
-            var deleted = await _store.DeleteMemoryWithoutEvidence();
+            var deleted = await _store.CleanupMemoryReferences();
             _logger.Information("Deleted {0} invalid/dangling memory items", deleted);
 
             var decayed = await ApplyDecay(

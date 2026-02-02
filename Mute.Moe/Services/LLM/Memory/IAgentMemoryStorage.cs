@@ -47,7 +47,14 @@ public interface IAgentMemoryStorage
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>
-    public Task<AgentMemory> Get(int id);
+    public Task<AgentMemory?> Get(int id);
+
+    /// <summary>
+    /// Get all memories with the given context
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    public Task<IEnumerable<AgentMemory>> Get(ulong context);
 
     /// <summary>
     /// Find memories with similar embedding to the query
@@ -56,7 +63,7 @@ public interface IAgentMemoryStorage
     /// <param name="query"></param>
     /// <param name="limit"></param>
     /// <returns></returns>
-    public Task<IEnumerable<AgentMemory>> FindSimilar(ulong context, string query, int limit);
+    public Task<IEnumerable<MemorySearchResult>> FindSimilar(ulong context, string query, int limit);
 
     /// <summary>
     /// Add a value to all confidence logits within a range
@@ -69,11 +76,35 @@ public interface IAgentMemoryStorage
     public Task<int> AddToConfidenceLogits(float? minLogit, float? maxLogit, float value, IDbTransaction? tsx = null);
 
     /// <summary>
-    /// Delete all memories that do not have a linked evidence items
+    /// Perform DB maintanence, deleting things:
+    /// - Memories with no evidence
+    /// - Evidence links referencing non-existant things
+    /// - Evidence with no linked memories
     /// </summary>
     /// <returns></returns>
-    public Task<int> DeleteMemoryWithoutEvidence();
+    public Task<int> CleanupMemoryReferences();
+
+    /// <summary>
+    /// Delete a memory by ID
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    Task<bool> Delete(int id);
+        
+    /// <summary>
+    /// Set the memory acess time to now
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    Task UpdateAccessTime(int id);
 }
+
+/// <summary>
+/// Result from searching for memories
+/// </summary>
+/// <param name="Memory">The memory item</param>
+/// <param name="Distance">Distance to query</param>
+public record struct MemorySearchResult(AgentMemory Memory, float Distance);
 
 /// <summary>
 /// Stores agent memories in the database
@@ -255,13 +286,34 @@ public class DatabaseAgentMemoryStorage
     }
 
     /// <inheritdoc />
-    public Task<AgentMemory> Get(int id)
+    public Task<AgentMemory?> Get(int id)
     {
-        return _database.Connection.GetAsync<AgentMemory>(id);
+        return _database.Connection.QuerySingleOrDefaultAsync<AgentMemory>(
+            "SELECT * FROM AgentMemorys WHERE ID = @id",
+            new { id = id }
+        );
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<AgentMemory>> FindSimilar(ulong context, string query, int limit)
+    public Task<IEnumerable<AgentMemory>> Get(ulong context)
+    {
+        const string SQL = """
+                           SELECT *
+                           FROM AgentMemorys
+                           WHERE Context = @Context
+                           """;
+
+        return _database.Connection.QueryAsync<AgentMemory>(
+            SQL,
+            new
+            {
+                Context = context
+            }
+        );
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<MemorySearchResult>> FindSimilar(ulong context, string query, int limit)
     {
         var queryEmbedding = await _embeddings.Embed(query);
         if (queryEmbedding == null)
@@ -271,7 +323,7 @@ public class DatabaseAgentMemoryStorage
         }
 
         const string SQL = """
-                           SELECT t.*
+                           SELECT t.*, v.distance
                            FROM AgentMemorys as t
                            JOIN vector_quantize_scan_stream(
                                'AgentMemorys',
@@ -285,13 +337,18 @@ public class DatabaseAgentMemoryStorage
                            LIMIT @TopK;
                            """;
 
-        var result = _database.Connection.Query<AgentMemory>(SQL, new
-        {
-            Context = context,
-            QueryEmbedding = MemoryMarshal.Cast<float, byte>(queryEmbedding.Result.Span).ToArray(),
-            TopK = limit,
-            EmbeddingModel = queryEmbedding.Model
-        });
+        var result = _database.Connection.Query<AgentMemory, double, MemorySearchResult>(
+            SQL,
+            (m, d) => new(m, (float)d),
+            new
+            {
+                Context = context,
+                QueryEmbedding = MemoryMarshal.Cast<float, byte>(queryEmbedding.Result.Span).ToArray(),
+                TopK = limit,
+                EmbeddingModel = queryEmbedding.Model
+            },
+            splitOn: "distance"
+        );
 
         return result;
     }
@@ -320,7 +377,7 @@ public class DatabaseAgentMemoryStorage
     }
 
     /// <inheritdoc />
-    public async Task<int> DeleteMemoryWithoutEvidence()
+    public async Task<int> CleanupMemoryReferences()
     {
         var affected = 0;
 
@@ -349,7 +406,71 @@ public class DatabaseAgentMemoryStorage
             transaction: tx
         );
 
+        // Delete evidence with no memories linked to it
+        affected += await _database.Connection.ExecuteAsync(
+            """
+            DELETE FROM AgentMemoryEvidences AS e
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM AgentMemoryEvidenceLinks AS l
+                WHERE l.EvidenceId = e.ID
+            )
+            """,
+            transaction: tx
+        );
+
         tx.Commit();
         return affected;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> Delete(int id)
+    {
+        using var tsx = _database.Connection.BeginTransaction();
+
+        await _database.Connection.ExecuteAsync(
+            """
+            DELETE FROM AgentMemoryEvidenceLinks
+            WHERE MemoryId = @id
+            """,
+            new
+            {
+                id = id
+            },
+            transaction: tsx
+        );
+
+        var count = await _database.Connection.ExecuteAsync(
+            """
+            DELETE FROM AgentMemorys
+            WHERE ID = @id
+            """,
+            new
+            {
+                id = id
+            },
+            transaction: tsx
+        );
+
+        tsx.Commit();
+
+        return count > 0;
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateAccessTime(int id)
+    {
+        await _database.Connection.ExecuteAsync(
+            """
+            UPDATE AgentMemorys
+            SET `AccessUnix` = @UnixTime
+            WHERE `ID` = @ID
+            """,
+            new
+            {
+                ID = id,
+                UnixTime = DateTime.UtcNow.UnixTimestamp(),
+            }
+        );
     }
 }

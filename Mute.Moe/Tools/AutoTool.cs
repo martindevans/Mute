@@ -1,9 +1,7 @@
 ﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
-using Discord;
 using LlmTornado.Infra;
 
 namespace Mute.Moe.Tools;

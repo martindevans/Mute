@@ -66,10 +66,16 @@ public class FactExtractionService
         foreach (var item in response1.EnumerateLines())
         {
             var line = item
-                      .Trim(' ')
-                      .TrimStartCaseInsensitive("- we learned that")
                       .Trim()
-                      .TrimEnd('.');
+                      .TrimStartCaseInsensitive([ '-', '*' ])
+                      .Trim()
+                      .TrimStartCaseInsensitive("we learned that")
+                      .Trim()
+                      .TrimEnd('.')
+                      .Trim();
+
+            if (line.IsWhiteSpace() || line.IsEmpty)
+                continue;
 
             result.Add(new MemoryItem(new string(line)));
         }
