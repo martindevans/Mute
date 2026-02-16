@@ -204,4 +204,29 @@ public static class StringExtensions
             span = span[trim.Length..];
         return span;
     }
+
+    /// <summary>
+    /// Replace a substring with a replacement in a string, with a count of how many replacements were done
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="pattern"></param>
+    /// <param name="replacement"></param>
+    /// <param name="count"></param>
+    /// <returns></returns>
+    public static string ReplaceWithCount(this string input, string substring, string replacement, out int count)
+    {
+        var accumulator = 0;
+
+        var result = Regex.Replace(
+            input,
+            Regex.Escape(substring),
+            _ =>
+            {
+                accumulator++;
+                return replacement;
+            });
+
+        count = accumulator;
+        return result;
+    }
 }

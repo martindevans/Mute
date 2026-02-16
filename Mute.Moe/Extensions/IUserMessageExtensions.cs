@@ -14,13 +14,16 @@ public static class IUserMessageExtensions
     /// </summary>
     /// <param name="message"></param>
     /// <returns></returns>
-    public static IReadOnlyList<IAttachment> GetMessageImageAttachments(this IUserMessage message)
+    public static IReadOnlyList<IAttachment> GetMessageImageAttachments(this IMessage message)
     {
         // Get all attachments for message
         var attachments = message.Attachments.ToList<IAttachment>();
 
-        // Get all attachments from mentioned message (if any)
-        attachments.AddRange(message.ReferencedMessage?.Attachments ?? []);
+        if (message is IUserMessage um)
+        {
+            // Get all attachments from mentioned message (if any)
+            attachments.AddRange(um.ReferencedMessage?.Attachments ?? []);
+        }
 
         // Remove all non image attachments
         attachments.RemoveAll(a => !a.ContentType.StartsWith("image/"));
@@ -29,12 +32,22 @@ public static class IUserMessageExtensions
     }
 
     /// <summary>
+    /// Get all image attachments from this message or the message it references
+    /// </summary>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    public static IReadOnlyList<IAttachment> GetMessageImageAttachments(this IUserMessage message)
+    {
+        return ((IMessage)message).GetMessageImageAttachments();
+    }
+
+    /// <summary>
     /// Get the URLs of all images in this message. Attachments, embeds and referenced messages
     /// </summary>
     /// <param name="message"></param>
     /// <param name="followReference"></param>
     /// <returns></returns>
-    private static List<string> GetMessageImageUrls(this IUserMessage message, bool followReference = true)
+    public static List<string> GetMessageImageUrls(this IUserMessage message, bool followReference = true)
     {
         // Get all image attachments
         var urls = message.Attachments.Where(a => a.ContentType.StartsWith("image/")).Select(a => a.Url).ToList();
@@ -49,7 +62,7 @@ public static class IUserMessageExtensions
 
         // Load from referenced message
         if (followReference && message.ReferencedMessage != null)
-            urls.AddRange(GetMessageImageUrls(message.ReferencedMessage, false));
+            urls.AddRange(message.ReferencedMessage.GetMessageImageUrls(false));
 
         return urls;
     }
@@ -62,7 +75,7 @@ public static class IUserMessageExtensions
     /// <returns></returns>
     public static async Task<IReadOnlyList<SixLabors.ImageSharp.Image>> GetMessageImages(this IUserMessage message, HttpClient http)
     {
-        var images = GetMessageImageUrls(message);
+        var images = message.GetMessageImageUrls();
 
         var result = await images
                           .ToAsyncEnumerable()

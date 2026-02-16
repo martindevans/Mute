@@ -107,3 +107,9 @@ public class FactExtractionService
         return result;
     }
 }
+
+/// <summary>
+/// An item in agent memory
+/// </summary>
+/// <param name="Text"></param>
+public record MemoryItem(string Text);

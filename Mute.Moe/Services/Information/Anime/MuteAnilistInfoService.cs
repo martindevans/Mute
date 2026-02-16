@@ -89,6 +89,18 @@ public class MuteAnilistInfoService
         return new MangaMedia(item.Item);
     }
 
+    /// <summary>
+    /// Get a raw media item by ID
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<Media?> GetMediaInfoAsync(long id)
+    {
+        var item = await _mediaById.GetItem(id, GetMediaItemUncached);
+
+        return item?.Item;
+    }
+
     private async Task<MediaCacheItem> GetMediaItemUncached(long key)
     {
         return new MediaCacheItem(
@@ -188,6 +200,8 @@ public class MuteAnilistInfoService
     private class AnimeMedia(Media media)
         : IAnime
     {
+        public Media Media => media;
+
         public long Id => media.Id;
 
         public string? TitleEnglish => media.Title?.English ?? media.Title?.Romaji;
@@ -209,6 +223,8 @@ public class MuteAnilistInfoService
     private class MangaMedia(Media media)
         : IManga
     {
+        public Media Media => media;
+
         public long Id => media.Id;
         public string? TitleEnglish => media.Title?.English ?? media.Title?.Romaji;
         public string? TitleJapanese => media.Title?.Romaji ?? media.Title?.Native;

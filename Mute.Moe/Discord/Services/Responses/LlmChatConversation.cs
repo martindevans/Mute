@@ -1,4 +1,6 @@
-﻿using Discord;
+﻿using System.Net.Http;
+using System.Text;
+using Discord;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.LLM;
@@ -7,6 +9,7 @@ using Serilog;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Mute.Moe.Services.ImageGen;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
@@ -27,6 +30,8 @@ public class LlmChatConversation
     private readonly ulong _memoryContext;
     private readonly IConversationStateStorage _chatStorage;
     private readonly IMemoryExtractAndStoreQueue _memory;
+    private readonly IImageAnalyser _analyser;
+    private readonly IHttpClientFactory _httpClient;
 
     /// <summary>
     /// Indicates if this conversation is complete and should not be used again
@@ -72,13 +77,17 @@ public class LlmChatConversation
     /// <param name="client"></param>
     /// <param name="chatStorage"></param>
     /// <param name="memory"></param>
+    /// <param name="analyser"></param>
+    /// <param name="httpClient"></param>
     public LlmChatConversation(
         ulong memoryContext,
         ChatConversation conversation,
         IMessageChannel channel,
         DiscordSocketClient client,
         IConversationStateStorage chatStorage,
-        IMemoryExtractAndStoreQueue memory
+        IMemoryExtractAndStoreQueue memory,
+        IImageAnalyser analyser,
+        IHttpClientFactory httpClient
     )
     {
         Channel = channel;    
@@ -87,6 +96,8 @@ public class LlmChatConversation
         _memoryContext = memoryContext;
         _chatStorage = chatStorage;
         _memory = memory;
+        _analyser = analyser;
+        _httpClient = httpClient;
 
         Task.Run(async () => await MessageConsumer(conversation));
     }
@@ -284,10 +295,52 @@ public class LlmChatConversation
 
         async ValueTask<string?> GenerateResponse(BaseProcessEvent.Message context, int maxIters = 8, CancellationToken cancellation = default)
         {
+            // Add the text message
             conversation.AddUserMessage(
                 context.User.GlobalName ?? context.User.Username,
                 context.Content
             );
+
+            if (context.AttachedImages.Length > 0)
+            {
+                var descriptions = new List<string>();
+                using var http = _httpClient.CreateClient();
+
+                // Fetch all the images
+                var images = await context.AttachedImages
+                    .ToAsyncEnumerable()
+                    // ReSharper disable once AccessToDisposedClosure
+                    .Select(async (url, ct) => await http.GetAsync(url, ct))
+                    .Where(a => a.IsSuccessStatusCode)
+                    .Select(async (resp, ct) => await SixLabors.ImageSharp.Image.LoadAsync(await resp.Content.ReadAsStreamAsync(ct), ct))
+                    .ToListAsync(cancellationToken: cancellation);
+
+                // Describe all the images
+                foreach (var image in images)
+                {
+                    var desc = await _analyser.GetImageDescription(image, cancellation);
+                    if (desc == null)
+                        continue;
+
+                    descriptions.Add(desc.Description);
+                }
+
+                // Clean up the images
+                foreach (var image in images)
+                    image.Dispose();
+
+                // Add another message with image descriptions
+                if (descriptions.Count > 0)
+                {
+                    var builder = new StringBuilder();
+                    builder.AppendLine("## AUTO IMAGE ANALYSIS");
+                    builder.AppendLine($"There are {descriptions.Count} image(s) attached to the previous message. Descriptions:");
+                    foreach (var desc in descriptions)
+                        builder.AppendLine($" - {desc}");
+
+                    conversation.AddAnonymousUserMessage(builder.ToString());
+                }
+            }
 
             return await conversation.GenerateResponseMultiStep(maxIters, cancellation);
         }
@@ -304,6 +357,9 @@ public class LlmChatConversation
         // Update the last used time
         LastUpdated = DateTime.UtcNow;
 
+        // Get all images in the message
+        var images = context.Message.GetMessageImageUrls().ToArray();
+
         // Strip bot mention from start of string
         var content = context
             .Message
@@ -313,7 +369,11 @@ public class LlmChatConversation
             .TrimStart();
 
         // Enqueue work
-        await _messages.Writer.WriteAsync(new BaseProcessEvent.Message(context.User, new string(content)), ct);
+        await _messages.Writer.WriteAsync(new BaseProcessEvent.Message(
+            context.User,
+            new string(content),
+            images
+        ), ct);
     }
 
     /// <summary>
@@ -350,7 +410,7 @@ public class LlmChatConversation
             _completionSource.SetResult();
         }
 
-        public sealed record Message(IUser User, string Content) : BaseProcessEvent;
+        public sealed record Message(IUser User, string Content, string[] AttachedImages) : BaseProcessEvent;
 
         public sealed record Clear : BaseProcessEvent;
 

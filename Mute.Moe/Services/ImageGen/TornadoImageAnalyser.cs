@@ -40,7 +40,7 @@ namespace Mute.Moe.Services.ImageGen
             var api = endpoint.Endpoint.TornadoApi;
 
             // Convert image to base64
-            var image = await Image.LoadAsync(imageStream, cancellation);
+            using var image = await Image.LoadAsync(imageStream, cancellation);
             var mem = new MemoryStream();
             await image.SaveAsPngAsync(mem, cancellation);
             var buffer = mem.ToArray();

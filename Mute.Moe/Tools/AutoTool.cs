@@ -84,6 +84,7 @@ public class AutoTool
     private static readonly Dictionary<Type, Func<string, bool, IToolParamType>> AtomicTypes = new()
     {
         { typeof(int), (desc, req) => new ToolParamInt(desc, req) },
+        { typeof(long), (desc, req) => new ToolParamInt(desc, req) },
         { typeof(float), (desc, req) => new ToolParamNumber(desc, req) },
         { typeof(string), (desc, req) => new ToolParamString(desc, req) },
         { typeof(bool), (desc, req) => new ToolParamBool(desc, req) }
@@ -92,6 +93,7 @@ public class AutoTool
     private static readonly Dictionary<Type, ToolParamAtomicTypes> AtomicTypeMap = new()
     {
         { typeof(int), ToolParamAtomicTypes.Int },
+        { typeof(long), ToolParamAtomicTypes.Int },
         { typeof(float), ToolParamAtomicTypes.Float },
         { typeof(string), ToolParamAtomicTypes.String },
         { typeof(bool), ToolParamAtomicTypes.Bool }

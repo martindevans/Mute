@@ -91,6 +91,7 @@ public record Startup(Configuration Configuration)
         services.AddHostedService<AgentMemoryConfidenceDecayOverTime>();
         services.AddSingleton<FactExtractionService>();
         services.AddHostedService<IMemoryExtractAndStoreQueue, DatabaseMemoryExtractAndStoreQueue>();
+        services.AddSingleton<IKeyValueStorage<AgentDomainDocument>, AgentDomainDocumentStorage>();
 
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddSingleton<IFileSystem, FileSystem>();

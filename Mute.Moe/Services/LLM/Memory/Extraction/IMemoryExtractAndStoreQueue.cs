@@ -24,6 +24,7 @@ public interface IMemoryExtractAndStoreQueue
 /// <summary>
 /// Stores the extraction queue in the database
 /// </summary>
+[UsedImplicitly]
 public class DatabaseMemoryExtractAndStoreQueue
     : IMemoryExtractAndStoreQueue, IHostedService
 {

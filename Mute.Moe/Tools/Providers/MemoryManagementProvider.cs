@@ -59,11 +59,11 @@ namespace Mute.Moe.Tools.Providers
                 return new { error = "No relevant memories were found" };
 
             var rerankPrompt = $"""
-                                Task: Score how relevant each memory item is for answering the given query.
-                                Query: {query}
+                                Task: Score how relevant each fact is for answering the given query.
+                                Query: '{query}'
                                 Instructions:
-                                 - Score high memories that are relevant to the query
-                                 - Score low memories that are irrelevant
+                                 - Score high facts that are relevant to the query
+                                 - Score low facts that are irrelevant
                                 """;
 
             // Rerank the memories based on the query and their description

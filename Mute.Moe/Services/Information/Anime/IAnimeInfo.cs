@@ -2,6 +2,7 @@
 using Mute.Moe.Tools.Providers;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Mute.Anilist;
 
 
 namespace Mute.Moe.Services.Information.Anime;
@@ -118,12 +119,101 @@ public partial class AnimeToolProvider
     {
         _info = info;
 
-        Tools =
-        [
-            new AutoTool("anime_info", false, info.GetAnimeInfoAsync),
-            new AutoTool("anime_search", false, info.GetAnimesInfoAsync, postprocess: AutoTool.AsyncEnumerableToEnumerable<IAnime>),
-            new AutoTool("anime_season", false, GetSeasonAnimes),
-        ];
+        var tools = new List<AutoTool>()
+        {
+            new("anime_info", false, info.GetAnimeInfoAsync),
+            new("anime_search", false, GetAnimesInfoAsync, postprocess: AutoTool.AsyncEnumerableToEnumerable<IAnime>),
+            new("anime_season", false, GetSeasonAnimes),
+        };
+
+        if (info is MuteAnilistInfoService anilist)
+        {
+            tools.Add(new("anime_manga_related_media", false, GetRelatedAnimeMedias));
+        }
+
+        Tools = tools;
+    }
+
+    /// <summary>
+    /// Search for anime, anime movies, ONA, OVA etc. Search string could be part of the title, a character name, or part of the description.
+    /// </summary>
+    /// <param name="search">The term to search for - could be part of the title, a character name or part of the description</param>
+    /// <param name="limit">Maximum number of results to return (max 16)</param>
+    /// <returns></returns>
+    private async Task<IAsyncEnumerable<IAnime>> GetAnimesInfoAsync(string search, int limit)
+    {
+        return _info.GetAnimesInfoAsync(
+            search,
+            Math.Min(16, limit)
+        );
+    }
+
+    /// <summary>
+    /// Given the ID of an anime or manga retrieve other related media (e.g. original source, sequels, prequels, spinoffs etc).<br />
+    /// - Capability: Anime/Manga media relation retrieval.<br />
+    /// - Inputs: Anime ID or Manga ID.<br />
+    /// - Outputs: List of related media.
+    /// </summary>
+    /// <param name="id">ID of an anime or manga. `anime_info`/`anime_search`/`manga_info`/`mamga_search` tools can provide this.</param>
+    /// <returns></returns>
+    private async Task<object> GetRelatedAnimeMedias(long id)
+    {
+        // This tool is only available if the service is this more specific type
+        var service = (MuteAnilistInfoService)_info;
+
+        // Error if we can't find this media
+        var media = await service.GetMediaInfoAsync(id);
+        if (media == null)
+            return new { error = $"Cannot find media with ID '{id}'" };
+
+        // If there are no relations just return an empty array
+        var edges = media.Relations?.Edges;
+        if (edges == null)
+            return Array.Empty<object>();
+
+        var items = new List<object>();
+        foreach (var edge in edges)
+        {
+            if (edge.Node == null)
+                continue;
+
+            // Skip nodes that we don't know the type of
+            var node = edge.Node;
+            if (node.Type is null or MediaType.Unknown)
+                continue;
+
+            // Only take certain relations
+            var type = edge.RelationType;
+            switch (type)
+            {
+                case MediaRelation.Adaptation:
+                case MediaRelation.Prequel:
+                case MediaRelation.Sequel:
+                case MediaRelation.Parent:
+                case MediaRelation.SideStory:
+                case MediaRelation.Summary:
+                case MediaRelation.Alternative:
+                case MediaRelation.SpinOff:
+                case MediaRelation.Source:
+                case MediaRelation.Compilation:
+                    items.Add(new
+                    {
+                        ID = node.Id,
+                        RelationType = node.Type,
+                        Title = node.Title
+                    });
+                    break;
+
+                // We don't want these relation types
+                case MediaRelation.Contains:
+                case MediaRelation.Other:
+                case MediaRelation.Character:
+                default:
+                    break;
+            }
+        }
+
+        return items;
     }
 
     /// <summary>
