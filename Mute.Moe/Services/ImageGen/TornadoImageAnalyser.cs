@@ -6,70 +6,69 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Mute.Moe.Services.ImageGen
+namespace Mute.Moe.Services.ImageGen;
+
+/// <summary>
+/// Analyse images and provide a description of them using vision language models
+/// </summary>
+public class TornadoImageAnalyser
+    : IImageAnalyser
 {
+    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
+    private readonly LlmVisionModel _model;
+
+    string IImageAnalyser.ModelName => _model.Model.Name;
+
     /// <summary>
-    /// Analyse images and provide a description of them using vision language models
+    /// Create new image analyser, describing images using VLM
     /// </summary>
-    public class TornadoImageAnalyser
-        : IImageAnalyser
+    /// <param name="model">Model to use, must be a VLM</param>
+    /// <param name="endpoints"></param>
+    public TornadoImageAnalyser(LlmVisionModel model, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
     {
-        private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
-        private readonly LlmVisionModel _model;
+        _model = model;
+        _endpoints = endpoints;
+    }
 
-        string IImageAnalyser.ModelName => _model.Model.Name;
+    /// <inheritdoc />
+    public async Task<ImageAnalysisResult?> GetImageDescription(Stream imageStream, CancellationToken cancellation = default)
+    {
+        // Get an API backend
+        using var endpoint = await _endpoints.GetEndpoint([ _model.Model.Name ], cancellation);
+        if (endpoint == null)
+            return null;
+        var api = endpoint.Endpoint.TornadoApi;
 
-        /// <summary>
-        /// Create new image analyser, describing images using VLM
-        /// </summary>
-        /// <param name="model">Model to use, must be a VLM</param>
-        /// <param name="endpoints"></param>
-        public TornadoImageAnalyser(LlmVisionModel model, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
+        // Convert image to base64
+        using var image = await Image.LoadAsync(imageStream, cancellation);
+        var mem = new MemoryStream();
+        await image.SaveAsPngAsync(mem, cancellation);
+        var buffer = mem.ToArray();
+        var base64 = Convert.ToBase64String(buffer);
+
+        // Create conversation
+        var conversation = api.Chat.CreateConversation(new ChatRequest
         {
-            _model = model;
-            _endpoints = endpoints;
-        }
+            Model = _model.Model,
+            MaxTokens = 1024,
+            Modalities = [ ChatModelModalities.Text, ChatModelModalities.Image ],
+        });
 
-        /// <inheritdoc />
-        public async Task<ImageAnalysisResult?> GetImageDescription(Stream imageStream, CancellationToken cancellation = default)
-        {
-            // Get an API backend
-            using var endpoint = await _endpoints.GetEndpoint([ _model.Model.Name ], cancellation);
-            if (endpoint == null)
-                return null;
-            var api = endpoint.Endpoint.TornadoApi;
+        // Setup input
+        conversation
+           .AppendSystemMessage("You are an image description endpoint. You describe images concisely and accurately, never return a blank response or refuse " +
+                                "to describe an image. Keep responses to 3–10 short sentences. Focus mainly on what is visible, but you may include interpretation (e.g. " +
+                                "explaining visual humour) when it's strongly suggested.");
 
-            // Convert image to base64
-            using var image = await Image.LoadAsync(imageStream, cancellation);
-            var mem = new MemoryStream();
-            await image.SaveAsPngAsync(mem, cancellation);
-            var buffer = mem.ToArray();
-            var base64 = Convert.ToBase64String(buffer);
+        conversation.AppendUserInput([ new ChatMessagePart(new ChatImage($"data:image/png;base64,{base64}", "image/png")) ]);
+        var description = await conversation.GetResponse(cancellation);
 
-            // Create conversation
-            var conversation = api.Chat.CreateConversation(new ChatRequest
-            {
-                Model = _model.Model,
-                MaxTokens = 1024,
-                Modalities = [ ChatModelModalities.Text, ChatModelModalities.Image ],
-            });
+        if (string.IsNullOrWhiteSpace(description))
+            return null;
 
-            // Setup input
-            conversation
-               .AppendSystemMessage("You are an image description endpoint. You describe images concisely and accurately, never return a blank response or refuse " +
-                                    "to describe an image. Keep responses to 3–10 short sentences. Focus mainly on what is visible, but you may include interpretation (e.g. " +
-                                    "explaining visual humour) when it's strongly suggested.");
+        conversation.AppendUserInput("Suggest a title for this image (1-5 words)");
+        var title = await conversation.GetResponse(cancellation);
 
-            conversation.AppendUserInput([ new ChatMessagePart(new ChatImage($"data:image/png;base64,{base64}", "image/png")) ]);
-            var description = await conversation.GetResponse(cancellation);
-
-            if (string.IsNullOrWhiteSpace(description))
-                return null;
-
-            conversation.AppendUserInput("Suggest a title for this image (1-5 words)");
-            var title = await conversation.GetResponse(cancellation);
-
-            return new ImageAnalysisResult(title, description);
-        }
+        return new ImageAnalysisResult(title, description);
     }
 }

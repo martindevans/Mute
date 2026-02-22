@@ -13,18 +13,9 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 [UsedImplicitly]
-public class Diagnostics
+public class Diagnostics(IUptime _uptime, Status _status)
     : MuteBaseModule
 {
-    private readonly IUptime _uptime;
-    private readonly Status _status;
-
-    public Diagnostics(IUptime uptime, Status status)
-    {
-        _uptime = uptime;
-        _status = status;
-    }
-
     [Command("memory"), RequireOwner, Summary("I will tell you my current memory usage")]
     [UsedImplicitly]
     public async Task MemoryUsage()

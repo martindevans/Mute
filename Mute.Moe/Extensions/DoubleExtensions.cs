@@ -10,7 +10,7 @@ public static class DoubleExtensions
     /// </summary>
     public static double LogitToProbability(this double logit)
     {
-        return (1.0 / (1.0 + Math.Exp(-logit)));
+        return 1.0 / (1.0 + Math.Exp(-logit));
     }
 
     /// <summary>
@@ -18,6 +18,6 @@ public static class DoubleExtensions
     /// </summary>
     public static float LogitToProbability(this float logit)
     {
-        return (1.0f / (1.0f + MathF.Exp(-logit)));
+        return 1.0f / (1.0f + MathF.Exp(-logit));
     }
 }

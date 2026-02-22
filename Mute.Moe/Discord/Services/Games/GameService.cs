@@ -11,6 +11,7 @@ namespace Mute.Moe.Discord.Services.Games;
 /// <summary>
 /// Monitor user "playing" status, store them in the DB
 /// </summary>
+[UsedImplicitly]
 public class GameService
     : IHostedService
 {

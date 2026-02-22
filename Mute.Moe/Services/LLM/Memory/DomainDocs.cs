@@ -40,7 +40,7 @@ public record AgentDomainDocument
     /// <returns></returns>
     public override string ToString()
     {
-        return ToString(null);
+        return ToString(expanded:null);
     }
 
     /// <summary>

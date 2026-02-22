@@ -14,10 +14,11 @@ public partial class Dev(IKeyValueStorage<AgentDomainDocument> docs)
     : MuteBaseModule
 {
     [Command("create_domain_doc")]
+    [UsedImplicitly]
     public async Task CreateDomainDoc()
     {
         var str = "";
-        var edits = new List<StringEdit>()
+        var edits = new List<StringEdit>
         {
             new(StringEditType.Insert, 0, "Hello", 1),
             new(StringEditType.Insert, 5, "World", 1),
@@ -71,6 +72,7 @@ public partial class Dev(IKeyValueStorage<AgentDomainDocument> docs)
     }
 
     [Command("get_domain_doc")]
+    [UsedImplicitly]
     public async Task GetDomainDoc()
     {
         var doc = (await docs.Get(0))!;

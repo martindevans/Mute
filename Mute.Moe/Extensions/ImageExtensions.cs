@@ -52,7 +52,7 @@ public static class ImageExtensions
     /// <returns></returns>
     public static (string, string)? GetGenerationPrompt(this PngMetadata meta)
     {
-        var parameters = GetGenerationMetadata(meta);
+        var parameters = meta.GetGenerationMetadata();
         if (string.IsNullOrEmpty(parameters))
             return null;
 

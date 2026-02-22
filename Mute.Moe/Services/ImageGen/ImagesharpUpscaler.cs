@@ -15,7 +15,7 @@ public class ImagesharpUpscaler
     /// <inheritdoc />
     public async Task<Image> UpscaleImage(Image image, uint width, uint height, Func<ProgressReport, Task>? progressReporter = null)
     {
-        return image.Clone(ctx => ctx.Resize(new ResizeOptions()
+        return image.Clone(ctx => ctx.Resize(new ResizeOptions
         {
             Size = new Size((int)width, (int)height),
             Sampler = CubicResampler.MitchellNetravali

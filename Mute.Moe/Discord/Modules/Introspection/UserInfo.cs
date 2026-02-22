@@ -12,17 +12,10 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 [UsedImplicitly]
-public class UserInfo
+public class UserInfo(IHttpClientFactory _http, IUserService _users)
     : MuteBaseModule
 {
-    private readonly IUserService _users;
-    private readonly HttpClient _http;
-
-    public UserInfo(IHttpClientFactory http, IUserService users)
-    {
-        _users = users;
-        _http = http.CreateClient();
-    }
+    private readonly HttpClient _http = _http.CreateClient();
 
     [Command("userid"), Summary("I will type out the ID of the specified user")]
     [UsedImplicitly]

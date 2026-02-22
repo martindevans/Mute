@@ -26,12 +26,17 @@ public class Configuration
     /// <summary>
     /// Set if the bot process messages from itself
     /// </summary>
-    [UsedImplicitly] public bool ProcessMessagesFromSelf = false;
+    [UsedImplicitly] public bool ProcessMessagesFromSelf;
 
     /// <summary>
     /// Set the command prefix character
     /// </summary>
     [UsedImplicitly] public char PrefixCharacter = '!';
+
+    /// <summary>
+    /// Prefix characters which will cause a message to be completely ignored
+    /// </summary>
+    [UsedImplicitly] public char[] IgnorePrefixCharacters = [ ];
 }
 
 /// <summary>

@@ -143,7 +143,7 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
 
             if (result.Healthy)
             {
-                desc.AppendLine($" - Online 🟢");
+                desc.AppendLine( " - Online 🟢");
                 desc.AppendLine($" - Available: {result.AvailableSlots}/{result.MaxSlots}");
                 desc.AppendLine($" - Latency: {result.Latency.TotalMilliseconds:##.#}ms");
             }

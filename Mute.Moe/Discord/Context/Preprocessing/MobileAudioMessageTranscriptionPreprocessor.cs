@@ -118,19 +118,12 @@ public class MobileAudioMessageTranscriptionPreprocessor
         return new AudioBuffer(samples, new WaveFormat(48000, 1));
     }
 
-    private class AudioBuffer
+    private class AudioBuffer(List<float> _samples, WaveFormat _waveFormat)
         : ISampleProvider
     {
-        public WaveFormat WaveFormat { get; }
+        public WaveFormat WaveFormat => _waveFormat;
 
         private int _read;
-        private readonly List<float> _samples;
-
-        public AudioBuffer(List<float> samples, WaveFormat waveFormat)
-        {
-            _samples = samples;
-            WaveFormat = waveFormat;
-        }
 
         public int Read(float[] buffer, int offset, int count)
         {

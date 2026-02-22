@@ -16,18 +16,9 @@ namespace Mute.Moe.Discord.Modules.Payment;
 [HelpGroup("payment")]
 [WarnDebugger]
 [TypingReply]
-public class Uoi
+public class Uoi(IPendingTransactions _pending, IUserService _users)
     : MuteBaseModule
 {
-    private readonly IPendingTransactions _pending;
-    private readonly IUserService _users;
-
-    public Uoi(IPendingTransactions pending, IUserService users)
-    {
-        _pending = pending;
-        _users = users;
-    }
-
     [Command("uoi"), Summary("I will I will notify someone that they owe you something"), UsedImplicitly]
     public async Task CreatePendingUoi(IUser user, decimal amount, string unit, [Remainder] string? note = null)
     {
@@ -211,7 +202,7 @@ public class Uoi
     public static async Task<string> FormatSinglePending(IPendingTransaction p, IUserService users, bool mentionReceiver, bool longForm)
     {
         var receiver = await users.Name(p.ToId, mention: mentionReceiver);
-        var payer = (await users.Name(p.FromId));
+        var payer = await users.Name(p.FromId);
         var note = string.IsNullOrEmpty(p.Note) ? "" : $"'{p.Note}'";
         var amount = TransactionFormatting.FormatCurrency(p.Amount, p.Unit);
         var date = p.Instant.ToShortDateString();

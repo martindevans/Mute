@@ -11,6 +11,7 @@ public class UserInfo
     : MuteInteractionModuleBase
 {
     [UserCommand("Show Avatar")]
+    [UsedImplicitly]
     public async Task ShowAvatar(IUser user)
     {
         var url = user.GetAvatarUrl(ImageFormat.Png, 2048);

@@ -19,17 +19,10 @@ public static class InputStreamExtensions
         return new InputStreamWrapper(input, format);
     }
 
-    private class InputStreamWrapper
+    private class InputStreamWrapper(InputStream _input, WaveFormat _format)
         : IWaveProvider
     {
-        private readonly InputStream _input;
-        public WaveFormat WaveFormat { get; }
-
-        public InputStreamWrapper(InputStream input, WaveFormat format)
-        {
-            WaveFormat = format;
-            _input = input;
-        }
+        public WaveFormat WaveFormat => _format;
 
         public int Read(byte[] buffer, int offset, int count)
         {

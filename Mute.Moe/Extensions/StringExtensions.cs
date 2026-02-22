@@ -108,7 +108,7 @@ public static class StringExtensions
     /// <returns></returns>
     public static IEnumerable<ulong> FindUserMentions(this string str)
     {
-        return FindMentions(str, '@');
+        return str.FindMentions('@');
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public static class StringExtensions
     /// <returns></returns>
     public static IEnumerable<ulong> FindChannelMentions(this string str)
     {
-        return FindMentions(str, '#');
+        return str.FindMentions('#');
     }
 
     /// <summary>
@@ -209,7 +209,7 @@ public static class StringExtensions
     /// Replace a substring with a replacement in a string, with a count of how many replacements were done
     /// </summary>
     /// <param name="input"></param>
-    /// <param name="pattern"></param>
+    /// <param name="substring"></param>
     /// <param name="replacement"></param>
     /// <param name="count"></param>
     /// <returns></returns>

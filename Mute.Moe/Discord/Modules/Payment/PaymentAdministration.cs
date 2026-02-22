@@ -14,18 +14,9 @@ namespace Mute.Moe.Discord.Modules.Payment;
 [WarnDebugger]
 [TypingReply]
 [Summary("Administration for IOU system")]
-public class PaymentAdministration
+public class PaymentAdministration(IPendingTransactions _pending, IUserService _users)
     : MuteBaseModule
 {
-    private readonly IPendingTransactions _pending;
-    private readonly IUserService _users;
-
-    public PaymentAdministration(IPendingTransactions pending, IUserService users)
-    {
-        _pending = pending;
-        _users = users;
-    }
-
     [Command("iou-pending-tsx-info"), Summary("I will tell you about a transaction by ID"), UsedImplicitly]
     public async Task PendingTsxInfo(string id)
     {

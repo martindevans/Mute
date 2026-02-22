@@ -9,11 +9,9 @@ namespace Mute.Moe.Discord.Modules.Games;
 
 [UsedImplicitly]
 [HelpGroup("games")]
-public class Flip
+public class Flip(IDiceRoller _dice)
     : MuteBaseModule
 {
-    private readonly IDiceRoller _dice;
-
     private static readonly IReadOnlyList<string> Ball8Replies =
     [
         "It is certain.",
@@ -38,11 +36,6 @@ public class Flip
         "Very doubtful.",
     ];
 
-
-    public Flip(IDiceRoller dice)
-    {
-        _dice = dice;
-    }
 
     [Command("flip"), Summary("I will flip a coin")]
     [UsedImplicitly]

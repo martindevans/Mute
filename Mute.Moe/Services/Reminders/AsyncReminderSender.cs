@@ -122,16 +122,9 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         public abstract Task Run(ref Reminder? next);
     }
 
-    private class EventCreatedAction
+    private class EventCreatedAction(Reminder _reminder)
         : BaseEventAction
     {
-        private readonly Reminder _reminder;
-
-        public EventCreatedAction(Reminder reminder)
-        {
-            _reminder = reminder;
-        }
-
         public override Task Run(ref Reminder? next)
         {
             Log.Information("Created reminder: {0}", _reminder.ID);
@@ -143,16 +136,9 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         }
     }
 
-    private class EventDeletedAction
+    private class EventDeletedAction(uint _id)
         : BaseEventAction
     {
-        private readonly uint _id;
-
-        public EventDeletedAction(uint id)
-        {
-            _id = id;
-        }
-
         public override Task Run(ref Reminder? next)
         {
             Log.Information("Deleted reminder: {0}", _id);
@@ -163,20 +149,9 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         }
     }
 
-    private class EventTimeoutAction
+    private class EventTimeoutAction(Reminder _reminder, IReminders _reminders, DiscordSocketClient _client)
         : BaseEventAction
     {
-        private readonly Reminder _reminder;
-        private readonly IReminders _reminders;
-        private readonly DiscordSocketClient _client;
-
-        public EventTimeoutAction(Reminder reminder, IReminders reminders, DiscordSocketClient client)
-        {
-            _reminder = reminder;
-            _reminders = reminders;
-            _client = client;
-        }
-
         public override Task Run(ref Reminder? _)
         {
             Log.Information("Sending reminder: {0}", _reminder.ID);

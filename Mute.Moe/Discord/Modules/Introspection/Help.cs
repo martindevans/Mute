@@ -10,21 +10,10 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 [HelpGroup("help")]
-public class Help
+public class Help(CommandService _commands, IServiceProvider _services, Configuration _config)
     : MuteBaseModule
 {
-    private readonly CommandService _commands;
-    private readonly IServiceProvider _services;
-
-    private readonly char _prefixCharacter;
-
-    public Help(CommandService commands, IServiceProvider services,  Configuration config)
-    {
-        _commands = commands;
-        _services = services;
-
-        _prefixCharacter = config.PrefixCharacter;
-    }
+    private readonly char _prefixCharacter = _config.PrefixCharacter;
 
     [Command("modules"), Alias("help", "commands")]
     [Summary("I will list all command modules (groups of commands)")]

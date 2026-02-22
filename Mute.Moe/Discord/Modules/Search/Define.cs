@@ -10,18 +10,9 @@ namespace Mute.Moe.Discord.Modules.Search;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 [UsedImplicitly]
-public class Define
+public class Define(IWikipedia _wiki, IUrbanDictionary _urban)
     : MuteBaseModule
 {
-    private readonly IWikipedia _wikipedia;
-    private readonly IUrbanDictionary _urban;
-
-    public Define(IWikipedia wiki, IUrbanDictionary urban)
-    {
-        _wikipedia = wiki;
-        _urban = urban;
-    }
-
     [Command("define"), Summary("I will briefly explain what a thing is")]
     [ThinkingReply]
     [UsedImplicitly]
@@ -36,7 +27,7 @@ public class Define
     public async Task DefineAsync(int sentences, [Remainder] string thing)
     {
         //Get definitions from wikipedia
-        var definitions = await _wikipedia.Define(thing, sentences: sentences);
+        var definitions = await _wiki.Define(thing, sentences: sentences);
 
         //Display the item(s)
         await DisplayItemList(

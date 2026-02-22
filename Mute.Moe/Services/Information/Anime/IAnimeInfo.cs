@@ -119,7 +119,7 @@ public partial class AnimeToolProvider
     {
         _info = info;
 
-        var tools = new List<AutoTool>()
+        var tools = new List<AutoTool>
         {
             new("anime_info", false, info.GetAnimeInfoAsync),
             new("anime_search", false, GetAnimesInfoAsync, postprocess: AutoTool.AsyncEnumerableToEnumerable<IAnime>),

@@ -42,7 +42,7 @@ public static class IAnimeExtensions
         // Attach appropriate title
         if (anime is { TitleJapanese: not null, TitleEnglish: not null })
             builder.WithAuthor(anime.TitleJapanese).WithTitle(anime.TitleEnglish);
-        else if (anime.TitleEnglish != null ^ anime.TitleJapanese != null)
+        else if ((anime.TitleEnglish != null) ^ (anime.TitleJapanese != null))
             builder.WithTitle(anime.TitleEnglish ?? anime.TitleJapanese);
         else
             builder.WithTitle($"Anime ID: {anime.Id}");

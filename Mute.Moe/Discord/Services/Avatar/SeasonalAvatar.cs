@@ -11,6 +11,7 @@ namespace Mute.Moe.Discord.Services.Avatar;
 /// <summary>
 /// Picks avatars based on the date
 /// </summary>
+[UsedImplicitly]
 public class SeasonalAvatar
     : IAvatarPicker
 {

@@ -41,7 +41,7 @@ public static class IReadOnlyDictionaryExtensions
         /// <returns></returns>
         public bool GetToolParameterFloat(string key, out float result, [NotNullWhen(false)] out object? err)
         {
-            if (!GetToolParameterObject(parameters, key, out var obj, out err))
+            if (!parameters.GetToolParameterObject(key, out var obj, out err))
             {
                 result = default;
                 return false;
@@ -69,7 +69,7 @@ public static class IReadOnlyDictionaryExtensions
         /// <returns></returns>
         public bool GetToolParameterBoolean(string key, out bool result, [NotNullWhen(false)] out object? err)
         {
-            if (!GetToolParameterObject(parameters, key, out var obj, out err))
+            if (!parameters.GetToolParameterObject(key, out var obj, out err))
             {
                 result = default;
                 return false;
@@ -97,7 +97,7 @@ public static class IReadOnlyDictionaryExtensions
         /// <returns></returns>
         public bool GetToolParameterInteger(string key, out int result, [NotNullWhen(false)] out object? err)
         {
-            if (!GetToolParameterObject(parameters, key, out var obj, out err))
+            if (!parameters.GetToolParameterObject(key, out var obj, out err))
             {
                 result = default;
                 return false;
@@ -125,7 +125,7 @@ public static class IReadOnlyDictionaryExtensions
         /// <returns></returns>
         public bool GetToolParameterString(string key, [NotNullWhen(true)] out string? result, [NotNullWhen(false)] out object? err)
         {
-            if (!GetToolParameterObject(parameters, key, out var obj, out err))
+            if (!parameters.GetToolParameterObject(key, out var obj, out err))
             {
                 result = default;
                 return false;
@@ -143,7 +143,7 @@ public static class IReadOnlyDictionaryExtensions
 
         private bool GetToolParameterArrayObject<TElement>(string key, [NotNullWhen(true)] out TElement[]? result, [NotNullWhen(false)] out object? err, Func<object, TElement> convert)
         {
-            if (!GetToolParameterObject(parameters, key, out var obj, out err))
+            if (!parameters.GetToolParameterObject(key, out var obj, out err))
             {
                 result = default;
                 return false;

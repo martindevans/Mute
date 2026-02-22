@@ -11,18 +11,9 @@ namespace Mute.Moe.Discord.Modules.Audio;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 [UsedImplicitly]
-public class Voice
+public class Voice(IGuildSpeechQueueCollection _queueCollection, ITextToSpeech _tts)
     : MuteBaseModule
 {
-    private readonly IGuildSpeechQueueCollection _queueCollection;
-    private readonly ITextToSpeech _tts;
-
-    public Voice(IGuildSpeechQueueCollection queueCollection, ITextToSpeech tts)
-    {
-        _queueCollection = queueCollection;
-        _tts = tts;
-    }
-
     [RequireOwner]
     [Command("tts")]
     [ThinkingReply(EmojiLookup.SpeakerMedVolume)]

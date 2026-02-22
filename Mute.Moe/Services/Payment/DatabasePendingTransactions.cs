@@ -89,7 +89,7 @@ public class DatabasePendingTransactions
         cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
         cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
         cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = instant.UnixTimestamp() });
-        cmd.Parameters.Add(new SQLiteParameter("@Pending", System.Data.DbType.String) { Value = PendingState.Pending.ToString() });
+        cmd.Parameters.Add(new SQLiteParameter("@Pending", System.Data.DbType.String) { Value = nameof(PendingState.Pending) });
 
         return (uint)(long)(await cmd.ExecuteScalarAsync())!;
     }

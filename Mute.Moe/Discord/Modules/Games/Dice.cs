@@ -14,18 +14,8 @@ namespace Mute.Moe.Discord.Modules.Games;
 
 [UsedImplicitly]
 [HelpGroup("games")]
-public class Dice
-    : MuteBaseModule
+public class Dice(IDiceRoller _dice, IMacroResolver _macros) : MuteBaseModule
 {
-    private readonly IDiceRoller _dice;
-    private readonly IMacroResolver _macros;
-
-    public Dice(IDiceRoller dice, IMacroResolver macros)
-    {
-        _dice = dice;
-        _macros = macros;
-    }
-
     [WarnSlashComandMigration("dice roll", 90)]
     [Command("roll"), Summary("I will roll a dice, allowing use of complex mathematical expressions")]
     [UsedImplicitly]
@@ -69,16 +59,9 @@ public class Dice
 
 [UsedImplicitly]
 [Group("macro")]
-public class Macro
+public class Macro(IMacroStorage _macros)
     : MuteBaseModule
 {
-    private readonly IMacroStorage _macros;
-
-    public Macro(IMacroStorage macros)
-    {
-        _macros = macros;
-    }
-
     [Command("find")]
     [UsedImplicitly]
     public async Task FindMacros(string name)

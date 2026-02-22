@@ -64,7 +64,7 @@ public class DatabaseMemoryExtractAndStoreQueue
     public async Task Enqueue(ulong context, string transcript)
     {
         // Store the work in the database
-        await _database.Connection.InsertAsync(new MemoryExtractionJob()
+        await _database.Connection.InsertAsync(new MemoryExtractionJob
         {
             Context = context,
             Transcript = transcript

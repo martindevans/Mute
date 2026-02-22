@@ -18,20 +18,12 @@ namespace Mute.Moe.Discord.Modules.Payment;
 [WarnDebugger]
 [TypingReply]
 [Summary("Record and query how much you owe people")]
-public class Iou
+public class Iou(ITransactions _transactions, IUserService _users)
     : MuteBaseModule
 {
-    private readonly ITransactions _transactions;
-    private readonly IUserService _users;
-
-    public Iou(ITransactions transactions, IUserService users)
-    {
-        _transactions = transactions;
-        _users = users;
-    }
-
     #region helpers
-    private async Task DisplayTransactions(IReadOnlyCollection<ITransaction> transactions)
+    private async Task DisplayTransactions<TTransactionsCollection>(TTransactionsCollection transactions)
+        where TTransactionsCollection : IReadOnlyCollection<ITransaction>
     {
         var tsx = new List<string>(transactions.Count);
         foreach (var transaction in transactions)
@@ -98,6 +90,7 @@ public class Iou
     #endregion
 
     [Command("iou"), Summary("I will remember that you owe something to another user")]
+    [UsedImplicitly]
     public async Task CreateDebt(IUser user, decimal amount, string unit, [Remainder] string? note = null)
     {
         if (amount < 0)
@@ -114,6 +107,7 @@ public class Iou
     }
 
     [Command("transactions"), Summary("I will show all your transactions")]
+    [UsedImplicitly]
     public async Task ListTransactions([Summary("Filter only to transactions with this user")] IUser? other = null)
     {
         //Get all transactions in both directions
@@ -126,18 +120,21 @@ public class Iou
 
     #region balance query
     [Command("io"), Summary("I will tell you what you owe")]
+    [UsedImplicitly]
     public Task ListDebtsByBorrower([Summary("Filter debts by this lender")] IUser? lender = null)
     {
-        return ShowBalances(lender, b => b.UserA == Context.User.Id ^ b.Amount > 0, "You are debt free");
+        return ShowBalances(lender, b => (b.UserA == Context.User.Id) ^ (b.Amount > 0), "You are debt free");
     }
 
     [Command("oi"), Summary("I will tell you what you are owed")]
+    [UsedImplicitly]
     public Task ListDebtsByLender([Summary("Filter debts by this borrower")] IUser? borrower = null)
     {
-        return ShowBalances(borrower, b => b.UserB == Context.User.Id ^ b.Amount > 0, "Nobody owes you anything");
+        return ShowBalances(borrower, b => (b.UserB == Context.User.Id) ^ (b.Amount > 0), "Nobody owes you anything");
     }
 
     [Command("balance"), Summary("I will tell you your balance")]
+    [UsedImplicitly]
     public Task ShowBalance([Summary("Filter only to transactions with this user")] IUser? other = null)
     {
         return ShowBalances(other, _ => true, "No non-zero balances");

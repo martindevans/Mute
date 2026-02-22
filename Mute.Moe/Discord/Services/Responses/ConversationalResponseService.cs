@@ -33,7 +33,16 @@ public class ConversationalResponseService
     /// <param name="chatFactory"></param>
     /// <param name="chatStorage"></param>
     /// <param name="memory"></param>
-    public ConversationalResponseService(DiscordSocketClient client, ChatConversationFactory chatFactory, IConversationStateStorage chatStorage, IMemoryExtractAndStoreQueue memory, IImageAnalyser analyser, IHttpClientFactory httpFactory)
+    /// <param name="analyser"></param>
+    /// <param name="httpFactory"></param>
+    public ConversationalResponseService(
+        DiscordSocketClient client,
+        ChatConversationFactory chatFactory,
+        IConversationStateStorage chatStorage,
+        IMemoryExtractAndStoreQueue memory,
+        IImageAnalyser analyser,
+        IHttpClientFactory httpFactory
+    )
     {
         _client = client;
         _chatFactory = chatFactory;

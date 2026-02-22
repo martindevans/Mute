@@ -13,18 +13,9 @@ namespace Mute.Moe.Discord.Interactions.Games;
 
 [Group("dice", "Rolling dice")]
 [UsedImplicitly]
-public class Dice
+public class Dice(IDiceRoller _dice, IMacroResolver _macros)
     : MuteInteractionModuleBase
 {
-    private readonly IDiceRoller _dice;
-    private readonly IMacroResolver _macros;
-
-    public Dice(IDiceRoller dice, IMacroResolver macros)
-    {
-        _dice = dice;
-        _macros = macros;
-    }
-
     [SlashCommand("roll", "I will roll a dice, allowing use of complex mathematical expressions")]
     [UsedImplicitly]
     public async Task Roll([Summary("command", "e.g. 1d10 + 3d4 * 1d6")] string command)
@@ -66,16 +57,9 @@ public class Dice
 
     [Group("macro", "Macros for dice rolling expressions")]
     [UsedImplicitly]
-    public class DiceMacro
+    public class DiceMacro(IMacroStorage _macros)
         : MuteInteractionModuleBase
     {
-        private readonly IMacroStorage _macros;
-
-        public DiceMacro(IMacroStorage macros)
-        {
-            _macros = macros;
-        }
-
         [SlashCommand("find", "Search for existing macros")]
         [UsedImplicitly]
         public async Task FindMacros(string name)

@@ -59,16 +59,10 @@ public class AsyncLock
         }
     }
 
-    private class LockLifetime
+    private class LockLifetime(AsyncLock _parent)
         : IDisposable
     {
-        private readonly AsyncLock _parent;
         private bool _released;
-
-        public LockLifetime(AsyncLock parent)
-        {
-            _parent = parent;
-        }
 
         public void Dispose()
         {

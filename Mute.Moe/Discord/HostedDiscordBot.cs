@@ -185,14 +185,27 @@ public class HostedDiscordBot
             if (message.Author.Id == Client.CurrentUser.Id && !_config.ProcessMessagesFromSelf)
                 return;
 
+            // Ignore messages with one of the special ignore-me prefix character
+            foreach (var ignoreChar in _config.IgnorePrefixCharacters)
+                if (message.Content.StartsWith(ignoreChar))
+                    return;
+
             // Check if the message starts with the command prefix character
             var prefixPos = 0;
             var hasPrefix = message.HasCharPrefix(_config.PrefixCharacter, ref prefixPos);
 
+            // Skip the position forward over spaces after the command char. So messages like `! help` work
+            if (hasPrefix)
+            {
+                var text = message.Content;
+                while (prefixPos < text.Length && text[prefixPos] == ' ')
+                    prefixPos++;
+            }
+
             // Create a context for this message
             await using var context = new MuteCommandContext(Client, message, _services);
 
-            // Apply generic message preproccessor
+            // Apply generic message preproccessors
             var preprocessors = _services.GetServices<IMessagePreprocessor>().ToList();
             foreach (var pre in preprocessors)
             {

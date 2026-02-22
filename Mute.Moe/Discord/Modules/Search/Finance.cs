@@ -14,27 +14,12 @@ namespace Mute.Moe.Discord.Modules.Search;
 [UsedImplicitly]
 [HelpGroup("finance")]
 [ThinkingReply]
-public class Finance
+public class Finance(ICryptocurrencyInfo _crypto, IStockQuotes _stocks, IForexInfo _forex, IStockSearch _search, Random _random)
     : MuteBaseModule
 {
-    private readonly ICryptocurrencyInfo _crypto;
-    private readonly IStockQuotes _stocks;
-    private readonly IForexInfo _forex;
-    private readonly IStockSearch _search;
-    private readonly Random _random;
-
     private readonly IReadOnlyList<string> _fail = [
         EmojiLookup.Confused, EmojiLookup.Crying, EmojiLookup.Pensive, EmojiLookup.SlightlyFrowning, EmojiLookup.Thinking, EmojiLookup.Unamused, EmojiLookup.Worried
     ];
-
-    public Finance(ICryptocurrencyInfo crypto, IStockQuotes stocks, IForexInfo forex, IStockSearch search, Random random)
-    {
-        _crypto = crypto;
-        _stocks = stocks;
-        _forex = forex;
-        _search = search;
-        _random = random;
-    }
 
     [Command("ticker"), Summary("I will find out information about a stock or currency")]
     [UsedImplicitly]

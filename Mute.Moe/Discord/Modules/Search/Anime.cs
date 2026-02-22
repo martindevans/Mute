@@ -10,16 +10,9 @@ namespace Mute.Moe.Discord.Modules.Search;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 [UsedImplicitly]
-public class Anime
+public class Anime(IAnimeInfo _animeSearch)
     : MuteBaseModule
 {
-    private readonly IAnimeInfo _animeSearch;
-
-    public Anime(IAnimeInfo animeSearch)
-    {
-        _animeSearch = animeSearch;
-    }
-
     [Command("anime"), Alias("animu"), Summary("I will tell you about the given anime")]
     [TypingReply]
     [UsedImplicitly]

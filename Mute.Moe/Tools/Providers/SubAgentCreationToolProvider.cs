@@ -64,7 +64,7 @@ public class SubAgentCreationToolProvider
     private async Task<object> DelegateAgent(ITool.CallContext callContext, string task, string context, string[] facts, string[] tools)
     {
         // Create tool execution engine
-        var request = new ChatRequest()
+        var request = new ChatRequest
         {
             Model = _model.Model,
             ParallelToolCalls = true,

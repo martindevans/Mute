@@ -13,20 +13,9 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 
 [UsedImplicitly]
 [RequireOwner]
-public class Administration
+public class Administration(DiscordSocketClient _client, IAvatarPicker _avatar, IServiceProvider _services)
     : MuteBaseModule
 {
-    private readonly DiscordSocketClient _client;
-    private readonly IAvatarPicker _avatar;
-    private readonly IServiceProvider _services;
-
-    public Administration(DiscordSocketClient client, IAvatarPicker avatar, IServiceProvider services)
-    {
-        _client = client;
-        _avatar = avatar;
-        _services = services;
-    }
-
     [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
     [UsedImplicitly]
     public async Task Say(string message, IMessageChannel? channel = null)
@@ -156,10 +145,9 @@ public class Administration
             return;
         }
 
-        var kvs = svc as IKeyValueStorage;
-        if (kvs == null)
+        if (svc is not IKeyValueStorage kvs)
         {
-            await ReplyAsync($"Cannot convert service object to `IKeyValueStorage`");
+            await ReplyAsync("Cannot convert service object to `IKeyValueStorage`");
             return;
         }
 

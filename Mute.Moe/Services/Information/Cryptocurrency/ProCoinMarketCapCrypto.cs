@@ -289,18 +289,17 @@ public class ProCoinMarketCapCrypto
         [JsonProperty("total_supply"), UsedImplicitly] public decimal? TotalSupply { get; private set; }
         [JsonProperty("max_supply"), UsedImplicitly] public decimal? MaxSupply { get; private set; }
 
-        private IReadOnlyDictionary<string, IQuote>? _quotesCache;
         public IReadOnlyDictionary<string, IQuote> Quotes
         {
             get
             {
-                if (_quotesCache == null)
+                if (field == null)
                 {
                     var cmcQuotes = _cmcQuotes ?? throw new InvalidOperationException("API returned null value for `quote` field");
-                    _quotesCache = new Dictionary<string, IQuote>(cmcQuotes.Select(a => new KeyValuePair<string, IQuote>(a.Key, a.Value)));
+                    field = new Dictionary<string, IQuote>(cmcQuotes.Select(a => new KeyValuePair<string, IQuote>(a.Key, a.Value)));
                 }
 
-                return _quotesCache;
+                return field;
             }
         }
 

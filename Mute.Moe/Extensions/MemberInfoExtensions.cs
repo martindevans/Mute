@@ -49,7 +49,7 @@ public static partial class MemberInfoExtensions
         // Remove the common indent from all lines
         var indent = lines.MinimumCommonWhitespacePrefix();
         for (var i = 0; i < lines.Length; i++)
-            lines[i] = lines[i].Substring(indent);
+            lines[i] = lines[i][indent..];
 
         // Replace <br /> with newlines
         for (var i = 0; i < lines.Length; i++)
