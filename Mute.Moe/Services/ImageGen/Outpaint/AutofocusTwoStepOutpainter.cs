@@ -4,6 +4,7 @@ using Autofocus;
 using Autofocus.Config;
 using Autofocus.ImageSharp.Extensions;
 using Autofocus.Outpaint;
+using Autofocus.Utilities.Progress;
 using SixLabors.ImageSharp;
 
 namespace Mute.Moe.Services.ImageGen.Outpaint;
@@ -22,12 +23,13 @@ public class AutofocusTwoStepOutpainter
     /// <param name="api"></param>
     /// <param name="model"></param>
     /// <param name="sampler"></param>
+    /// <param name="scheduler"></param>
     /// <param name="batchSize1"></param>
     /// <param name="batchSize2"></param>
     /// <param name="steps"></param>
-    public AutofocusTwoStepOutpainter(IStableDiffusion api, IStableDiffusionModel model, ISampler sampler, int batchSize1, int batchSize2, int steps)
+    public AutofocusTwoStepOutpainter(IStableDiffusion api, IStableDiffusionModel model, ISampler sampler, IScheduler? scheduler, int batchSize1, int batchSize2, int steps)
     {
-        _outpainter = new TwoStepOutpainter(api, model, sampler)
+        _outpainter = new TwoStepOutpainter(api, model, new() { Sampler = sampler, Scheduler = scheduler })
         {
             BatchSize1 = batchSize1,
             BatchSize2 = batchSize2,

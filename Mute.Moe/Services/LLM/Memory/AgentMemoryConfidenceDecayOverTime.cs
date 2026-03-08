@@ -17,13 +17,15 @@ public class AgentMemoryConfidenceDecayOverTime(Configuration _config, IAgentMem
 {
     private static readonly ILogger _logger = Log.ForContext<AgentMemoryConfidenceDecayOverTime>();
 
-    private readonly CancellationTokenSource _cancellation = new();
+    private CancellationTokenSource _cancellation = new();
     private Task? _task;
 
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _task = Task.Run(() => DecayLoop(cancellationToken), cancellationToken);
+        _cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+        _task = Task.Run(() => DecayLoop(_cancellation.Token), _cancellation.Token);
     }
 
     /// <inheritdoc />
@@ -46,6 +48,9 @@ public class AgentMemoryConfidenceDecayOverTime(Configuration _config, IAgentMem
                 config.Second ?? 11,
                 cancellation
             );
+
+            if (cancellation.IsCancellationRequested)
+                break;
 
             _logger.Information("Beginning memory maintenance cycle");
 

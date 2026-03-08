@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Autofocus.Outpaint;
+using Autofocus.Utilities.Progress;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Transforms;

@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
 using System.IO;
 using System.Net.Http;
-using Autofocus.Outpaint;
+using Autofocus.Utilities.Progress;
 using Mute.Moe.Discord.Services.ImageGeneration;
 using Image = SixLabors.ImageSharp.Image;
 

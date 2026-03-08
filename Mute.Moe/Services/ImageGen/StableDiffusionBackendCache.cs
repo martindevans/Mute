@@ -1,7 +1,7 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Autofocus;
+﻿using Autofocus;
 using Mute.Moe.Utilities;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.ImageGen;
 
@@ -31,12 +31,22 @@ public class StableDiffusionBackendCache
             if (backend is not { Enabled: true, Url: not null })
                 continue;
 
+            var api = new StableDiffusion(backend.Url)
+            {
+                TimeoutSlow = TimeSpan.FromSeconds(backend.GenerationTimeOutSeconds ?? timeoutSlow),
+                TimeoutFast = TimeSpan.FromSeconds(backend.FastTimeOutSeconds ?? timeoutFast),
+                EnableProgress = backend.EnableProgress,
+            };
+
+            if (backend.PingEndpoint != null)
+                api.PingEndpoint = backend.PingEndpoint;
+
             var b = new BackendStatus(
                 backend.Url,
-                TimeSpan.FromSeconds(backend.GenerationTimeOutSeconds ?? timeoutSlow),
-                TimeSpan.FromSeconds(backend.FastTimeOutSeconds ?? timeoutFast),
+                api,
                 backend.StepsMultiplier ?? 1
             );
+
             backends.Add(b);
         }
     }
@@ -122,14 +132,10 @@ public class StableDiffusionBackendCache
         private readonly AsyncLock _lock = new();
         private readonly IStableDiffusion _backend;
 
-        public BackendStatus(string url, TimeSpan slow, TimeSpan fast, float stepsMultiplier)
+        public BackendStatus(string url, StableDiffusion api, float stepsMultiplier)
         {
             StepsMultiplier = stepsMultiplier;
-            _backend = new StableDiffusion(url)
-            {
-                TimeoutSlow = slow,
-                TimeoutFast = fast
-            };
+            _backend = api;
 
             LastCheck = DateTime.MinValue;
             IsResponsive = false;

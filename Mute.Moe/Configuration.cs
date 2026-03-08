@@ -301,7 +301,9 @@ public class Automatic1111Config
     [UsedImplicitly] public Backend[] Backends = null!;
 
     [UsedImplicitly] public string? Text2ImageSampler;
+    [UsedImplicitly] public string? Text2ImageScheduler;
     [UsedImplicitly] public string? Image2ImageSampler;
+    [UsedImplicitly] public string? Image2ImageScheduler;
     [UsedImplicitly] public int? SamplerSteps;
     [UsedImplicitly] public int? OutpaintSteps;
     [UsedImplicitly] public string? Checkpoint;
@@ -320,6 +322,7 @@ public class Automatic1111Config
 
     [UsedImplicitly] public class ADetailer
     {
+        [UsedImplicitly] public bool Enable = true;
         [UsedImplicitly] public float? HandMinSize;
         [UsedImplicitly] public float? FaceMinSize;
     }
@@ -328,6 +331,8 @@ public class Automatic1111Config
     {
         [UsedImplicitly] public bool Enabled;
         [UsedImplicitly] public string? Url;
+        [UsedImplicitly] public string? PingEndpoint;
+        [UsedImplicitly] public bool EnableProgress = true;
 
         [UsedImplicitly] public int? GenerationTimeOutSeconds;
         [UsedImplicitly] public int? FastTimeOutSeconds;

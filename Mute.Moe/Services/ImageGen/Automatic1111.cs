@@ -7,8 +7,8 @@ using Autofocus.CtrlNet;
 using Autofocus.Extensions.AfterDetailer;
 using SixLabors.ImageSharp.Processing;
 using Autofocus.ImageSharp.Extensions;
-using Autofocus.Outpaint;
 using Autofocus.Scripts.UltimateUpscaler;
+using Autofocus.Utilities.Progress;
 using Mute.Moe.Services.ImageGen.Outpaint;
 using SixLabors.ImageSharp;
 using Image = SixLabors.ImageSharp.Image;
@@ -26,7 +26,9 @@ public class Automatic1111
 
     private readonly string _checkpoint;
     private readonly string _t2iSampler;
+    private readonly string _t2iScheduler;
     private readonly string _i2iSampler;
+    private readonly string _i2iScheduler;
     private readonly int _samplerSteps;
     private readonly int _outpaintSteps;
     private readonly uint _width;
@@ -38,6 +40,7 @@ public class Automatic1111
 
     private readonly float _afterDetailHandMinSize;
     private readonly float _afterDetailFaceMinSize;
+    private readonly bool _enableAfterDetailer;
 
     private const InterrogateModel _model = InterrogateModel.DeepDanbooru;
     string IImageAnalyser.ModelName => _model.ToString();
@@ -53,7 +56,9 @@ public class Automatic1111
 
         _checkpoint = config.Automatic1111?.Checkpoint ?? "cardosAnime_v20";
         _t2iSampler = config.Automatic1111?.Text2ImageSampler ?? "UniPC";
+        _t2iScheduler = config.Automatic1111?.Text2ImageScheduler ?? "karras";
         _i2iSampler = config.Automatic1111?.Image2ImageSampler ?? "DDIM";
+        _i2iScheduler = config.Automatic1111?.Image2ImageScheduler ?? "karras";
         _samplerSteps = config.Automatic1111?.SamplerSteps ?? 18;
         _outpaintSteps = config.Automatic1111?.OutpaintSteps ?? 75;
         _width = config.Automatic1111?.Width ?? 512;
@@ -63,6 +68,7 @@ public class Automatic1111
         _img2imgClipSkip = config.Automatic1111?.Image2ImageClipSkip ?? 2;
         _txt2imgClipSkip = config.Automatic1111?.Text2ImageClipSkip ?? 2;
 
+        _enableAfterDetailer = config.Automatic1111?.AfterDetail?.Enable ?? false;
         _afterDetailHandMinSize = config.Automatic1111?.AfterDetail?.HandMinSize ?? 0.05f;
         _afterDetailFaceMinSize = config.Automatic1111?.AfterDetail?.FaceMinSize ?? 0.05f;
     }
@@ -82,6 +88,7 @@ public class Automatic1111
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_t2iSampler);
+        var scheduler = await backend.Scheduler(_t2iScheduler);
 
         var rawResults = await PumpProgress(backend, backend.TextToImage(
             new()
@@ -98,6 +105,7 @@ public class Automatic1111
                 {
                     Sampler = sampler,
                     SamplingSteps = scope.Steps(_samplerSteps),
+                    Scheduler = scheduler,
                 },
 
                 Model = model,
@@ -129,6 +137,7 @@ public class Automatic1111
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
+        var scheduler = await backend.Scheduler(_i2iScheduler);
 
         // Clone input image before mutation
         using var image = inputImage.CloneAs<Rgba32>();
@@ -188,6 +197,7 @@ public class Automatic1111
                 {
                     Sampler = sampler,
                     SamplingSteps = scope.Steps(_samplerSteps),
+                    Scheduler = scheduler,
                 },
                 DenoisingStrength = 0.75,
 
@@ -214,8 +224,11 @@ public class Automatic1111
             .ToListAsync();
     }
 
-    private AfterDetailer GetAfterDetailer(Prompt prompt)
+    private AfterDetailer? GetAfterDetailer(Prompt prompt)
     {
+        if (!_enableAfterDetailer)
+            return null;
+
         return new AfterDetailer
         {
             Steps = {
@@ -286,6 +299,7 @@ public class Automatic1111
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
+        var scheduler = await backend.Scheduler(_i2iScheduler);
         var upscaler = await backend.Upscaler(_upscaler);
 
         // Try to get the generation prompt that was originally used for this image
@@ -316,6 +330,7 @@ public class Automatic1111
                 {
                     Sampler = sampler,
                     SamplingSteps = scope.Steps(_samplerSteps * 2),
+                    Scheduler = scheduler
                 },
 
                 Width = width,
@@ -341,7 +356,8 @@ public class Automatic1111
 
         var model = await backend.StableDiffusionModel(_checkpoint);
         var sampler = await backend.Sampler(_i2iSampler);
-        var outpainter = new AutofocusTwoStepOutpainter(backend, model, sampler, 2, 1, scope.Steps(_outpaintSteps));
+        var scheduler = await backend.Scheduler(_i2iScheduler);
+        var outpainter = new AutofocusTwoStepOutpainter(backend, model, sampler, scheduler, 2, 1, scope.Steps(_outpaintSteps));
 
         // Clone input image before mutation
         using var image = inputImage.CloneAs<Rgba32>();

@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Autofocus.Outpaint;
+using Autofocus.Utilities.Progress;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen;
