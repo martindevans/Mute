@@ -304,8 +304,8 @@ public class Automatic1111
 
         // Try to get the generation prompt that was originally used for this image
         var prompt = inputImage.GetGenerationPrompt() ?? (
-            "detailed, <lora:add_detail:0.5>",
-            "easynegative, nsfw, badhandv4"
+            "detailed",
+            "nsfw, bad quality"
         );
 
         var upscaleResult = await PumpProgress(backend, backend.Image2Image(

@@ -3,10 +3,10 @@
 /// <summary>
 /// An edit action on a string
 /// </summary>
-/// <param name="Type">The type ofa ction</param>
+/// <param name="Type">The type of action</param>
 /// <param name="Position">The location of the action</param>
 /// <param name="Text">Either the text being inserted, or the text being deleted.</param>
-/// <param name="EditorId"></param>
+/// <param name="EditorId">Who made this change</param>
 public readonly record struct StringEdit(StringEditType Type, int Position, string Text, ulong EditorId)
 {
     /// <summary>

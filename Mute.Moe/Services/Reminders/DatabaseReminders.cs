@@ -1,4 +1,5 @@
-﻿using Mute.Moe.Services.Database;
+﻿using Dapper;
+using Mute.Moe.Services.Database;
 using Serilog;
 using System.Data.Common;
 using System.Data.SQLite;
@@ -54,15 +55,20 @@ public class DatabaseReminders
         try
         {
             var reminder = new Reminder(0, triggerTime, prelude, msg, channelId, userId);
-            await using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = InsertReminder;
-                WriteReminder(reminder, cmd);
-                reminder = reminder with
+
+            var id = (uint)await _database.Connection.ExecuteScalarAsync<long>(
+                InsertReminder,
+                new
                 {
-                    ID = (uint)(long)(await cmd.ExecuteScalarAsync())!
-                };
-            }
+                    InstantUnix = reminder.TriggerTime.UnixTimestamp(),
+                    ChannelId = reminder.ChannelId.ToString(),
+                    Prelude = reminder.Prelude,
+                    Message = reminder.Message,
+                    UserId = reminder.UserId.ToString(),
+                }
+            );
+
+            reminder = reminder with { ID = id };
 
             ReminderCreated?.Invoke(reminder);
 
@@ -78,15 +84,14 @@ public class DatabaseReminders
     /// <inheritdoc />
     public async Task<bool> Delete(ulong userId, uint reminderId)
     {
-        bool deleted;
-        await using (var cmd = _database.CreateCommand())
-        {
-            cmd.CommandText = DeleteReminder;
-            cmd.Parameters.Add(new SQLiteParameter("@ID", System.Data.DbType.UInt32) { Value = reminderId });
-            cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = userId });
-
-            deleted = await cmd.ExecuteNonQueryAsync() > 0;
-        }
+        var deleted = await _database.Connection.ExecuteAsync(
+            DeleteReminder,
+            new
+            {
+                ID = reminderId,
+                UserId = userId.ToString(),
+            }
+        ) > 0;
 
         if (deleted)
             ReminderDeleted?.Invoke(reminderId);
@@ -122,15 +127,5 @@ public class DatabaseReminders
             ChannelId: ulong.Parse((string)reader["ChannelId"]),
             UserId: ulong.Parse((string)reader["UserId"])
         );
-    }
-
-    private static void WriteReminder(Reminder reminder, DbCommand cmd)
-    {
-        cmd.CommandText = InsertReminder;
-        cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = reminder.TriggerTime.UnixTimestamp() });
-        cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = reminder.ChannelId.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@Prelude", System.Data.DbType.String) { Value = reminder.Prelude });
-        cmd.Parameters.Add(new SQLiteParameter("@Message", System.Data.DbType.String) { Value = reminder.Message });
-        cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = reminder.UserId.ToString() });
     }
 }

@@ -311,6 +311,9 @@ public class Automatic1111Config
     [UsedImplicitly] public uint? Height;
     [UsedImplicitly] public string? Upscaler;
 
+    [UsedImplicitly] public string ExtraPositive = "";
+    [UsedImplicitly] public string ExtraNegative = "";
+
     [UsedImplicitly] public int? GenerationTimeOutSeconds;
     [UsedImplicitly] public int? FastTimeOutSeconds;
 

@@ -25,9 +25,10 @@ public class DisposableEnd(IDisposable disposable)
     : IEndExecute
 {
     /// <inheritdoc />
-    public async Task EndExecute()
+    public Task EndExecute()
     {
         disposable.Dispose();
+        return Task.CompletedTask;
     }
 }
 

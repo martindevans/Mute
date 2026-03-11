@@ -43,7 +43,7 @@ public class AutofocusTwoStepOutpainter
     {
         progressReporter ??= _ => Task.CompletedTask;
 
-        var base64 = await _outpainter.Outpaint(
+        var base64s = await _outpainter.Outpaint(
             new PromptConfig
             {
                 Positive = positive,
@@ -54,7 +54,7 @@ public class AutofocusTwoStepOutpainter
         );
 
         var results = new List<Image>();
-        foreach (var item in base64)
+        foreach (var item in base64s)
             results.Add(await item.ToImageSharpAsync());
         return results;
 

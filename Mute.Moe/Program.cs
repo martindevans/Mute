@@ -30,7 +30,7 @@ public static class Program
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
             .CreateLogger();
-        Log.Information("Version: {0}", 6);
+        Log.Information("Version: {0}", 7);
 
         // Build DI container
         var collection = new ServiceCollection();

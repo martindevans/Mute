@@ -1,10 +1,9 @@
-﻿using Discord;
+﻿using Dapper;
+using Discord;
 using Discord.WebSocket;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Information.RSS;
 using Serilog;
-using System.Data.Common;
-using System.Data.SQLite;
 using System.ServiceModel.Syndication;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +18,7 @@ public class DatabaseRssNotificationsSender
     : IRssNotificationsSender
 {
     private const string InsertNotificationSql = "INSERT into RssNotificationsSent (ChannelId, FeedUrl, UniqueId) values(@ChannelId, @FeedUrl, @UniqueId)";
-    private const string HasPublishedNotification = "SELECT * FROM RssNotificationsSent Where (ChannelId = @ChannelId) AND (FeedUrl = @FeedUrl) AND (UniqueId = @UniqueId)";
+    private const string HasPublishedNotification = "SELECT Count(*) FROM RssNotificationsSent Where (ChannelId = @ChannelId) AND (FeedUrl = @FeedUrl) AND (UniqueId = @UniqueId)";
 
     private readonly IDatabaseService _database;
     private readonly DiscordSocketClient _client;
@@ -115,35 +114,30 @@ public class DatabaseRssNotificationsSender
 
     private async Task<bool> HasBeenPublished(string channelId, string feedUrl, string uniqueId)
     {
-        return await new SqlAsyncResult<int>(_database, PrepareQuery, ParseSubscription).AnyAsync();
-
-        DbCommand PrepareQuery(IDatabaseService db)
-        {
-            var cmd = db.CreateCommand();
-            cmd.CommandText = HasPublishedNotification;
-            cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = channelId });
-            cmd.Parameters.Add(new SQLiteParameter("@FeedUrl", System.Data.DbType.String) { Value = feedUrl });
-            cmd.Parameters.Add(new SQLiteParameter("@UniqueId", System.Data.DbType.String) { Value = uniqueId });
-            return cmd;
-        }
-
-        static int ParseSubscription(DbDataReader reader)
-        {
-            return 0;
-        }
+        return await _database.Connection.ExecuteScalarAsync<int>(
+            HasPublishedNotification,
+            new
+            {
+                ChannelId = channelId,
+                FeedUrl = feedUrl,
+                UniqueId = uniqueId
+            }
+        ) > 0;
     }
 
     private async Task Publish(IRssSubscription feed, SyndicationItem item)
     {
         await SendMessage(feed, item);
 
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = InsertNotificationSql;
-        cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = feed.Channel.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@FeedUrl", System.Data.DbType.String) { Value = feed.FeedUrl });
-        cmd.Parameters.Add(new SQLiteParameter("@UniqueId", System.Data.DbType.String) { Value = item.Id });
-
-        await cmd.ExecuteNonQueryAsync();
+        await _database.Connection.ExecuteAsync(
+            InsertNotificationSql,
+            new
+            {
+                ChannelId = feed.Channel.ToString(),
+                FeedUrl = feed.FeedUrl,
+                UniqueId = item.Id,
+            }
+        );
     }
 
     private static EmbedBuilder FormatMessage(SyndicationItem item)

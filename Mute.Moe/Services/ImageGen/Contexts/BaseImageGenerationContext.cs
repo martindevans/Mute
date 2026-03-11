@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Mute.Moe.Discord.Context;
+﻿using Mute.Moe.Discord.Context;
 using System.Threading.Tasks;
 using Discord;
 using Microsoft.Extensions.DependencyInjection;
@@ -249,7 +248,7 @@ public static class ContextImageGenerationExtensions
         var muteConfig = context.Services.GetRequiredService<Configuration>();
 
         // Parse the prompt
-        var parsedPrompt = Parse(prompt, context.IsPrivate, blacklist);
+        var parsedPrompt = Parse(prompt, context.IsPrivate, blacklist, muteConfig.Automatic1111?.ExtraPositive, muteConfig.Automatic1111?.ExtraNegative);
 
         // Find any images in the reference
         var images = context.Message.GetMessageImageAttachments();
@@ -271,9 +270,17 @@ public static class ContextImageGenerationExtensions
     }
 
     #region prompt filtering
-    private static readonly IReadOnlyList<string> BaseNegative = [ "easynegative, badhandv4, bad-hands-5" ];
 
-    private static Prompt Parse(string input, bool isPrivate, IImageGeneratorBannedWords blacklist)
+    /// <summary>
+    /// Attempt to parse a prompt
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="isPrivate"></param>
+    /// <param name="blacklist"></param>
+    /// <param name="extraPositive"></param>
+    /// <param name="extraNegative"></param>
+    /// <returns></returns>
+    public static Prompt Parse(string input, bool isPrivate, IImageGeneratorBannedWords blacklist, string? extraPositive, string? extraNegative)
     {
         var result = new Prompt
         {
@@ -289,11 +296,12 @@ public static class ContextImageGenerationExtensions
         {
             var split = line
                 .Replace(" not ", " not ", StringComparison.OrdinalIgnoreCase)
+                .Replace(" **not** ", " not ", StringComparison.OrdinalIgnoreCase)
                 .Split(" not ", StringSplitOptions.RemoveEmptyEntries);
 
             var positive = split[0];
             var negative = string.Join(", ", split.Skip(1));
-            (positive, negative) = PreprocessPrompt(positive, negative, isPrivate, blacklist, index > 0);
+            (positive, negative) = PreprocessPrompt(positive, negative, isPrivate, blacklist, extraPositive, extraNegative, index > 0);
 
             if (index == 0)
             {
@@ -323,19 +331,11 @@ public static class ContextImageGenerationExtensions
         return result;
     }
 
-    private static (string, string) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist, bool skipEmptyNegative = false)
+    private static (string, string) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist, string? extrPos, string? extrNeg, bool skipEmptyNegative = false)
     {
-        // Add in all the help negatives
-        var negativeBuilder = new StringBuilder();
-        foreach (var item in BaseNegative)
-        {
-            if (!negative.Contains(item, StringComparison.OrdinalIgnoreCase))
-            {
-                negativeBuilder.Append(item);
-                negativeBuilder.Append(',');
-            }
-        }
-        negativeBuilder.Append(negative);
+        // Add extras to prompts
+        positive = ParseExtraPrompt(positive, extrPos);
+        negative = ParseExtraPrompt(negative, extrNeg);
 
         // If it's a public channel apply extra precautions
         if (!isPrivate)
@@ -343,13 +343,34 @@ public static class ContextImageGenerationExtensions
             if (blacklist.IsBanned(positive))
                 throw new ImageGenerationPrivateChannelRequiredException();
 
-            negativeBuilder.Append(", (nsfw:1.4), (spider:1.4)");
+            negative = $"{negative}, (nsfw:1.2), (spider:1.4)";
         }
 
         if (skipEmptyNegative && string.IsNullOrWhiteSpace(negative))
             return (positive, "");
 
-        return (positive, negativeBuilder.Replace(",,", ",").ToString());
+        return (
+            positive.Replace(",,", ",").ToString(),
+            negative.Replace(",,", ",").ToString()
+        );
+    }
+
+    private static string ParseExtraPrompt(string prompt, string? extra)
+    {
+        if (string.IsNullOrWhiteSpace(extra))
+            return prompt;
+
+        var extras = string.Join(", ",
+            extra
+               .Split(",")
+               .Select(a => a.Trim())
+               .Where(a => !prompt.Contains(a, StringComparison.OrdinalIgnoreCase))
+        );
+
+        if (string.IsNullOrWhiteSpace(extras))
+            return prompt;
+
+        return $"{prompt}, {extras}";
     }
     #endregion
 }

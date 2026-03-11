@@ -1,6 +1,6 @@
-﻿using System.Data.SQLite;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Dapper;
 using Discord;
 using Discord.WebSocket;
 using Mute.Moe.Services.Database;
@@ -45,12 +45,14 @@ public class GameService
             if (string.IsNullOrWhiteSpace(activity.Name))
                 continue;
 
-            await using var cmd = _database.CreateCommand();
-            cmd.CommandText = InsertGamePlayed;
-            cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = user.Id });
-            cmd.Parameters.Add(new SQLiteParameter("@GameId", System.Data.DbType.String) { Value = activity.Name });
-
-            var count = await cmd.ExecuteNonQueryAsync();
+            var count = await _database.Connection.ExecuteAsync(
+                InsertGamePlayed,
+                new
+                {
+                    UserId = user.Id.ToString(),
+                    GameId = activity.Name
+                }
+            );
 
             if (count > 0)
             {

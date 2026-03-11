@@ -8,84 +8,86 @@ namespace Mute.Moe.Extensions;
 /// </summary>
 public static class IAnimeExtensions
 {
-    /// <summary>
-    /// Convert to an embed with summary info about this anime
-    /// </summary>
-    /// <param name="anime"></param>
-    /// <param name="embed"></param>
-    /// <returns></returns>
-    public static EmbedBuilder ToEmbed(this IAnime anime, EmbedBuilder? embed = null)
+    /// <param name="this"></param>
+    extension(IAnime @this)
     {
-        if (embed == null)
-            embed = new EmbedBuilder();
-
-        // Limit description length to 2048 characters
-        var desc = anime.Description;
-        if (desc.Length > 2048)
+        /// <summary>
+        /// Convert to an embed with summary info about this anime
+        /// </summary>
+        /// <param name="embed"></param>
+        /// <returns></returns>
+        public EmbedBuilder ToEmbed(EmbedBuilder? embed = null)
         {
-            var addon = "...";
-            if (!string.IsNullOrWhiteSpace(anime.Url))
-                addon += $"... <[Read More]({anime.Url})>";
+            if (embed == null)
+                embed = new EmbedBuilder();
 
-            desc = desc[..(2047 - addon.Length)];
-            desc += addon;
+            // Limit description length to 2048 characters
+            var desc = @this.Description;
+            if (desc.Length > 2048)
+            {
+                var addon = "...";
+                if (!string.IsNullOrWhiteSpace(@this.Url))
+                    addon += $"... <[Read More]({@this.Url})>";
+
+                desc = desc[..(2047 - addon.Length)];
+                desc += addon;
+            }
+
+            // Build embed basics
+            var builder = embed
+                         .WithDescription(desc)
+                         .WithColor(@this.Adult ? Color.DarkPurple : Color.Blue)
+                         .WithImageUrl(@this.ImageUrl)
+                         .WithFooter("🦑 https://anilist.co")
+                         .WithUrl(@this.Url);
+
+            // Attach appropriate title
+            if (@this is { TitleJapanese: not null, TitleEnglish: not null })
+                builder.WithAuthor(@this.TitleJapanese).WithTitle(@this.TitleEnglish);
+            else if ((@this.TitleEnglish != null) ^ (@this.TitleJapanese != null))
+                builder.WithTitle(@this.TitleEnglish ?? @this.TitleJapanese);
+            else
+                builder.WithTitle($"Anime ID: {@this.Id}");
+
+            // Extract a string describing dates
+            string? dateString = null;
+            if (@this is { StartDate: not null, EndDate: not null })
+                dateString = $"{@this.StartDate.Value.UtcDateTime:dd-MMM-yyyy} -> {@this.EndDate.Value.UtcDateTime:dd-MMM-yyyy}";
+            else if (@this.StartDate.HasValue)
+                dateString = $"Started airing {@this.StartDate.Value.UtcDateTime:dd-MMM-yyyy}";
+
+            // Attach episode info
+            if (@this.TotalEpisodes.HasValue && dateString != null)
+                builder.WithFields(new EmbedFieldBuilder().WithName($"{@this.TotalEpisodes} episode{(@this.TotalEpisodes > 1 ? "s" : "")}").WithValue(dateString));
+            else if (@this.TotalEpisodes.HasValue)
+                builder.WithFields(new EmbedFieldBuilder().WithName("Episodes").WithValue(@this.TotalEpisodes.ToString()));
+            else if (dateString != null)
+                builder.WithFields(new EmbedFieldBuilder().WithName("Airing Dates").WithValue(dateString));
+
+            return builder;
         }
 
-        // Build embed basics
-        var builder = embed
-            .WithDescription(desc)
-            .WithColor(anime.Adult ? Color.DarkPurple : Color.Blue)
-            .WithImageUrl(anime.ImageUrl)
-            .WithFooter("🦑 https://anilist.co")
-            .WithUrl(anime.Url);
-
-        // Attach appropriate title
-        if (anime is { TitleJapanese: not null, TitleEnglish: not null })
-            builder.WithAuthor(anime.TitleJapanese).WithTitle(anime.TitleEnglish);
-        else if ((anime.TitleEnglish != null) ^ (anime.TitleJapanese != null))
-            builder.WithTitle(anime.TitleEnglish ?? anime.TitleJapanese);
-        else
-            builder.WithTitle($"Anime ID: {anime.Id}");
-
-        // Extract a string describing dates
-        string? dateString = null;
-        if (anime is { StartDate: not null, EndDate: not null })
-            dateString = $"{anime.StartDate.Value.UtcDateTime:dd-MMM-yyyy} -> {anime.EndDate.Value.UtcDateTime:dd-MMM-yyyy}";
-        else if (anime.StartDate.HasValue)
-            dateString = $"Started airing {anime.StartDate.Value.UtcDateTime:dd-MMM-yyyy}";
-
-        // Attach episode info
-        if (anime.TotalEpisodes.HasValue && dateString != null)
-            builder.WithFields(new EmbedFieldBuilder().WithName($"{anime.TotalEpisodes} episode{(anime.TotalEpisodes > 1 ? "s" : "")}").WithValue(dateString));
-        else if (anime.TotalEpisodes.HasValue)
-            builder.WithFields(new EmbedFieldBuilder().WithName("Episodes").WithValue(anime.TotalEpisodes.ToString()));
-        else if (dateString != null)
-            builder.WithFields(new EmbedFieldBuilder().WithName("Airing Dates").WithValue(dateString));
-
-        return builder;
-    }
-
-    /// <summary>
-    /// Get the full title of this anime
-    /// </summary>
-    /// <param name="anime"></param>
-    /// <param name="preferJapanese"></param>
-    /// <param name="softMaxLength"></param>
-    /// <returns></returns>
-    public static string FullTitle(this IAnime anime, bool preferJapanese = false, int softMaxLength = int.MaxValue)
-    {
-        // Attach appropriate title
-        if (anime is { TitleJapanese: string jp, TitleEnglish: string en })
+        /// <summary>
+        /// Get the full title of this anime
+        /// </summary>
+        /// <param name="preferJapanese"></param>
+        /// <param name="softMaxLength"></param>
+        /// <returns></returns>
+        public string FullTitle(bool preferJapanese = false, int softMaxLength = int.MaxValue)
         {
-            var (preferred, secondary) = preferJapanese ? (jp, en) : (en, jp);
+            // Attach appropriate title
+            if (@this is { TitleJapanese: string jp, TitleEnglish: string en })
+            {
+                var (preferred, secondary) = preferJapanese ? (jp, en) : (en, jp);
 
-            return preferred.Length < softMaxLength 
-                 ? $"{preferred} ({secondary})"
-                 : $"{preferred}";
+                return preferred.Length < softMaxLength 
+                    ? $"{preferred} ({secondary})"
+                    : $"{preferred}";
+            }
+
+            if (@this.TitleEnglish != null || @this.TitleJapanese != null)
+                return (@this.TitleEnglish ?? @this.TitleJapanese)!;
+            return $"Anime ID: {@this.Id}";
         }
-
-        if (anime.TitleEnglish != null || anime.TitleJapanese != null)
-            return (anime.TitleEnglish ?? anime.TitleJapanese)!;
-        return $"Anime ID: {anime.Id}";
     }
 }

@@ -1,9 +1,9 @@
-﻿using Discord;
+﻿using System.Data;
+using Discord;
 using Mute.Moe.Services.Database;
 using Serilog;
-using System.Data.Common;
-using System.Data.SQLite;
 using System.Threading.Tasks;
+using Dapper;
 
 namespace Mute.Moe.Services.Groups;
 
@@ -41,56 +41,75 @@ public class DatabaseGroupService
     }
 
     /// <inheritdoc />
-    public async Task<bool> IsUnlocked( IRole grp)
+    public async Task<bool> IsUnlocked(IRole grp)
     {
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = FindUnlockedRoleByCompositeId;
-        cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
+        var result = await _database.Connection.ExecuteScalarAsync<int>(
+            FindUnlockedRoleByCompositeId,
+            new
+            {
+                RoleId = grp.Id.ToString(),
+                GuildId = grp.Guild.Id.ToString()
+            }
+        );
 
-        await using var results = await cmd.ExecuteReaderAsync();
-        return results.HasRows;
+        return result > 0;
     }
 
     /// <inheritdoc />
     public IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
     {
-        return new SqlAsyncResult<IRole?>(_database, PrepareQuery, ParseRole)
+        var unlockeds = _database.Connection.QueryAsync<UnlockedRole>(
+            FindUnlockedRoleByGuildId,
+            new { GuildId = guild.Id.ToString() }
+        );
+
+        return unlockeds
+              .ToAsyncEnumerable()
+              .SelectMany((a, _) => a)
+              .Select(async (u, _, _) => await GetRole(u))
               .Where(a => a != null)
               .Select(a => a!)
               .OrderBy(a => a.Name);
 
-        DbCommand PrepareQuery(IDatabaseService db)
+        async ValueTask<IRole?> GetRole(UnlockedRole unlocked)
         {
-            var cmd = _database.CreateCommand();
-            cmd.CommandText = FindUnlockedRoleByGuildId;
-            cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.Id.ToString() });
-            return cmd;
-        }
-
-        IRole? ParseRole(DbDataReader reader)
-        {
-            return guild.GetRole(ulong.Parse((string)reader["RoleId"]));
+            try
+            {
+                return await guild.GetRoleAsync(ulong.Parse(unlocked.RoleId));
+            }
+            catch (Exception exception)
+            {
+                Log.Error("Failed to fetch guild role Guild={0} ID={1} Ex={2}", guild.Name, unlocked.RoleId, exception);
+                return null;
+            }
         }
     }
 
     /// <inheritdoc />
     public async Task Unlock(IRole grp)
     {
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = InsertUnlockSql;
-        cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
-        await cmd.ExecuteNonQueryAsync();
+        await _database.Connection.ExecuteAsync(
+            InsertUnlockSql,
+            new
+            {
+                RoleId = grp.Id.ToString(),
+                GuildId = grp.Guild.Id.ToString(),
+            }
+        );
     }
 
     /// <inheritdoc />
     public async Task Lock(IRole grp)
     {
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = DeleteUnlockSql;
-        cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
-        await cmd.ExecuteNonQueryAsync();
+        await _database.Connection.ExecuteAsync(
+            DeleteUnlockSql,
+            new
+            {
+                RoleId = grp.Id.ToString(),
+                GuildId = grp.Guild.Id.ToString(),
+            }
+        );
     }
+
+    private record UnlockedRole(string RoleId, string GuildId);
 }
