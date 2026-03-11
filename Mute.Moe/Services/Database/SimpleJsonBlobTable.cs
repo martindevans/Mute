@@ -67,7 +67,8 @@ public abstract class SimpleJsonBlobTable<TBlob>
                     {
                         ID = id.ToString(),
                         Json = JsonSerializer.Serialize(data)
-                    }
+                    },
+                    transaction:tsx
                 );
 
                 tsx.Commit();
@@ -174,7 +175,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
     }
 
     /// <summary>
-    /// 
+    /// Convert JSON into <see cref="TBlob"/> object
     /// </summary>
     /// <param name="json"></param>
     /// <returns></returns>
