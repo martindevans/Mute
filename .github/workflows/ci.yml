@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Mute.Moe.csproj references Discord.Addons.Interactive via a relative project
+      # reference at ../../Discord.Addons.Interactive/... (relative to Mute.Moe/),
+      # which resolves to a sibling of this repo's directory on the runner.
+      - name: Checkout Discord.Addons.Interactive
+        uses: actions/checkout@v4
+        with:
+          repository: martindevans/Discord.Addons.Interactive
+          path: ../Discord.Addons.Interactive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Mute.Tests/Mute.Tests.csproj
+
+      - name: Build
+        run: dotnet build Mute.Tests/Mute.Tests.csproj --no-restore
+
+      - name: Test
+        run: dotnet test Mute.Tests/Mute.Tests.csproj --no-build --verbosity normal
