@@ -88,8 +88,8 @@ public class DatabaseReminders
             DeleteReminder,
             new
             {
-                ID = reminderId,
-                UserId = userId,
+                ID = reminderId.ToString(),
+                UserId = userId.ToString(),
             }
         ) > 0;
 
@@ -127,15 +127,5 @@ public class DatabaseReminders
             ChannelId: ulong.Parse((string)reader["ChannelId"]),
             UserId: ulong.Parse((string)reader["UserId"])
         );
-    }
-
-    private static void WriteReminder(Reminder reminder, DbCommand cmd)
-    {
-        cmd.CommandText = InsertReminder;
-        cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = reminder.TriggerTime.UnixTimestamp() });
-        cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = reminder.ChannelId.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@Prelude", System.Data.DbType.String) { Value = reminder.Prelude });
-        cmd.Parameters.Add(new SQLiteParameter("@Message", System.Data.DbType.String) { Value = reminder.Message });
-        cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = reminder.UserId.ToString() });
     }
 }

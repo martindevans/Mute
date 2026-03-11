@@ -49,7 +49,7 @@ public class GameService
                 InsertGamePlayed,
                 new
                 {
-                    UserId = user.Id,
+                    UserId = user.Id.ToString(),
                     GameId = activity.Name
                 }
             );

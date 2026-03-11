@@ -89,7 +89,7 @@ public static class IMessageChannelExtensions
                         yield break;
                     }
 
-                    var idx = content[..maxLength].LastIndexOf(' ');
+                    var idx = remainder[..maxLength].Span.LastIndexOf(' ');
                     if (idx < 0)
                         idx = maxLength;
 

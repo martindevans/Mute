@@ -336,8 +336,10 @@ public static class ContextImageGenerationExtensions
     {
         // Build negative prompt
         var negativeBuilder = new StringBuilder();
-        foreach (var item in extrNeg?.Split(", ") ?? [])
+        foreach (var it in extrNeg?.Split(",") ?? [])
         {
+            var item = it.Trim();
+
             if (!negative.Contains(item, StringComparison.OrdinalIgnoreCase))
             {
                 negativeBuilder.Append(item);
@@ -357,8 +359,10 @@ public static class ContextImageGenerationExtensions
 
         // Build positive prompt
         var positiveBuilder = new StringBuilder();
-        foreach (var item in extrPos?.Split(", ") ?? [])
+        foreach (var it in extrPos?.Split(", ") ?? [])
         {
+            var item = it.Trim();
+
             if (!positive.Contains(item, StringComparison.OrdinalIgnoreCase))
             {
                 positiveBuilder.Append(item);

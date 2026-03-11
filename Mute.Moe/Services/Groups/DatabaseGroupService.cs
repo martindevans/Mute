@@ -56,30 +56,31 @@ public class DatabaseGroupService
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
+    public IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
     {
-        using var reader = await _database.Connection.ExecuteReaderAsync(
+        var unlockeds = _database.Connection.QueryAsync<UnlockedRole>(
             FindUnlockedRoleByGuildId,
             new { GuildId = guild.Id.ToString() }
         );
 
-        var items = reader.ToAsyncEnumerable(ParseRole)
+        return unlockeds
+              .ToAsyncEnumerable()
+              .SelectMany((a, _) => a)
+              .Select(async (u, _, _) => await GetRole(u))
               .Where(a => a != null)
               .Select(a => a!)
               .OrderBy(a => a.Name);
 
-        await foreach (var item in items)
-            yield return item;
-
-        ValueTask<IRole?> ParseRole(IDataReader reader)
+        async ValueTask<IRole?> GetRole(UnlockedRole unlocked)
         {
             try
             {
-                return ValueTask.FromResult<IRole?>(guild.GetRole(ulong.Parse((string)reader["RoleId"])));
+                return await guild.GetRoleAsync(ulong.Parse(unlocked.RoleId));
             }
             catch (Exception exception)
             {
-                return ValueTask.FromException<IRole?>(exception);
+                Log.Error("Failed to fetch guild role Guild={0} ID={1} Ex={2}", guild.Name, unlocked.RoleId, exception);
+                return null;
             }
         }
     }
@@ -92,7 +93,7 @@ public class DatabaseGroupService
             new
             {
                 RoleId = grp.Id.ToString(),
-                GuildId = grp.Id.ToString(),
+                GuildId = grp.Guild.Id.ToString(),
             }
         );
     }
@@ -105,8 +106,10 @@ public class DatabaseGroupService
             new
             {
                 RoleId = grp.Id.ToString(),
-                GuildId = grp.Id.ToString(),
+                GuildId = grp.Guild.Id.ToString(),
             }
         );
     }
+
+    private record UnlockedRole(string RoleId, string GuildId);
 }

@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
 using Mute.Moe.Services.Database;
@@ -46,17 +45,17 @@ public class DatabaseMacroStorage
         if (ns == null && name == null)
             yield break;
 
-        using var reader = await _database.Connection.ExecuteReaderAsync(
+        var macros = await _database.Connection.QueryAsync<DiceMacro>(
             FindMacros,
             new
             {
                 Namespace = ns,
-                Name = name
+                Name = name,
             }
         );
 
-        while (reader.Read())
-            yield return ParseMacroDefinition(reader);
+        foreach (var diceMacro in macros)
+            yield return diceMacro.ToMacroDef();
     }
 
     /// <inheritdoc />
@@ -92,17 +91,20 @@ public class DatabaseMacroStorage
         ) > 0;
     }
 
-    private static MacroDefinition ParseMacroDefinition(IDataReader reader)
-    {
-        var deserialized = JsonSerializer.Deserialize<DbMacroJson>((string)reader["JSON"])!;
-
-        return new MacroDefinition(
-            (string)reader["Namespace"],
-            (string)reader["Name"],
-            deserialized.ParameterNames,
-            deserialized.Root
-        );
-    }
-
     private record DbMacroJson(IReadOnlyList<string> ParameterNames, IAstNode Root);
+
+    private record DiceMacro(string JSON, string Namespace, string Name)
+    {
+        public MacroDefinition ToMacroDef()
+        {
+            var deserialized = JsonSerializer.Deserialize<DbMacroJson>(JSON)!;
+
+            return new MacroDefinition(
+                Namespace,
+                Name,
+                deserialized.ParameterNames,
+                deserialized.Root
+            );
+        }
+    }
 }
