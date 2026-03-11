@@ -1,8 +1,8 @@
 ﻿using Mute.Moe.Services.Database;
 using Serilog;
 using System.Data.Common;
-using System.Data.SQLite;
 using System.Threading.Tasks;
+using Dapper;
 
 namespace Mute.Moe.Services.Notifications.RSS;
 
@@ -37,24 +37,28 @@ public class DatabaseRssNotifications
     /// <inheritdoc />
     public async Task Subscribe(string feedUrl, ulong channel, ulong? mentionGroup)
     {
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = InsertSubscriptionSql;
-        cmd.Parameters.Add(new SQLiteParameter("@Url", System.Data.DbType.String) { Value = feedUrl });
-        cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = channel.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@MentionGroup", System.Data.DbType.String) { Value = mentionGroup?.ToString() });
-
-        await cmd.ExecuteNonQueryAsync();
+        await _database.Connection.ExecuteAsync(
+            InsertSubscriptionSql,
+            new
+            {
+                Url = feedUrl,
+                ChannelId = channel.ToString(),
+                MentionGroup = mentionGroup?.ToString(),
+            }
+        );
     }
 
     /// <inheritdoc />
     public async Task Unsubscribe(string feedUrl, ulong channel)
     {
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = DeleteSubscriptionSql;
-        cmd.Parameters.Add(new SQLiteParameter("@Url", System.Data.DbType.String) { Value = feedUrl });
-        cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = channel.ToString() });
-
-        await cmd.ExecuteNonQueryAsync();
+        await _database.Connection.ExecuteAsync(
+            DeleteSubscriptionSql,
+            new
+            {
+                Url = feedUrl,
+                ChannelId = channel.ToString(),
+            }
+        );
     }
 
     /// <inheritdoc />

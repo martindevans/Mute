@@ -1,7 +1,7 @@
 ﻿using System.Data.Common;
-using System.Data.SQLite;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Dapper;
 using Serilog;
 
 namespace Mute.Moe.Services.Database;
@@ -60,13 +60,14 @@ public abstract class SimpleJsonBlobTable<TBlob>
         var json = JsonSerializer.Serialize(data);
         try
         {
-            await using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = _putSql;
-                cmd.Parameters.Add(new SQLiteParameter("@ID", System.Data.DbType.String) { Value = id.ToString() });
-                cmd.Parameters.Add(new SQLiteParameter("@Json", System.Data.DbType.String) { Value = json });
-                await cmd.ExecuteNonQueryAsync();
-            }
+            await _database.Connection.ExecuteAsync(
+                _putSql,
+                new
+                {
+                    ID = id.ToString(),
+                    Json = json
+                }
+            );
         }
         catch (Exception e)
         {
@@ -80,12 +81,15 @@ public abstract class SimpleJsonBlobTable<TBlob>
     {
         try
         {
-            await using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = _getSql;
-                cmd.Parameters.Add(new SQLiteParameter("@ID", System.Data.DbType.String) { Value = id.ToString() });
-                return await Read(cmd);
-            }
+            var data = await _database.Connection.QuerySingleOrDefaultAsync<Data>(
+                _getSql,
+                new
+                {
+                    ID = id.ToString()
+                }
+            );
+
+            return await Read(data?.Json);
         }
         catch (Exception e)
         {
@@ -99,13 +103,15 @@ public abstract class SimpleJsonBlobTable<TBlob>
     {
         try
         {
-            await using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = _deleteSql;
-                cmd.Parameters.Add(new SQLiteParameter("@ID", System.Data.DbType.String) { Value = id.ToString() });
-                var count = await cmd.ExecuteNonQueryAsync();
-                return count > 0;
-            }
+            var count = await _database.Connection.ExecuteAsync(
+                _deleteSql,
+                new
+                {
+                    ID = id.ToString(),
+                }
+            );
+
+            return count > 0;
         }
         catch (Exception e)
         {
@@ -119,11 +125,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
     {
         try
         {
-            await using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = _clearSql;
-                var count = await cmd.ExecuteNonQueryAsync();
-            }
+            await _database.Connection.ExecuteAsync(_clearSql);
         }
         catch (Exception e)
         {
@@ -137,12 +139,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
     {
         try
         {
-            await using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = _countSql;
-                var count = Convert.ToInt64(await cmd.ExecuteScalarAsync());
-                return count;
-            }
+            return await _database.Connection.ExecuteScalarAsync<long>(_countSql);
         }
         catch (Exception e)
         {
@@ -156,11 +153,8 @@ public abstract class SimpleJsonBlobTable<TBlob>
     {
         try
         {
-            await using (var cmd = _database.CreateCommand())
-            {
-                cmd.CommandText = _randomSql;
-                return await Read(cmd);
-            }
+            var data = await _database.Connection.QuerySingleOrDefaultAsync<Data>(_randomSql);
+            return await Read(data?.Json);
         }
         catch (Exception e)
         {
@@ -177,9 +171,29 @@ public abstract class SimpleJsonBlobTable<TBlob>
     protected virtual async Task<TBlob?> Read(DbCommand cmd)
     {
         var json = (string?)await cmd.ExecuteScalarAsync();
+        return await Read(json);
+    }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="json"></param>
+    /// <returns></returns>
+    protected virtual async Task<TBlob?> Read(string? json)
+    {
         if (json == null)
             return null;
         return JsonSerializer.Deserialize<TBlob>(json);
+    }
+
+    private class Data(string Key, string Json)
+    {
+        public string Key { get; init; } = Key;
+        public string Json { get; init; } = Json;
+
+        public Data()
+            : this("", "")
+        {
+        }
     }
 }

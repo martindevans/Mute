@@ -11,10 +11,10 @@ public class RequireVoiceChannel
     : PreconditionAttribute 
 {
     /// <inheritdoc />
-    public override async Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
+    public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
     {
-        return context.User is IVoiceState
+        return Task.FromResult(context.User is IVoiceState
              ? PreconditionResult.FromSuccess()
-             : PreconditionResult.FromError("Not in a voice channel");
+             : PreconditionResult.FromError("Not in a voice channel"));
     }
 }

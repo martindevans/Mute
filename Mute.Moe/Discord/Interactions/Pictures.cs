@@ -28,6 +28,7 @@ public class Pictures
     private readonly IImageGenerator _generator;
     private readonly IImageUpscaler _upscaler;
     private readonly IImageOutpainter _outpainter;
+    private readonly IImageGeneratorBannedWords _blacklist;
 
     /// <summary>
     /// Construct a new <see cref="Pictures"/> module
@@ -39,7 +40,8 @@ public class Pictures
     /// <param name="generator"></param>
     /// <param name="upscaler"></param>
     /// <param name="outpainter"></param>
-    public Pictures(IImageAnalyser analyser, HttpClient http, StableDiffusionBackendCache backends, IImageGenerationConfigStorage storage, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter)
+    /// <param name="blacklist"></param>
+    public Pictures(IImageAnalyser analyser, HttpClient http, StableDiffusionBackendCache backends, IImageGenerationConfigStorage storage, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, IImageGeneratorBannedWords blacklist)
     {
         _analyser = analyser;
         _http = http;
@@ -48,6 +50,7 @@ public class Pictures
         _generator = generator;
         _upscaler = upscaler;
         _outpainter = outpainter;
+        _blacklist = blacklist;
     }
 
     /// <summary>
@@ -192,8 +195,9 @@ public class Pictures
     private async Task<ImageGenerationConfig> LegacyConfig(SocketMessageComponent args)
     {
         // Lets just assume the message is the prompt
-        var positive = args.Message.Content;
-        var negative = "(nsfw), (spider)";
+        var config = ContextImageGenerationExtensions.Parse(args.Message.Content, args.IsDMInteraction, _blacklist, null, null);
+        var positive = config.Positive;
+        var negative = config.Negative;
 
         // Try to extract the prompt from the image attachments
         var firstImage = args.Message.Attachments.FirstOrDefault(a => a.ContentType.StartsWith("image/"));

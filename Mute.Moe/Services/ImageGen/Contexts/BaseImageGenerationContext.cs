@@ -249,7 +249,7 @@ public static class ContextImageGenerationExtensions
         var muteConfig = context.Services.GetRequiredService<Configuration>();
 
         // Parse the prompt
-        var parsedPrompt = Parse(prompt, context.IsPrivate, blacklist);
+        var parsedPrompt = Parse(prompt, context.IsPrivate, blacklist, muteConfig.Automatic1111?.ExtraPositive, muteConfig.Automatic1111?.ExtraNegative);
 
         // Find any images in the reference
         var images = context.Message.GetMessageImageAttachments();
@@ -271,9 +271,17 @@ public static class ContextImageGenerationExtensions
     }
 
     #region prompt filtering
-    private static readonly IReadOnlyList<string> BaseNegative = [ "easynegative, badhandv4, bad-hands-5" ];
 
-    private static Prompt Parse(string input, bool isPrivate, IImageGeneratorBannedWords blacklist)
+    /// <summary>
+    /// Attempt to parse a prompt
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="isPrivate"></param>
+    /// <param name="blacklist"></param>
+    /// <param name="extraPositive"></param>
+    /// <param name="extraNegative"></param>
+    /// <returns></returns>
+    public static Prompt Parse(string input, bool isPrivate, IImageGeneratorBannedWords blacklist, string? extraPositive, string? extraNegative)
     {
         var result = new Prompt
         {
@@ -289,11 +297,12 @@ public static class ContextImageGenerationExtensions
         {
             var split = line
                 .Replace(" not ", " not ", StringComparison.OrdinalIgnoreCase)
+                .Replace(" **not** ", " not ", StringComparison.OrdinalIgnoreCase)
                 .Split(" not ", StringSplitOptions.RemoveEmptyEntries);
 
             var positive = split[0];
             var negative = string.Join(", ", split.Skip(1));
-            (positive, negative) = PreprocessPrompt(positive, negative, isPrivate, blacklist, index > 0);
+            (positive, negative) = PreprocessPrompt(positive, negative, isPrivate, blacklist, extraPositive, extraNegative, index > 0);
 
             if (index == 0)
             {
@@ -323,11 +332,11 @@ public static class ContextImageGenerationExtensions
         return result;
     }
 
-    private static (string, string) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist, bool skipEmptyNegative = false)
+    private static (string, string) PreprocessPrompt(string positive, string negative, bool isPrivate, IImageGeneratorBannedWords blacklist, string? extrPos, string? extrNeg, bool skipEmptyNegative = false)
     {
-        // Add in all the help negatives
+        // Build negative prompt
         var negativeBuilder = new StringBuilder();
-        foreach (var item in BaseNegative)
+        foreach (var item in extrNeg?.Split(", ") ?? [])
         {
             if (!negative.Contains(item, StringComparison.OrdinalIgnoreCase))
             {
@@ -346,10 +355,25 @@ public static class ContextImageGenerationExtensions
             negativeBuilder.Append(", (nsfw:1.4), (spider:1.4)");
         }
 
-        if (skipEmptyNegative && string.IsNullOrWhiteSpace(negative))
-            return (positive, "");
+        // Build positive prompt
+        var positiveBuilder = new StringBuilder();
+        foreach (var item in extrPos?.Split(", ") ?? [])
+        {
+            if (!positive.Contains(item, StringComparison.OrdinalIgnoreCase))
+            {
+                positiveBuilder.Append(item);
+                positiveBuilder.Append(',');
+            }
+        }
+        positiveBuilder.Append(positive);
 
-        return (positive, negativeBuilder.Replace(",,", ",").ToString());
+        if (skipEmptyNegative && string.IsNullOrWhiteSpace(negative))
+            return (positiveBuilder.ToString(), "");
+
+        return (
+            positiveBuilder.Replace(",,", ",").ToString(),
+            negativeBuilder.Replace(",,", ",").ToString()
+        );
     }
     #endregion
 }

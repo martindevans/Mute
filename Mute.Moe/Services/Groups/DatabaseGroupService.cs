@@ -1,9 +1,9 @@
-﻿using Discord;
+﻿using System.Data;
+using Discord;
 using Mute.Moe.Services.Database;
 using Serilog;
-using System.Data.Common;
-using System.Data.SQLite;
 using System.Threading.Tasks;
+using Dapper;
 
 namespace Mute.Moe.Services.Groups;
 
@@ -41,56 +41,72 @@ public class DatabaseGroupService
     }
 
     /// <inheritdoc />
-    public async Task<bool> IsUnlocked( IRole grp)
+    public async Task<bool> IsUnlocked(IRole grp)
     {
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = FindUnlockedRoleByCompositeId;
-        cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
+        var result = await _database.Connection.ExecuteScalarAsync<int>(
+            FindUnlockedRoleByCompositeId,
+            new
+            {
+                RoleId = grp.Id.ToString(),
+                GuildId = grp.Guild.Id.ToString()
+            }
+        );
 
-        await using var results = await cmd.ExecuteReaderAsync();
-        return results.HasRows;
+        return result > 0;
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
+    public async IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
     {
-        return new SqlAsyncResult<IRole?>(_database, PrepareQuery, ParseRole)
+        using var reader = await _database.Connection.ExecuteReaderAsync(
+            FindUnlockedRoleByGuildId,
+            new { GuildId = guild.Id.ToString() }
+        );
+
+        var items = reader.ToAsyncEnumerable(ParseRole)
               .Where(a => a != null)
               .Select(a => a!)
               .OrderBy(a => a.Name);
 
-        DbCommand PrepareQuery(IDatabaseService db)
-        {
-            var cmd = _database.CreateCommand();
-            cmd.CommandText = FindUnlockedRoleByGuildId;
-            cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = guild.Id.ToString() });
-            return cmd;
-        }
+        await foreach (var item in items)
+            yield return item;
 
-        IRole? ParseRole(DbDataReader reader)
+        ValueTask<IRole?> ParseRole(IDataReader reader)
         {
-            return guild.GetRole(ulong.Parse((string)reader["RoleId"]));
+            try
+            {
+                return ValueTask.FromResult<IRole?>(guild.GetRole(ulong.Parse((string)reader["RoleId"])));
+            }
+            catch (Exception exception)
+            {
+                return ValueTask.FromException<IRole?>(exception);
+            }
         }
     }
 
     /// <inheritdoc />
     public async Task Unlock(IRole grp)
     {
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = InsertUnlockSql;
-        cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
-        await cmd.ExecuteNonQueryAsync();
+        await _database.Connection.ExecuteAsync(
+            InsertUnlockSql,
+            new
+            {
+                RoleId = grp.Id.ToString(),
+                GuildId = grp.Id.ToString(),
+            }
+        );
     }
 
     /// <inheritdoc />
     public async Task Lock(IRole grp)
     {
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = DeleteUnlockSql;
-        cmd.Parameters.Add(new SQLiteParameter("@RoleId", System.Data.DbType.String) { Value = grp.Id.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@GuildId", System.Data.DbType.String) { Value = grp.Guild.Id.ToString() });
-        await cmd.ExecuteNonQueryAsync();
+        await _database.Connection.ExecuteAsync(
+            DeleteUnlockSql,
+            new
+            {
+                RoleId = grp.Id.ToString(),
+                GuildId = grp.Id.ToString(),
+            }
+        );
     }
 }
