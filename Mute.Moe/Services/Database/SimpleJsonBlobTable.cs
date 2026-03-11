@@ -1,4 +1,4 @@
-﻿using System.Data.Common;
+﻿using System.Data;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
@@ -34,12 +34,12 @@ public abstract class SimpleJsonBlobTable<TBlob>
         _tableName = tableName;
         _database = database;
 
-        _putSql = $"INSERT OR REPLACE into {tableName} (ID, Json) values(@ID, @Json)";
+        _putSql = $"INSERT into {tableName} (ID, Json) values(@ID, @Json)";
         _getSql = $"SELECT Json FROM {tableName} WHERE ID = @ID";
         _deleteSql = $"DELETE FROM {tableName} WHERE ID = @ID";
         _clearSql = $"DELETE FROM {tableName}";
         _countSql = $"SELECT COUNT(*) FROM {tableName}";
-        _randomSql = $"SELECT * FROM {tableName} ORDER BY RANDOM() LIMIT 1;";
+        _randomSql = $"SELECT Json FROM {tableName} ORDER BY RANDOM() LIMIT 1;";
 
         try
         {
@@ -55,24 +55,28 @@ public abstract class SimpleJsonBlobTable<TBlob>
     /// <inheritdoc />
     public async Task Put(ulong id, TBlob data)
     {
-        await Delete(id);
+        using (var tsx = _database.Connection.BeginTransaction())
+        {
+            await Delete(id, tsx);
 
-        var json = JsonSerializer.Serialize(data);
-        try
-        {
-            await _database.Connection.ExecuteAsync(
-                _putSql,
-                new
-                {
-                    ID = id.ToString(),
-                    Json = json
-                }
-            );
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "PUT into SimpleJsonBlobTable '{0}' failed. Key={1}.", _tableName, id);
-            throw;
+            try
+            {
+                await _database.Connection.ExecuteAsync(
+                    _putSql,
+                    new
+                    {
+                        ID = id.ToString(),
+                        Json = JsonSerializer.Serialize(data)
+                    }
+                );
+
+                tsx.Commit();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "PUT into SimpleJsonBlobTable '{0}' failed. Key={1}.", _tableName, id);
+                throw;
+            }
         }
     }
 
@@ -81,7 +85,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
     {
         try
         {
-            var data = await _database.Connection.QuerySingleOrDefaultAsync<Data>(
+            var json = await _database.Connection.QuerySingleOrDefaultAsync<string>(
                 _getSql,
                 new
                 {
@@ -89,7 +93,7 @@ public abstract class SimpleJsonBlobTable<TBlob>
                 }
             );
 
-            return await Read(data?.Json);
+            return await Read(json);
         }
         catch (Exception e)
         {
@@ -99,7 +103,12 @@ public abstract class SimpleJsonBlobTable<TBlob>
     }
 
     /// <inheritdoc />
-    public async Task<bool> Delete(ulong id)
+    public Task<bool> Delete(ulong id)
+    {
+        return Delete(id, null);
+    }
+
+    private async Task<bool> Delete(ulong id, IDbTransaction? tsx)
     {
         try
         {
@@ -108,7 +117,8 @@ public abstract class SimpleJsonBlobTable<TBlob>
                 new
                 {
                     ID = id.ToString(),
-                }
+                },
+                transaction: tsx
             );
 
             return count > 0;
@@ -153,25 +163,14 @@ public abstract class SimpleJsonBlobTable<TBlob>
     {
         try
         {
-            var data = await _database.Connection.QuerySingleOrDefaultAsync<Data>(_randomSql);
-            return await Read(data?.Json);
+            var json = await _database.Connection.QuerySingleOrDefaultAsync<string>(_randomSql);
+            return await Read(json);
         }
         catch (Exception e)
         {
             Log.Error(e, "RANDOM from SimpleJsonBlobTable '{0}' failed.", _tableName);
             throw;
         }
-    }
-
-    /// <summary>
-    /// Read a TBlob from the given <see cref="DbCommand"/>
-    /// </summary>
-    /// <param name="cmd"></param>
-    /// <returns></returns>
-    protected virtual async Task<TBlob?> Read(DbCommand cmd)
-    {
-        var json = (string?)await cmd.ExecuteScalarAsync();
-        return await Read(json);
     }
 
     /// <summary>
@@ -184,16 +183,5 @@ public abstract class SimpleJsonBlobTable<TBlob>
         if (json == null)
             return null;
         return JsonSerializer.Deserialize<TBlob>(json);
-    }
-
-    private class Data(string Key, string Json)
-    {
-        public string Key { get; init; } = Key;
-        public string Json { get; init; } = Json;
-
-        public Data()
-            : this("", "")
-        {
-        }
     }
 }

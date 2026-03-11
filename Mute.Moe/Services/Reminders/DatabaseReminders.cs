@@ -88,7 +88,7 @@ public class DatabaseReminders
             DeleteReminder,
             new
             {
-                ID = reminderId.ToString(),
+                ID = reminderId,
                 UserId = userId.ToString(),
             }
         ) > 0;
