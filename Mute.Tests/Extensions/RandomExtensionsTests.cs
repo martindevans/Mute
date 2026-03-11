@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe.Extensions;
 
@@ -39,11 +41,13 @@ namespace Mute.Tests.Extensions
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void NextSingle_ThrowsWhenMinGreaterThanMax()
         {
-            var rng = new Random();
-            rng.NextSingle(5.0f, 1.0f);
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+            {
+                var rng = new Random();
+                rng.NextSingle(5.0f, 1.0f);
+            });
         }
 
         [TestMethod]
