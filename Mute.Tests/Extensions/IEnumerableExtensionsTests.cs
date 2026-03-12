@@ -24,5 +24,14 @@ namespace Mute.Tests.Extensions
             var r = new Random();
             Assert.IsGreaterThan(5, Enumerable.Range(0, 1000).Select(_ => l.Random(r)).Distinct().Count());
         }
+
+        [TestMethod]
+        public void NullListReturnsDefault()
+        {
+            IEnumerable<object> l = null;
+
+            // ReSharper disable once ExpressionIsAlwaysNull
+            Assert.IsNull(l!.Random(new Random()));
+        }
     }
 }
