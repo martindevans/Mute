@@ -48,7 +48,7 @@ namespace Mute.Tests.Extensions
             using var cts = new CancellationTokenSource();
             cts.Cancel();
 
-            await Assert.ThrowsExceptionAsync<OperationCanceledException>(
+            await Assert.ThrowsAsync<OperationCanceledException>(
                 () => channel.Reader.WaitToReadWithTimeout<int>(TimeSpan.FromSeconds(5), cts.Token).AsTask()
             );
         }
@@ -63,7 +63,7 @@ namespace Mute.Tests.Extensions
             var waitTask = channel.Reader.WaitToReadWithTimeout<int>(TimeSpan.FromSeconds(5), cts.Token).AsTask();
             await cts.CancelAsync();
 
-            await Assert.ThrowsExceptionAsync<OperationCanceledException>(() => waitTask);
+            await Assert.ThrowsAsync<OperationCanceledException>(() => waitTask);
         }
     }
 }
