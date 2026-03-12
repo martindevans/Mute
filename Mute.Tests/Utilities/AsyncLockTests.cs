@@ -103,7 +103,7 @@ public class AsyncLockTests
         first.Dispose();
 
         // The cancelled task should fault as cancelled
-        await Assert.ThrowsExceptionAsync<TaskCanceledException>(() => cancelledTask);
+        await Assert.ThrowsAsync<TaskCanceledException>(() => cancelledTask);
 
         // The normal waiter should get the lock
         var handle = await normalTask.WaitAsync(TimeSpan.FromSeconds(5));
@@ -119,6 +119,6 @@ public class AsyncLockTests
         var handle = await asyncLock.LockAsync();
         handle.Dispose();
 
-        Assert.ThrowsException<InvalidOperationException>(() => handle.Dispose());
+        Assert.Throws<InvalidOperationException>(() => handle.Dispose());
     }
 }
