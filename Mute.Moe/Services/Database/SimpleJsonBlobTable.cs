@@ -59,48 +59,32 @@ public abstract class SimpleJsonBlobTable<TBlob>
         {
             await Delete(id, tsx);
 
-            try
-            {
-                await _database.Connection.ExecuteAsync(
-                    _putSql,
-                    new
-                    {
-                        ID = id.ToString(),
-                        Json = JsonSerializer.Serialize(data)
-                    },
-                    transaction:tsx
-                );
+            await _database.Connection.ExecuteAsync(
+                _putSql,
+                new
+                {
+                    ID = id.ToString(),
+                    Json = JsonSerializer.Serialize(data)
+                },
+                transaction:tsx
+            );
 
-                tsx.Commit();
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "PUT into SimpleJsonBlobTable '{0}' failed. Key={1}.", _tableName, id);
-                throw;
-            }
+            tsx.Commit();
         }
     }
 
     /// <inheritdoc />
     public async Task<TBlob?> Get(ulong id)
     {
-        try
-        {
-            var json = await _database.Connection.QuerySingleOrDefaultAsync<string>(
-                _getSql,
-                new
-                {
-                    ID = id.ToString()
-                }
-            );
+        var json = await _database.Connection.QuerySingleOrDefaultAsync<string>(
+            _getSql,
+            new
+            {
+                ID = id.ToString()
+            }
+        );
 
-            return await Read(json);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "GET from SimpleJsonBlobTable '{0}' failed. Key={1}.", _tableName, id);
-            throw;
-        }
+        return await Read(json);
     }
 
     /// <inheritdoc />
@@ -111,67 +95,35 @@ public abstract class SimpleJsonBlobTable<TBlob>
 
     private async Task<bool> Delete(ulong id, IDbTransaction? tsx)
     {
-        try
-        {
-            var count = await _database.Connection.ExecuteAsync(
-                _deleteSql,
-                new
-                {
-                    ID = id.ToString(),
-                },
-                transaction: tsx
-            );
+        var count = await _database.Connection.ExecuteAsync(
+            _deleteSql,
+            new
+            {
+                ID = id.ToString(),
+            },
+            transaction: tsx
+        );
 
-            return count > 0;
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "DELETE from SimpleJsonBlobTable '{0}' failed. Key={1}.", _tableName, id);
-            throw;
-        }
+        return count > 0;
     }
 
     /// <inheritdoc />
     public async Task Clear()
     {
-        try
-        {
-            await _database.Connection.ExecuteAsync(_clearSql);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "CLEAR SimpleJsonBlobTable '{0}' failed.", _tableName);
-            throw;
-        }
+        await _database.Connection.ExecuteAsync(_clearSql);
     }
 
     /// <inheritdoc />
     public async Task<long> Count()
     {
-        try
-        {
-            return await _database.Connection.ExecuteScalarAsync<long>(_countSql);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "COUNT SimpleJsonBlobTable '{0}' failed.", _tableName);
-            throw;
-        }
+        return await _database.Connection.ExecuteScalarAsync<long>(_countSql);
     }
 
     /// <inheritdoc />
     public async Task<TBlob?> Random()
     {
-        try
-        {
-            var json = await _database.Connection.QuerySingleOrDefaultAsync<string>(_randomSql);
-            return await Read(json);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "RANDOM from SimpleJsonBlobTable '{0}' failed.", _tableName);
-            throw;
-        }
+        var json = await _database.Connection.QuerySingleOrDefaultAsync<string>(_randomSql);
+        return await Read(json);
     }
 
     /// <summary>
