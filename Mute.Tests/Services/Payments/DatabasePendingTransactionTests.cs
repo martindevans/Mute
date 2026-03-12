@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe.Services.Database;
@@ -299,6 +301,132 @@ namespace Mute.Tests.Services.Payments
 
             var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync();
             Assert.HasCount(4, notConfirmed);
+        }
+
+        [TestMethod]
+        public async Task GetTransactionByConfirmedState()
+        {
+            var db = new SqliteInMemoryDatabase();
+            var tsx = new DatabaseTransactions(db);
+            var pending = new DatabasePendingTransactions(db, tsx);
+
+            var now = DateTime.UtcNow;
+            var (a, b, _, _) = await CreateTestTransactions(now, pending);
+
+            await pending.ConfirmPending(a);
+            await pending.ConfirmPending(b);
+
+            var confirmed = await pending.Get(state: PendingState.Confirmed).ToArrayAsync();
+            Assert.HasCount(2, confirmed);
+            Assert.IsTrue(confirmed.All(t => t.State == PendingState.Confirmed));
+        }
+
+        [TestMethod]
+        public async Task GetTransactionByDeniedState()
+        {
+            var db = new SqliteInMemoryDatabase();
+            var tsx = new DatabaseTransactions(db);
+            var pending = new DatabasePendingTransactions(db, tsx);
+
+            var now = DateTime.UtcNow;
+            var (a, _, c, _) = await CreateTestTransactions(now, pending);
+
+            await pending.DenyPending(a);
+            await pending.DenyPending(c);
+
+            var denied = await pending.Get(state: PendingState.Denied).ToArrayAsync();
+            Assert.HasCount(2, denied);
+            Assert.IsTrue(denied.All(t => t.State == PendingState.Denied));
+        }
+
+        [TestMethod]
+        public async Task ConfirmedTransaction_PreservesAllFields()
+        {
+            var db = new SqliteInMemoryDatabase();
+            var tsx = new DatabaseTransactions(db);
+            var pending = new DatabasePendingTransactions(db, tsx);
+
+            var now = DateTime.UtcNow.AddSeconds(-1); // truncate sub-second precision
+            now = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, DateTimeKind.Utc);
+
+            var id = await pending.CreatePending(42, 99, 12.5m, "GBP", "TestNote", now);
+            Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(id));
+
+            var confirmed = await tsx.GetTransactions(fromId: 42, toId: 99, unit: "gbp").ToArrayAsync();
+            Assert.HasCount(1, confirmed);
+
+            var t = confirmed[0];
+            Assert.AreEqual((ulong)42, t.FromId);
+            Assert.AreEqual((ulong)99, t.ToId);
+            Assert.AreEqual(12.5m, t.Amount);
+            Assert.AreEqual("gbp", t.Unit);
+            Assert.AreEqual("TestNote", t.Note);
+            Assert.AreEqual(now, t.Instant);
+        }
+
+        [TestMethod]
+        public async Task CreatePending_NegativeAmount_Throws()
+        {
+            var db = new SqliteInMemoryDatabase();
+            var tsx = new DatabaseTransactions(db);
+            var pending = new DatabasePendingTransactions(db, tsx);
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+                () => pending.CreatePending(0, 1, -5, "GBP", null, DateTime.UtcNow));
+        }
+
+        [TestMethod]
+        public async Task CreatePending_SelfTransaction_Throws()
+        {
+            var db = new SqliteInMemoryDatabase();
+            var tsx = new DatabaseTransactions(db);
+            var pending = new DatabasePendingTransactions(db, tsx);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => pending.CreatePending(0, 0, 10, "GBP", null, DateTime.UtcNow));
+        }
+
+        [TestMethod]
+        public void Constructor_RequiresDatabaseTransactions()
+        {
+            var db = new SqliteInMemoryDatabase();
+            var fakeTsx = new FakeTransactions();
+
+            Assert.Throws<ArgumentException>(
+                () => new DatabasePendingTransactions(db, fakeTsx));
+        }
+
+        [TestMethod]
+        public async Task Pending_UnitStoredAsLowercase()
+        {
+            var db = new SqliteInMemoryDatabase();
+            var tsx = new DatabaseTransactions(db);
+            var pending = new DatabasePendingTransactions(db, tsx);
+
+            var id = await pending.CreatePending(0, 1, 10, "GBP", null, DateTime.UtcNow);
+            var results = await pending.Get(debtId: id).ToArrayAsync();
+
+            Assert.HasCount(1, results);
+            Assert.AreEqual("gbp", results[0].Unit);
+        }
+    }
+
+    /// <summary>
+    /// A fake ITransactions implementation (not DatabaseTransactions) used to test constructor validation.
+    /// </summary>
+    internal class FakeTransactions : ITransactions
+    {
+        public Task CreateTransaction(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
+            => Task.CompletedTask;
+
+        public IAsyncEnumerable<ITransaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
+        {
+            return Empty();
+
+            static async IAsyncEnumerable<ITransaction> Empty()
+            {
+                yield break;
+            }
         }
     }
 }
