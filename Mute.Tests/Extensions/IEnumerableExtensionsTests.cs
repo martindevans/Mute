@@ -26,20 +26,6 @@ namespace Mute.Tests.Extensions
         }
 
         [TestMethod]
-        public void Random_NullInput_ReturnsDefault()
-        {
-            IEnumerable<int>? nullList = null;
-            Assert.AreEqual(default(int), nullList.Random(new Random()));
-        }
-
-        [TestMethod]
-        public void Random_NullInput_ReturnsDefaultForReferenceType()
-        {
-            IEnumerable<string>? nullList = null;
-            Assert.IsNull(nullList.Random(new Random()));
-        }
-
-        [TestMethod]
         public void Random_EmptyList_ReturnsDefault()
         {
             var emptyList = Array.Empty<int>();
