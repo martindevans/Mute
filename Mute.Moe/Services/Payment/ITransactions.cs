@@ -12,10 +12,10 @@ public static class ITransactionsExtensions
     /// </summary>
     /// <param name="primaryUser"></param>
     /// <param name="transactions"></param>
-    private static async Task<IReadOnlyList<IBalance>> TransactionsToBalances(ulong primaryUser, IAsyncEnumerable<ITransaction> transactions)
+    private static async Task<IReadOnlyList<IBalance>> TransactionsToBalances(ulong primaryUser, IAsyncEnumerable<Transaction> transactions)
     {
         // Accumulate a lookup table of user -> unit -> amount
-        //user in this case is always the secondary user (the other is implicitly the primary user)
+        // user in this case is always the secondary user (the other is implicitly the primary user)
         var accumulator = new Dictionary<ulong, Dictionary<string, decimal>>();
 
         await foreach (var transaction in transactions)
@@ -32,16 +32,16 @@ public static class ITransactionsExtensions
             Add(inner, transaction.Unit, transaction.Amount * (positive ? 1 : -1));
         }
 
-        //Create a list of all results
+        // Create a list of all results
         var results = new List<IBalance>();
         foreach (var (user, inner) in accumulator)
         foreach (var (unit, amount) in inner)
             results.Add(new Balance(unit, primaryUser, user, amount));
 
-        //Remove useless result
+        // Remove useless result
         results.RemoveAll(r => r.Amount == 0);
 
-        //Order sensibly
+        // Order sensibly
         results.Sort((a, b) => a.Amount.CompareTo(b.Amount));
 
         return results;
@@ -97,7 +97,7 @@ public static class ITransactionsExtensions
     /// <param name="userA">One of the users in the transaction</param>
     /// <param name="userB"></param>
     /// <returns>All transactions involving A (filtered to also involving B if specified), ordered by instant</returns>
-    public static async Task<IReadOnlyList<ITransaction>> GetAllTransactions(this ITransactions database, ulong userA, ulong? userB = null)
+    public static async Task<IReadOnlyList<Transaction>> GetAllTransactions(this ITransactions database, ulong userA, ulong? userB = null)
     {
         var ab = database.GetTransactions(fromId: userA, toId: userB);
         var ba = database.GetTransactions(fromId: userB, toId: userA);
@@ -127,5 +127,5 @@ public interface ITransactions
     /// Get all transactions, optionally filtered by source, sink, unit and time range
     /// </summary>
     /// <returns></returns>
-    IAsyncEnumerable<ITransaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
+    IAsyncEnumerable<Transaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
 }

@@ -95,9 +95,9 @@ public class DatabasePendingTransactions
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<IPendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
+    public IAsyncEnumerable<PendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
-        return new SqlAsyncResult<IPendingTransaction>(_database, PrepareQuery, ParsePendingTransaction);
+        return new SqlAsyncResult<PendingTransaction>(_database, PrepareQuery, ParsePendingTransaction);
 
         DbCommand PrepareQuery(IDatabaseService db)
         {
@@ -113,7 +113,7 @@ public class DatabasePendingTransactions
             return cmd;
         }
 
-        static IPendingTransaction ParsePendingTransaction(DbDataReader reader)
+        static PendingTransaction ParsePendingTransaction(DbDataReader reader)
         {
             return new PendingTransaction(
                 ulong.Parse((string)reader["FromId"]),

@@ -1,11 +1,11 @@
 ﻿#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Payment;
-using JetBrains.Annotations;
 using System.Linq;
 
 namespace Mute.Tests.Services.Payments
@@ -24,7 +24,7 @@ namespace Mute.Tests.Services.Payments
             await pending.CreatePending(0, 1, 10, "GBP", "Note", now);
         }
 
-        private static async Task<(uint, uint, uint, uint)> CreateTestTransactions(DateTime now, [NotNull] IPendingTransactions svc)
+        private static async Task<(uint, uint, uint, uint)> CreateTestTransactions(DateTime now, IPendingTransactions svc)
         {
             var a = await svc.CreatePending(0, 1, 10, "TEST", "Note 1", now + TimeSpan.FromMinutes(1));
             var b = await svc.CreatePending(0, 1, 1, "TEST2", "Note 3", now + TimeSpan.FromMinutes(3));
@@ -414,19 +414,15 @@ namespace Mute.Tests.Services.Payments
     /// <summary>
     /// A fake ITransactions implementation (not DatabaseTransactions) used to test constructor validation.
     /// </summary>
-    internal class FakeTransactions : ITransactions
+    internal class FakeTransactions
+        : ITransactions
     {
         public Task CreateTransaction(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
             => Task.CompletedTask;
 
-        public IAsyncEnumerable<ITransaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
+        public IAsyncEnumerable<Transaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
         {
-            return Empty();
-
-            static async IAsyncEnumerable<ITransaction> Empty()
-            {
-                yield break;
-            }
+            return Array.Empty<Transaction>().ToAsyncEnumerable();
         }
     }
 }
