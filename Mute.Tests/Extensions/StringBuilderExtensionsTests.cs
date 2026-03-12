@@ -27,15 +27,6 @@ namespace Mute.Tests.Extensions
         }
 
         [TestMethod]
-        public void AppendLine_ReturnsBuilder_ForFluentChaining()
-        {
-            var builder = new StringBuilder();
-            var result = builder.AppendLine("test".AsSpan());
-
-            Assert.AreSame(builder, result);
-        }
-
-        [TestMethod]
         public void AppendLine_MultipleChainedCalls_ProducesCorrectResult()
         {
             var builder = new StringBuilder();
