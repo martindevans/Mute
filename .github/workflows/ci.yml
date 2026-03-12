@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      # Check out the main repo into a subdirectory so that Discord.Addons.Interactive
+      # can be placed alongside it within the workspace. Mute.Moe.csproj references it
+      # via ../../Discord.Addons.Interactive/... (relative to Mute.Moe/), which resolves
+      # to the sibling directory checked out below.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: Mute
+
+      - name: Checkout Discord.Addons.Interactive
+        uses: actions/checkout@v4
+        with:
+          repository: martindevans/Discord.Addons.Interactive
+          path: Discord.Addons.Interactive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Mute.Tests/Mute.Tests.csproj
+        working-directory: Mute
+
+      - name: Build
+        run: dotnet build Mute.Tests/Mute.Tests.csproj --no-restore
+        working-directory: Mute
+
+      - name: Test
+        run: dotnet test Mute.Tests/Mute.Tests.csproj --no-build --verbosity normal
+        working-directory: Mute
