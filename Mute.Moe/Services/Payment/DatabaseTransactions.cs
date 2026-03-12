@@ -43,7 +43,7 @@ public class DatabaseTransactions
         if (fromId == toId)
             throw new InvalidOperationException("Cannot transact from self to self");
 
-        await _database.Connection.ExecuteAsync(
+        await _database.Connection.ExecuteScalarAsync<long>(
             InsertTransactionSql,
             new
             {

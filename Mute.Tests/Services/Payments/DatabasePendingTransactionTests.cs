@@ -44,7 +44,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
-            var results = await pending.Get(debtId: a).ToArrayAsync(TestContext.CancellationToken);
+            var results = await pending.Get(debtId: a).ToArrayAsync();
 
             Assert.HasCount(1, results);
             Assert.AreEqual("test", results[0].Unit);
@@ -65,7 +65,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
-            var results = await pending.Get(fromId: 1).ToArrayAsync(TestContext.CancellationToken);
+            var results = await pending.Get(fromId: 1).ToArrayAsync();
 
             Assert.HasCount(2, results);
             Assert.AreEqual("test", results[0].Unit);
@@ -82,7 +82,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
-            var results = await pending.Get(toId: 1).ToArrayAsync(TestContext.CancellationToken);
+            var results = await pending.Get(toId: 1).ToArrayAsync();
 
             Assert.HasCount(2, results);
             Assert.AreEqual("test", results[0].Unit);
@@ -99,7 +99,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
-            var results = await pending.Get(unit: "test").ToArrayAsync(TestContext.CancellationToken);
+            var results = await pending.Get(unit: "test").ToArrayAsync();
 
             Assert.HasCount(2, results);
             Assert.AreEqual("Note 1", results[0].Note);
@@ -116,7 +116,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
-            var results = await pending.Get(before: now + TimeSpan.FromMinutes(2.5)).ToArrayAsync(TestContext.CancellationToken);
+            var results = await pending.Get(before: now + TimeSpan.FromMinutes(2.5)).ToArrayAsync();
 
             Assert.HasCount(2, results);
             Assert.AreEqual("test", results[0].Unit);
@@ -133,7 +133,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (_, _, _, _) = await CreateTestTransactions(now, pending);
 
-            var results = await pending.Get(after: now + TimeSpan.FromMinutes(2.5)).ToArrayAsync(TestContext.CancellationToken);
+            var results = await pending.Get(after: now + TimeSpan.FromMinutes(2.5)).ToArrayAsync();
 
             Assert.HasCount(2, results);
             Assert.AreEqual("test2", results[0].Unit);
@@ -150,7 +150,7 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, b, c, d) = await CreateTestTransactions(now, pending);
 
-            var results = await pending.Get(state: PendingState.Pending).ToArrayAsync(TestContext.CancellationToken);
+            var results = await pending.Get(state: PendingState.Pending).ToArrayAsync();
 
             Assert.HasCount(4, results);
             Assert.AreEqual(a, results[0].Id);
@@ -169,15 +169,15 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
-            var transactionsBefore = await tsx.GetTransactions(0, 1, "TEST").ToArrayAsync(TestContext.CancellationToken);
+            var transactionsBefore = await tsx.GetTransactions(0, 1, "TEST").ToArrayAsync();
             Assert.HasCount(0, transactionsBefore);
 
             Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(a));
 
-            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync(TestContext.CancellationToken);
+            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync();
             Assert.HasCount(3, notConfirmed);
 
-            var transactionsAfter = await tsx.GetTransactions(0, 1, "TEST").ToArrayAsync(TestContext.CancellationToken);
+            var transactionsAfter = await tsx.GetTransactions(0, 1, "TEST").ToArrayAsync();
             Assert.HasCount(1, transactionsAfter);
         }
 
@@ -194,7 +194,7 @@ namespace Mute.Tests.Services.Payments
             Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(a));
             Assert.AreEqual(ConfirmResult.AlreadyConfirmed, await pending.ConfirmPending(a));
 
-            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync(TestContext.CancellationToken);
+            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync();
             Assert.HasCount(3, notConfirmed);
         }
 
@@ -211,7 +211,7 @@ namespace Mute.Tests.Services.Payments
             Assert.AreEqual(DenyResult.Denied, await pending.DenyPending(a));
             Assert.AreEqual(ConfirmResult.AlreadyDenied, await pending.ConfirmPending(a));
 
-            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync(TestContext.CancellationToken);
+            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync();
             Assert.HasCount(3, notConfirmed);
         }
 
@@ -227,7 +227,7 @@ namespace Mute.Tests.Services.Payments
 
             Assert.AreEqual(ConfirmResult.IdNotFound, await pending.ConfirmPending(d + 10));
             
-            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync(TestContext.CancellationToken);
+            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync();
             Assert.HasCount(4, notConfirmed);
         }
 
@@ -241,15 +241,15 @@ namespace Mute.Tests.Services.Payments
             var now = DateTime.UtcNow;
             var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
-            var transactionsBefore = await tsx.GetTransactions(0, 1, "TEST").ToArrayAsync(TestContext.CancellationToken);
+            var transactionsBefore = await tsx.GetTransactions(0, 1, "TEST").ToArrayAsync();
             Assert.HasCount(0, transactionsBefore);
 
             Assert.AreEqual(DenyResult.Denied, await pending.DenyPending(a));
 
-            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync(TestContext.CancellationToken);
+            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync();
             Assert.HasCount(3, notConfirmed);
 
-            var transactionsAfter = await tsx.GetTransactions(0, 1, "TEST").ToArrayAsync(TestContext.CancellationToken);
+            var transactionsAfter = await tsx.GetTransactions(0, 1, "TEST").ToArrayAsync();
             Assert.HasCount(0, transactionsAfter);
         }
 
@@ -266,7 +266,7 @@ namespace Mute.Tests.Services.Payments
             Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(a));
             Assert.AreEqual(DenyResult.AlreadyConfirmed, await pending.DenyPending(a));
 
-            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync(TestContext.CancellationToken);
+            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync();
             Assert.HasCount(3, notConfirmed);
         }
 
@@ -283,7 +283,7 @@ namespace Mute.Tests.Services.Payments
             Assert.AreEqual(DenyResult.Denied, await pending.DenyPending(a));
             Assert.AreEqual(DenyResult.AlreadyDenied, await pending.DenyPending(a));
 
-            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync(TestContext.CancellationToken);
+            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync();
             Assert.HasCount(3, notConfirmed);
         }
 
@@ -299,7 +299,7 @@ namespace Mute.Tests.Services.Payments
 
             Assert.AreEqual(DenyResult.IdNotFound, await pending.DenyPending(d + 10));
 
-            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync(TestContext.CancellationToken);
+            var notConfirmed = await pending.Get(state: PendingState.Pending).ToArrayAsync();
             Assert.HasCount(4, notConfirmed);
         }
 
@@ -316,7 +316,7 @@ namespace Mute.Tests.Services.Payments
             await pending.ConfirmPending(a);
             await pending.ConfirmPending(b);
 
-            var confirmed = await pending.Get(state: PendingState.Confirmed).ToArrayAsync(TestContext.CancellationToken);
+            var confirmed = await pending.Get(state: PendingState.Confirmed).ToArrayAsync();
             Assert.HasCount(2, confirmed);
             Assert.IsTrue(confirmed.All(t => t.State == PendingState.Confirmed));
         }
@@ -334,7 +334,7 @@ namespace Mute.Tests.Services.Payments
             await pending.DenyPending(a);
             await pending.DenyPending(c);
 
-            var denied = await pending.Get(state: PendingState.Denied).ToArrayAsync(TestContext.CancellationToken);
+            var denied = await pending.Get(state: PendingState.Denied).ToArrayAsync();
             Assert.HasCount(2, denied);
             Assert.IsTrue(denied.All(t => t.State == PendingState.Denied));
         }
@@ -352,7 +352,7 @@ namespace Mute.Tests.Services.Payments
             var id = await pending.CreatePending(42, 99, 12.5m, "GBP", "TestNote", now);
             Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(id));
 
-            var confirmed = await tsx.GetTransactions(fromId: 42, toId: 99, unit: "gbp").ToArrayAsync(TestContext.CancellationToken);
+            var confirmed = await tsx.GetTransactions(fromId: 42, toId: 99, unit: "gbp").ToArrayAsync();
             Assert.HasCount(1, confirmed);
 
             var t = confirmed[0];
@@ -404,26 +404,25 @@ namespace Mute.Tests.Services.Payments
             var pending = new DatabasePendingTransactions(db, tsx);
 
             var id = await pending.CreatePending(0, 1, 10, "GBP", null, DateTime.UtcNow);
-            var results = await pending.Get(debtId: id).ToArrayAsync(TestContext.CancellationToken);
+            var results = await pending.Get(debtId: id).ToArrayAsync();
 
             Assert.HasCount(1, results);
             Assert.AreEqual("gbp", results[0].Unit);
         }
-
-        public TestContext TestContext { get; set; }
     }
 
     /// <summary>
     /// A fake ITransactions implementation (not DatabaseTransactions) used to test constructor validation.
     /// </summary>
-    internal class FakeTransactions : ITransactions
+    internal class FakeTransactions
+        : ITransactions
     {
         public Task CreateTransaction(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
             => Task.CompletedTask;
 
-        public async IAsyncEnumerable<Transaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
+        public IAsyncEnumerable<Transaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
         {
-            yield break;
+            return Array.Empty<Transaction>().ToAsyncEnumerable();
         }
     }
 }
