@@ -8,65 +8,31 @@ namespace Mute.Moe.Services.Payment;
 /// <summary>
 /// Represents A transaction of some amount of a thing from one person to another
 /// </summary>
-public interface ITransaction
-{
-    /// <summary>
-    /// ID of the source user
-    /// </summary>
-    ulong FromId { get; }
-
-    /// <summary>
-    /// ID of the destination user
-    /// </summary>
-    ulong ToId { get; }
-
-    /// <summary>
-    /// Amount transferred
-    /// </summary>
-    decimal Amount { get; }
-
-    /// <summary>
-    /// Exact time of transaction
-    /// </summary>
-    DateTime Instant { get; }
-
-    /// <summary>
-    /// Unit of transaction (e.g. GBP)
-    /// </summary>
-    string Unit { get; }
-
-    /// <summary>
-    /// A human readable note attached to this transaction
-    /// </summary>
-    string? Note { get; }
-}
-
-/// <summary>
-/// Extensions to <see cref="ITransaction"/>
-/// </summary>
-public static class ITransactionExtensions
+/// <param name="FromId">ID of the source user</param>
+/// <param name="ToId">ID of the destination user</param>
+/// <param name="Amount">Amount transferred</param>
+/// <param name="Unit">Unit of transaction (e.g. GBP)</param>
+/// <param name="Note">A human readable note attached to this transaction</param>
+/// <param name="Instant">Exact time of transaction</param>
+public sealed record Transaction(ulong FromId, ulong ToId, decimal Amount, string Unit, string? Note, DateTime Instant)
 {
     /// <summary>
     /// Convert a transaction into a string
     /// </summary>
-    /// <param name="transaction"></param>
     /// <param name="users"></param>
     /// <param name="mention"></param>
     /// <returns></returns>
-    public static Task<string> Format(this ITransaction transaction, IUserService users, bool mention = false)
+    public Task<string> Format(IUserService users, bool mention = false)
     {
         return TransactionFormatting.FormatTransaction(
             users,
-            transaction.FromId,
-            transaction.ToId,
-            transaction.Note,
-            transaction.Instant,
-            transaction.Amount,
-            transaction.Unit,
+            FromId,
+            ToId,
+            Note,
+            Instant,
+            Amount,
+            Unit,
             mention
         );
     }
 }
-
-internal record Transaction(ulong FromId, ulong ToId, decimal Amount, string Unit, string? Note, DateTime Instant)
-    : ITransaction;

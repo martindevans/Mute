@@ -23,7 +23,7 @@ public class Iou(ITransactions _transactions, IUserService _users)
 {
     #region helpers
     private async Task DisplayTransactions<TTransactionsCollection>(TTransactionsCollection transactions)
-        where TTransactionsCollection : IReadOnlyCollection<ITransaction>
+        where TTransactionsCollection : IReadOnlyCollection<Transaction>
     {
         var tsx = new List<string>(transactions.Count);
         foreach (var transaction in transactions)

@@ -2,6 +2,7 @@
 using System.Data.SQLite;
 using System.Globalization;
 using System.Threading.Tasks;
+using Dapper;
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Payment;
@@ -42,23 +43,24 @@ public class DatabaseTransactions
         if (fromId == toId)
             throw new InvalidOperationException("Cannot transact from self to self");
 
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = InsertTransactionSql;
-        cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
-        cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
-        cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
-        cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = instant.UnixTimestamp() });
-
-        // ReSharper disable once UnusedVariable
-        var id = await cmd.ExecuteScalarAsync();
+        await _database.Connection.ExecuteAsync(
+            InsertTransactionSql,
+            new
+            {
+                FromId = fromId.ToString(),
+                ToId = toId.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
+                Unit = unit.ToLowerInvariant(),
+                Note = note ?? "",
+                InstantUnix = instant.UnixTimestamp().ToString()
+            }
+        );
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<ITransaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
+    public IAsyncEnumerable<Transaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
-        return new SqlAsyncResult<ITransaction>(_database, PrepareQuery, ParseTransaction);
+        return new SqlAsyncResult<Transaction>(_database, PrepareQuery, ParseTransaction);
 
         DbCommand PrepareQuery(IDatabaseService db)
         {
@@ -72,7 +74,7 @@ public class DatabaseTransactions
             return cmd;
         }
 
-        static ITransaction ParseTransaction(DbDataReader reader)
+        static Transaction ParseTransaction(DbDataReader reader)
         {
             return new Transaction(
                 ulong.Parse((string)reader["FromId"]),

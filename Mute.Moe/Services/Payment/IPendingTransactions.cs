@@ -32,7 +32,7 @@ public interface IPendingTransactions
     /// <param name="after"></param>
     /// <param name="before"></param>
     /// <returns></returns>
-    IAsyncEnumerable<IPendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
+    IAsyncEnumerable<PendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
 
     /// <summary>
     /// Confirm a pending transaction
@@ -125,99 +125,33 @@ public enum PendingState
 /// <summary>
 /// Represents A transaction which has not been confirmed.
 /// </summary>
-public interface IPendingTransaction
-{
-    /// <summary>
-    /// Unique ID of this pending transaction
-    /// </summary>
-    uint Id { get; }
-
-    /// <summary>
-    /// Source user
-    /// </summary>
-    ulong FromId { get; }
-
-    /// <summary>
-    /// Destination user
-    /// </summary>
-    ulong ToId { get; }
-
-    /// <summary>
-    /// Amount in transaction
-    /// </summary>
-    decimal Amount { get; }
-
-    /// <summary>
-    /// Instant of transaction
-    /// </summary>
-    DateTime Instant { get; }
-
-    /// <summary>
-    /// Unit of transaction
-    /// </summary>
-    string Unit { get; }
-
-    /// <summary>
-    /// Human readable note attached to transaction
-    /// </summary>
-    string? Note { get; }
-
-    /// <summary>
-    /// Current state of this pending transaction
-    /// </summary>
-    PendingState State { get; }
-}
-
-/// <summary>
-/// Extensions for <see cref="IPendingTransaction"/>
-/// </summary>
-public static class IPendingTransactionExtensions
+/// <param name="FromId">Source user</param>
+/// <param name="ToId">Destination user</param>
+/// <param name="Amount">Amount in transaction</param>
+/// <param name="Unit">Unit of transaction</param>
+/// <param name="Note">Human readable note attached to transaction</param>
+/// <param name="Instant">Instant of transaction</param>
+/// <param name="State">Current state of this pending transaction</param>
+/// <param name="Id">Unique ID of this pending transaction</param>
+public sealed record PendingTransaction(ulong FromId, ulong ToId, decimal Amount, string Unit, string? Note, DateTime Instant, PendingState State, uint Id)
 {
     /// <summary>
     /// String format a pending transaction
     /// </summary>
-    /// <param name="transaction"></param>
     /// <param name="users"></param>
     /// <param name="mention"></param>
     /// <returns></returns>
-    public static Task<string> Format(this IPendingTransaction transaction, IUserService users, bool mention = false)
+    public Task<string> Format(IUserService users, bool mention = false)
     {
         return TransactionFormatting.FormatTransaction(
             users,
-            transaction.FromId,
-            transaction.ToId,
-            transaction.Note,
-            transaction.Instant,
-            transaction.Amount,
-            transaction.Unit,
+            FromId,
+            ToId,
+            Note,
+            Instant,
+            Amount,
+            Unit,
             mention
         );
-    }
-}
-
-internal class PendingTransaction
-    : IPendingTransaction
-{
-    public ulong FromId { get; }
-    public ulong ToId { get; }
-    public decimal Amount { get; }
-    public DateTime Instant { get; }
-
-    public string Unit { get; }
-    public string? Note { get; }
-
-    public PendingState State { get; }
-    public uint Id { get; }
-
-    public PendingTransaction(ulong fromId, ulong toId, decimal amount,  string unit, string? note, DateTime instant, PendingState state, uint id)
-    {
-        FromId = fromId;
-        ToId = toId;
-        Amount = amount;
-        Unit = unit;
-        Note = note;
-        Instant = instant;
-        State = state;
-        Id = id;
     }
 }

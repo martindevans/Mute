@@ -180,7 +180,7 @@ public class Uoi(IPendingTransactions _pending, IUserService _users)
         );
     }
 
-    private async Task PaginatedPending(IAsyncEnumerable<IPendingTransaction> pending, string none, string paginatedHeader, bool mentionReceiver)
+    private async Task PaginatedPending(IAsyncEnumerable<PendingTransaction> pending, string none, string paginatedHeader, bool mentionReceiver)
     {
         var pendingArr = await pending.ToListAsync();
         var formatted = new List<string>();
@@ -199,7 +199,7 @@ public class Uoi(IPendingTransactions _pending, IUserService _users)
         }
     }
 
-    public static async Task<string> FormatSinglePending(IPendingTransaction p, IUserService users, bool mentionReceiver, bool longForm)
+    public static async Task<string> FormatSinglePending(PendingTransaction p, IUserService users, bool mentionReceiver, bool longForm)
     {
         var receiver = await users.Name(p.ToId, mention: mentionReceiver);
         var payer = await users.Name(p.FromId);
