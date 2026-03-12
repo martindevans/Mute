@@ -148,15 +148,21 @@ namespace Mute.Tests.Utilities
         [TestMethod]
         public void Apply_UnknownType_ThrowsInvalidOperationException()
         {
-            var edit = new StringEdit((StringEditType)999, 0, "x", AnyEditor);
-            Assert.ThrowsException<InvalidOperationException>(() => edit.Apply("hello"));
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                var edit = new StringEdit((StringEditType)999, 0, "x", AnyEditor);
+                edit.Apply("hello");
+            });
         }
 
         [TestMethod]
         public void Unapply_UnknownType_ThrowsInvalidOperationException()
         {
-            var edit = new StringEdit((StringEditType)999, 0, "x", AnyEditor);
-            Assert.ThrowsException<InvalidOperationException>(() => edit.Unapply("hello"));
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                var edit = new StringEdit((StringEditType)999, 0, "x", AnyEditor);
+                edit.Unapply("hello");
+            });
         }
 
         #endregion
