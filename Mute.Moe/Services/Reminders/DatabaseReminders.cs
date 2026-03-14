@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Globalization;
+using Dapper;
 using Mute.Moe.Services.Database;
 using Serilog;
 using System.Threading.Tasks;
@@ -100,13 +101,14 @@ public class DatabaseReminders
     /// <inheritdoc />
     public IAsyncEnumerable<Reminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
     {
-        var rows = _database.Connection.QueryAsync<ReminderRow>(GetFilteredRemindersSql,
+        var rows = _database.Connection.QueryAsync<ReminderRow>(
+            GetFilteredRemindersSql,
             new
             {
-                UserId = userId,
-                UpperBoundInstant = before?.UnixTimestamp(),
-                LowerBoundInstant = after?.UnixTimestamp(),
-                ChannelId = channel,
+                UserId = userId?.ToString(CultureInfo.InvariantCulture),
+                UpperBoundInstant = before?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+                LowerBoundInstant = after?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+                ChannelId = channel?.ToString(CultureInfo.InvariantCulture),
                 Limit = count ?? uint.MaxValue
             }
         );

@@ -82,7 +82,7 @@ public class DatabasePendingTransactions
         if (fromId == toId)
             throw new InvalidOperationException("Cannot transact from self to self");
 
-        return await _database.Connection.ExecuteScalarAsync<uint>(
+        return (uint)await _database.Connection.ExecuteScalarAsync<long>(
             InsertPendingSql,
             new
             {
