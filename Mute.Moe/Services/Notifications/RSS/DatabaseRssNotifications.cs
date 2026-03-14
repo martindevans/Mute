@@ -1,8 +1,7 @@
-﻿using Mute.Moe.Services.Database;
+﻿using Dapper;
+using Mute.Moe.Services.Database;
 using Serilog;
-using System.Data.Common;
 using System.Threading.Tasks;
-using Dapper;
 
 namespace Mute.Moe.Services.Notifications.RSS;
 
@@ -64,25 +63,24 @@ public class DatabaseRssNotifications
     /// <inheritdoc />
     public IAsyncEnumerable<IRssSubscription> GetSubscriptions()
     {
-        return new SqlAsyncResult<IRssSubscription>(_database, PrepareQuery, ParseSubscription);
+        var rows = _database.Connection.QueryAsync<RssSubscriptionRow>(GetSubscriptionsSql);
 
-        static DbCommand PrepareQuery(IDatabaseService db)
-        {
-            var cmd = db.CreateCommand();
-            cmd.CommandText = GetSubscriptionsSql;
-            return cmd;
-        }
-
-        static IRssSubscription ParseSubscription(DbDataReader reader)
-        {
-            var mention = reader["MentionGroup"];
-            return new RssSubscription(
-                reader["Url"].ToString()!,
-                ulong.Parse(reader["ChannelId"].ToString()!),
-                mention is DBNull ? null : ulong.Parse(mention.ToString()!)
-            );
-        }
+        return rows.ToAsyncEnumerable()
+                   .SelectMany(a => a)
+                   .Select(a => a.ToSubscription());
     }
 
     private record RssSubscription(string FeedUrl, ulong Channel, ulong? MentionRole) : IRssSubscription;
+
+    private record RssSubscriptionRow(string Url, string ChannelId, string? MentionGroup)
+    {
+        public RssSubscription ToSubscription()
+        {
+            return new(
+                Url,
+                ulong.Parse(ChannelId),
+                MentionGroup == null ? null : ulong.Parse(MentionGroup)
+            );
+        }
+    }
 }

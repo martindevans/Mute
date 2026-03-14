@@ -17,7 +17,7 @@ public interface IReminders
     /// Get all reminders in date order filtered by user, time range, channel or status and limited by a max count
     /// </summary>
     /// <returns></returns>
-    IOrderedAsyncEnumerable<Reminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null);
+    IAsyncEnumerable<Reminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null);
 
     /// <summary>
     /// Delete a reminder

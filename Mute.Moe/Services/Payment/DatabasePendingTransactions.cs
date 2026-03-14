@@ -2,6 +2,7 @@
 using System.Data.SQLite;
 using System.Globalization;
 using System.Threading.Tasks;
+using Dapper;
 using Mute.Moe.Services.Database;
 
 namespace Mute.Moe.Services.Payment;
@@ -81,17 +82,19 @@ public class DatabasePendingTransactions
         if (fromId == toId)
             throw new InvalidOperationException("Cannot transact from self to self");
 
-        await using var cmd = _database.CreateCommand();
-        cmd.CommandText = InsertPendingSql;
-        cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId.ToString() });
-        cmd.Parameters.Add(new SQLiteParameter("@Amount", System.Data.DbType.String) { Value = amount.ToString(CultureInfo.InvariantCulture) });
-        cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit.ToLowerInvariant() });
-        cmd.Parameters.Add(new SQLiteParameter("@Note", System.Data.DbType.String) { Value = note ?? "" });
-        cmd.Parameters.Add(new SQLiteParameter("@InstantUnix", System.Data.DbType.String) { Value = instant.UnixTimestamp() });
-        cmd.Parameters.Add(new SQLiteParameter("@Pending", System.Data.DbType.String) { Value = nameof(PendingState.Pending) });
-
-        return (uint)(long)(await cmd.ExecuteScalarAsync())!;
+        return await _database.Connection.ExecuteScalarAsync<uint>(
+            InsertPendingSql,
+            new
+            {
+                FromId = fromId.ToString(CultureInfo.InvariantCulture),
+                ToId = toId.ToString(CultureInfo.InvariantCulture),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
+                Unit = unit.ToLowerInvariant(),
+                Note = note ?? "",
+                InstantUnix = instant.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+                Pending = nameof(PendingState.Pending),
+            }
+        );
     }
 
     /// <inheritdoc />

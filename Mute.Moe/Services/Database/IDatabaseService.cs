@@ -2,6 +2,7 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapper;
 
 
 namespace Mute.Moe.Services.Database;
@@ -36,9 +37,7 @@ public static class IDatabaseServiceExtensions
     /// <returns></returns>
     public static int Exec(this IDatabaseService db, string sql)
     {
-        using var cmd = db.CreateCommand();
-        cmd.CommandText = sql;
-        return cmd.ExecuteNonQuery();
+        return db.Connection.Execute(sql);
     }
 }
 
