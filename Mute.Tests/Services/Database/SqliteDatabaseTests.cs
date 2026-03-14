@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Dapper;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe;
 using Mute.Moe.Services.Database;
 
@@ -19,11 +20,7 @@ namespace Mute.Tests.Services.Database
                 Agent = null!
             });
 
-            using (var cmd = db.CreateCommand())
-            {
-                cmd.CommandText = "PRAGMA VACUUM";
-                cmd.ExecuteNonQuery();
-            }
+            db.Connection.Execute("PRAGMA VACUUM");
         }
 
         [TestMethod]

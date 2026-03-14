@@ -1,8 +1,7 @@
-﻿using Dapper;
+﻿using System.Globalization;
+using Dapper;
 using Mute.Moe.Services.Database;
 using Serilog;
-using System.Data.Common;
-using System.Data.SQLite;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Reminders;
@@ -100,32 +99,37 @@ public class DatabaseReminders
     }
 
     /// <inheritdoc />
-    public IOrderedAsyncEnumerable<Reminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
+    public IAsyncEnumerable<Reminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
     {
-        return new SqlAsyncResult<Reminder>(_database, PrepareQuery, ParseReminder).OrderBy(a => a.TriggerTime);
+        var rows = _database.Connection.QueryAsync<ReminderRow>(
+            GetFilteredRemindersSql,
+            new
+            {
+                UserId = userId?.ToString(CultureInfo.InvariantCulture),
+                UpperBoundInstant = before?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+                LowerBoundInstant = after?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+                ChannelId = channel?.ToString(CultureInfo.InvariantCulture),
+                Limit = count ?? uint.MaxValue
+            }
+        );
 
-        DbCommand PrepareQuery(IDatabaseService db)
-        {
-            var cmd = db.CreateCommand();
-            cmd.CommandText = GetFilteredRemindersSql;
-            cmd.Parameters.Add(new SQLiteParameter("@UserId", System.Data.DbType.String) { Value = userId?.ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@UpperBoundInstant", System.Data.DbType.String) { Value = before?.UnixTimestamp().ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@LowerBoundInstant", System.Data.DbType.String) { Value = after?.UnixTimestamp().ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@ChannelId", System.Data.DbType.String) { Value = channel?.ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@Limit", System.Data.DbType.UInt32) { Value = count ?? uint.MaxValue });
-            return cmd;
-        }
+        return rows.ToAsyncEnumerable()
+                   .SelectMany(a => a)
+                   .Select(row => row.ToReminder());
     }
 
-    private static Reminder ParseReminder(DbDataReader reader)
+    private record ReminderRow(string InstantUnix, string ChannelId, string Prelude, string Message, bool Deleted, string UserId, long RowId)
     {
-        return new Reminder(
-            ID: uint.Parse(reader["rowid"].ToString()!),
-            TriggerTime: ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
-            Prelude: reader["Prelude"].ToString(),
-            Message: reader["Message"].ToString()!,
-            ChannelId: ulong.Parse((string)reader["ChannelId"]),
-            UserId: ulong.Parse((string)reader["UserId"])
-        );
+        public Reminder ToReminder()
+        {
+            return new(
+                ID: (uint)RowId,
+                TriggerTime: ulong.Parse(InstantUnix).FromUnixTimestamp(),
+                Prelude: Prelude,
+                Message: Message,
+                ChannelId: ulong.Parse(ChannelId),
+                UserId: ulong.Parse(UserId)
+            );
+        }
     }
 }
