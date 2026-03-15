@@ -25,11 +25,12 @@ public class Automatic1111
     private readonly StableDiffusionBackendCache _backends;
 
     private readonly string _checkpoint;
-    private readonly string _t2iSampler;
-    private readonly string _t2iScheduler;
-    private readonly string _i2iSampler;
-    private readonly string _i2iScheduler;
-    private readonly int _samplerSteps;
+
+    private readonly SamplerOptions _t2iSampler;
+    private readonly string[] _t2iLoras;
+    private readonly SamplerOptions _i2iSampler;
+    private readonly string[] _i2iLoras;
+
     private readonly int _outpaintSteps;
     private readonly uint _width;
     private readonly uint _height;
@@ -55,11 +56,23 @@ public class Automatic1111
         _backends = backends;
 
         _checkpoint = config.Automatic1111?.Checkpoint ?? "cardosAnime_v20";
-        _t2iSampler = config.Automatic1111?.Text2ImageSampler ?? "UniPC";
-        _t2iScheduler = config.Automatic1111?.Text2ImageScheduler ?? "karras";
-        _i2iSampler = config.Automatic1111?.Image2ImageSampler ?? "DDIM";
-        _i2iScheduler = config.Automatic1111?.Image2ImageScheduler ?? "karras";
-        _samplerSteps = config.Automatic1111?.SamplerSteps ?? 18;
+
+        _t2iSampler = new SamplerOptions(
+            config.Automatic1111?.Text2ImageSampler ?? "UniPC",
+            config.Automatic1111?.Text2ImageScheduler ?? "karras",
+            config.Automatic1111?.Text2ImageGuidanceScale ?? 5,
+            config.Automatic1111?.SamplerSteps ?? 18
+        );
+        _t2iLoras = config.Automatic1111?.Image2ImageLoras ?? [ ];
+
+        _i2iSampler = new SamplerOptions(
+            config.Automatic1111?.Image2ImageSampler ?? "UniPC",
+            config.Automatic1111?.Image2ImageScheduler ?? "karras",
+            config.Automatic1111?.Image2ImageGuidanceScale ?? 5,
+            config.Automatic1111?.SamplerSteps ?? 18
+        );
+        _i2iLoras = config.Automatic1111?.Image2ImageLoras ?? [ ];
+
         _outpaintSteps = config.Automatic1111?.OutpaintSteps ?? 75;
         _width = config.Automatic1111?.Width ?? 512;
         _height = config.Automatic1111?.Height ?? 768;
@@ -87,8 +100,6 @@ public class Automatic1111
         var backend = scope.Backend;
 
         var model = await backend.StableDiffusionModel(_checkpoint);
-        var sampler = await backend.Sampler(_t2iSampler);
-        var scheduler = await backend.Scheduler(_t2iScheduler);
 
         var rawResults = await PumpProgress(backend, backend.TextToImage(
             new()
@@ -101,12 +112,8 @@ public class Automatic1111
                     Negative = prompt.Negative,
                 },
 
-                Sampler = new()
-                {
-                    Sampler = sampler,
-                    SamplingSteps = scope.Steps(_samplerSteps),
-                    Scheduler = scheduler,
-                },
+                Sampler = await _t2iSampler.ToSamplerConfig(scope),
+                Lora = await GetLorasConfig(backend, _t2iLoras),
 
                 Model = model,
                 BatchSize = batch,
@@ -128,6 +135,14 @@ public class Automatic1111
         return results;
     }
 
+    private static async Task<LoraConfig[]> GetLorasConfig(IStableDiffusion backend, string[] loras)
+    {
+        var output = new List<LoraConfig>();
+        foreach (var lora in loras)
+            output.Add(new LoraConfig(await backend.Lora(lora)));
+        return output.ToArray();
+    }
+
     /// <inheritdoc />
     public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image inputImage, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
@@ -136,8 +151,6 @@ public class Automatic1111
         var backend = scope.Backend;
 
         var model = await backend.StableDiffusionModel(_checkpoint);
-        var sampler = await backend.Sampler(_i2iSampler);
-        var scheduler = await backend.Scheduler(_i2iScheduler);
 
         // Clone input image before mutation
         using var image = inputImage.CloneAs<Rgba32>();
@@ -193,13 +206,9 @@ public class Automatic1111
                     Negative = prompt.Negative,
                 },
 
-                Sampler = new()
-                {
-                    Sampler = sampler,
-                    SamplingSteps = scope.Steps(_samplerSteps),
-                    Scheduler = scheduler,
-                },
+                Sampler = await _i2iSampler.ToSamplerConfig(scope),
                 DenoisingStrength = 0.75,
+                Lora = await GetLorasConfig(backend, _i2iLoras),
 
                 Model = model,
                 BatchSize = batch,
@@ -238,7 +247,7 @@ public class Automatic1111
                     PositivePrompt = Join(prompt.FaceEnhancementPositive, prompt.EyeEnhancementPositive),
                     NegativePrompt = Join(prompt.FaceEnhancementNegative, prompt.EyeEnhancementNegative),
 
-                    SamplerSteps = _samplerSteps,
+                    SamplerSteps = _i2iSampler.Steps,
                     MaskMinRatio = _afterDetailFaceMinSize,
                 },
                 //new()
@@ -253,7 +262,7 @@ public class Automatic1111
                     PositivePrompt = prompt.HandEnhancementPositive,
                     NegativePrompt = prompt.HandEnhancementNegative,
 
-                    SamplerSteps = _samplerSteps,
+                    SamplerSteps = _i2iSampler.Steps,
                     InpaintSize = (448, 448),
                     MaskMinRatio = _afterDetailHandMinSize,
                 }
@@ -298,8 +307,6 @@ public class Automatic1111
         var backend = scope.Backend;
 
         var model = await backend.StableDiffusionModel(_checkpoint);
-        var sampler = await backend.Sampler(_i2iSampler);
-        var scheduler = await backend.Scheduler(_i2iScheduler);
         var upscaler = await backend.Upscaler(_upscaler);
 
         // Try to get the generation prompt that was originally used for this image
@@ -326,12 +333,8 @@ public class Automatic1111
 
                 Seed = new(),
 
-                Sampler = new()
-                {
-                    Sampler = sampler,
-                    SamplingSteps = scope.Steps(_samplerSteps * 2),
-                    Scheduler = scheduler
-                },
+                Sampler = await _i2iSampler.ToSamplerConfig(scope),
+                Lora = await GetLorasConfig(backend, _i2iLoras),
 
                 Width = width,
                 Height = height,
@@ -355,9 +358,8 @@ public class Automatic1111
         var backend = scope.Backend;
 
         var model = await backend.StableDiffusionModel(_checkpoint);
-        var sampler = await backend.Sampler(_i2iSampler);
-        var scheduler = await backend.Scheduler(_i2iScheduler);
-        var outpainter = new AutofocusTwoStepOutpainter(backend, model, sampler, scheduler, 2, 1, scope.Steps(_outpaintSteps));
+        var conf = await _i2iSampler.ToSamplerConfig(scope);
+        var outpainter = new AutofocusTwoStepOutpainter(backend, model, conf.Sampler, conf.Scheduler, 2, 1, scope.Steps(_outpaintSteps));
 
         // Clone input image before mutation
         using var image = inputImage.CloneAs<Rgba32>();
@@ -396,5 +398,19 @@ public class Automatic1111
         }
 
         return await task;
+    }
+
+    private record SamplerOptions(string Sampler, string Scheduler, float CFG, int Steps)
+    {
+        public async Task<SamplerConfig> ToSamplerConfig(StableDiffusionBackendCache.BackendScope scope)
+        {
+            return new SamplerConfig
+            {
+                Sampler = await scope.Backend.Sampler(Sampler),
+                Scheduler = await scope.Backend.Scheduler(Scheduler),
+                SamplingSteps = scope.Steps(Steps),
+                CfgScale = CFG,
+            };
+        }
     }
 }

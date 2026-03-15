@@ -97,19 +97,15 @@ public class ChatConversationFactory
 /// </summary>
 public class ChatConversation
 {
+    private readonly ToolExecutionEngine? _toolExecutionEngine;
+    private readonly ChatRequest _request;
+    private readonly List<ChatMessage> _messages = [];
+    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
+
     /// <summary>
     /// The model used for this conversation
     /// </summary>
     public ILlmModel Model { get; }
-
-    /// <summary>
-    /// The tool execution engine used for this conversation
-    /// </summary>
-    public ToolExecutionEngine? ToolExecutionEngine { get; }
-
-    private readonly ChatRequest _request;
-    private readonly List<ChatMessage> _messages = [ ];
-    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
 
     /// <summary>
     /// Total tokens in the conversation state. Only available once a request has been made.
@@ -132,7 +128,7 @@ public class ChatConversation
     {
         Model = model;
         _request = request;
-        ToolExecutionEngine = toolEngine;
+        _toolExecutionEngine = toolEngine;
         _endpoints = endpoints;
     }
 
@@ -187,9 +183,9 @@ public class ChatConversation
 
         async ValueTask ExecuteTools(List<FunctionCall> calls)
         {
-            if (ToolExecutionEngine != null)
+            if (_toolExecutionEngine != null)
             {
-                await ToolExecutionEngine.ExecuteValueTask(calls);
+                await _toolExecutionEngine.ExecuteValueTask(calls);
             }
             else
             {
@@ -251,7 +247,7 @@ public class ChatConversation
             _messages.Add(sys);
 
         // Clear all except for the default tools
-        ToolExecutionEngine?.Clear();
+        _toolExecutionEngine?.Clear();
     }
 
     #region Summarisation

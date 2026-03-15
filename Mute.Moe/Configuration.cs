@@ -302,8 +302,14 @@ public class Automatic1111Config
 
     [UsedImplicitly] public string? Text2ImageSampler;
     [UsedImplicitly] public string? Text2ImageScheduler;
+    [UsedImplicitly] public float? Text2ImageGuidanceScale;
+    [UsedImplicitly] public string[]? Text2ImageLoras;
+
     [UsedImplicitly] public string? Image2ImageSampler;
     [UsedImplicitly] public string? Image2ImageScheduler;
+    [UsedImplicitly] public float? Image2ImageGuidanceScale;
+    [UsedImplicitly] public string[]? Image2ImageLoras;
+
     [UsedImplicitly] public int? SamplerSteps;
     [UsedImplicitly] public int? OutpaintSteps;
     [UsedImplicitly] public string? Checkpoint;
