@@ -1,18 +1,17 @@
 ﻿using Autofocus;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using Autofocus.Config;
-using Autofocus.CtrlNet;
-using Autofocus.Extensions.AfterDetailer;
-using SixLabors.ImageSharp.Processing;
 using Autofocus.ImageSharp.Extensions;
 using Autofocus.Scripts.UltimateUpscaler;
 using Autofocus.Utilities.Progress;
 using Mute.Moe.Services.ImageGen.Outpaint;
 using SixLabors.ImageSharp;
-using Image = SixLabors.ImageSharp.Image;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Autofocus.FeatureRepaint;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen;
 
@@ -38,10 +37,6 @@ public class Automatic1111
 
     private readonly uint _img2imgClipSkip;
     private readonly uint _txt2imgClipSkip;
-
-    private readonly float _afterDetailHandMinSize;
-    private readonly float _afterDetailFaceMinSize;
-    private readonly bool _enableAfterDetailer;
 
     private const InterrogateModel _model = InterrogateModel.DeepDanbooru;
     string IImageAnalyser.ModelName => _model.ToString();
@@ -80,10 +75,6 @@ public class Automatic1111
 
         _img2imgClipSkip = config.Automatic1111?.Image2ImageClipSkip ?? 2;
         _txt2imgClipSkip = config.Automatic1111?.Text2ImageClipSkip ?? 2;
-
-        _enableAfterDetailer = config.Automatic1111?.AfterDetail?.Enable ?? false;
-        _afterDetailHandMinSize = config.Automatic1111?.AfterDetail?.HandMinSize ?? 0.05f;
-        _afterDetailFaceMinSize = config.Automatic1111?.AfterDetail?.FaceMinSize ?? 0.05f;
     }
 
     private async Task<StableDiffusionBackendCache.IBackendAccessor> GetBackend()
@@ -99,9 +90,11 @@ public class Automatic1111
         using var scope = await (await GetBackend()).Lock(default);
         var backend = scope.Backend;
 
-        var model = await backend.StableDiffusionModel(_checkpoint);
+        // Make some progress
+        await (progressReporter?.Invoke(new ProgressReport(0.1f, null)) ?? Task.CompletedTask);
 
-        var rawResults = await PumpProgress(backend, backend.TextToImage(
+        // Generate images
+        var rawResults = await backend.TextToImage(
             new()
             {
                 Seed = new() { Seed = seed },
@@ -115,24 +108,17 @@ public class Automatic1111
                 Sampler = await _t2iSampler.ToSamplerConfig(scope),
                 Lora = await GetLorasConfig(backend, _t2iLoras),
 
-                Model = model,
+                Model = await backend.StableDiffusionModel(_checkpoint),
                 BatchSize = batch,
                 Batches = 1,
                 Width = _width,
                 Height = _height,
 
                 ClipSkip = _txt2imgClipSkip,
+            }
+        );
 
-                AdditionalScripts = {
-                    GetAfterDetailer(prompt)
-                },
-    }
-        ), progressReporter);
-
-        var results = new List<Image>();
-        foreach (var item in rawResults.Images)
-            results.Add(await item.ToImageSharpAsync());
-        return results;
+        return await ExtractImagesWithRepaint(rawResults.Images, scope, prompt, progressReporter);
     }
 
     private static async Task<LoraConfig[]> GetLorasConfig(IStableDiffusion backend, string[] loras)
@@ -164,33 +150,10 @@ public class Automatic1111
 
         var autofocusInputImage = await image.ToAutofocusImageAsync();
 
-        // Add a weak controlnet constraint if available
-        ControlNetConfig? cnetConfig = null;
-        var cnet = await backend.TryGetControlNet();
-        if (cnet != null)
-        {
-            var preprocessed = await cnet.Preprocess(new ControlNetPreprocessConfig
-            {
-                Images = { autofocusInputImage },
-                Module = await cnet.Module("lineart_anime_denoise"),
-            });
+        // Make some progress
+        await (progressReporter?.Invoke(new ProgressReport(0.1f, null)) ?? Task.CompletedTask);
 
-            var cnetModel = await cnet.Model("control_v11p_sd15s2_lineart_anime [3825e83e]");
-            if (cnetModel != null)
-            {
-                cnetConfig = new ControlNetConfig
-                {
-                    Image = preprocessed.Images[0],
-                    Model = cnetModel,
-                    GuidanceStart = 0.1,
-                    GuidanceEnd = 0.5,
-                    ControlMode = ControlMode.PromptImportant,
-                    Weight = 0.25
-                };
-            }
-        }
-
-        var result = await PumpProgress(backend, backend.Image2Image(
+        var result = await backend.Image2Image(
             new()
             {
                 Images =
@@ -217,68 +180,10 @@ public class Automatic1111
                 Height = (uint)image.Height,
 
                 ClipSkip = _img2imgClipSkip,
-
-                AdditionalScripts =
-                {
-                    cnetConfig,
-                    GetAfterDetailer(prompt)
-                }
             }
-        ), progressReporter);
-        
-        return await result.Images
-            .Take(result.Images.Count - (cnetConfig == null ? 0 : 1)) // Skip the last image if cnet is used, to remove the guidance image which is added to the end
-            .ToAsyncEnumerable()
-            .Select(async (Base64EncodedImage a, CancellationToken _) => await a.ToImageSharpAsync())
-            .ToListAsync();
-    }
+        );
 
-    private AfterDetailer? GetAfterDetailer(Prompt prompt)
-    {
-        if (!_enableAfterDetailer)
-            return null;
-
-        return new AfterDetailer
-        {
-            Steps = {
-                new()
-                {
-                    Model = "face_yolov8n.pt",
-                    PositivePrompt = Join(prompt.FaceEnhancementPositive, prompt.EyeEnhancementPositive),
-                    NegativePrompt = Join(prompt.FaceEnhancementNegative, prompt.EyeEnhancementNegative),
-
-                    SamplerSteps = _i2iSampler.Steps,
-                    MaskMinRatio = _afterDetailFaceMinSize,
-                },
-                //new()
-                //{
-                //    Model = "mediapipe_face_mesh_eyes_only",
-                //    PositivePrompt = prompt.EyeEnhancementPositive,
-                //    NegativePrompt = prompt.EyeEnhancementNegative,
-                //},
-                new()
-                {
-                    Model = "hand_yolov8n.pt",
-                    PositivePrompt = prompt.HandEnhancementPositive,
-                    NegativePrompt = prompt.HandEnhancementNegative,
-
-                    SamplerSteps = _i2iSampler.Steps,
-                    InpaintSize = (448, 448),
-                    MaskMinRatio = _afterDetailHandMinSize,
-                }
-            }
-        };
-
-        static string? Join(string? left, string? right)
-        {
-            return (string.IsNullOrWhiteSpace(left), string.IsNullOrWhiteSpace(right)) switch
-            {
-                (true, true) => null,
-                (true, false) => right,
-                (false, true) => left,
-                (false, false) => $"{left}, {right}",
-            };
-        }
+        return await ExtractImagesWithRepaint(result.Images, scope, prompt, progressReporter);
     }
 
     /// <inheritdoc />
@@ -315,7 +220,7 @@ public class Automatic1111
             "nsfw, bad quality"
         );
 
-        var upscaleResult = await PumpProgress(backend, backend.Image2Image(
+        var upscaleResult = await backend.Image2Image(
             new()
             {
                 Images =
@@ -345,7 +250,7 @@ public class Automatic1111
                     Upscaler = upscaler
                 }
             }
-        ), progressReporter);
+        );
 
         return await upscaleResult.Images[0].ToImageSharpAsync();
     }
@@ -375,29 +280,95 @@ public class Automatic1111
         return await outpainter.Outpaint(image, positive, negative, progressReporter);
     }
 
-    private static async Task<T> PumpProgress<T>(IStableDiffusion backend, Task<T> task, Func<ProgressReport, Task>? progressReporter)
+    private async Task<List<Image>> ExtractImagesWithRepaint(
+        IReadOnlyList<Base64EncodedImage> rawResults,
+        StableDiffusionBackendCache.BackendScope scope,
+        Prompt prompt,
+        Func<ProgressReport, Task>? progressReporter
+    )
     {
-        while (!task.IsCompleted)
+        // Should we redraw faces?
+        var redraw = !string.IsNullOrWhiteSpace(prompt.FaceEnhancementPositive) || !string.IsNullOrWhiteSpace(prompt.EyeEnhancementPositive);
+        FeatureRepainter? repainter = null;
+        if (redraw)
         {
-            try
-            {
-                if (progressReporter != null)
-                {
-                    var progress = await backend.Progress(true);
-                    await progressReporter(new ProgressReport((float)progress.Progress, null));
-                }
-            }
-            catch (TimeoutException)
-            {
+            repainter = new FeatureRepainter(
+                scope.Backend,
+                await scope.Backend.StableDiffusionModel(_checkpoint),
+                await _i2iSampler.ToSamplerConfig(scope),
+                await GetLorasConfig(scope.Backend, _t2iLoras)
+            );
+        }
 
-            }
-            finally
+        // Update progress report
+        if (progressReporter != null)
+            await progressReporter(new ProgressReport(redraw ? 0.5f : 0.9f, null));
+
+        // Extract results and apply repainting
+        var progressStep = 0.45f / rawResults.Count;
+        var progress = 0.5f;
+        var results = new List<Image>();
+        foreach (var item in rawResults)
+        {
+            var itemImage = await item.ToImageSharpAsync<Rgb24>();
+            if (redraw)
             {
-                await Task.Delay(350);
+                using (itemImage)
+                    results.Add(await RepaintFaces(itemImage, repainter!, prompt));
+
+                progress += progressStep;
+                await (progressReporter?.Invoke(new ProgressReport(progress, null)) ?? Task.CompletedTask);
+            }
+            else
+            {
+                results.Add(itemImage);
             }
         }
 
-        return await task;
+        return results;
+    }
+
+    private static async Task<Image> RepaintFaces(Image<Rgb24> input, FeatureRepainter repainter, Prompt prompt)
+    {
+        var positivesF = prompt.FaceEnhancementPositive?.Split("[SEP]") ?? [];
+        var negativesF = prompt.FaceEnhancementNegative?.Split("[SEP]") ?? [];
+        var positivesE = prompt.EyeEnhancementPositive?.Split("[SEP]") ?? [];
+        var negativesE = prompt.EyeEnhancementNegative?.Split("[SEP]") ?? [];
+
+        var count = Math.Max(Math.Max(positivesF.Length, positivesE.Length), Math.Max(negativesF.Length, negativesE.Length));
+        var prompts = new List<FacePrompt>();
+        for (var i = 0; i < count; i++)
+        {
+            var pf = GetIndexOrLast(positivesF, i);
+            var nf = GetIndexOrLast(negativesF, i);
+            var pe = GetIndexOrLast(positivesE, i);
+            var ne = GetIndexOrLast(negativesE, i);
+            var n = $"{nf}, {ne}";
+            prompts.Add(new FacePrompt(pf, pe, n));
+        }
+
+        var analysis = await repainter.Analyse(input, new AnalysisConfig()
+        {
+            MinSize = (64, 64),
+            MaxDetections = 3,
+            MinConfidence = 0.5f,
+        });
+
+        var result = await repainter.Repaint(
+            input,
+            analysis,
+            prompts
+        );
+
+        return result;
+
+        static string GetIndexOrLast(string[]? items, int index)
+        {
+            if (items == null || items.Length == 0)
+                return "";
+
+            return index >= items.Length ? items[^1] : items[index];
+        }
     }
 
     private record SamplerOptions(string Sampler, string Scheduler, float CFG, int Steps)
