@@ -43,7 +43,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autofocus" Version="8.0.0" />
-    <PackageReference Include="Autofocus.FeatureRepaint" Version="1.0.2" />
+    <PackageReference Include="Autofocus.FeatureRepaint" Version="1.1.0" />
     <PackageReference Include="Autofocus.ImageSharp" Version="3.1.0" />
     <PackageReference Include="Autofocus.Outpaint" Version="3.0.0" />
     <PackageReference Include="Autofocus.Scripts.UltimateUpscaler" Version="2.0.0" />
@@ -62,6 +62,7 @@
     <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
     <PackageReference Include="LlmTornado" Version="3.8.54" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
     <PackageReference Include="Microsoft.Recognizers.Text" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.Choice" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.8.13" />

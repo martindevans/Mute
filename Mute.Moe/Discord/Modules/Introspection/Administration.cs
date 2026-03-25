@@ -1,10 +1,10 @@
-﻿using System.Reflection;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Services.Avatar;
 using Mute.Moe.Services.Database;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Discord.Modules.Introspection;

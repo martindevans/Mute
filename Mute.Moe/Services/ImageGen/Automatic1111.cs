@@ -1,16 +1,15 @@
 ﻿using Autofocus;
 using Autofocus.Config;
+using Autofocus.FeatureRepaint;
 using Autofocus.ImageSharp.Extensions;
 using Autofocus.Scripts.UltimateUpscaler;
 using Autofocus.Utilities.Progress;
+using FaceAiSharp;
 using Mute.Moe.Services.ImageGen.Outpaint;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
-using Autofocus.FeatureRepaint;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen;
@@ -19,7 +18,7 @@ namespace Mute.Moe.Services.ImageGen;
 /// Implementation of various image related services, using Automatic1111 API
 /// </summary>
 public class Automatic1111
-    : IImageGenerator, IImageAnalyser, IImageUpscaler, IImageOutpainter
+    : IImageGenerator, IImageUpscaler, IImageOutpainter
 {
     private readonly StableDiffusionBackendCache _backends;
 
@@ -38,15 +37,15 @@ public class Automatic1111
     private readonly uint _img2imgClipSkip;
     private readonly uint _txt2imgClipSkip;
 
-    private const InterrogateModel _model = InterrogateModel.DeepDanbooru;
-    string IImageAnalyser.ModelName => _model.ToString();
+    private readonly IFaceDetectorWithLandmarks _detector;
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="config"></param>
     /// <param name="backends"></param>
-    public Automatic1111(Configuration config, StableDiffusionBackendCache backends)
+    /// <param name="detector"></param>
+    public Automatic1111(Configuration config, StableDiffusionBackendCache backends, IFaceDetectorWithLandmarks detector)
     {
         _backends = backends;
 
@@ -75,6 +74,8 @@ public class Automatic1111
 
         _img2imgClipSkip = config.Automatic1111?.Image2ImageClipSkip ?? 2;
         _txt2imgClipSkip = config.Automatic1111?.Text2ImageClipSkip ?? 2;
+
+        _detector = detector;
     }
 
     private async Task<StableDiffusionBackendCache.IBackendAccessor> GetBackend()
@@ -187,24 +188,6 @@ public class Automatic1111
     }
 
     /// <inheritdoc />
-    public async Task<ImageAnalysisResult?> GetImageDescription(Stream image, CancellationToken cancellation = default)
-    {
-        // Get the backend and lock it for the duration of this operation
-        using var scope = await (await GetBackend()).Lock(default);
-        var backend = scope.Backend;
-
-        var mem = new MemoryStream();
-        await image.CopyToAsync(mem, cancellation);
-        var buffer = mem.ToArray();
-
-        var analysis = await backend.Interrogate(new Base64EncodedImage(buffer), _model, cancellation);
-
-        var desc = analysis.Caption.Replace("\\(", "(").Replace("\\)", ")");
-
-        return new ImageAnalysisResult(null, desc);
-    }
-
-    /// <inheritdoc />
     public async Task<Image> UpscaleImage(Image inputImage, uint width, uint height, Func<ProgressReport, Task>? progressReporter = null)
     {
         // Get the backend and lock it for the duration of this operation
@@ -296,7 +279,8 @@ public class Automatic1111
                 scope.Backend,
                 await scope.Backend.StableDiffusionModel(_checkpoint),
                 await _i2iSampler.ToSamplerConfig(scope),
-                await GetLorasConfig(scope.Backend, _t2iLoras)
+                await GetLorasConfig(scope.Backend, _t2iLoras),
+                _detector
             );
         }
 

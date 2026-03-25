@@ -52,6 +52,7 @@ using Serpent.Loading;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
+using FaceAiSharp;
 using Mute.Moe.Services.LLM.Memory.Extraction;
 using Wasmtime;
 
@@ -86,6 +87,7 @@ public record Startup(Configuration Configuration)
         services.AddTransient<IImageOutpainter, Automatic1111>();
         services.AddSingleton<StableDiffusionBackendCache>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
+        services.AddSingleton<IFaceDetectorWithLandmarks>(_ => new ScrfdDetector(new ScrfdDetectorOptions { ModelPath = Path.Combine(AppContext.BaseDirectory, "onnx", "scrfd_2.5g_kps.onnx") }));
 
         services.AddSingleton<IAgentMemoryStorage, DatabaseAgentMemoryStorage>();
         services.AddHostedService<AgentMemoryConfidenceDecayOverTime>();
