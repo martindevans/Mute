@@ -1,10 +1,12 @@
-﻿using Mute.Moe.Services.LLM;
+﻿using System.Diagnostics.CodeAnalysis;
+using Mute.Moe.Services.LLM;
 
 namespace Mute.Moe;
 
 /// <summary>
 /// Bot configuration, loaded from config.json file
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class Configuration
 {
     #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
@@ -42,6 +44,7 @@ public class Configuration
 /// <summary>
 /// Configuration for avatars
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AvatarConfig
 {
     /// <summary>
@@ -79,6 +82,7 @@ public class AvatarConfig
 /// <summary>
 /// Discord Auth
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AuthConfig
 {
     /// <summary>
@@ -95,6 +99,7 @@ public class AuthConfig
 /// <summary>
 /// Alpha Advantage API service config
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AlphaAdvantageConfig
 {
     /// <summary>
@@ -116,6 +121,7 @@ public class AlphaAdvantageConfig
 /// <summary>
 /// CoinMarketCap API service config
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class CoinMarketCapConfig
 {
     /// <summary>
@@ -137,6 +143,7 @@ public class CoinMarketCapConfig
 /// <summary>
 /// SQLite database config
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class DatabaseConfig
 {
     /// <summary>
@@ -148,6 +155,7 @@ public class DatabaseConfig
 /// <summary>
 /// Urban dictionary API service config
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class UrbanDictionaryConfig
 {
     /// <summary>
@@ -164,6 +172,7 @@ public class UrbanDictionaryConfig
 /// <summary>
 /// Config for Speech-To-Text
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class STTConfig
 {
     /// <summary>
@@ -191,6 +200,7 @@ public class STTConfig
 /// <summary>
 /// Config for large language models
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class LLMConfig
 {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
@@ -236,6 +246,7 @@ public class LLMConfig
 /// <summary>
 /// Config for agent stuff
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class AgentConfig
 {
     /// <summary>
@@ -295,6 +306,7 @@ public class AgentConfig
 /// <summary>
 /// Config for Automatic1111 image generation backends
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class Automatic1111Config
 {
     #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
@@ -327,15 +339,6 @@ public class Automatic1111Config
     [UsedImplicitly] public uint? Text2ImageClipSkip;
     [UsedImplicitly] public int? RecheckDeadBackendTime;
 
-    [UsedImplicitly] public ADetailer? AfterDetail;
-
-    [UsedImplicitly] public class ADetailer
-    {
-        [UsedImplicitly] public bool Enable = true;
-        [UsedImplicitly] public float? HandMinSize;
-        [UsedImplicitly] public float? FaceMinSize;
-    }
-
     public class Backend
     {
         [UsedImplicitly] public bool Enabled;
@@ -353,6 +356,7 @@ public class Automatic1111Config
 /// <summary>
 /// General config for image generation (non A1111 specific)
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class GlobalImageGenerationConfig
 {
     /// <summary>
@@ -364,6 +368,7 @@ public class GlobalImageGenerationConfig
 /// <summary>
 /// Provide the bot with it's approximate physical location on Earth
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class LocationConfig
 {
     /// <summary>
@@ -380,6 +385,7 @@ public class LocationConfig
 /// <summary>
 /// Config for OpenWeatherMap API service
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class OpenWeatherMapConfig
 {
     /// <summary>
