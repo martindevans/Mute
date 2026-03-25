@@ -12,7 +12,7 @@ public static class ITransactionsExtensions
     /// </summary>
     /// <param name="primaryUser"></param>
     /// <param name="transactions"></param>
-    private static async Task<IReadOnlyList<IBalance>> TransactionsToBalances(ulong primaryUser, IAsyncEnumerable<Transaction> transactions)
+    private static async Task<IReadOnlyList<Balance>> TransactionsToBalances(ulong primaryUser, IAsyncEnumerable<Transaction> transactions)
     {
         // Accumulate a lookup table of user -> unit -> amount
         // user in this case is always the secondary user (the other is implicitly the primary user)
@@ -33,7 +33,7 @@ public static class ITransactionsExtensions
         }
 
         // Create a list of all results
-        var results = new List<IBalance>();
+        var results = new List<Balance>();
         foreach (var (user, inner) in accumulator)
         foreach (var (unit, amount) in inner)
             results.Add(new Balance(unit, primaryUser, user, amount));
@@ -72,7 +72,7 @@ public static class ITransactionsExtensions
     /// <param name="userB"></param>
     /// <param name="unit"></param>
     /// <returns>All non-zero balances in order of amount</returns>
-    public static Task<IReadOnlyList<IBalance>> GetBalances(this ITransactions database, ulong userA, ulong? userB, string? unit = null)
+    public static Task<IReadOnlyList<Balance>> GetBalances(this ITransactions database, ulong userA, ulong? userB, string? unit = null)
     {
         //e.g.
         //A -> B £2

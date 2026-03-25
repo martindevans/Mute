@@ -1,6 +1,4 @@
-﻿using System.Data.Common;
-using System.Data.SQLite;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Threading.Tasks;
 using Dapper;
 using Mute.Moe.Services.Database;
@@ -60,29 +58,35 @@ public class DatabaseTransactions
     /// <inheritdoc />
     public IAsyncEnumerable<Transaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
-        return new SqlAsyncResult<Transaction>(_database, PrepareQuery, ParseTransaction);
+        var rows = _database.Connection.QueryAsync<TransactionRow>(
+            GetFilteredTransactionsSql,
+            new
+            {
+                FromId = fromId?.ToString(),
+                ToId = toId?.ToString(),
+                Unit = unit?.ToLowerInvariant(),
+                UpperBoundInstant = before?.UnixTimestamp().ToString(),
+                LowerBoundInstant = after?.UnixTimestamp().ToString(),
+            }
+        );
 
-        DbCommand PrepareQuery(IDatabaseService db)
-        {
-            var cmd = db.CreateCommand();
-            cmd.CommandText = GetFilteredTransactionsSql;
-            cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId?.ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId?.ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit?.ToLowerInvariant() });
-            cmd.Parameters.Add(new SQLiteParameter("@UpperBoundInstant", System.Data.DbType.String) { Value = before?.UnixTimestamp().ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@LowerBoundInstant", System.Data.DbType.String) { Value = after?.UnixTimestamp().ToString() });
-            return cmd;
-        }
+        return rows
+            .ToAsyncEnumerable()
+            .SelectMany(a => a)
+            .Select(a => a.ToTransaction());
+    }
 
-        static Transaction ParseTransaction(DbDataReader reader)
+    private sealed record TransactionRow(string FromId, string ToId, string Amount, string Unit, string Note, string InstantUnix)
+    {
+        public Transaction ToTransaction()
         {
             return new Transaction(
-                ulong.Parse((string)reader["FromId"]),
-                ulong.Parse((string)reader["ToId"]),
-                decimal.Parse(reader["Amount"].ToString()!),
-                (string)reader["Unit"],
-                (string)reader["Note"],
-                ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp()
+                ulong.Parse(FromId),
+                ulong.Parse(ToId),
+                decimal.Parse(Amount, NumberStyles.Number, CultureInfo.InvariantCulture),
+                Unit,
+                Note,
+                ulong.Parse(InstantUnix).FromUnixTimestamp()
             );
         }
     }

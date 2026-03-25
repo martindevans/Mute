@@ -37,7 +37,7 @@ public class Iou(ITransactions _transactions, IUserService _users)
             await PagedReplyAsync(new PaginatedMessage { Pages = tsx.Batch(10).Select(d => string.Join("\n", d)) });
     }
 
-    private async Task DisplayBalances(IReadOnlyCollection<IBalance> balances)
+    private async Task DisplayBalances(IReadOnlyCollection<Balance> balances)
     {
         var balancesList = new List<string>(balances.Count);
         foreach (var balance in balances)
@@ -140,7 +140,7 @@ public class Iou(ITransactions _transactions, IUserService _users)
         return ShowBalances(other, _ => true, "No non-zero balances");
     }
 
-    private async Task ShowBalances(IUser? other, Func<IBalance, bool> filter, string none)
+    private async Task ShowBalances(IUser? other, Func<Balance, bool> filter, string none)
     {
         var balances = (await _transactions.GetBalances(Context.User.Id, other?.Id)).Where(filter).ToArray();
         if (balances.Length == 0)
