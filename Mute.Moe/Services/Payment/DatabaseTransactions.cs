@@ -83,7 +83,7 @@ public class DatabaseTransactions
             return new Transaction(
                 ulong.Parse(FromId),
                 ulong.Parse(ToId),
-                decimal.Parse(Amount),
+                decimal.Parse(Amount, NumberStyles.Number, CultureInfo.InvariantCulture),
                 Unit,
                 Note,
                 ulong.Parse(InstantUnix).FromUnixTimestamp()
