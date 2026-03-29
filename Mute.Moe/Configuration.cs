@@ -23,7 +23,8 @@ public class Configuration
     [UsedImplicitly] public GlobalImageGenerationConfig? ImageGeneration;
     [UsedImplicitly] public LocationConfig? Location;
     [UsedImplicitly] public OpenWeatherMapConfig? OpenWeatherMap;
-    #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+    [UsedImplicitly] public BraveWebSearchConfig? BraveWebSearch;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
     /// <summary>
     /// Set if the bot process messages from itself
@@ -301,6 +302,18 @@ public class AgentConfig
         /// </summary>
         [UsedImplicitly] public required string SystemPromptFacts;
     }
+}
+
+/// <summary>
+/// Config for brave web search
+/// </summary>
+[ExcludeFromCodeCoverage]
+public class BraveWebSearchConfig
+{
+    /// <summary>
+    /// API key for brave web search
+    /// </summary>
+    [UsedImplicitly] public string ApiKey = "";
 }
 
 /// <summary>

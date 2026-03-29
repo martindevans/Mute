@@ -29,7 +29,7 @@ public interface IToolIndex
     /// Do one time update of the index
     /// </summary>
     /// <returns></returns>
-    Task Update();
+    Task Update(bool force = false);
 
     /// <summary>
     /// Fuzzy find tools for the given natural language query
@@ -154,9 +154,9 @@ public class DatabaseToolIndex
     }
 
     /// <inheritdoc />
-    public async Task Update()
+    public async Task Update(bool force = false)
     {
-        if (_updated)
+        if (_updated && !force)
             return;
         _updated = true;
 

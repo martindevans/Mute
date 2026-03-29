@@ -61,6 +61,8 @@
     <PackageReference Include="Humanizer.Core" Version="3.0.10" />
     <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
     <PackageReference Include="LlmTornado" Version="3.8.54" />
+    <PackageReference Include="LlmTornado.Agents" Version="1.0.50" />
+    <PackageReference Include="LlmTornado.Mcp" Version="1.1.51" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.24.4" />
     <PackageReference Include="Microsoft.Recognizers.Text" Version="1.8.13" />
@@ -68,8 +70,10 @@
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.Number" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.NumberWithUnit" Version="1.8.13" />
+    <PackageReference Include="ModelContextProtocol" Version="1.2.0" />
     <PackageReference Include="morelinq" Version="4.4.0" />
     <PackageReference Include="Mute.Anilist" Version="2.2.0" />
+    <PackageReference Include="Mute.BraveSearch" Version="2.0.0" />
     <PackageReference Include="NAudio" Version="2.3.0" />
     <PackageReference Include="Pegasus" Version="4.1.0" />
     <PackageReference Include="Serilog" Version="4.3.1" />

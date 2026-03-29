@@ -170,7 +170,7 @@ public class ChatConversation
             return;
         var api = endpoint.Endpoint.TornadoApi;
 
-        Log.Information("Chat selected LLM Backend: {0}", endpoint.Endpoint.Url);
+        Log.Information("Chat selected LLM Backend: {0}", endpoint.Endpoint.ID);
 
         var conversation = api.Chat.CreateConversation(_request);
         conversation.AddMessage(_messages);

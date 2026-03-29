@@ -53,6 +53,7 @@ using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
 using FaceAiSharp;
+using Mute.BraveSearch;
 using Mute.Moe.Services.LLM.Memory.Extraction;
 using Wasmtime;
 
@@ -176,6 +177,11 @@ public record Startup(Configuration Configuration)
         if (Configuration.Auth == null)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
+        if (Configuration.BraveWebSearch != null)
+        {
+            services.AddBraveSearch(Configuration.BraveWebSearch.ApiKey);
+        }
+
         // Create LLM stuff
         services.AddSingleton<ChatConversationFactory>();
         if (Configuration.LLM != null)
@@ -233,5 +239,6 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, GuildInfoToolProvider>();
         services.AddSingleton<IToolProvider, ClockProvider>();
         services.AddSingleton<IToolProvider, MemoryManagementProvider>();
+        services.AddSingleton<IToolProvider, BraveWebSearchProvider>();
     }
 }

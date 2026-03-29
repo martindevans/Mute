@@ -201,13 +201,15 @@ public sealed class MultiEndpointProvider<TEndpoint>
 
         public async Task<bool> CheckHealth(HttpClient client, CancellationToken cancellation)
         {
+            var sw = Stopwatch.StartNew();
             try
             {
                 var result = await client.GetAsync(HealthCheck, cancellation);
                 return result.IsSuccessStatusCode;
             }
-            catch (TaskCanceledException)
+            catch (TaskCanceledException ex)
             {
+                Log.Warning("Health check failed {0} after {1}ms", HealthCheck, sw.ElapsedMilliseconds);
                 return false;
             }
             catch (Exception ex)
