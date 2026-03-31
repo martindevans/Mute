@@ -118,7 +118,7 @@ public class DatabasePendingTransactions
               .Select(a => a.ToPendingTransaction());
     }
 
-    private sealed record PendingRow(long rowid, string FromId, string ToId, string Amount, string Unit, string Note, string InstantUnix, string Pending)
+    private sealed record PendingRow(long RowId, string FromId, string ToId, string Amount, string Unit, string Note, string InstantUnix, string Pending)
     {
         public PendingTransaction ToPendingTransaction()
         {
@@ -130,7 +130,7 @@ public class DatabasePendingTransactions
                 Note,
                 ulong.Parse(InstantUnix, NumberStyles.AllowBinarySpecifier, CultureInfo.InvariantCulture).FromUnixTimestamp(),
                 Enum.Parse<PendingState>(Pending),
-                checked((uint)rowid)
+                checked((uint)RowId)
             );
         }
     }
