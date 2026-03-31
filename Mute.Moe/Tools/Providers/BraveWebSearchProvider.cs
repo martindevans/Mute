@@ -1,6 +1,7 @@
 ﻿using Mute.BraveSearch;
 using Mute.BraveSearch.Models;
 using System.Threading.Tasks;
+using Discord;
 
 namespace Mute.Moe.Tools.Providers;
 
@@ -30,6 +31,8 @@ public class BraveWebSearchProvider
 
     /// <summary>
     /// Search the web for recent news.<br />
+    /// Use quotes for exact phrase matching e.g. "climate change"<br />
+    /// Exclude terms with minus e.g. technology -cryptocurrency<br />
     /// - Capability: Web news search.<br />
     /// - Inputs: Query for information.<br />
     /// - Outputs: A list news item summaries from the search engine.
@@ -40,12 +43,19 @@ public class BraveWebSearchProvider
     private async Task<NewsItem[]> NewsSearch(ITool.CallContext callCtx, string query)
 #pragma warning restore CS1573 // Parameter has no matching param tag in the XML comment (but other parameters do)
     {
+        // Automatically turn off moderate filtering in DM and NSFW channels
+        var dm = callCtx.Channel is IDMChannel;
+        var nsfw = callCtx.Channel is ITextChannel { IsNsfw: true };
+
+        // Run query
         var results = await _client.NewsSearchAsync(new NewsSearchRequest(query)
         {
-            Country = "GB",
             ExtraSnippets = true,
+            SafeSearch = dm || nsfw ? SafeSearch.Off : SafeSearch.Moderate,
+            
         });
 
+        // Extract results
         return results
             .Results
             .Select(NewsItem.Create)
