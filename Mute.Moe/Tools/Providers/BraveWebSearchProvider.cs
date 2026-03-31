@@ -1,6 +1,6 @@
 ﻿using Mute.BraveSearch;
-using System.Threading.Tasks;
 using Mute.BraveSearch.Models;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Tools.Providers;
 
@@ -64,7 +64,7 @@ public class BraveWebSearchProvider
     /// <param name="Source"></param>
     /// <param name="Snippets"></param>
     [UsedImplicitly]
-    public record NewsItem(string Title, string Description, string Age, string Source, IReadOnlyList<string> Snippets)
+    public record NewsItem(string Title, string Description, string Age, string Source, IReadOnlyList<string> Snippets, string? Caution)
     {
         internal static NewsItem? Create(NewsResult result)
         {
@@ -80,13 +80,30 @@ public class BraveWebSearchProvider
             if (string.IsNullOrWhiteSpace(source))
                 return null;
 
+            var caution = default(string);
+            if (IsNearAprilFirst())
+                caution = $"The current date is {DateOnly.FromDateTime(DateTime.UtcNow).ToShortDateString()} - April fools **may** apply to some or all items!";
+
             return new NewsItem(
                 result.Title,
                 desc,
                 age,
                 source,
-                result.ExtraSnippets ?? []
+                result.ExtraSnippets ?? [],
+                caution
             );
         }
+    }
+
+    private static bool IsNearAprilFirst()
+    {
+        var date = DateTime.UtcNow;
+
+        var apr1st = new DateTime(date.Year, 4, 1);
+
+        var start = apr1st - TimeSpan.FromHours(12);
+        var end = apr1st + TimeSpan.FromHours(36);
+
+        return date > start && date < end;
     }
 }
