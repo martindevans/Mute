@@ -123,12 +123,12 @@ public class DatabasePendingTransactions
         public PendingTransaction ToPendingTransaction()
         {
             return new PendingTransaction(
-                ulong.Parse(FromId),
-                ulong.Parse(ToId),
-                decimal.Parse(Amount),
+                ulong.Parse(FromId, NumberStyles.AllowBinarySpecifier, CultureInfo.InvariantCulture),
+                ulong.Parse(ToId, NumberStyles.AllowBinarySpecifier, CultureInfo.InvariantCulture),
+                decimal.Parse(Amount, NumberStyles.AllowBinarySpecifier, CultureInfo.InvariantCulture),
                 Unit,
                 Note,
-                ulong.Parse(InstantUnix).FromUnixTimestamp(),
+                ulong.Parse(InstantUnix, NumberStyles.AllowBinarySpecifier, CultureInfo.InvariantCulture).FromUnixTimestamp(),
                 Enum.Parse<PendingState>(Pending),
                 checked((uint)rowid)
             );
