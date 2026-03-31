@@ -99,7 +99,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddSingleton<HttpClient, HttpClient>();
-        services.AddSingleton<IDatabaseService, SqliteDatabase>();
+        services.AddSingleton<IDatabaseService, SqliteConfigDatabase>();
 
         services.AddSingleton<MuteAnilistInfoService>();
         services.AddSingleton<IAnimeInfo>(svc => svc.GetRequiredService<MuteAnilistInfoService>());

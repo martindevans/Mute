@@ -1,6 +1,4 @@
-﻿using System.Data.Common;
-using System.Data.SQLite;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Threading.Tasks;
 using Dapper;
 using Mute.Moe.Services.Database;
@@ -100,59 +98,58 @@ public class DatabasePendingTransactions
     /// <inheritdoc />
     public IAsyncEnumerable<PendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
-        return new SqlAsyncResult<PendingTransaction>(_database, PrepareQuery, ParsePendingTransaction);
+        return _database
+              .Connection
+              .QueryAsync<PendingRow>(
+                   GetFilteredTransactionsSql,
+                   new
+                   {
+                       DebtId = debtId?.ToString(CultureInfo.InvariantCulture),
+                       FromId = fromId?.ToString(CultureInfo.InvariantCulture),
+                       ToId = toId?.ToString(CultureInfo.InvariantCulture),
+                       Unit = unit?.ToLowerInvariant(),
+                       UpperBoundInstant = before?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+                       LowerBoundInstant = after?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+                       Pending = state?.ToString()
+                   }
+              )
+              .ToAsyncEnumerable()
+              .SelectMany(a => a)
+              .Select(a => a.ToPendingTransaction());
+    }
 
-        DbCommand PrepareQuery(IDatabaseService db)
-        {
-            var cmd = db.CreateCommand();
-            cmd.CommandText = GetFilteredTransactionsSql;
-            cmd.Parameters.Add(new SQLiteParameter("@DebtId", System.Data.DbType.String) { Value = debtId?.ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@FromId", System.Data.DbType.String) { Value = fromId?.ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@ToId", System.Data.DbType.String) { Value = toId?.ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@Unit", System.Data.DbType.String) { Value = unit?.ToLowerInvariant() });
-            cmd.Parameters.Add(new SQLiteParameter("@UpperBoundInstant", System.Data.DbType.String) { Value = before?.UnixTimestamp().ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@LowerBoundInstant", System.Data.DbType.String) { Value = after?.UnixTimestamp().ToString() });
-            cmd.Parameters.Add(new SQLiteParameter("@Pending", System.Data.DbType.String) { Value = state?.ToString() });
-            return cmd;
-        }
-
-        static PendingTransaction ParsePendingTransaction(DbDataReader reader)
+    private sealed record PendingRow(long rowid, string FromId, string ToId, string Amount, string Unit, string Note, string InstantUnix, string Pending)
+    {
+        public PendingTransaction ToPendingTransaction()
         {
             return new PendingTransaction(
-                ulong.Parse((string)reader["FromId"]),
-                ulong.Parse((string)reader["ToId"]),
-                decimal.Parse(reader["Amount"].ToString()!),
-                (string)reader["Unit"],
-                (string)reader["Note"],
-                ulong.Parse((string)reader["InstantUnix"]).FromUnixTimestamp(),
-                Enum.Parse<PendingState>(reader["Pending"].ToString()!),
-                uint.Parse(reader["rowid"].ToString()!)
+                ulong.Parse(FromId),
+                ulong.Parse(ToId),
+                decimal.Parse(Amount),
+                Unit,
+                Note,
+                ulong.Parse(InstantUnix).FromUnixTimestamp(),
+                Enum.Parse<PendingState>(Pending),
+                checked((uint)rowid)
             );
         }
     }
 
     private async Task<PendingState?> UpdatePending(uint id, string sql)
     {
-        var results = await new SqlAsyncResult<PendingState>(_database, PrepareQuery, ParseResult).ToArrayAsync();
+        var results = await _database
+            .Connection
+            .QueryAsync<string>(sql, new { DebtId = id })
+            .ToAsyncEnumerable()
+            .SelectMany(a => a)
+            .Select(Enum.Parse<PendingState>)
+            .ToArrayAsync();
 
         return results.Length switch {
             > 1 => throw new InvalidOperationException($"Modified more than 1 payment at once! ID:{id}"),
             0 => null,
             _ => results[0],
         };
-
-        DbCommand PrepareQuery(IDatabaseService db)
-        {
-            var cmd = db.CreateCommand();
-            cmd.CommandText = sql;
-            cmd.Parameters.Add(new SQLiteParameter("@DebtId", System.Data.DbType.String) { Value = id.ToString() });
-            return cmd;
-        }
-
-        static PendingState ParseResult(DbDataReader reader)
-        {
-            return Enum.Parse<PendingState>(reader["Pending"].ToString()!);
-        }
     }
 
     /// <inheritdoc />

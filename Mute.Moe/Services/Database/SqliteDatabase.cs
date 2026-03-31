@@ -1,8 +1,7 @@
-﻿using System.Data;
+﻿using Serilog;
+using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
-using Serilog;
-
 
 namespace Mute.Moe.Services.Database;
 
@@ -18,25 +17,49 @@ public class SqliteDatabase
     public IDbConnection Connection => _dbConnection;
 
     /// <summary>
-    /// Create new SQLite database connection
+    /// Create new DB
     /// </summary>
-    /// <param name="config"></param>
-    /// <exception cref="ArgumentNullException"></exception>
-    public SqliteDatabase(Configuration config)
+    public SqliteDatabase(string connection)
     {
-        Log.Information("DB Connection String: {0}", config.Database?.ConnectionString);
+        Log.Information("DB Connection String: {0}", connection);
 
-        _dbConnection = new SQLiteConnection(config.Database?.ConnectionString ?? throw new ArgumentNullException(nameof(config.Database.ConnectionString)));
+        _dbConnection = new SQLiteConnection(connection);
         _dbConnection.Open();
 
         _dbConnection.EnableExtensions(true);
         _dbConnection.LoadExtension("vector");
         _dbConnection.EnableExtensions(false);
     }
+}
 
-    /// <inheritdoc />
-    public DbCommand CreateCommand()
+/// <summary>
+/// SQLite database
+/// </summary>
+public class SqliteConfigDatabase
+    : SqliteDatabase
+{
+    /// <summary>
+    /// Create new SQLite database connection
+    /// </summary>
+    /// <param name="config"></param>
+    /// <exception cref="ArgumentNullException"></exception>
+    public SqliteConfigDatabase(Configuration config)
+        : base(config.Database?.ConnectionString ?? throw new ArgumentNullException(nameof(config.Database.ConnectionString)))
     {
-        return new SQLiteCommand(_dbConnection);
+    }
+}
+
+/// <summary>
+/// Provides an entirely in-memory SQLite database that loses all data once this process ends
+/// </summary>
+public class SqliteInMemoryDatabase
+    : SqliteDatabase
+{
+    /// <summary>
+    /// Create new in-memory DB
+    /// </summary>
+    public SqliteInMemoryDatabase()
+        : base("Data Source=:memory:")
+    {
     }
 }
