@@ -319,6 +319,8 @@ public class ToolExecutionEngine
 
     private static async Task<(bool success, object result)> ExecuteTool(FunctionCall call, ITool tool, ITool.CallContext context)
     {
+        Log.Information("Execute tool: {0}", call.Name);
+
         try
         {
             return await tool.Execute(context, call.GetArguments());

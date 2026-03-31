@@ -28,7 +28,7 @@ public class DatabaseTransactions
         _database = database;
 
         // Create debts table and indices
-        _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_Transactions` (`FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT);");
+        _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_Transactions` (`ID` INTEGER PRIMARY KEY, `FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT);");
     }
 
     /// <inheritdoc />
@@ -76,7 +76,7 @@ public class DatabaseTransactions
             .Select(a => a.ToTransaction());
     }
 
-    private sealed record TransactionRow(string FromId, string ToId, string Amount, string Unit, string Note, string InstantUnix)
+    private sealed record TransactionRow(long ID, string FromId, string ToId, string Amount, string Unit, string Note, string InstantUnix)
     {
         public Transaction ToTransaction()
         {
