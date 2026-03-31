@@ -1,6 +1,5 @@
 ﻿using Dapper;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Mute.Moe;
 using Mute.Moe.Services.Database;
 
 namespace Mute.Tests.Services.Database
@@ -11,14 +10,7 @@ namespace Mute.Tests.Services.Database
         [TestMethod]
         public void CreateDatabase()
         {
-            var db = new SqliteDatabase(new Configuration
-            {
-                Database = new DatabaseConfig
-                {
-                    ConnectionString = "Data Source=:memory:"
-                },
-                Agent = null!
-            });
+            var db = new SqliteInMemoryDatabase();
 
             db.Connection.Execute("PRAGMA VACUUM");
         }
@@ -26,12 +18,7 @@ namespace Mute.Tests.Services.Database
         [TestMethod]
         public void Exec()
         {
-            var db = new SqliteDatabase(new Configuration {
-                Database = new DatabaseConfig {
-                    ConnectionString = "Data Source=:memory:"
-                },
-                Agent = null!
-            });
+            var db = new SqliteInMemoryDatabase();
 
             db.Exec("CREATE TABLE `test` (`foo` TEXT NOT NULL)");
         }

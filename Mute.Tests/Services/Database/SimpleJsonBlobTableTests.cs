@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Mute.Moe;
 using Mute.Moe.Services.Database;
 using System.Threading.Tasks;
 
@@ -10,14 +9,7 @@ namespace Mute.Tests.Services.Database
     {
         private static IDatabaseService CreateDb()
         {
-            return new SqliteDatabase(new Configuration
-            {
-                Database = new DatabaseConfig
-                {
-                    ConnectionString = "Data Source=:memory:"
-                },
-                Agent = null!
-            });
+            return new SqliteInMemoryDatabase();
         }
 
         [TestMethod]
