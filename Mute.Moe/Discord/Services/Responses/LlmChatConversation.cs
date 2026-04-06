@@ -141,7 +141,7 @@ public class LlmChatConversation
                 // - Something is ready to read
                 // - Timeout to auto summary
                 // - Cancellation (_stopper throws an exception)
-                var waitResult = await reader.WaitToReadWithTimeout(summaryNeeded ? TimeSpan.FromMinutes(2) : TimeSpan.FromDays(1), _stopper.Token);
+                var waitResult = await reader.WaitToReadWithTimeout(summaryNeeded ? TimeSpan.FromMinutes(15) : TimeSpan.FromDays(1), _stopper.Token);
 
                 // Check if no more messages will ever arrive: break out of loop.
                 if (waitResult == ChannelReaderExtensions.WaitToReadResult.EndOfStream)

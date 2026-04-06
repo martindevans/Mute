@@ -78,7 +78,7 @@
     <PackageReference Include="Pegasus" Version="4.1.0" />
     <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
-    <PackageReference Include="Serpent" Version="0.0.35" />
+    <PackageReference Include="Serpent" Version="0.0.38" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
     <PackageReference Include="SteamWebAPI2" Version="5.0.0" />
