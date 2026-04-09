@@ -58,6 +58,7 @@ public class Anime(IAnimeInfo _animeSearch)
     }
 
     [Command("season"), Summary("I will list all of the anime airing in a given season")]
+    [UsedImplicitly]
     public async Task AnimeSeason(int year, MediaSeason season)
     {
         var animes = await _animeSearch.GetSeasonAnimes(year, (int)season)

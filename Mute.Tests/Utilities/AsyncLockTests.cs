@@ -92,12 +92,15 @@ public class AsyncLockTests
         var cancelledTask = asyncLock.LockAsync(cts.Token);
 
         // Enqueue a second waiter that is not cancelled
+        // ReSharper disable once MethodSupportsCancellation
         var normalTask = asyncLock.LockAsync();
 
         // Cancel the first waiter before the lock is released
+        // ReSharper disable once MethodHasAsyncOverload
         cts.Cancel();
 
         // Give the cancellation a moment to propagate
+        // ReSharper disable once MethodSupportsCancellation
         await Task.Delay(50);
 
         first.Dispose();
@@ -106,6 +109,7 @@ public class AsyncLockTests
         await Assert.ThrowsAsync<TaskCanceledException>(() => cancelledTask);
 
         // The normal waiter should get the lock
+        // ReSharper disable once MethodSupportsCancellation
         var handle = await normalTask.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.IsTrue(asyncLock.IsLocked);
         handle.Dispose();
@@ -119,6 +123,6 @@ public class AsyncLockTests
         var handle = await asyncLock.LockAsync();
         handle.Dispose();
 
-        Assert.Throws<InvalidOperationException>(() => handle.Dispose());
+        Assert.Throws<InvalidOperationException>(handle.Dispose);
     }
 }

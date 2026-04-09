@@ -350,8 +350,8 @@ public static class ContextImageGenerationExtensions
             return (positive, "");
 
         return (
-            positive.Replace(",,", ",").ToString(),
-            negative.Replace(",,", ",").ToString()
+            positive.Replace(",,", ","),
+            negative.Replace(",,", ",")
         );
     }
 

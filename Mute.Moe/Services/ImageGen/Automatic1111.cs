@@ -331,7 +331,7 @@ public class Automatic1111
             prompts.Add(new FacePrompt(pf, pe, n));
         }
 
-        var analysis = await repainter.Analyse(input, new AnalysisConfig()
+        var analysis = await repainter.Analyse(input, new AnalysisConfig
         {
             MinSize = (64, 64),
             MaxDetections = 3,

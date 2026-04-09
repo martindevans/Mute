@@ -2,75 +2,74 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe.Extensions;
 
-namespace Mute.Tests.Extensions
+namespace Mute.Tests.Extensions;
+
+[TestClass]
+public class StringExtensions
 {
-    [TestClass]
-    public class StringExtensions
+    [TestMethod]
+    public void Levenshtein_Similar()
     {
-        [TestMethod]
-        public void Levenshtein_Similar()
-        {
-            Assert.AreEqual(1, (int)"aaa".Levenshtein("aab"));
-        }
+        Assert.AreEqual(1, (int)"aaa".Levenshtein("aab"));
+    }
 
-        [TestMethod]
-        public void Levenshtein_Different()
-        {
-            Assert.AreEqual(3, (int)"aaa".Levenshtein("bbb"));
-        }
+    [TestMethod]
+    public void Levenshtein_Different()
+    {
+        Assert.AreEqual(3, (int)"aaa".Levenshtein("bbb"));
+    }
 
-        [TestMethod]
-        public void Levenshtein_Similar_ExceptLength()
-        {
-            Assert.AreEqual(1, (int)"aaa".Levenshtein("aaaa"));
-        }
+    [TestMethod]
+    public void Levenshtein_Similar_ExceptLength()
+    {
+        Assert.AreEqual(1, (int)"aaa".Levenshtein("aaaa"));
+    }
 
-        [TestMethod]
-        public void Levenshtein_Different_WithLength()
-        {
-            Assert.AreEqual(4, (int)"aaa".Levenshtein("bbbb"));
-        }
+    [TestMethod]
+    public void Levenshtein_Different_WithLength()
+    {
+        Assert.AreEqual(4, (int)"aaa".Levenshtein("bbbb"));
+    }
 
-        [TestMethod]
-        public void SplitSpan()
-        {
-            const string str = "a b c";
-            var split = str.SplitSpan(' ').ToArray();
+    [TestMethod]
+    public void SplitSpan()
+    {
+        const string str = "a b c";
+        var split = str.SplitSpan(' ').ToArray();
 
-            Assert.HasCount(3, split);
-            Assert.AreEqual("a", split[0].ToString());
-            Assert.AreEqual("b", split[1].ToString());
-            Assert.AreEqual("c", split[2].ToString());
-        }
+        Assert.HasCount(3, split);
+        Assert.AreEqual("a", split[0].ToString());
+        Assert.AreEqual("b", split[1].ToString());
+        Assert.AreEqual("c", split[2].ToString());
+    }
 
-        [TestMethod]
-        public void SplitSpanWithEmpty()
-        {
-            const string str = "a b c   d";
+    [TestMethod]
+    public void SplitSpanWithEmpty()
+    {
+        const string str = "a b c   d";
 
-            var split = str.SplitSpan(' ').ToArray();
+        var split = str.SplitSpan(' ').ToArray();
 
-            Assert.HasCount(6, split);
-            Assert.AreEqual("a", split[0].ToString());
-            Assert.AreEqual("b", split[1].ToString());
-            Assert.AreEqual("c", split[2].ToString());
-            Assert.AreEqual("", split[3].ToString());
-            Assert.AreEqual("", split[4].ToString());
-            Assert.AreEqual("d", split[5].ToString());
-        }
+        Assert.HasCount(6, split);
+        Assert.AreEqual("a", split[0].ToString());
+        Assert.AreEqual("b", split[1].ToString());
+        Assert.AreEqual("c", split[2].ToString());
+        Assert.AreEqual("", split[3].ToString());
+        Assert.AreEqual("", split[4].ToString());
+        Assert.AreEqual("d", split[5].ToString());
+    }
 
-        [TestMethod]
-        public void SplitSpanWithEmptyRemoved()
-        {
-            const string str = "a b c   d";
+    [TestMethod]
+    public void SplitSpanWithEmptyRemoved()
+    {
+        const string str = "a b c   d";
 
-            var split = str.SplitSpan(' ', System.StringSplitOptions.RemoveEmptyEntries).ToArray();
+        var split = str.SplitSpan(' ', System.StringSplitOptions.RemoveEmptyEntries).ToArray();
 
-            Assert.HasCount(4, split);
-            Assert.AreEqual("a", split[0].ToString());
-            Assert.AreEqual("b", split[1].ToString());
-            Assert.AreEqual("c", split[2].ToString());
-            Assert.AreEqual("d", split[3].ToString());
-        }
+        Assert.HasCount(4, split);
+        Assert.AreEqual("a", split[0].ToString());
+        Assert.AreEqual("b", split[1].ToString());
+        Assert.AreEqual("c", split[2].ToString());
+        Assert.AreEqual("d", split[3].ToString());
     }
 }
