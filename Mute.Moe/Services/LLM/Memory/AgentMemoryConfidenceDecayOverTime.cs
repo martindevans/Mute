@@ -9,7 +9,7 @@ namespace Mute.Moe.Services.LLM.Memory;
 /// </summary>
 [UsedImplicitly]
 public class AgentMemoryConfidenceDecayOverTime
-    : BaseDailyHostedService
+    : BaseDailyHostedService<AgentMemoryConfidenceDecayOverTime>
 {
     private static readonly ILogger _logger = Log.ForContext<AgentMemoryConfidenceDecayOverTime>();
 

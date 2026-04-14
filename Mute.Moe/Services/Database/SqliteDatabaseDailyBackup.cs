@@ -22,7 +22,7 @@ public interface IDatabaseBackupService
 /// </summary>
 [UsedImplicitly]
 public class SqliteDatabaseDailyBackup
-    : BaseDailyHostedService, IDatabaseBackupService
+    : BaseDailyHostedService<SqliteDatabaseDailyBackup>, IDatabaseBackupService
 {
     private static readonly ILogger _logger = Log.ForContext<SqliteDatabaseDailyBackup>();
 
@@ -42,7 +42,7 @@ public class SqliteDatabaseDailyBackup
     /// <inheritdoc />
     protected override async Task Execute()
     {
-        using (_lock.LockAsync())
+        using (await _lock.LockAsync())
             await Backup();
     }
 
@@ -69,7 +69,7 @@ public class SqliteDatabaseDailyBackup
 
         // Open backup file
         _logger.Information("Opening backup DB: {0}", connStr);
-        var backup = new SQLiteConnection(connStr);
+        await using var backup = new SQLiteConnection(connStr);
         backup.Open();
 
         // Do backup

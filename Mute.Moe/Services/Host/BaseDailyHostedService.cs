@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Mute.Moe.Services.LLM.Memory;
 using Serilog;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,10 +8,10 @@ namespace Mute.Moe.Services.Host;
 /// <summary>
 /// Runs a service once each day
 /// </summary>
-public abstract class BaseDailyHostedService
+public abstract class BaseDailyHostedService<TSelf>
     : IHostedService
 {
-    private static readonly ILogger _logger = Log.ForContext<AgentMemoryConfidenceDecayOverTime>();
+    private static readonly ILogger _logger = Log.ForContext<TSelf>();
 
     private CancellationTokenSource _cancellation = new();
     private Task? _task;
@@ -116,7 +115,7 @@ public abstract class BaseDailyHostedService
             timer.Stop();
             
             if (success)
-                _logger.Information("Completed daily task: '{0}' with {1} attempts in {2}", _name, attemptIndex, timer.Elapsed);
+                _logger.Information("Completed daily task: '{0}' with {1} attempts in {2}", _name, attemptIndex + 1, timer.Elapsed);
             else
                 _logger.Information("Failed to complete daily task: '{0}' after {1} attempts in {2}", _name, RETRIES_MAX, timer.Elapsed);
         }
