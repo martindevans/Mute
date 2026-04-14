@@ -151,6 +151,11 @@ public class DatabaseConfig
     /// SQLite connection string
     /// </summary>
     [UsedImplicitly] public string? ConnectionString;
+
+    /// <summary>
+    /// SQLite connection string for backup
+    /// </summary>
+    [UsedImplicitly] public string? BackupConnectionString;
 }
 
 /// <summary>

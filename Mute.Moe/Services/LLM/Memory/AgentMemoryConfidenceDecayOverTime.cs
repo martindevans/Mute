@@ -1,81 +1,48 @@
 ﻿using Mute.Moe.Services.Host;
 using Serilog;
-using System.Threading;
 using System.Threading.Tasks;
-using ILogger = Serilog.ILogger;
 
 namespace Mute.Moe.Services.LLM.Memory;
 
 /// <summary>
 /// Applies memory confidence decay once per day
 /// </summary>
-/// <param name="_config"></param>
-/// <param name="_store"></param>
 [UsedImplicitly]
-public class AgentMemoryConfidenceDecayOverTime(Configuration _config, IAgentMemoryStorage _store)
-    : IHostedService
+public class AgentMemoryConfidenceDecayOverTime
+    : BaseDailyHostedService
 {
     private static readonly ILogger _logger = Log.ForContext<AgentMemoryConfidenceDecayOverTime>();
 
-    private CancellationTokenSource _cancellation = new();
-    private Task? _task;
+    private readonly AgentConfig.MemoryDecayConfig _config;
+    private readonly IAgentMemoryStorage _store;
 
-    /// <inheritdoc />
-    public async Task StartAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="store"></param>
+    public AgentMemoryConfidenceDecayOverTime(Configuration config, IAgentMemoryStorage store)
+        : base(
+            nameof(AgentMemoryConfidenceDecayOverTime),
+            new TimeOnly(config.Agent.MemoryDecay.Hour ?? 5, config.Agent.MemoryDecay.Minute ?? 6, config.Agent.MemoryDecay.Second ?? 7),
+            TimeSpan.FromMinutes(1)
+        )
     {
-        _cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-        _task = Task.Run(() => DecayLoop(_cancellation.Token), _cancellation.Token);
+        _config = config.Agent.MemoryDecay;
+        _store = store;
     }
 
     /// <inheritdoc />
-    public async Task StopAsync(CancellationToken cancellationToken)
+    protected override async Task Execute()
     {
-        await _cancellation.CancelAsync();
-        if (_task != null)
-            await _task;
-    }
+        var deleted = await _store.CleanupMemoryReferences();
+        _logger.Information("Deleted {0} invalid/dangling memory items", deleted);
 
-    private async Task DecayLoop(CancellationToken cancellation)
-    {
-        var config = _config.Agent.MemoryDecay;
-
-        while (!cancellation.IsCancellationRequested)
-        {
-            await WaitForNextTime(
-                config.Hour   ?? 11,
-                config.Minute ?? 11,
-                config.Second ?? 11,
-                cancellation
-            );
-
-            if (cancellation.IsCancellationRequested)
-                break;
-
-            _logger.Information("Beginning memory maintenance cycle");
-
-            var deleted = await _store.CleanupMemoryReferences();
-            _logger.Information("Deleted {0} invalid/dangling memory items", deleted);
-
-            var decayed = await ApplyDecay(
-                config.Threshold,
-                config.DecayValue
-            );
-            _logger.Information("Decayed {0} memories", decayed);
-
-            _logger.Information("Completed memory maintenance cycle");
-        }
-    }
-
-    private static async Task WaitForNextTime(int hour, int min, int sec, CancellationToken cancellation)
-    {
-        _logger.Information("Waiting for next decay time: {0}:{1}:{2}", hour, min, sec);
-
-        var now = DateTime.Now;
-        var next4AM = new DateTime(now.Year, now.Month, now.Day, hour, min, sec);
-        if (now >= next4AM)
-            next4AM = next4AM.AddDays(1);
-        await Task.Delay(next4AM - now, cancellation);
+        var decayed = await ApplyDecay(
+            _config.Threshold,
+            _config.DecayValue
+        );
+        _logger.Information("Decayed {0} memories", decayed);
     }
 
     /// <summary>
