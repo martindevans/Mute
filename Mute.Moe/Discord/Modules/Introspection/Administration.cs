@@ -159,8 +159,9 @@ public class Administration(DiscordSocketClient _client, IAvatarPicker _avatar, 
 
     [Command("db_backup")]
     [UsedImplicitly]
+    [ThinkingReply]
     public async Task BackupDb()
     {
-        await _backup.Backup();
+        await _backup.Backup(default);
     }
 }

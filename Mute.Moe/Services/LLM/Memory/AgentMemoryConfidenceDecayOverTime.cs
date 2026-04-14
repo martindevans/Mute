@@ -1,4 +1,5 @@
-﻿using Mute.Moe.Services.Host;
+﻿using System.Threading;
+using Mute.Moe.Services.Host;
 using Serilog;
 using System.Threading.Tasks;
 
@@ -33,9 +34,9 @@ public class AgentMemoryConfidenceDecayOverTime
     }
 
     /// <inheritdoc />
-    protected override async Task Execute()
+    protected override async Task Execute(CancellationToken cancellation)
     {
-        var deleted = await _store.CleanupMemoryReferences();
+        var deleted = await _store.CleanupMemoryReferences(cancellation);
         _logger.Information("Deleted {0} invalid/dangling memory items", deleted);
 
         var decayed = await ApplyDecay(

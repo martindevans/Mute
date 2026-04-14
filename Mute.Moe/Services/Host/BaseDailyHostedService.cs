@@ -98,7 +98,7 @@ public abstract class BaseDailyHostedService<TSelf>
                 try
                 {
                     // Do work
-                    await Execute();
+                    await Execute(cancellation);
 
                     // Exit if it succeeds
                     success = true;
@@ -108,6 +108,10 @@ public abstract class BaseDailyHostedService<TSelf>
                 {
                     _logger.Error(ex, "Daily task {0} failed", _name);
                 }
+
+                // Early out for cancellation
+                if (cancellation.IsCancellationRequested)
+                    break;
 
                 // Wait longer and longer after more failures
                 await Task.Delay(TimeSpan.FromMinutes(attemptIndex), cancellation);
@@ -124,7 +128,7 @@ public abstract class BaseDailyHostedService<TSelf>
     /// <summary>
     /// Do the daily task
     /// </summary>
-    protected abstract Task Execute();
+    protected abstract Task Execute(CancellationToken cancellation);
 
     private async Task WaitForNextTime(int hour, int min, int sec, CancellationToken cancellation)
     {
