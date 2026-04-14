@@ -100,6 +100,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddSingleton<HttpClient, HttpClient>();
         services.AddSingleton<IDatabaseService, SqliteConfigDatabase>();
+        services.AddHostedService<IDatabaseBackupService, SqliteDatabaseDailyBackup>();
 
         services.AddSingleton<MuteAnilistInfoService>();
         services.AddSingleton<IAnimeInfo>(svc => svc.GetRequiredService<MuteAnilistInfoService>());

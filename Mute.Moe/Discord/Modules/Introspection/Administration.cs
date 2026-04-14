@@ -13,7 +13,7 @@ namespace Mute.Moe.Discord.Modules.Introspection;
 
 [UsedImplicitly]
 [RequireOwner]
-public class Administration(DiscordSocketClient _client, IAvatarPicker _avatar, IServiceProvider _services)
+public class Administration(DiscordSocketClient _client, IAvatarPicker _avatar, IServiceProvider _services, IDatabaseBackupService _backup)
     : MuteBaseModule
 {
     [Command("say"), Summary("I will say whatever you want, but I won't be happy about it >:(")]
@@ -155,5 +155,13 @@ public class Administration(DiscordSocketClient _client, IAvatarPicker _avatar, 
         await kvs.Clear();
 
         await ReplyAsync($"Deleted {count} items from blob store");
+    }
+
+    [Command("db_backup")]
+    [UsedImplicitly]
+    [ThinkingReply]
+    public async Task BackupDb()
+    {
+        await _backup.Backup(default);
     }
 }

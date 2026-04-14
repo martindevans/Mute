@@ -5,6 +5,7 @@ using Mute.Moe.Services.LLM.Embedding;
 using Serilog;
 using System.Data;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.LLM.Memory;
@@ -82,7 +83,7 @@ public interface IAgentMemoryStorage
     /// - Evidence with no linked memories
     /// </summary>
     /// <returns></returns>
-    public Task<int> CleanupMemoryReferences();
+    public Task<int> CleanupMemoryReferences(CancellationToken cancellation);
 
     /// <summary>
     /// Delete a memory by ID
@@ -377,7 +378,7 @@ public class DatabaseAgentMemoryStorage
     }
 
     /// <inheritdoc />
-    public async Task<int> CleanupMemoryReferences()
+    public async Task<int> CleanupMemoryReferences(CancellationToken cancellation)
     {
         var affected = 0;
 
