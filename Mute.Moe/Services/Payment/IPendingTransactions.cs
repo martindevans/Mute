@@ -34,7 +34,7 @@ public interface IPendingTransactions
     /// <param name="after"></param>
     /// <param name="before"></param>
     /// <returns></returns>
-    IAsyncEnumerable<PendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
+    Task<IEnumerable<PendingTransaction>> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
 
     /// <summary>
     /// Get a single transaction with the given ID

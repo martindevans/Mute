@@ -67,7 +67,8 @@ public class DatabasePendingTransactions
 
         _database = database;
 
-        _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_PendingTransactions` (`FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT NOT NULL, `Pending` TEXT NOT NULL);");
+        using var connection = _database.GetConnection();
+        connection.Execute("CREATE TABLE IF NOT EXISTS `IOU2_PendingTransactions` (`FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT NOT NULL, `Pending` TEXT NOT NULL);");
     }
 
     /// <inheritdoc />
@@ -85,7 +86,8 @@ public class DatabasePendingTransactions
         note ??= "";
 
         // Store in DB
-        var id = (uint)await _database.Connection.ExecuteScalarAsync<long>(
+        using var connection = _database.GetConnection();
+        var id = (uint)await connection.ExecuteScalarAsync<long>(
             InsertPendingSql,
             new
             {
@@ -113,10 +115,10 @@ public class DatabasePendingTransactions
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<PendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
+    public async Task<IEnumerable<PendingTransaction>> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
-        return _database
-              .Connection
+        using var connection = _database.GetConnection();
+        return await connection
               .QueryAsync<PendingRow>(
                    GetFilteredTransactionsSql,
                    new
@@ -129,16 +131,17 @@ public class DatabasePendingTransactions
                        LowerBoundInstant = after?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
                        Pending = state?.ToString()
                    }
-              )
+               )
               .ToAsyncEnumerable()
               .SelectMany(a => a)
-              .Select(a => a.ToPendingTransaction());
+              .Select(a => a.ToPendingTransaction())
+              .ToArrayAsync();
     }
 
     /// <inheritdoc />
     public async Task<PendingTransaction?> GetSingle(uint debtId)
     {
-        var results = await Get(debtId).ToArrayAsync();
+        var results = (await Get(debtId)).ToArray();
         
         return results.Length switch
         {
@@ -167,13 +170,13 @@ public class DatabasePendingTransactions
 
     private async Task<PendingState?> UpdatePending(uint id, string sql)
     {
-        var results = await _database
-            .Connection
-            .QueryAsync<string>(sql, new { DebtId = id })
-            .ToAsyncEnumerable()
-            .SelectMany(a => a)
-            .Select(Enum.Parse<PendingState>)
-            .ToArrayAsync();
+        using var connection = _database.GetConnection();
+        var results = await connection
+                           .QueryAsync<string>(sql, new { DebtId = id })
+                           .ToAsyncEnumerable()
+                           .SelectMany(a => a)
+                           .Select(Enum.Parse<PendingState>)
+                           .ToArrayAsync();
 
         return results.Length switch {
             > 1 => throw new InvalidOperationException($"Modified more than 1 payment at once! ID:{id}"),

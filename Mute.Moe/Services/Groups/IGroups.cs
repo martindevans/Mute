@@ -21,7 +21,7 @@ public interface IGroups
     /// </summary>
     /// <param name="guild"></param>
     /// <returns></returns>
-    IAsyncEnumerable<IRole> GetUnlocked(IGuild guild);
+    Task<IEnumerable<IRole>> GetUnlocked(IGuild guild);
 
     /// <summary>
     /// Unlock a group

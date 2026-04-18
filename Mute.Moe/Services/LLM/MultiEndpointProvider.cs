@@ -207,7 +207,7 @@ public sealed class MultiEndpointProvider<TEndpoint>
                 var result = await client.GetAsync(HealthCheck, cancellation);
                 return result.IsSuccessStatusCode;
             }
-            catch (TaskCanceledException ex)
+            catch (TaskCanceledException)
             {
                 //Log.Warning("Health check failed {0} after {1}ms", HealthCheck, sw.ElapsedMilliseconds);
                 return false;

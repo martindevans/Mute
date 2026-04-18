@@ -25,7 +25,8 @@ public class DatabaseRssNotifications
 
         try
         {
-            _database.Exec("CREATE TABLE IF NOT EXISTS `RssSubscriptions` (`Url` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `MentionGroup` TEXT)");
+            using var connection = _database.GetConnection();
+            connection.Execute("CREATE TABLE IF NOT EXISTS `RssSubscriptions` (`Url` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `MentionGroup` TEXT)");
         }
         catch (Exception e)
         {
@@ -36,7 +37,8 @@ public class DatabaseRssNotifications
     /// <inheritdoc />
     public async Task Subscribe(string feedUrl, ulong channel, ulong? mentionGroup)
     {
-        await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+        await connection.ExecuteAsync(
             InsertSubscriptionSql,
             new
             {
@@ -50,7 +52,8 @@ public class DatabaseRssNotifications
     /// <inheritdoc />
     public async Task Unsubscribe(string feedUrl, ulong channel)
     {
-        await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+        await connection.ExecuteAsync(
             DeleteSubscriptionSql,
             new
             {
@@ -61,13 +64,16 @@ public class DatabaseRssNotifications
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<IRssSubscription> GetSubscriptions()
+    public async Task<IEnumerable<IRssSubscription>> GetSubscriptions()
     {
-        var rows = _database.Connection.QueryAsync<RssSubscriptionRow>(GetSubscriptionsSql);
+        using var connection = _database.GetConnection();
+        var rows = connection.QueryAsync<RssSubscriptionRow>(GetSubscriptionsSql);
 
-        return rows.ToAsyncEnumerable()
-                   .SelectMany(a => a)
-                   .Select(a => a.ToSubscription());
+        return await rows
+            .ToAsyncEnumerable()
+            .SelectMany(a => a)
+            .Select(a => a.ToSubscription())
+            .ToArrayAsync();
     }
 
     private record RssSubscription(string FeedUrl, ulong Channel, ulong? MentionRole) : IRssSubscription;

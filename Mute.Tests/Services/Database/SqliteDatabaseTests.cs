@@ -12,7 +12,8 @@ public class SqliteDatabaseTests
     {
         var db = new SqliteInMemoryDatabase();
 
-        db.Connection.Execute("PRAGMA VACUUM");
+        using var conn = db.GetConnection();
+        conn.Execute("PRAGMA VACUUM");
     }
 
     [TestMethod]
@@ -20,6 +21,7 @@ public class SqliteDatabaseTests
     {
         var db = new SqliteInMemoryDatabase();
 
-        db.Exec("CREATE TABLE `test` (`foo` TEXT NOT NULL)");
+        using var conn = db.GetConnection();
+        conn.Execute("CREATE TABLE `test` (`foo` TEXT NOT NULL)");
     }
 }

@@ -15,7 +15,7 @@ public interface IMacroStorage
     /// <param name="ns">Optional namespace</param>
     /// <param name="name">Optional name</param>
     /// <returns></returns>
-    IAsyncEnumerable<MacroDefinition> FindAll(string? ns, string? name);
+    Task<IEnumerable<MacroDefinition>> FindAll(string? ns, string? name);
 
     /// <summary>
     /// Create a new macro

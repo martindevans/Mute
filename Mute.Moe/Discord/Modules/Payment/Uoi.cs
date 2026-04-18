@@ -71,7 +71,7 @@ public class Uoi(IPendingTransactions _pending, IUserService _users)
             return;
         }
 
-        var transactions = await _pending.Get(debtId: fid.Value.Value).ToArrayAsync();
+        var transactions = (await _pending.Get(debtId: fid.Value.Value)).ToArray();
         switch (transactions.Length)
         {
             case 0:
@@ -120,7 +120,7 @@ public class Uoi(IPendingTransactions _pending, IUserService _users)
             return;
         }
 
-        var transactions = await _pending.Get(debtId: fid.Value.Value).ToArrayAsync();
+        var transactions = (await _pending.Get(debtId: fid.Value.Value)).ToArray();
         switch (transactions.Length)
         {
             case 0:
@@ -160,10 +160,10 @@ public class Uoi(IPendingTransactions _pending, IUserService _users)
     }
 
     [Command("pending"), Summary("I will list pending transactions you have yet to confirm"), UsedImplicitly]
-    public Task Pending()
+    public async Task Pending()
     {
-        return PaginatedPending(
-            _pending.Get(toId: Context.User.Id, state: PendingState.Pending),
+        await PaginatedPending(
+            await _pending.Get(toId: Context.User.Id, state: PendingState.Pending),
             "No pending transactions to confirm",
             "You have {0} payments to confirm. Type `!confirm $id` to confirm that it has happened or `!deny $id` otherwise",
             mentionReceiver: false
@@ -171,19 +171,19 @@ public class Uoi(IPendingTransactions _pending, IUserService _users)
     }
 
     [Command("pending-in"), Summary("I will list pending transactions involving you which the other person has no yet confirmed"), UsedImplicitly]
-    public Task ReversePending()
+    public async Task ReversePending()
     {
-        return PaginatedPending(
-            _pending.Get(fromId: Context.User.Id, state: PendingState.Pending),
+        await PaginatedPending(
+            await _pending.Get(fromId: Context.User.Id, state: PendingState.Pending),
             "No pending transactions involving you for others to confirm",
             "There are {0} unconfirmed payments to you. The other person should type `!confirm $id` or `!deny $id` to confirm or deny that the payment has happened",
             mentionReceiver: true
         );
     }
 
-    private async Task PaginatedPending(IAsyncEnumerable<PendingTransaction> pending, string none, string paginatedHeader, bool mentionReceiver)
+    private async Task PaginatedPending(IEnumerable<PendingTransaction> pending, string none, string paginatedHeader, bool mentionReceiver)
     {
-        var pendingArr = await pending.ToListAsync();
+        var pendingArr = pending.ToList();
         var formatted = new List<string>();
         var longForm = pendingArr.Count < 5;
         foreach (var item in pendingArr)

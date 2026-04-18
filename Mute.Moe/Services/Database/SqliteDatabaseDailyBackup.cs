@@ -59,7 +59,7 @@ public class SqliteDatabaseDailyBackup
             }
 
             // Check source is compatible
-            if (_database is not SqliteDatabase sqlite)
+            if (_database is not BaseSqliteDatabase sqlite)
             {
                 _logger.Warning("Cannot backup non SQLite database");
                 return;
