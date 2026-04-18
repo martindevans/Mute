@@ -65,8 +65,8 @@ public class Dice(IDiceRoller _dice, IMacroResolver _macros)
         public async Task FindMacros(string name)
         {
             // Get all results, matching search string with both name and namespace
-            var results1 = await _macros.FindAll(null, name).ToListAsync();
-            var results2 = await _macros.FindAll(name, null).ToListAsync();
+            var results1 = (await _macros.FindAll(null, name)).ToList();
+            var results2 = (await _macros.FindAll(name, null)).ToList();
             var results = results1.Concat(results2).DistinctBy(a => a.Namespace + a.Name)
                                   .GroupBy(a => a.Namespace)
                                   .Select(grp => grp.OrderBy(b => b.Name).ToArray())

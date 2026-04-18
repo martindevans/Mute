@@ -163,8 +163,7 @@ public class DatabaseAgentMemoryStorage
                            """);
 
         // Initialise the column as a vector store
-        connection.Execute($"SELECT vector_init('AgentMemorys', 'Embedding', 'type=FLOAT32,dimension={_embeddings.Dimensions},distance=cosine');");
-        connection.Execute("SELECT vector_quantize('AgentMemorys', 'Embedding')");
+        PrepareVectorQuery(connection);
 
         // Add indices
         connection.Execute("CREATE INDEX IF NOT EXISTS `AgentMemorysByContext` ON `AgentMemorys` (`Context` ASC);");
@@ -189,6 +188,12 @@ public class DatabaseAgentMemoryStorage
         }
     }
 
+    private void PrepareVectorQuery(IDbConnection connection)
+    {
+        connection.Execute($"SELECT vector_init('AgentMemorys', 'Embedding', 'type=FLOAT32,dimension={_embeddings.Dimensions},distance=cosine');");
+        connection.Execute( "SELECT vector_quantize('AgentMemorys', 'Embedding')");
+    }
+    
     private async Task UpdateMemoryEmbeddings()
     {
         Log.Information("Begin UpdateMemoryEmbeddings");
@@ -196,9 +201,13 @@ public class DatabaseAgentMemoryStorage
         while (true)
         {
             using var connection = _database.GetConnection();
+            PrepareVectorQuery(connection);
 
             // Get a batch of items
-            var items = (await connection.QueryAsync<AgentMemory>("SELECT * FROM AgentMemorys WHERE (EmbeddingModel != @EmbeddingModel) LIMIT 8")).ToList();
+            var items = (await connection.QueryAsync<AgentMemory>(
+                "SELECT * FROM AgentMemorys WHERE (EmbeddingModel != @EmbeddingModel) LIMIT 8",
+                new { EmbeddingModel = _embeddings.Model }
+            )).ToList();
             Log.Information("UpdateMemoryEmbeddings Batch={0}", items.Count);
             if (items.Count == 0)
                 return;
@@ -344,6 +353,8 @@ public class DatabaseAgentMemoryStorage
                            """;
 
         using var connection = _database.GetConnection();
+        PrepareVectorQuery(connection);
+        
         var result = connection.Query<AgentMemory, double, MemorySearchResult>(
             SQL,
             (m, d) => new(m, (float)d),

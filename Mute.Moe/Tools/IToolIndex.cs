@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Data;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Dapper;
 using Mute.Moe.Services.Database;
@@ -114,6 +115,8 @@ public class DatabaseToolIndex
         """;
 
         using var connection = _database.GetConnection();
+        await PrepareVectorLookup(connection);
+        
         var result = connection.Query<(string Name, float distance)>(SQL, new
         {
             QueryEmbedding = MemoryMarshal.Cast<float, byte>(embedding.Result.Span).ToArray(),
@@ -154,6 +157,12 @@ public class DatabaseToolIndex
         return rerankedResults;
     }
 
+    private async Task PrepareVectorLookup(IDbConnection connection)
+    {
+        await connection.ExecuteAsync($"SELECT vector_init('ToolDescriptionEmbeddings', 'Embedding', 'type=FLOAT32,dimension={_embeddings.Dimensions},distance=cosine');");
+        await connection.ExecuteAsync( "SELECT vector_quantize('ToolDescriptionEmbeddings', 'Embedding');");
+    }
+
     /// <inheritdoc />
     public async Task Update(bool force = false)
     {
@@ -164,6 +173,9 @@ public class DatabaseToolIndex
         // Create table
         using var db = _database.GetConnection();
         await db.ExecuteAsync("CREATE TABLE IF NOT EXISTS `ToolDescriptionEmbeddings` (`Name` TEXT NOT NULL, `Description` TEXT NOT NULL, `Model` TEXT NOT NULL, `Embedding` BLOB)");
+
+        // Initialise the column as a vector store
+        await PrepareVectorLookup(db);
 
         // Delete all tools from DB which no longer exist in the toolset or have a different description
         using (var tsx = db.BeginTransaction())
@@ -228,10 +240,6 @@ public class DatabaseToolIndex
 
             tsx.Commit();
         }
-
-        // Initialise the column as a vector store
-        await db.ExecuteAsync($"SELECT vector_init('ToolDescriptionEmbeddings', 'Embedding', 'type=FLOAT32,dimension={_embeddings.Dimensions},distance=cosine');");
-        await db.ExecuteAsync( "SELECT vector_quantize('ToolDescriptionEmbeddings', 'Embedding')");
     }
 
     private class ToolDescriptionEmbedding

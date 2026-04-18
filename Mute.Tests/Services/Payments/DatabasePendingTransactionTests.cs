@@ -428,8 +428,8 @@ internal class FakeTransactions
     public Task CreateTransaction(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
         => Task.CompletedTask;
 
-    public async Task<IEnumerable<Transaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
+    public Task<IEnumerable<Transaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
-        return Array.Empty<Transaction>();
+        return Task.FromResult<IEnumerable<Transaction>>([]);
     }
 }

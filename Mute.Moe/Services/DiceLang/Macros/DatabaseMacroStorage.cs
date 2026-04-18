@@ -35,16 +35,16 @@ public class DatabaseMacroStorage
     /// <inheritdoc />
     public async Task<MacroDefinition?> Find(string? ns, string name)
     {
-        return await FindAll(ns, name).SingleOrDefaultAsync();
+        return (await FindAll(ns, name)).SingleOrDefault();
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<MacroDefinition> FindAll(string? ns, string? name)
+    public async Task<IEnumerable<MacroDefinition>> FindAll(string? ns, string? name)
     {
         const string FindMacros = "SELECT * FROM DiceMacros WHERE (Name = @Name OR @Name is NULL) AND (Namespace = @Namespace OR @Namespace is NULL)";
 
         if (ns == null && name == null)
-            yield break;
+            return [ ];
 
         using var connection = _database.GetConnection();
 
@@ -57,8 +57,7 @@ public class DatabaseMacroStorage
             }
         );
 
-        foreach (var diceMacro in macros)
-            yield return diceMacro.ToMacroDef();
+        return macros.Select(a => a.ToMacroDef());
     }
 
     /// <inheritdoc />
