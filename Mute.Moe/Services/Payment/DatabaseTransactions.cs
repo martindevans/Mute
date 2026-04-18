@@ -28,7 +28,8 @@ public class DatabaseTransactions
         _database = database;
 
         // Create debts table and indices
-        _database.Exec("CREATE TABLE IF NOT EXISTS `IOU2_Transactions` (`ID` INTEGER PRIMARY KEY, `FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT);");
+        using var connection = _database.GetConnection();
+        connection.Execute("CREATE TABLE IF NOT EXISTS `IOU2_Transactions` (`ID` INTEGER PRIMARY KEY, `FromId` TEXT NOT NULL, `ToId` TEXT NOT NULL, `Amount` TEXT NOT NULL, `Unit` TEXT NOT NULL, `Note` TEXT, `InstantUnix` TEXT);");
     }
 
     /// <inheritdoc />
@@ -41,7 +42,8 @@ public class DatabaseTransactions
         if (fromId == toId)
             throw new InvalidOperationException("Cannot transact from self to self");
 
-        await _database.Connection.ExecuteScalarAsync<long>(
+        using var connection = _database.GetConnection();
+        await connection.ExecuteScalarAsync<long>(
             InsertTransactionSql,
             new
             {
@@ -58,7 +60,8 @@ public class DatabaseTransactions
     /// <inheritdoc />
     public IAsyncEnumerable<Transaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
-        var rows = _database.Connection.QueryAsync<TransactionRow>(
+        using var connection = _database.GetConnection();
+        var rows = connection.QueryAsync<TransactionRow>(
             GetFilteredTransactionsSql,
             new
             {

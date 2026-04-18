@@ -40,7 +40,8 @@ public class DatabaseReminders
 
         try
         {
-            _database.Exec("CREATE TABLE IF NOT EXISTS `Reminders2` (`InstantUnix` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `Prelude` TEXT, `Message` TEXT NOT NULL, `Deleted` BOOLEAN NOT NULL, `UserId` TEXT NOT NULL)");
+            using var connection = _database.GetConnection();
+            connection.Execute("CREATE TABLE IF NOT EXISTS `Reminders2` (`InstantUnix` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `Prelude` TEXT, `Message` TEXT NOT NULL, `Deleted` BOOLEAN NOT NULL, `UserId` TEXT NOT NULL)");
         }
         catch (Exception e)
         {
@@ -55,7 +56,8 @@ public class DatabaseReminders
         {
             var reminder = new Reminder(0, triggerTime, prelude, msg, channelId, userId);
 
-            var id = (uint)await _database.Connection.ExecuteScalarAsync<long>(
+            using var connection = _database.GetConnection();
+            var id = (uint)await connection.ExecuteScalarAsync<long>(
                 InsertReminder,
                 new
                 {
@@ -83,7 +85,8 @@ public class DatabaseReminders
     /// <inheritdoc />
     public async Task<bool> Delete(ulong userId, uint reminderId)
     {
-        var deleted = await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+        var deleted = await connection.ExecuteAsync(
             DeleteReminder,
             new
             {
@@ -101,7 +104,8 @@ public class DatabaseReminders
     /// <inheritdoc />
     public IAsyncEnumerable<Reminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
     {
-        var rows = _database.Connection.QueryAsync<ReminderRow>(
+        using var connection = _database.GetConnection();
+        var rows = connection.QueryAsync<ReminderRow>(
             GetFilteredRemindersSql,
             new
             {

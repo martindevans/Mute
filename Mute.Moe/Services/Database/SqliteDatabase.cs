@@ -2,33 +2,52 @@
 using System.Data;
 using System.Data.SQLite;
 using System.Threading.Tasks;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.Database;
 
 /// <summary>
 /// SQLite database
 /// </summary>
-public class SqliteDatabase
+public abstract class BaseSqliteDatabase
     : IDatabaseService
 {
+    private readonly AsyncLock _execLock = new();
     private readonly SQLiteConnection _dbConnection;
-
-    /// <inheritdoc />
-    public IDbConnection Connection => _dbConnection;
+    
+    private readonly string _dbConnStr;
 
     /// <summary>
     /// Create new DB
     /// </summary>
-    public SqliteDatabase(string connection)
+    public BaseSqliteDatabase(string connection)
     {
         Log.Information("DB Connection String: {0}", connection);
 
-        _dbConnection = new SQLiteConnection(connection);
-        _dbConnection.Open();
+        _dbConnStr = connection;
+        _dbConnection = GetSqliteConnection();
+    }
 
-        _dbConnection.EnableExtensions(true);
-        _dbConnection.LoadExtension("vector");
-        _dbConnection.EnableExtensions(false);
+    /// <summary>
+    /// Get an <see cref="SQLiteConnection"/>
+    /// </summary>
+    /// <returns></returns>
+    public SQLiteConnection GetSqliteConnection()
+    {
+        var connection = new SQLiteConnection(_dbConnStr);
+        connection.Open();
+
+        connection.EnableExtensions(true);
+        connection.LoadExtension("vector");
+        connection.EnableExtensions(false);
+
+        return connection;
+    }
+
+    /// <inheritdoc />
+    public IDbConnection GetConnection()
+    {
+        return GetSqliteConnection();
     }
 
     /// <summary>
@@ -40,7 +59,9 @@ public class SqliteDatabase
     {
         await Task.Run(() =>
         {
-            _dbConnection.BackupDatabase(
+            using var connection = GetSqliteConnection();
+
+            connection.BackupDatabase(
                 destination: dest,
                 destinationName: "main",
                 sourceName: "main",
@@ -62,7 +83,7 @@ public class SqliteDatabase
     /// </summary>
     /// <param name="dest"></param>
     /// <returns></returns>
-    public async Task Backup(SqliteDatabase dest)
+    public async Task Backup(BaseSqliteDatabase dest)
     {
         await Backup(dest._dbConnection);
     }
@@ -72,7 +93,7 @@ public class SqliteDatabase
 /// SQLite database
 /// </summary>
 public class SqliteConfigDatabase
-    : SqliteDatabase
+    : BaseSqliteDatabase
 {
     /// <summary>
     /// Create new SQLite database connection
@@ -89,13 +110,22 @@ public class SqliteConfigDatabase
 /// Provides an entirely in-memory SQLite database that loses all data once this process ends
 /// </summary>
 public class SqliteInMemoryDatabase
-    : SqliteDatabase
+    : BaseSqliteDatabase
 {
+    // The in memory DB will be lost as soon as the last connection is closed. This is a connection that
+    // exists to "root" the database, but should never be used for queries (hence the type).
+    // ReSharper disable once NotAccessedField.Local
+    private readonly object _root;
+
     /// <summary>
     /// Create new in-memory DB
     /// </summary>
     public SqliteInMemoryDatabase()
-        : base("Data Source=:memory:")
+        : base($"Data Source=file:{RandomName()}?mode=memory&cache=shared")
     {
+        // One connection must always be open, to keep the DB alive
+        _root = GetConnection();
     }
+
+    private static string RandomName() => Random.Shared.GetHexString(32);
 }

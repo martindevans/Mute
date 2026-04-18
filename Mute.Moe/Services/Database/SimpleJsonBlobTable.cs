@@ -43,8 +43,11 @@ public abstract class SimpleJsonBlobTable<TBlob>
 
         try
         {
-            _database.Exec($"CREATE TABLE IF NOT EXISTS `{tableName}` (`ID` TEXT NOT NULL, `Json` TEXT NOT NULL)");
-            _database.Exec($"CREATE INDEX IF NOT EXISTS `{tableName}ById` ON '{tableName}' (ID ASC);");
+            using (var connection = _database.GetConnection())
+            {
+                connection.Execute($"CREATE TABLE IF NOT EXISTS `{tableName}` (`ID` TEXT NOT NULL, `Json` TEXT NOT NULL)");
+                connection.Execute($"CREATE INDEX IF NOT EXISTS `{tableName}ById` ON '{tableName}' (ID ASC);");
+            }
         }
         catch (Exception e)
         {
@@ -55,18 +58,20 @@ public abstract class SimpleJsonBlobTable<TBlob>
     /// <inheritdoc />
     public async Task Put(ulong id, TBlob data)
     {
-        using (var tsx = _database.Connection.BeginTransaction())
+        using var connection = _database.GetConnection();
+        
+        using (var tsx = connection.BeginTransaction())
         {
             await Delete(id, tsx);
 
-            await _database.Connection.ExecuteAsync(
+            await connection.ExecuteAsync(
                 _putSql,
                 new
                 {
                     ID = id.ToString(),
                     Json = JsonSerializer.Serialize(data)
                 },
-                transaction:tsx
+                transaction: tsx
             );
 
             tsx.Commit();
@@ -76,7 +81,9 @@ public abstract class SimpleJsonBlobTable<TBlob>
     /// <inheritdoc />
     public async Task<TBlob?> Get(ulong id)
     {
-        var json = await _database.Connection.QuerySingleOrDefaultAsync<string>(
+        using var connection = _database.GetConnection();
+        
+        var json = await connection.QuerySingleOrDefaultAsync<string>(
             _getSql,
             new
             {
@@ -90,12 +97,19 @@ public abstract class SimpleJsonBlobTable<TBlob>
     /// <inheritdoc />
     public Task<bool> Delete(ulong id)
     {
-        return Delete(id, null);
+        using var connection = _database.GetConnection();
+
+        using (var tsx = connection.BeginTransaction())
+        {
+            var result = Delete(id, tsx);
+            tsx.Commit();
+            return result;
+        }
     }
 
-    private async Task<bool> Delete(ulong id, IDbTransaction? tsx)
+    private async Task<bool> Delete(ulong id, IDbTransaction tsx)
     {
-        var count = await _database.Connection.ExecuteAsync(
+        var count = await tsx.Connection!.ExecuteAsync(
             _deleteSql,
             new
             {
@@ -110,24 +124,27 @@ public abstract class SimpleJsonBlobTable<TBlob>
     /// <inheritdoc />
     public async Task Clear()
     {
-        await _database.Connection.ExecuteAsync(_clearSql);
+        using var connection = _database.GetConnection();
+        await connection.ExecuteAsync(_clearSql);
     }
 
     /// <inheritdoc />
     public async Task<long> Count()
     {
-        return await _database.Connection.ExecuteScalarAsync<long>(_countSql);
+        using var connection = _database.GetConnection();
+        return await connection.ExecuteScalarAsync<long>(_countSql);
     }
 
     /// <inheritdoc />
     public async Task<TBlob?> Random()
     {
-        var json = await _database.Connection.QuerySingleOrDefaultAsync<string>(_randomSql);
+        using var connection = _database.GetConnection();
+        var json = await connection.QuerySingleOrDefaultAsync<string>(_randomSql);
         return await Read(json);
     }
 
     /// <summary>
-    /// Convert JSON into <see cref="TBlob"/> object
+    /// Convert JSON into TBlob object
     /// </summary>
     /// <param name="json"></param>
     /// <returns></returns>

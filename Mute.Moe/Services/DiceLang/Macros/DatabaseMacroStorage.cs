@@ -23,7 +23,8 @@ public class DatabaseMacroStorage
 
         try
         {
-            _database.Exec("CREATE TABLE IF NOT EXISTS `DiceMacros` (`JSON` TEXT NOT NULL, `Namespace` TEXT NOT NULL, `Name` TEXT NOT NULL)");
+            using var connection = _database.GetConnection();
+            connection.Execute("CREATE TABLE IF NOT EXISTS `DiceMacros` (`JSON` TEXT NOT NULL, `Namespace` TEXT NOT NULL, `Name` TEXT NOT NULL)");
         }
         catch (Exception e)
         {
@@ -45,7 +46,9 @@ public class DatabaseMacroStorage
         if (ns == null && name == null)
             yield break;
 
-        var macros = await _database.Connection.QueryAsync<DiceMacro>(
+        using var connection = _database.GetConnection();
+
+        var macros = await connection.QueryAsync<DiceMacro>(
             FindMacros,
             new
             {
@@ -65,7 +68,9 @@ public class DatabaseMacroStorage
 
         var json = JsonSerializer.Serialize(new DbMacroJson(definition.ParameterNames, definition.Root));
 
-        await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+
+        await connection.ExecuteAsync(
             InsertMacroSql,
             new
             {
@@ -81,7 +86,9 @@ public class DatabaseMacroStorage
     {
         const string DeleteMacroSql = "DELETE FROM `DiceMacros` WHERE Namespace = @Namespace AND Name = @Name";
 
-        return await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+
+        return await connection.ExecuteAsync(
             DeleteMacroSql,
             new
             {

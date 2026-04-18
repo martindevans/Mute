@@ -1,5 +1,4 @@
-﻿using System.Data;
-using Discord;
+﻿using Discord;
 using Mute.Moe.Services.Database;
 using Serilog;
 using System.Threading.Tasks;
@@ -32,7 +31,8 @@ public class DatabaseGroupService
         // Create database structure
         try
         {
-            _database.Exec("CREATE TABLE IF NOT EXISTS `UnlockedRoles` (`RoleId` TEXT NOT NULL, `GuildId` TEXT NOT NULL, PRIMARY KEY(`RoleId`,`GuildId`))");
+            using var connection = _database.GetConnection();
+            connection.Execute("CREATE TABLE IF NOT EXISTS `UnlockedRoles` (`RoleId` TEXT NOT NULL, `GuildId` TEXT NOT NULL, PRIMARY KEY(`RoleId`,`GuildId`))");
         }
         catch (Exception e)
         {
@@ -43,7 +43,9 @@ public class DatabaseGroupService
     /// <inheritdoc />
     public async Task<bool> IsUnlocked(IRole grp)
     {
-        var result = await _database.Connection.ExecuteScalarAsync<int>(
+        using var connection = _database.GetConnection();
+
+        var result = await connection.ExecuteScalarAsync<int>(
             FindUnlockedRoleByCompositeId,
             new
             {
@@ -58,7 +60,8 @@ public class DatabaseGroupService
     /// <inheritdoc />
     public IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
     {
-        var unlockeds = _database.Connection.QueryAsync<UnlockedRole>(
+        using var connection = _database.GetConnection();
+        var unlockeds = connection.QueryAsync<UnlockedRole>(
             FindUnlockedRoleByGuildId,
             new { GuildId = guild.Id.ToString() }
         );
@@ -88,7 +91,8 @@ public class DatabaseGroupService
     /// <inheritdoc />
     public async Task Unlock(IRole grp)
     {
-        await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+        await connection.ExecuteAsync(
             InsertUnlockSql,
             new
             {
@@ -101,7 +105,8 @@ public class DatabaseGroupService
     /// <inheritdoc />
     public async Task Lock(IRole grp)
     {
-        await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+        await connection.ExecuteAsync(
             DeleteUnlockSql,
             new
             {

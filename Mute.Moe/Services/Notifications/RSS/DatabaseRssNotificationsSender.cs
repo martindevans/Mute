@@ -45,7 +45,8 @@ public class DatabaseRssNotificationsSender
 
         try
         {
-            _database.Exec("CREATE TABLE IF NOT EXISTS `RssNotificationsSent` (`ChannelId` TEXT NOT NULL, `FeedUrl` TEXT NOT NULL, `UniqueId` TEXT)");
+            using var connection = _database.GetConnection();
+            connection.Execute("CREATE TABLE IF NOT EXISTS `RssNotificationsSent` (`ChannelId` TEXT NOT NULL, `FeedUrl` TEXT NOT NULL, `UniqueId` TEXT)");
         }
         catch (Exception e)
         {
@@ -114,7 +115,8 @@ public class DatabaseRssNotificationsSender
 
     private async Task<bool> HasBeenPublished(string channelId, string feedUrl, string uniqueId)
     {
-        return await _database.Connection.ExecuteScalarAsync<int>(
+        using var connection = _database.GetConnection();
+        return await connection.ExecuteScalarAsync<int>(
             HasPublishedNotification,
             new
             {
@@ -129,7 +131,8 @@ public class DatabaseRssNotificationsSender
     {
         await SendMessage(feed, item);
 
-        await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+        await connection.ExecuteAsync(
             InsertNotificationSql,
             new
             {

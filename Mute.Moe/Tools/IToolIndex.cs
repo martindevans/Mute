@@ -113,7 +113,8 @@ public class DatabaseToolIndex
             ORDER BY v.distance ASC;
         """;
 
-        var result = _database.Connection.Query<(string Name, float distance)>(SQL, new
+        using var connection = _database.GetConnection();
+        var result = connection.Query<(string Name, float distance)>(SQL, new
         {
             QueryEmbedding = MemoryMarshal.Cast<float, byte>(embedding.Result.Span).ToArray(),
             TopK = limit
@@ -161,10 +162,10 @@ public class DatabaseToolIndex
         _updated = true;
 
         // Create table
-        _database.Exec("CREATE TABLE IF NOT EXISTS `ToolDescriptionEmbeddings` (`Name` TEXT NOT NULL, `Description` TEXT NOT NULL, `Model` TEXT NOT NULL, `Embedding` BLOB)");
+        using var db = _database.GetConnection();
+        await db.ExecuteAsync("CREATE TABLE IF NOT EXISTS `ToolDescriptionEmbeddings` (`Name` TEXT NOT NULL, `Description` TEXT NOT NULL, `Model` TEXT NOT NULL, `Embedding` BLOB)");
 
         // Delete all tools from DB which no longer exist in the toolset or have a different description
-        var db = _database.Connection;
         using (var tsx = db.BeginTransaction())
         {
             foreach (var item in await db.QueryAsync<ToolDescriptionEmbedding>("SELECT * From `ToolDescriptionEmbeddings`"))

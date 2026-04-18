@@ -23,7 +23,7 @@ public interface IAgentMemoryStorage
     /// <param name="confidenceLogit"></param>
     /// <param name="tsx"></param>
     /// <returns></returns>
-    public Task<int?> CreateMemory(ulong context, string text, float confidenceLogit, IDbTransaction? tsx = null);
+    public Task<int?> CreateMemory(ulong context, string text, float confidenceLogit, IDbTransaction tsx);
 
     /// <summary>
     /// Create an evidence object, return the ID
@@ -32,7 +32,7 @@ public interface IAgentMemoryStorage
     /// <param name="text"></param>
     /// <param name="tsx"></param>
     /// <returns></returns>
-    public Task<int> CreateEvidence(ulong context, string text, IDbTransaction? tsx = null);
+    public Task<int> CreateEvidence(ulong context, string text, IDbTransaction tsx);
 
     /// <summary>
     /// Create a link between a memory and some evidence
@@ -41,7 +41,7 @@ public interface IAgentMemoryStorage
     /// <param name="memory"></param>
     /// <param name="tsx"></param>
     /// <returns></returns>
-    public Task CreateEvidenceLink(int evidence, int memory, IDbTransaction? tsx = null);
+    public Task CreateEvidenceLink(int evidence, int memory, IDbTransaction tsx);
 
     /// <summary>
     /// Retrieve a specific memory by ID
@@ -72,9 +72,8 @@ public interface IAgentMemoryStorage
     /// <param name="minLogit">Logits below this threshold will NOT be updated</param>
     /// <param name="maxLogit">Logits above this threshold will NOT be updated</param>
     /// <param name="value">Value to add directly to logit</param>
-    /// <param name="tsx">Transaction (optional)</param>
     /// <returns></returns>
-    public Task<int> AddToConfidenceLogits(float? minLogit, float? maxLogit, float value, IDbTransaction? tsx = null);
+    public Task<int> AddToConfidenceLogits(float? minLogit, float? maxLogit, float value);
 
     /// <summary>
     /// Perform DB maintanence, deleting things:
@@ -126,53 +125,55 @@ public class DatabaseAgentMemoryStorage
         _database = database;
         _embeddings = embeddings;
 
-        _database.Exec("""
-                       CREATE TABLE IF NOT EXISTS `AgentMemorys`
-                       (
-                           `ID`              INTEGER PRIMARY KEY ASC,
-                           `Context`         INTEGER,
-                           `Text`            TEXT NOT NULL,
-                           `Embedding`       BLOB,
-                           `EmbeddingModel`  TEXT NOT NULL,
-                           `ConfidenceLogit` REAL,
-                           `CreationUnix`    INTEGER,
-                           `AccessUnix`      INTEGER
-                       );
-                       """);
+        using var connection = _database.GetConnection();
 
-        _database.Exec("""
-                       CREATE TABLE IF NOT EXISTS `AgentMemoryEvidences`
-                       (
-                           `ID`              INTEGER PRIMARY KEY ASC,
-                           `Context`         INTEGER,
-                           `Text`            TEXT NOT NULL,
-                           `CreationUnix`    INTEGER,
-                           `AccessUnix`      INTEGER
-                       );
-                       """);
-        
-        _database.Exec("""
-                       CREATE TABLE IF NOT EXISTS `AgentMemoryEvidenceLinks`
-                       (
-                           `EvidenceId`      INTEGER,
-                           `MemoryId`        INTEGER,
-                           FOREIGN KEY(EvidenceId) REFERENCES AgentMemoryEvidences(ID),
-                           FOREIGN KEY(MemoryId)   REFERENCES AgentMemorys(ID)
-                       );
-                       """);
+        connection.Execute("""
+                   CREATE TABLE IF NOT EXISTS `AgentMemorys`
+                   (
+                       `ID`              INTEGER PRIMARY KEY ASC,
+                       `Context`         INTEGER,
+                       `Text`            TEXT NOT NULL,
+                       `Embedding`       BLOB,
+                       `EmbeddingModel`  TEXT NOT NULL,
+                       `ConfidenceLogit` REAL,
+                       `CreationUnix`    INTEGER,
+                       `AccessUnix`      INTEGER
+                   );
+                   """);
+
+        connection.Execute("""
+                           CREATE TABLE IF NOT EXISTS `AgentMemoryEvidences`
+                           (
+                               `ID`              INTEGER PRIMARY KEY ASC,
+                               `Context`         INTEGER,
+                               `Text`            TEXT NOT NULL,
+                               `CreationUnix`    INTEGER,
+                               `AccessUnix`      INTEGER
+                           );
+                           """);
+
+        connection.Execute("""
+                           CREATE TABLE IF NOT EXISTS `AgentMemoryEvidenceLinks`
+                           (
+                               `EvidenceId`      INTEGER,
+                               `MemoryId`        INTEGER,
+                               FOREIGN KEY(EvidenceId) REFERENCES AgentMemoryEvidences(ID),
+                               FOREIGN KEY(MemoryId)   REFERENCES AgentMemorys(ID)
+                           );
+                           """);
 
         // Initialise the column as a vector store
-        _database.Exec($"SELECT vector_init('AgentMemorys', 'Embedding', 'type=FLOAT32,dimension={_embeddings.Dimensions},distance=cosine');");
-        _database.Exec("SELECT vector_quantize('AgentMemorys', 'Embedding')");
+        connection.Execute($"SELECT vector_init('AgentMemorys', 'Embedding', 'type=FLOAT32,dimension={_embeddings.Dimensions},distance=cosine');");
+        connection.Execute("SELECT vector_quantize('AgentMemorys', 'Embedding')");
 
         // Add indices
-        _database.Exec("CREATE INDEX IF NOT EXISTS `AgentMemorysByContext` ON `AgentMemorys` (`Context` ASC);");
-        _database.Exec("CREATE INDEX IF NOT EXISTS `AgentMemorysByConfidence` ON `AgentMemorys` (`ConfidenceLogit` ASC);");
-        _database.Exec("CREATE INDEX IF NOT EXISTS `AgentMemoryEvidenceLinksByMemoryId` ON AgentMemoryEvidenceLinks(MemoryId);");
-        _database.Exec("CREATE INDEX IF NOT EXISTS `AgentMemoryEvidenceLinksOnEvidenceId` ON AgentMemoryEvidenceLinks(EvidenceId);");
+        connection.Execute("CREATE INDEX IF NOT EXISTS `AgentMemorysByContext` ON `AgentMemorys` (`Context` ASC);");
+        connection.Execute("CREATE INDEX IF NOT EXISTS `AgentMemorysByConfidence` ON `AgentMemorys` (`ConfidenceLogit` ASC);");
+        connection.Execute("CREATE INDEX IF NOT EXISTS `AgentMemoryEvidenceLinksByMemoryId` ON AgentMemoryEvidenceLinks(MemoryId);");
+        connection.Execute("CREATE INDEX IF NOT EXISTS `AgentMemoryEvidenceLinksOnEvidenceId` ON AgentMemoryEvidenceLinks(EvidenceId);");
 
         // Check for incorrect embeddings
-        var count = _database.Connection.ExecuteScalar<int>(
+        var count = connection.ExecuteScalar<int>(
             "SELECT Count(*) FROM `AgentMemorys` WHERE (EmbeddingModel != @EmbeddingModel)",
             new
             {
@@ -194,8 +195,10 @@ public class DatabaseAgentMemoryStorage
 
         while (true)
         {
+            using var connection = _database.GetConnection();
+
             // Get a batch of items
-            var items = (await _database.Connection.QueryAsync<AgentMemory>("SELECT * FROM AgentMemorys WHERE (EmbeddingModel != @EmbeddingModel) LIMIT 8")).ToList();
+            var items = (await connection.QueryAsync<AgentMemory>("SELECT * FROM AgentMemorys WHERE (EmbeddingModel != @EmbeddingModel) LIMIT 8")).ToList();
             Log.Information("UpdateMemoryEmbeddings Batch={0}", items.Count);
             if (items.Count == 0)
                 return;
@@ -214,7 +217,7 @@ public class DatabaseAgentMemoryStorage
                 if (!embeds.TryGetValue(agentMemory.Text, out var result))
                     continue;
 
-                await _database.Connection.ExecuteAsync(
+                await connection.ExecuteAsync(
                     """
                     UPDATE AgentMemorys
                     SET `Embedding` = @Embedding
@@ -232,13 +235,13 @@ public class DatabaseAgentMemoryStorage
                 await Task.Delay(1);
             }
 
-            // Long delay between batches
-            await Task.Delay(10);
+            // Longer delay between batches
+            await Task.Delay(25);
         }
     }
 
     /// <inheritdoc />
-    public async Task<int?> CreateMemory(ulong context, string text, float confidenceLogit, IDbTransaction? tsx = null)
+    public async Task<int?> CreateMemory(ulong context, string text, float confidenceLogit, IDbTransaction tsx)
     {
         var embedding = await _embeddings.Embed(text);
         if (embedding == null)
@@ -256,11 +259,11 @@ public class DatabaseAgentMemoryStorage
             AccessUnix = now,
         };
 
-        return await _database.Connection.InsertAsync(memory, tsx);
+        return await tsx.Connection.InsertAsync(memory, tsx);
     }
 
     /// <inheritdoc />
-    public async Task<int> CreateEvidence(ulong context, string text, IDbTransaction? tsx = null)
+    public async Task<int> CreateEvidence(ulong context, string text, IDbTransaction tsx)
     {
         var now = DateTime.UtcNow.UnixTimestamp();
         var evidence = new AgentMemoryEvidence
@@ -271,11 +274,11 @@ public class DatabaseAgentMemoryStorage
             AccessUnix = now,
         };
 
-        return await _database.Connection.InsertAsync(evidence, tsx);
+        return await tsx.Connection.InsertAsync(evidence, tsx);
     }
 
     /// <inheritdoc />
-    public async Task CreateEvidenceLink(int evidence, int memory, IDbTransaction? tsx = null)
+    public async Task CreateEvidenceLink(int evidence, int memory, IDbTransaction tsx)
     {
         var link = new AgentMemoryEvidenceLink
         {
@@ -283,20 +286,21 @@ public class DatabaseAgentMemoryStorage
             MemoryId = memory
         };
 
-        await _database.Connection.InsertAsync(link, tsx);
+        await tsx.Connection.InsertAsync(link, tsx);
     }
 
     /// <inheritdoc />
-    public Task<AgentMemory?> Get(int id)
+    public async Task<AgentMemory?> Get(int id)
     {
-        return _database.Connection.QuerySingleOrDefaultAsync<AgentMemory>(
+        using var connection = _database.GetConnection();
+        return connection.QuerySingleOrDefault<AgentMemory>(
             "SELECT * FROM AgentMemorys WHERE ID = @id",
             new { id = id }
         );
     }
 
     /// <inheritdoc />
-    public Task<IEnumerable<AgentMemory>> Get(ulong context)
+    public async Task<IEnumerable<AgentMemory>> Get(ulong context)
     {
         const string SQL = """
                            SELECT *
@@ -304,7 +308,8 @@ public class DatabaseAgentMemoryStorage
                            WHERE Context = @Context
                            """;
 
-        return _database.Connection.QueryAsync<AgentMemory>(
+        using var connection = _database.GetConnection();
+        return await connection.QueryAsync<AgentMemory>(
             SQL,
             new
             {
@@ -338,7 +343,8 @@ public class DatabaseAgentMemoryStorage
                            LIMIT @TopK;
                            """;
 
-        var result = _database.Connection.Query<AgentMemory, double, MemorySearchResult>(
+        using var connection = _database.GetConnection();
+        var result = connection.Query<AgentMemory, double, MemorySearchResult>(
             SQL,
             (m, d) => new(m, (float)d),
             new
@@ -355,12 +361,13 @@ public class DatabaseAgentMemoryStorage
     }
 
     /// <inheritdoc />
-    public async Task<int> AddToConfidenceLogits(float? minLogit, float? maxLogit, float value, IDbTransaction? tsx = null)
+    public async Task<int> AddToConfidenceLogits(float? minLogit, float? maxLogit, float value)
     {
         if (minLogit > maxLogit)
             throw new ArgumentException("minLogit must be <= maxLogit");
 
-        return await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+        return await connection.ExecuteAsync(
             """
             UPDATE AgentMemorys
             SET `ConfidenceLogit` = `ConfidenceLogit` + @value
@@ -372,8 +379,7 @@ public class DatabaseAgentMemoryStorage
                 minLogit,
                 maxLogit,
                 value
-            },
-            tsx
+            }
         );
     }
 
@@ -382,86 +388,93 @@ public class DatabaseAgentMemoryStorage
     {
         var affected = 0;
 
-        using var tx = _database.Connection.BeginTransaction();
+        using var connection = _database.GetConnection();
+        using (var tsx = connection.BeginTransaction())
+        {
+            // Delete bad links (dangling MemoryId or EvidenceId)
+            affected += await connection.ExecuteAsync(
+                """
+                DELETE FROM AgentMemoryEvidenceLinks
+                WHERE MemoryId   NOT IN (SELECT ID FROM AgentMemorys)
+                   OR EvidenceId NOT IN (SELECT ID FROM AgentMemoryEvidences)
+                """,
+                transaction: tsx
+            );
 
-        // Delete bad links (dangling MemoryId or EvidenceId)
-        affected += await _database.Connection.ExecuteAsync(
-            """
-            DELETE FROM AgentMemoryEvidenceLinks
-            WHERE MemoryId   NOT IN (SELECT ID FROM AgentMemorys)
-               OR EvidenceId NOT IN (SELECT ID FROM AgentMemoryEvidences)
-            """,
-            transaction: tx
-        );
+            // Delete memories with no remaining evidence
+            affected += await connection.ExecuteAsync(
+                """
+                DELETE FROM AgentMemorys AS m
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM AgentMemoryEvidenceLinks AS l
+                    WHERE l.MemoryId = m.ID
+                )
+                """,
+                transaction: tsx
+            );
 
-        // Delete memories with no remaining evidence
-        affected += await _database.Connection.ExecuteAsync(
-            """
-            DELETE FROM AgentMemorys AS m
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM AgentMemoryEvidenceLinks AS l
-                WHERE l.MemoryId = m.ID
-            )
-            """,
-            transaction: tx
-        );
+            // Delete evidence with no memories linked to it
+            affected += await connection.ExecuteAsync(
+                """
+                DELETE FROM AgentMemoryEvidences AS e
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM AgentMemoryEvidenceLinks AS l
+                    WHERE l.EvidenceId = e.ID
+                )
+                """,
+                transaction: tsx
+            );
 
-        // Delete evidence with no memories linked to it
-        affected += await _database.Connection.ExecuteAsync(
-            """
-            DELETE FROM AgentMemoryEvidences AS e
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM AgentMemoryEvidenceLinks AS l
-                WHERE l.EvidenceId = e.ID
-            )
-            """,
-            transaction: tx
-        );
+            tsx.Commit();
+        }
 
-        tx.Commit();
         return affected;
     }
 
     /// <inheritdoc />
     public async Task<bool> Delete(int id)
     {
-        using var tsx = _database.Connection.BeginTransaction();
+        using var connection = _database.GetConnection();
+        using (var tsx = connection.BeginTransaction())
+        {
+            await connection.ExecuteAsync(
+                """
+                DELETE FROM AgentMemoryEvidenceLinks
+                WHERE MemoryId = @id
+                """,
+                new
+                {
+                    id = id
+                },
+                transaction: tsx
+            );
 
-        await _database.Connection.ExecuteAsync(
-            """
-            DELETE FROM AgentMemoryEvidenceLinks
-            WHERE MemoryId = @id
-            """,
-            new
-            {
-                id = id
-            },
-            transaction: tsx
-        );
+            var count = await connection.ExecuteAsync(
+                """
+                DELETE FROM AgentMemorys
+                WHERE ID = @id
+                """,
+                new
+                {
+                    id = id
+                },
+                transaction: tsx
+            );
 
-        var count = await _database.Connection.ExecuteAsync(
-            """
-            DELETE FROM AgentMemorys
-            WHERE ID = @id
-            """,
-            new
-            {
-                id = id
-            },
-            transaction: tsx
-        );
+            tsx.Commit();
 
-        tsx.Commit();
-
-        return count > 0;
+            return count > 0;
+        }
     }
 
     /// <inheritdoc />
     public async Task UpdateAccessTime(int id)
     {
-        await _database.Connection.ExecuteAsync(
+        using var connection = _database.GetConnection();
+
+        await connection.ExecuteAsync(
             """
             UPDATE AgentMemorys
             SET `AccessUnix` = @UnixTime

@@ -29,14 +29,19 @@ public class GameService
     {
         _client = client;
         _database = database;
-            
-        database.Exec("CREATE TABLE IF NOT EXISTS `Games_Played` (`UserId` TEXT NOT NULL, `GameId` TEXT NOT NULL, PRIMARY KEY(`UserId`,`GameId`));");
-        database.Exec("CREATE INDEX IF NOT EXISTS `GamesPlayedByUser` ON `Games_Played` (`UserId` ASC);");
-        database.Exec("CREATE INDEX IF NOT EXISTS `GamesPlayedByGame` ON `Games_Played` (`GameId` ASC);");
+
+        using (var connection = database.GetConnection())
+        {
+            connection.Execute("CREATE TABLE IF NOT EXISTS `Games_Played` (`UserId` TEXT NOT NULL, `GameId` TEXT NOT NULL, PRIMARY KEY(`UserId`,`GameId`));");
+            connection.Execute("CREATE INDEX IF NOT EXISTS `GamesPlayedByUser` ON `Games_Played` (`UserId` ASC);");
+            connection.Execute("CREATE INDEX IF NOT EXISTS `GamesPlayedByGame` ON `Games_Played` (`GameId` ASC);");
+        }
     }
 
     private async Task Updated(Cacheable<SocketGuildUser, ulong> _, SocketGuildUser user)
     {
+        using var connection = _database.GetConnection();
+        
         foreach (var activity in user.Activities)
         {
             if (activity?.Type != ActivityType.Playing)
@@ -45,7 +50,7 @@ public class GameService
             if (string.IsNullOrWhiteSpace(activity.Name))
                 continue;
 
-            var count = await _database.Connection.ExecuteAsync(
+            var count = await connection.ExecuteAsync(
                 InsertGamePlayed,
                 new
                 {

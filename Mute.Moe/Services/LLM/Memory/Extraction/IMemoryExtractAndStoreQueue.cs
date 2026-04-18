@@ -50,21 +50,23 @@ public class DatabaseMemoryExtractAndStoreQueue
         _extraction = extraction;
         _storage = storage;
 
-        _database.Exec("""
-                       CREATE TABLE IF NOT EXISTS `MemoryExtractionJobs`
-                       (
-                           `ID` INTEGER PRIMARY KEY ASC,
-                           `Transcript` TEXT NOT NULL,
-                           `Context` INTEGER NOT NULL
-                       );
-                       """);
+        using var connection = _database.GetConnection();
+        connection.Execute("""
+                        CREATE TABLE IF NOT EXISTS `MemoryExtractionJobs`
+                        (
+                            `ID` INTEGER PRIMARY KEY ASC,
+                            `Transcript` TEXT NOT NULL,
+                            `Context` INTEGER NOT NULL
+                        );
+                        """);
     }
 
     /// <inheritdoc />
     public async Task Enqueue(ulong context, string transcript)
     {
         // Store the work in the database
-        await _database.Connection.InsertAsync(new MemoryExtractionJob
+        using var connection = _database.GetConnection();
+        await connection.InsertAsync(new MemoryExtractionJob
         {
             Context = context,
             Transcript = transcript
@@ -98,7 +100,8 @@ public class DatabaseMemoryExtractAndStoreQueue
             while (!_cancellation.IsCancellationRequested)
             {
                 // Keep taking work from the database and processing it
-                var item = await _database.Connection.QuerySingleOrDefaultAsync<MemoryExtractionJob>("SELECT * FROM MemoryExtractionJobs LIMIT 1;");
+                using var connection = _database.GetConnection();
+                var item = await connection.QuerySingleOrDefaultAsync<MemoryExtractionJob>("SELECT * FROM MemoryExtractionJobs LIMIT 1;");
 
                 // Return to waiting as soon as the DB queue is empty
                 if (item == null)
@@ -125,7 +128,8 @@ public class DatabaseMemoryExtractAndStoreQueue
         var facts = await _extraction.Extract(job.Transcript, _cancellation.Token);
 
         // Add facts and delete work item in one transaction
-        using (var tsx = _database.Connection.BeginTransaction())
+        using var connection = _database.GetConnection();
+        using (var tsx = connection.BeginTransaction())
         {
             // Store the transcript as evidence
             var evidence = await _storage.CreateEvidence(job.Context, job.Transcript, tsx);
@@ -142,11 +146,11 @@ public class DatabaseMemoryExtractAndStoreQueue
 
                 // Create evidence link
                 if (memId.HasValue)
-                    await _storage.CreateEvidenceLink(evidence, memId.Value);
+                    await _storage.CreateEvidenceLink(evidence, memId.Value, tsx);
             }
 
             // Delete job
-            await _database.Connection.DeleteAsync(job, tsx);
+            await connection.DeleteAsync(job, tsx);
 
             tsx.Commit();
         }

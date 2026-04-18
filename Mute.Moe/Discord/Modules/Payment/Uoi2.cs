@@ -215,13 +215,15 @@ public class Uoi2Interaction(IUserService _users, IPendingTransactions _pending)
                 return;
             }
 
-            // Check if this person is allowed to confirm it
-            if (!transaction.CanUserConfirm(Context.User.Id))
-            {
-                var payeeMention = await _users.Name(transaction.ToId);
-                await ReplyAsync2($"This transaction can only be confirmed by {payeeMention}!");
-                return;
-            }
+            // TODO: vvv THIS MUST BE ADDED BACK IN BEFORE MERGING AND DEPLOYING!!!!!
+            //// Check if this person is allowed to confirm it
+            //if (!transaction.CanUserConfirm(Context.User.Id))
+            //{
+            //    var payeeMention = await _users.Name(transaction.ToId);
+            //    await ReplyAsync2($"This transaction can only be confirmed by {payeeMention}!");
+            //    return;
+            //}
+            // TODO: ^^^ THIS MUST BE ADDED BACK IN BEFORE MERGING AND DEPLOYING!!!!!
 
             // Do the actual confirm/deny
             var newState = await work(transaction);
