@@ -1,7 +1,7 @@
-﻿using System.Globalization;
-using System.Threading.Tasks;
-using Dapper;
+﻿using Dapper;
 using Mute.Moe.Services.Database;
+using System.Globalization;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Payment;
 
@@ -71,7 +71,7 @@ public class DatabasePendingTransactions
     }
 
     /// <inheritdoc />
-    public async Task<uint> CreatePending(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
+    public async Task<PendingTransaction> CreatePending(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant)
     {
         if (amount < 0)
             throw new ArgumentOutOfRangeException(nameof(amount), "Cannot transact a negative amount");
@@ -80,18 +80,35 @@ public class DatabasePendingTransactions
         if (fromId == toId)
             throw new InvalidOperationException("Cannot transact from self to self");
 
-        return (uint)await _database.Connection.ExecuteScalarAsync<long>(
+        // Normalise
+        unit = unit.ToLowerInvariant();
+        note ??= "";
+
+        // Store in DB
+        var id = (uint)await _database.Connection.ExecuteScalarAsync<long>(
             InsertPendingSql,
             new
             {
                 FromId = fromId.ToString(CultureInfo.InvariantCulture),
                 ToId = toId.ToString(CultureInfo.InvariantCulture),
                 Amount = amount.ToString(CultureInfo.InvariantCulture),
-                Unit = unit.ToLowerInvariant(),
-                Note = note ?? "",
+                Unit = unit,
+                Note = note,
                 InstantUnix = instant.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
                 Pending = nameof(PendingState.Pending),
             }
+        );
+
+        // Return result
+        return new PendingTransaction(
+            fromId,
+            toId,
+            amount,
+            unit,
+            note,
+            instant,
+            PendingState.Pending,
+            id
         );
     }
 
@@ -118,6 +135,19 @@ public class DatabasePendingTransactions
               .Select(a => a.ToPendingTransaction());
     }
 
+    /// <inheritdoc />
+    public async Task<PendingTransaction?> GetSingle(uint debtId)
+    {
+        var results = await Get(debtId).ToArrayAsync();
+        
+        return results.Length switch
+        {
+            0 => null,
+            1 => results[0],
+            _ => throw new MultiplePendingTransactionsWithUniqueId(results)
+        };
+    }
+    
     private sealed record PendingRow(long RowId, string FromId, string ToId, string Amount, string Unit, string Note, string InstantUnix, string Pending)
     {
         public PendingTransaction ToPendingTransaction()
@@ -158,7 +188,7 @@ public class DatabasePendingTransactions
         var result = await UpdatePending(debtId, ConfirmPendingTransaction);
         if (!result.HasValue)
             return ConfirmResult.IdNotFound;
-
+        
         return result switch {
             PendingState.Confirmed => ConfirmResult.AlreadyConfirmed,
             PendingState.Denied => ConfirmResult.AlreadyDenied,
