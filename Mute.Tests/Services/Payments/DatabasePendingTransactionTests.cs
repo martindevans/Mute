@@ -32,7 +32,7 @@ public class DatabasePendingTransactionTests
         var c = await svc.CreatePending(1, 0, 5, "TEST", "Note 2", now + TimeSpan.FromMinutes(2));
         var d = await svc.CreatePending(1, 2, 5, "TEST3", "Note 4", now + TimeSpan.FromMinutes(3));
 
-        return (a, b, c, d);
+        return (a.Id, b.Id, c.Id, d.Id);
     }
 
     [TestMethod]
@@ -46,6 +46,7 @@ public class DatabasePendingTransactionTests
         var (a, _, _, _) = await CreateTestTransactions(now, pending);
 
         var results = await pending.Get(debtId: a).ToArrayAsync();
+        var result = await pending.GetSingle(debtId: a);
 
         Assert.HasCount(1, results);
         Assert.AreEqual("test", results[0].Unit);
@@ -54,6 +55,8 @@ public class DatabasePendingTransactionTests
         Assert.AreEqual((uint)1, results[0].ToId);
         Assert.AreEqual(PendingState.Pending, results[0].State);
         Assert.AreEqual(a, results[0].Id);
+
+        Assert.AreEqual(result, results[0]);
     }
 
     [TestMethod]
@@ -350,7 +353,8 @@ public class DatabasePendingTransactionTests
         var now = DateTime.UtcNow.AddSeconds(-1); // truncate sub-second precision
         now = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, DateTimeKind.Utc);
 
-        var id = await pending.CreatePending(42, 99, 12.5m, "GBP", "TestNote", now);
+        var tsx2 = await pending.CreatePending(42, 99, 12.5m, "GBP", "TestNote", now);
+        var id = tsx2.Id;
         Assert.AreEqual(ConfirmResult.Confirmed, await pending.ConfirmPending(id));
 
         var confirmed = await tsx.GetTransactions(fromId: 42, toId: 99, unit: "gbp").ToArrayAsync();
@@ -404,7 +408,8 @@ public class DatabasePendingTransactionTests
         var tsx = new DatabaseTransactions(db);
         var pending = new DatabasePendingTransactions(db, tsx);
 
-        var id = await pending.CreatePending(0, 1, 10, "GBP", null, DateTime.UtcNow);
+        var tsx2 = await pending.CreatePending(0, 1, 10, "GBP", null, DateTime.UtcNow);
+        var id = tsx2.Id;
         var results = await pending.Get(debtId: id).ToArrayAsync();
 
         Assert.HasCount(1, results);

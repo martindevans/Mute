@@ -1,6 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
+using BalderHash;
 using Mute.Moe.Discord.Modules.Payment;
 using Mute.Moe.Discord.Services.Users;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Payment;
 
@@ -19,7 +21,7 @@ public interface IPendingTransactions
     /// <param name="note"></param>
     /// <param name="instant"></param>
     /// <returns></returns>
-    Task<uint> CreatePending(ulong fromId, ulong toId, decimal amount,  string unit, string? note, DateTime instant);
+    Task<PendingTransaction> CreatePending(ulong fromId, ulong toId, decimal amount,  string unit, string? note, DateTime instant);
 
     /// <summary>
     /// Query for a transaction
@@ -34,6 +36,14 @@ public interface IPendingTransactions
     /// <returns></returns>
     IAsyncEnumerable<PendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
 
+    /// <summary>
+    /// Get a single transaction with the given ID
+    /// </summary>
+    /// <param name="debtId"></param>
+    /// <returns></returns>
+    /// <exception cref="MultiplePendingTransactionsWithUniqueId"></exception>
+    Task<PendingTransaction?> GetSingle(uint debtId);
+    
     /// <summary>
     /// Confirm a pending transaction
     /// </summary>
@@ -153,5 +163,38 @@ public sealed record PendingTransaction(ulong FromId, ulong ToId, decimal Amount
             Unit,
             mention
         );
+    }
+
+    /// <summary>
+    /// Check if the given user may confirm this transaction
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    public bool CanUserConfirm(ulong userId)
+    {
+        return userId == ToId;
+    }
+}
+
+/// <summary>
+/// Base exception for all pending transaction exceptions
+/// </summary>
+/// <param name="message"></param>
+[ExcludeFromCodeCoverage]
+public class BasePendingTransactionException(string message)
+    : Exception(message);
+
+/// <summary>
+/// Multiple transactions were found with the same ID
+/// </summary>
+/// <param name="transactions"></param>
+[ExcludeFromCodeCoverage]
+public class MultiplePendingTransactionsWithUniqueId(PendingTransaction[] transactions)
+    : BasePendingTransactionException(CreateMessage(transactions))
+{
+    private static string CreateMessage(PendingTransaction[] transactions)
+    {
+        var id = new BalderHash32(transactions[0].Id);
+        return $"Found multiple ({transactions.Length}) transactions with the same ID `{id}`!";
     }
 }

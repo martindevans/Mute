@@ -73,6 +73,7 @@ public class BraveWebSearchProvider
     /// <param name="Age"></param>
     /// <param name="Source"></param>
     /// <param name="Snippets"></param>
+    /// <param name="Caution">An optional note, providing a cautionary warning about the reliability of this news item</param>
     [UsedImplicitly]
     public record NewsItem(string Title, string Description, string Age, string Source, IReadOnlyList<string> Snippets, string? Caution)
     {
