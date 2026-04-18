@@ -9,3 +9,4 @@
 - [Mute.Anilist](https://github.com/martindevans/Mute.Anilist): Wrapper for the [Anilist API](https://docs.anilist.co/).
 - [Mute.BraveSearch](https://github.com/martindevans/Mute.BraveSearch): Wrapper for the [Brave Search API](https://api-dashboard.search.brave.com/documentation/quickstart).
 - [Serpent](https://github.com/martindevans/Serpent): Provides safe sandboxed Python execution within a WASM container.
+- [LimitnessNonsense](https://github.com/martindevans/LimitlessNonsense): LLM context management system.
