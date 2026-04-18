@@ -12,13 +12,13 @@ public static class ITransactionsExtensions
     /// </summary>
     /// <param name="primaryUser"></param>
     /// <param name="transactions"></param>
-    private static async Task<IReadOnlyList<Balance>> TransactionsToBalances(ulong primaryUser, IAsyncEnumerable<Transaction> transactions)
+    private static async Task<IReadOnlyList<Balance>> TransactionsToBalances(ulong primaryUser, IEnumerable<Transaction> transactions)
     {
         // Accumulate a lookup table of user -> unit -> amount
         // user in this case is always the secondary user (the other is implicitly the primary user)
         var accumulator = new Dictionary<ulong, Dictionary<string, decimal>>();
 
-        await foreach (var transaction in transactions)
+        foreach (var transaction in transactions)
         {
             Dictionary<string, decimal> inner;
             if (transaction.FromId == primaryUser)
@@ -72,7 +72,7 @@ public static class ITransactionsExtensions
     /// <param name="userB"></param>
     /// <param name="unit"></param>
     /// <returns>All non-zero balances in order of amount</returns>
-    public static Task<IReadOnlyList<Balance>> GetBalances(this ITransactions database, ulong userA, ulong? userB, string? unit = null)
+    public static async Task<IReadOnlyList<Balance>> GetBalances(this ITransactions database, ulong userA, ulong? userB, string? unit = null)
     {
         //e.g.
         //A -> B £2
@@ -83,11 +83,11 @@ public static class ITransactionsExtensions
         //Balance(A, B, null) = [ £1, -$2 ]
 
         //Get transactions involving these two users in both directions
-        var ab = database.GetTransactions(userA, userB, unit);
-        var ba = database.GetTransactions(userB, userA, unit);
+        var ab = await database.GetTransactions(userA, userB, unit);
+        var ba = await database.GetTransactions(userB, userA, unit);
 
         //Convert to balances
-        return TransactionsToBalances(userA, ab.Concat(ba));
+        return await TransactionsToBalances(userA, ab.Concat(ba));
     }
 
     /// <summary>
@@ -99,10 +99,10 @@ public static class ITransactionsExtensions
     /// <returns>All transactions involving A (filtered to also involving B if specified), ordered by instant</returns>
     public static async Task<IReadOnlyList<Transaction>> GetAllTransactions(this ITransactions database, ulong userA, ulong? userB = null)
     {
-        var ab = database.GetTransactions(fromId: userA, toId: userB);
-        var ba = database.GetTransactions(fromId: userB, toId: userA);
+        var ab = await database.GetTransactions(fromId: userA, toId: userB);
+        var ba = await database.GetTransactions(fromId: userB, toId: userA);
 
-        return await ab.Concat(ba).OrderByDescending(t => t.Instant).ToArrayAsync();
+        return ab.Concat(ba).OrderByDescending(t => t.Instant).ToArray();
     }
 }
 
@@ -127,5 +127,5 @@ public interface ITransactions
     /// Get all transactions, optionally filtered by source, sink, unit and time range
     /// </summary>
     /// <returns></returns>
-    IAsyncEnumerable<Transaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
+    Task<IEnumerable<Transaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null);
 }

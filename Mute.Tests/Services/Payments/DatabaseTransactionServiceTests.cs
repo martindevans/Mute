@@ -53,7 +53,7 @@ public class DatabaseTransactionServiceTests
         var now = DateTime.UtcNow;
         await CreateTestTransactions(now, svc);
 
-        var tsx = await svc.GetTransactions(fromId: 0).OrderBy(a => a.Instant).ToArrayAsync();
+        var tsx = (await svc.GetTransactions(fromId: 0)).OrderBy(a => a.Instant).ToArray();
 
         Assert.HasCount(2, tsx);
         Assert.AreEqual("test", tsx[0].Unit);
@@ -68,7 +68,7 @@ public class DatabaseTransactionServiceTests
         var now = DateTime.UtcNow;
         await CreateTestTransactions(now, svc);
 
-        var tsx = await svc.GetTransactions(toId: 0).OrderBy(a => a.Instant).ToArrayAsync();
+        var tsx = (await svc.GetTransactions(toId: 0)).OrderBy(a => a.Instant).ToArray();
 
         Assert.HasCount(1, tsx);
         Assert.AreEqual("test", tsx[0].Unit);
@@ -82,7 +82,7 @@ public class DatabaseTransactionServiceTests
         var now = DateTime.UtcNow;
         await CreateTestTransactions(now, svc);
 
-        var tsx = await svc.GetTransactions(unit: "test").OrderBy(a => a.Instant).ToArrayAsync();
+        var tsx = (await svc.GetTransactions(unit: "test")).OrderBy(a => a.Instant).ToArray();
 
         Assert.HasCount(2, tsx);
         Assert.AreEqual("test", tsx[0].Unit);
@@ -97,7 +97,7 @@ public class DatabaseTransactionServiceTests
         var now = DateTime.UtcNow;
         await CreateTestTransactions(now, svc);
 
-        var tsx = await svc.GetTransactions(before: now + TimeSpan.FromMinutes(2.5)).OrderBy(a => a.Instant).ToArrayAsync();
+        var tsx = (await svc.GetTransactions(before: now + TimeSpan.FromMinutes(2.5))).OrderBy(a => a.Instant).ToArray();
 
         Assert.HasCount(2, tsx);
         Assert.AreEqual("test", tsx[0].Unit);
@@ -112,7 +112,7 @@ public class DatabaseTransactionServiceTests
         var now = DateTime.UtcNow;
         await CreateTestTransactions(now, svc);
 
-        var tsx = await svc.GetTransactions(after: now + TimeSpan.FromMinutes(2.5)).OrderBy(a => a.Instant).ToArrayAsync();
+        var tsx = (await svc.GetTransactions(after: now + TimeSpan.FromMinutes(2.5))).OrderBy(a => a.Instant).ToArray();
 
         Assert.HasCount(2, tsx);
         Assert.AreEqual("test2", tsx[0].Unit);
@@ -249,7 +249,7 @@ public class DatabaseTransactionServiceTests
         var now = DateTime.UtcNow;
         await CreateTestTransactions(now, svc);
 
-        var tsx = await svc.GetTransactions().ToArrayAsync();
+        var tsx = (await svc.GetTransactions()).ToArray();
 
         Assert.HasCount(4, tsx);
     }
@@ -308,7 +308,7 @@ public class DatabaseTransactionServiceTests
 
         await svc.CreateTransaction(0, 1, 10, "GBP", null, DateTime.UtcNow);
 
-        var tsx = await svc.GetTransactions().ToArrayAsync();
+        var tsx = (await svc.GetTransactions()).ToArray();
 
         Assert.HasCount(1, tsx);
         Assert.AreEqual("gbp", tsx[0].Unit);

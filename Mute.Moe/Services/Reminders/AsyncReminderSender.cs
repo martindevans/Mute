@@ -39,11 +39,11 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         {
             while (!token.IsCancellationRequested)
             {
-                //Get the first unsent reminder
+                // Get the first unsent reminder
                 // ReSharper disable once RedundantCast
-                var next = await _reminders.Get(count: 1).FirstOrDefaultAsync(cancellationToken: token);
+                var next = (await _reminders.Get(count: 1)).FirstOrDefault();
 
-                //Wait for one of these events to happen
+                // Wait for one of these events to happen
                 var cts = new CancellationTokenSource();
                 var evt = await await Task.WhenAny(
                     WaitForCreation(cts.Token),
@@ -51,10 +51,10 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
                     WaitForTimeout(cts.Token, next)
                 );
 
-                //cancel all the others
+                // cancel all the others
                 await cts.CancelAsync();
 
-                //Run whichever one completed
+                // Run whichever one completed
                 await evt.Run(ref next);
             }
         }

@@ -74,7 +74,7 @@ public class DatabaseRssNotificationsSender
         {
             while (!token.IsCancellationRequested)
             {
-                foreach (var feed in await _notifications.GetSubscriptions().ToListAsync(token))
+                foreach (var feed in (await _notifications.GetSubscriptions()).ToList())
                 {
                     try
                     {

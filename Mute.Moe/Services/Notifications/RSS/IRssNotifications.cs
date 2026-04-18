@@ -28,7 +28,7 @@ public interface IRssNotifications
     /// Get all active subscriptions
     /// </summary>
     /// <returns></returns>
-    IAsyncEnumerable<IRssSubscription> GetSubscriptions();
+    Task<IEnumerable<IRssSubscription>> GetSubscriptions();
 }
 
 /// <summary>

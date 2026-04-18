@@ -103,7 +103,7 @@ public class Roles(IGroups _groups, IUserService _users)
     [UsedImplicitly]
     public async Task ListRoles()
     {
-        var roles = await _groups.GetUnlocked(Context.Guild).ToListAsync();
+        var roles = (await _groups.GetUnlocked(Context.Guild)).ToList();
         await DisplayItemList(
             roles,
             () => "There are no unlocked roles",

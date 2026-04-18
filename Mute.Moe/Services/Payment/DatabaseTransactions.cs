@@ -58,7 +58,7 @@ public class DatabaseTransactions
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<Transaction> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
+    public async Task<IEnumerable<Transaction>> GetTransactions(ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
         using var connection = _database.GetConnection();
         var rows = connection.QueryAsync<TransactionRow>(
@@ -73,10 +73,11 @@ public class DatabaseTransactions
             }
         );
 
-        return rows
-            .ToAsyncEnumerable()
-            .SelectMany(a => a)
-            .Select(a => a.ToTransaction());
+        return await rows
+              .ToAsyncEnumerable()
+              .SelectMany(a => a)
+              .Select(a => a.ToTransaction())
+              .ToArrayAsync();
     }
 
     private sealed record TransactionRow(long ID, string FromId, string ToId, string Amount, string Unit, string Note, string InstantUnix)

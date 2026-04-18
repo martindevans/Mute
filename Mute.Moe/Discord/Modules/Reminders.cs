@@ -39,7 +39,7 @@ public class Reminders(IReminders _reminders)
     [UsedImplicitly]
     public async Task ListReminders(IUser user)
     {
-        var items = await _reminders.Get(user.Id).ToArrayAsync();
+        var items = (await _reminders.Get(user.Id)).ToArray();
 
         await DisplayItemList(
             items,

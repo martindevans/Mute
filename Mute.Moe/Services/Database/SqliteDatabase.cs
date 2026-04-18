@@ -2,7 +2,6 @@
 using System.Data;
 using System.Data.SQLite;
 using System.Threading.Tasks;
-using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.Database;
 
@@ -12,9 +11,6 @@ namespace Mute.Moe.Services.Database;
 public abstract class BaseSqliteDatabase
     : IDatabaseService
 {
-    private readonly AsyncLock _execLock = new();
-    private readonly SQLiteConnection _dbConnection;
-    
     private readonly string _dbConnStr;
 
     /// <summary>
@@ -25,7 +21,9 @@ public abstract class BaseSqliteDatabase
         Log.Information("DB Connection String: {0}", connection);
 
         _dbConnStr = connection;
-        _dbConnection = GetSqliteConnection();
+        
+        // Get a connection and dispose it now, should surface any errors earlier doing this.
+        GetSqliteConnection().Dispose();
     }
 
     /// <summary>
@@ -85,7 +83,8 @@ public abstract class BaseSqliteDatabase
     /// <returns></returns>
     public async Task Backup(BaseSqliteDatabase dest)
     {
-        await Backup(dest._dbConnection);
+        await using var dst = dest.GetSqliteConnection();
+        await Backup(dst);
     }
 }
 

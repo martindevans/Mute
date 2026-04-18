@@ -102,7 +102,7 @@ public class DatabaseReminders
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<Reminder> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
+    public async Task<IEnumerable<Reminder>> Get(ulong? userId = null, DateTime? after = null, DateTime? before = null, ulong? channel = null, uint? count = null)
     {
         using var connection = _database.GetConnection();
         var rows = connection.QueryAsync<ReminderRow>(
@@ -117,9 +117,11 @@ public class DatabaseReminders
             }
         );
 
-        return rows.ToAsyncEnumerable()
-                   .SelectMany(a => a)
-                   .Select(row => row.ToReminder());
+        return await rows
+                    .ToAsyncEnumerable()
+                    .SelectMany(a => a)
+                    .Select(row => row.ToReminder())
+                    .ToArrayAsync();
     }
 
     private record ReminderRow(string InstantUnix, string ChannelId, string Prelude, string Message, bool Deleted, string UserId, long RowId)

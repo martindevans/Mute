@@ -36,7 +36,7 @@ public class DatabaseRemindersTests
         var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
         var r = await rm.Create(t, "pre", "msg", 17, 28);
 
-        var rs = await rm.Get(userId: 28).ToArrayAsync();
+        var rs = (await rm.Get(userId: 28)).ToArray();
 
         Assert.AreEqual(r, rs.Single());
     }
@@ -51,7 +51,7 @@ public class DatabaseRemindersTests
         await rm.Create(t, "pre", "msg2", 17, 28);
         var r2 = await rm.Create(t + TimeSpan.FromHours(1), "pre", "msg2", 17, 28);
 
-        var rs = await rm.Get(after: DateTime.UtcNow + TimeSpan.FromHours(0.5f)).ToArrayAsync();
+        var rs = (await rm.Get(after: DateTime.UtcNow + TimeSpan.FromHours(0.5f))).ToArray();
 
         Assert.AreEqual(r2, rs.Single());
     }
@@ -66,7 +66,7 @@ public class DatabaseRemindersTests
         var r1 = await rm.Create(t, "pre", "msg2", 17, 28);
         await rm.Create(t + TimeSpan.FromHours(1), "pre", "msg2", 17, 28);
 
-        var rs = await rm.Get(before: t + TimeSpan.FromHours(0.5f)).ToArrayAsync();
+        var rs = (await rm.Get(before: t + TimeSpan.FromHours(0.5f))).ToArray();
 
         Assert.AreEqual(r1, rs.Single());
     }
@@ -80,7 +80,7 @@ public class DatabaseRemindersTests
         var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
         var r = await rm.Create(t, "pre", "msg", 17, 28);
 
-        var rs = await rm.Get(channel: 17).ToArrayAsync();
+        var rs = (await rm.Get(channel: 17)).ToArray();
 
         Assert.AreEqual(r, rs.Single());
     }
@@ -95,7 +95,7 @@ public class DatabaseRemindersTests
         for (var i = 0; i < 10; i++)
             await rm.Create(t + TimeSpan.FromMinutes(i), "pre", "msg " + i, 17, 28);
 
-        var rs = await rm.Get(channel: 17, count: 3).ToArrayAsync();
+        var rs = (await rm.Get(channel: 17, count: 3)).ToArray();
 
         Assert.HasCount(3, rs);
         Assert.AreEqual((t + TimeSpan.FromMinutes(0)).UnixTimestamp(), rs[0].TriggerTime.UnixTimestamp());
@@ -114,7 +114,7 @@ public class DatabaseRemindersTests
 
         Assert.IsTrue(await rm.Delete(28, r.ID));
 
-        var rs = await rm.Get(channel: 17).ToArrayAsync();
+        var rs = (await rm.Get(channel: 17)).ToArray();
 
         Assert.HasCount(0, rs);
     }

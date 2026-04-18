@@ -33,7 +33,7 @@ public class Rss(IRssNotifications _rss, DiscordSocketClient _client)
     {
         // Note that this might leak private subs in other channels or other guilds. That's why it is owner only.
 
-        var subs = await _rss.GetSubscriptions().ToListAsync();
+        var subs = (await _rss.GetSubscriptions()).ToList();
         await DisplayItemList(
             subs,
             () => "No active RSS subscriptions",

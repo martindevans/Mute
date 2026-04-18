@@ -58,7 +58,7 @@ public class DatabaseGroupService
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<IRole> GetUnlocked(IGuild guild)
+    public async Task<IEnumerable<IRole>> GetUnlocked(IGuild guild)
     {
         using var connection = _database.GetConnection();
         var unlockeds = connection.QueryAsync<UnlockedRole>(
@@ -66,13 +66,14 @@ public class DatabaseGroupService
             new { GuildId = guild.Id.ToString() }
         );
 
-        return unlockeds
+        return await unlockeds
               .ToAsyncEnumerable()
               .SelectMany((a, _) => a)
               .Select(async (u, _, _) => await GetRole(u))
               .Where(a => a != null)
               .Select(a => a!)
-              .OrderBy(a => a.Name);
+              .OrderBy(a => a.Name)
+              .ToArrayAsync();
 
         async ValueTask<IRole?> GetRole(UnlockedRole unlocked)
         {

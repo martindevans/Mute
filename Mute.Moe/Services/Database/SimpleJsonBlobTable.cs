@@ -95,13 +95,13 @@ public abstract class SimpleJsonBlobTable<TBlob>
     }
 
     /// <inheritdoc />
-    public Task<bool> Delete(ulong id)
+    public async Task<bool> Delete(ulong id)
     {
         using var connection = _database.GetConnection();
 
         using (var tsx = connection.BeginTransaction())
         {
-            var result = Delete(id, tsx);
+            var result = await Delete(id, tsx);
             tsx.Commit();
             return result;
         }

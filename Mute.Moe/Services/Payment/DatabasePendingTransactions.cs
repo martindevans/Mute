@@ -115,10 +115,10 @@ public class DatabasePendingTransactions
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<PendingTransaction> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
+    public async Task<IEnumerable<PendingTransaction>> Get(uint? debtId = null, PendingState? state = null, ulong? fromId = null, ulong? toId = null, string? unit = null, DateTime? after = null, DateTime? before = null)
     {
         using var connection = _database.GetConnection();
-        return connection
+        return await connection
               .QueryAsync<PendingRow>(
                    GetFilteredTransactionsSql,
                    new
@@ -134,13 +134,14 @@ public class DatabasePendingTransactions
                )
               .ToAsyncEnumerable()
               .SelectMany(a => a)
-              .Select(a => a.ToPendingTransaction());
+              .Select(a => a.ToPendingTransaction())
+              .ToArrayAsync();
     }
 
     /// <inheritdoc />
     public async Task<PendingTransaction?> GetSingle(uint debtId)
     {
-        var results = await Get(debtId).ToArrayAsync();
+        var results = (await Get(debtId)).ToArray();
         
         return results.Length switch
         {

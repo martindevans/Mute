@@ -64,14 +64,16 @@ public class DatabaseRssNotifications
     }
 
     /// <inheritdoc />
-    public IAsyncEnumerable<IRssSubscription> GetSubscriptions()
+    public async Task<IEnumerable<IRssSubscription>> GetSubscriptions()
     {
         using var connection = _database.GetConnection();
         var rows = connection.QueryAsync<RssSubscriptionRow>(GetSubscriptionsSql);
 
-        return rows.ToAsyncEnumerable()
-                   .SelectMany(a => a)
-                   .Select(a => a.ToSubscription());
+        return await rows
+            .ToAsyncEnumerable()
+            .SelectMany(a => a)
+            .Select(a => a.ToSubscription())
+            .ToArrayAsync();
     }
 
     private record RssSubscription(string FeedUrl, ulong Channel, ulong? MentionRole) : IRssSubscription;

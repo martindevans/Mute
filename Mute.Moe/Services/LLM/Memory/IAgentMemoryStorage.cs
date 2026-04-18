@@ -293,7 +293,7 @@ public class DatabaseAgentMemoryStorage
     public async Task<AgentMemory?> Get(int id)
     {
         using var connection = _database.GetConnection();
-        return connection.QuerySingleOrDefault<AgentMemory>(
+        return await connection.QuerySingleOrDefaultAsync<AgentMemory>(
             "SELECT * FROM AgentMemorys WHERE ID = @id",
             new { id = id }
         );

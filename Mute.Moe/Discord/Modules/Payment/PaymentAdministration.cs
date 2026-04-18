@@ -26,7 +26,7 @@ public class PaymentAdministration(IPendingTransactions _pending, IUserService _
             return;
         }
 
-        var debt = await _pending.Get(debtId: hash.Value).ToArrayAsync();
+        var debt = (await _pending.Get(debtId: hash.Value)).ToArray();
 
         switch (debt.Length)
         {
