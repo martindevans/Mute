@@ -21,7 +21,7 @@ public interface IPendingTransactions
     /// <param name="note"></param>
     /// <param name="instant"></param>
     /// <returns></returns>
-    Task<PendingTransaction> CreatePending(ulong fromId, ulong toId, decimal amount,  string unit, string? note, DateTime instant);
+    Task<PendingTransaction> CreatePending(ulong fromId, ulong toId, decimal amount, string unit, string? note, DateTime instant);
 
     /// <summary>
     /// Query for a transaction

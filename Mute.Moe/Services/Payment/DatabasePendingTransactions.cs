@@ -80,6 +80,11 @@ public class DatabasePendingTransactions
         if (fromId == toId)
             throw new InvalidOperationException("Cannot transact from self to self");
 
+        // Normalise
+        unit = unit.ToLowerInvariant();
+        note ??= "";
+
+        // Store in DB
         var id = (uint)await _database.Connection.ExecuteScalarAsync<long>(
             InsertPendingSql,
             new
@@ -87,13 +92,14 @@ public class DatabasePendingTransactions
                 FromId = fromId.ToString(CultureInfo.InvariantCulture),
                 ToId = toId.ToString(CultureInfo.InvariantCulture),
                 Amount = amount.ToString(CultureInfo.InvariantCulture),
-                Unit = unit.ToLowerInvariant(),
-                Note = note ?? "",
+                Unit = unit,
+                Note = note,
                 InstantUnix = instant.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
                 Pending = nameof(PendingState.Pending),
             }
         );
 
+        // Return result
         return new PendingTransaction(
             fromId,
             toId,

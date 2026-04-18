@@ -3,6 +3,7 @@ using Discord;
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Discord.Interactions;
 using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Payment;
@@ -14,7 +15,11 @@ namespace Mute.Moe.Discord.Modules.Payment;
 /// <summary>
 /// 
 /// </summary>
-public class Dev(IPendingTransactions _pending, IUserService _users)
+[UsedImplicitly]
+[HelpGroup("payment")]
+[WarnDebugger]
+[TypingReply]
+public class Uoi2(IPendingTransactions _pending, IUserService _users)
     : MuteBaseModule
 {
     /// <summary>
