@@ -123,7 +123,7 @@ public class BraveWebSearchProvider
 
     #region web
     /// <summary>
-    /// Genreal purpose web search.<br />
+    /// General purpose web search.<br />
     /// Use quotes for exact phrase matching e.g. "climate change"<br />
     /// Exclude terms with minus e.g. technology -cryptocurrency<br />
     /// - Capability: General web search.<br />
@@ -144,9 +144,10 @@ public class BraveWebSearchProvider
         var freshness = default(SearchFreshness);
         if (maxAgeDays >= 0)
         {
+            var now = DateTime.UtcNow;
             freshness = SearchFreshness.Range(
-                DateOnly.FromDateTime(DateTime.UtcNow),
-                DateOnly.FromDateTime(DateTime.UtcNow - TimeSpan.FromDays(maxAgeDays))
+                DateOnly.FromDateTime(now - TimeSpan.FromDays(maxAgeDays)),
+                DateOnly.FromDateTime(now)
             );
         }
         
@@ -166,7 +167,7 @@ public class BraveWebSearchProvider
               .Where(a => a != null)
               .Take(20)
               .Cast<WebItem>()
-              .ToArray() ?? [];
+              .ToArray() ?? [ ];
     }
 
     /// <summary>
@@ -175,6 +176,7 @@ public class BraveWebSearchProvider
     /// <param name="Title"></param>
     /// <param name="Description"></param>
     /// <param name="Age"></param>
+    /// <param name="Nsfw"></param>
     /// <param name="Source"></param>
     /// <param name="Snippets"></param>
     [UsedImplicitly]
@@ -198,7 +200,7 @@ public class BraveWebSearchProvider
                 age,
                 nsfw,
                 result.Url,
-                result.ExtraSnippets ?? []
+                result.ExtraSnippets ?? [ ]
             );
         }
     }
