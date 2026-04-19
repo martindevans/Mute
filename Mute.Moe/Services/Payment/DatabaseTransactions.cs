@@ -75,7 +75,6 @@ public class DatabaseTransactions
 
         return await rows
               .ToAsyncEnumerable()
-              .SelectMany(a => a)
               .Select(a => a.ToTransaction())
               .ToArrayAsync();
     }

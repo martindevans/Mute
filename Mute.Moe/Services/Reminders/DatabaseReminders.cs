@@ -119,7 +119,6 @@ public class DatabaseReminders
 
         return await rows
                     .ToAsyncEnumerable()
-                    .SelectMany(a => a)
                     .Select(row => row.ToReminder())
                     .ToArrayAsync();
     }

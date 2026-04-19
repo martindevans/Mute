@@ -71,7 +71,6 @@ public class DatabaseRssNotifications
 
         return await rows
             .ToAsyncEnumerable()
-            .SelectMany(a => a)
             .Select(a => a.ToSubscription())
             .ToArrayAsync();
     }

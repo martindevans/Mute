@@ -68,7 +68,6 @@ public class DatabaseGroupService
 
         return await unlockeds
               .ToAsyncEnumerable()
-              .SelectMany((a, _) => a)
               .Select(async (u, _, _) => await GetRole(u))
               .Where(a => a != null)
               .Select(a => a!)

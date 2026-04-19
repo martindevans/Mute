@@ -133,7 +133,6 @@ public class DatabasePendingTransactions
                    }
                )
               .ToAsyncEnumerable()
-              .SelectMany(a => a)
               .Select(a => a.ToPendingTransaction())
               .ToArrayAsync();
     }
@@ -174,7 +173,6 @@ public class DatabasePendingTransactions
         var results = await connection
                            .QueryAsync<string>(sql, new { DebtId = id })
                            .ToAsyncEnumerable()
-                           .SelectMany(a => a)
                            .Select(Enum.Parse<PendingState>)
                            .ToArrayAsync();
 

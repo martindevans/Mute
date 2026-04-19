@@ -83,7 +83,6 @@
     <PackageReference Include="SteamWebAPI2" Version="5.0.0" />
     <PackageReference Include="System.Data.SQLite" Version="2.0.3" />
     <PackageReference Include="System.IO.Abstractions" Version="22.1.1" />
-    <PackageReference Include="System.Linq.Async" Version="7.0.1" />
     <PackageReference Include="System.Linq.LevenshteinDistance" Version="0.99.0-beta" />
     <PackageReference Include="System.Management" Version="10.0.6" />
     <PackageReference Include="System.Numerics.Tensors" Version="10.0.6" />
