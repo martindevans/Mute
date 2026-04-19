@@ -48,7 +48,6 @@
     <PackageReference Include="Autofocus.Outpaint" Version="3.0.0" />
     <PackageReference Include="Autofocus.Scripts.UltimateUpscaler" Version="2.0.0" />
     <PackageReference Include="BalderHash" Version="2.1.0" />
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Concentus.OggFile" Version="1.0.7" />
     <PackageReference Include="Dapper" Version="2.1.72" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
