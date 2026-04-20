@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Mute.Moe.Services.Payment;
+using System.Globalization;
 using System.Threading.Tasks;
 using Mute.Moe.Discord.Interaction;
 
@@ -57,7 +58,7 @@ public class Iou2
         }
 
         // Parse amount
-        if (!decimal.TryParse(modal.Amount, out var amount))
+        if (!decimal.TryParse(modal.Amount?.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
         {
             await ReplyAsync2("Cannot parse amount as a number! **Cancelled transaction**");
             return;
