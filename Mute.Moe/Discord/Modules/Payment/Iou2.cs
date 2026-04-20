@@ -127,7 +127,7 @@ public class IouModal
     /// </summary>
     [RequiredInput(false)]
     [InputLabel("Reason")]
-    [ModalTextInput("reason", minLength: 1, maxLength: 128)]
+    [ModalTextInput("reason", minLength: 0, maxLength: 128)]
     public string? Reason { get; set; } = null;
 
     /// <summary>
