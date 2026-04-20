@@ -1,11 +1,11 @@
 ﻿using Discord;
 using Discord.Commands;
-using Mute.Moe.Discord.Interactions;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
 using System.Text;
 using System.Threading.Tasks;
+using Mute.Moe.Discord.Interaction;
 using Mute.Moe.Services.LLM.Memory;
 using Serilog;
 

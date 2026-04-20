@@ -1,15 +1,15 @@
 ﻿using System.Net.Http;
 using System.Text;
-using Discord.Interactions;
-using Mute.Moe.Services.ImageGen;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Services.ImageGeneration;
+using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.ImageGen.Contexts;
 using SixLabors.ImageSharp;
 
-namespace Mute.Moe.Discord.Interactions;
+namespace Mute.Moe.Discord.Interaction;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 

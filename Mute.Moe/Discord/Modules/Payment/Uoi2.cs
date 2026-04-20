@@ -4,16 +4,18 @@ using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Attributes;
-using Mute.Moe.Discord.Interactions;
 using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Payment;
 using Mute.Moe.Utilities;
 using System.Threading.Tasks;
+using Mute.Moe.Discord.Interaction;
 
 namespace Mute.Moe.Discord.Modules.Payment;
 
 /// <summary>
-/// 
+/// Provides the "UOI" and "PAY" command - allowing users to declare that another user owes them something (e.g. money). Uses
+/// the <see cref="Uoi2Interaction"/> to display a summary of the transaction in a message, with buttons that the other user
+/// can click to confirm/deny the debt.
 /// </summary>
 [UsedImplicitly]
 [HelpGroup("payment")]
@@ -41,8 +43,11 @@ public class Uoi2(IPendingTransactions _pending, IUserService _users)
         else
         {
             // Sanity check unusual units, user must confirm anything other than "GBP"
-            if (!await Iou.CheckUnit(unit, this, Context))
+            if (!await Iou.CheckUnit(unit, Context))
+            {
+                await ReplyAsync("**Cancelled transaction**");
                 return;
+            }
 
             // Create the transaction in the DB
             var tsx = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
@@ -71,8 +76,11 @@ public class Uoi2(IPendingTransactions _pending, IUserService _users)
         else
         {
             // Sanity check unusual units, user must confirm anything other than "GBP"
-            if (!await Iou.CheckUnit(unit, this, Context))
+            if (!await Iou.CheckUnit(unit, Context))
+            {
+                await ReplyAsync("**Cancelled transaction**");
                 return;
+            }
 
             // Create the transaction in the DB
             var tsx = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);

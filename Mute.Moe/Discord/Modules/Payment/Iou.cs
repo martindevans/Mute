@@ -3,11 +3,14 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using MoreLinq;
 using Mute.Moe.Discord.Attributes;
+using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.Payment;
 using System.Text;
 using System.Threading.Tasks;
-using Mute.Moe.Discord.Context;
+using Discord.WebSocket;
+
+using InteractionUtility = Discord.Interactions.InteractionUtility;
 
 namespace Mute.Moe.Discord.Modules.Payment;
 
@@ -72,23 +75,24 @@ public class Iou(ITransactions _transactions, IUserService _users)
         }
     }
 
-    internal static async Task<bool> CheckUnit(string unit, MuteBaseModule module, MuteCommandContext context)
+    internal static Task<bool> CheckUnit(string unit, MuteCommandContext context)
+    {
+        return CheckUnit(unit, context.Client, context.Channel);
+    }
+
+    internal static async Task<bool> CheckUnit(string unit, BaseSocketClient client, IMessageChannel channel)
     {
         if (!string.Equals(unit, "gbp", StringComparison.OrdinalIgnoreCase))
         {
-            await context.Channel.SendMessageAsync($"Unusual unit detected: **'{unit}'**. Type **'confirm'** to confirm this transaction, or anything else to deny.");
-            var reply = await module.Interactive.NextMessageAsync(context);
-            if (reply == null || !string.Equals(reply.Content, "confirm", StringComparison.OrdinalIgnoreCase))
-            {
-                await context.Channel.SendMessageAsync("**Cancelling transaction**");
-                return false;
-            }
+            var message = $"Unusual unit detected: **'{unit}'**. Please confirm.";
+            var confirmed = await InteractionUtility.ConfirmAsync(client, channel, TimeSpan.FromMinutes(1), message);
+            return confirmed;
         }
 
         return true;
     }
     #endregion
-
+    
     [Command("iou"), Summary("I will remember that you owe something to another user")]
     [UsedImplicitly]
     public async Task CreateDebt(IUser user, decimal amount, string unit, [Remainder] string? note = null)
@@ -97,8 +101,11 @@ public class Iou(ITransactions _transactions, IUserService _users)
             await TypingReplyAsync("You cannot owe a negative amount!");
         else
         {
-            if (!await CheckUnit(unit, this, Context))
+            if (!await CheckUnit(unit, Context))
+            {
+                await ReplyAsync("**Cancelled transaction**");
                 return;
+            }
 
             await _transactions.CreateTransaction(user.Id, Context.User.Id, amount, unit, note, DateTime.UtcNow);
             await ReplyAsync(

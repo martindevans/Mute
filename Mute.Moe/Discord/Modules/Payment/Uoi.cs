@@ -18,49 +18,6 @@ namespace Mute.Moe.Discord.Modules.Payment;
 public class Uoi(IPendingTransactions _pending, IUserService _users)
     : MuteBaseModule
 {
-    //note: legacy uoi, replaced with Uoi2
-    //[Command("uoi"), Summary("I will I will notify someone that they owe you something"), UsedImplicitly]
-    //public async Task CreatePendingUoi(IUser user, decimal amount, string unit, [Remainder] string? note = null)
-    //{
-    //    if (amount < 0)
-    //    {
-    //        await TypingReplyAsync("You cannot owe a negative amount!");
-    //    }
-    //    else
-    //    {
-    //        if (!await Iou.CheckUnit(unit, this, Context))
-    //            return;
-
-    //        var tsx = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
-    //        var fid = new BalderHash32(tsx.Id).ToString();
-
-    //        await TypingReplyAsync($"{user.Mention} type `!confirm {fid}` to confirm that you owe this");
-    //        await TypingReplyAsync(
-    //            $"{user.Mention} type `!deny {fid}` to deny that you owe this. Please talk to the other user about why!");
-    //    }
-    //}
-
-    //note: legacy pay, replaced with Uoi2
-    //[Command("pay"), Summary("I will record that you have paid someone something"), UsedImplicitly]
-    //public async Task CreatePendingPayment(IUser user, decimal amount, string unit, [Remainder] string? note = null)
-    //{
-    //    if (amount < 0)
-    //    {
-    //        await TypingReplyAsync("You cannot pay a negative amount!");
-    //    }
-    //    else
-    //    {
-    //        if (!await Iou.CheckUnit(unit, this, Context))
-    //            return;
-
-    //        var tsx = await _pending.CreatePending(Context.User.Id, user.Id, amount, unit, note, DateTime.UtcNow);
-    //        var fid = new BalderHash32(tsx.Id).ToString();
-
-    //        await TypingReplyAsync($"{user.Mention} type `!confirm {fid}` to confirm that you have been paid this");
-    //        await TypingReplyAsync($"{user.Mention} type `!deny {fid}` to deny that you received this payment. Please talk to the other user about why!");
-    //    }
-    //}
-
     [Command("confirm"), Summary("I will confirm a pending transaction"), UsedImplicitly]
     public async Task Confirm(string input)
     {
