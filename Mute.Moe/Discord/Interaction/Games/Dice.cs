@@ -1,13 +1,13 @@
-﻿using Discord.Interactions;
+﻿using System.Globalization;
+using System.Threading.Tasks;
+using Discord.Interactions;
 using Mute.Moe.Services.DiceLang;
 using Mute.Moe.Services.DiceLang.AST;
 using Mute.Moe.Services.DiceLang.Macros;
 using Mute.Moe.Services.Randomness;
 using Pegasus.Common;
-using System.Globalization;
-using System.Threading.Tasks;
 
-namespace Mute.Moe.Discord.Interactions.Games;
+namespace Mute.Moe.Discord.Interaction.Games;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 

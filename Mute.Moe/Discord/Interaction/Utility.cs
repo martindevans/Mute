@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord.Interactions;
 
-namespace Mute.Moe.Discord.Interactions;
+namespace Mute.Moe.Discord.Interaction;
 
 /// <summary>
 /// Basic utility slash commands

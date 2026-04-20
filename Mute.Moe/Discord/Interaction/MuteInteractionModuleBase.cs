@@ -1,9 +1,9 @@
-﻿using Discord.Interactions;
-using System.Text;
+﻿using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
 
-namespace Mute.Moe.Discord.Interactions;
+namespace Mute.Moe.Discord.Interaction;
 
 /// <summary>
 /// Base class for *Mute interactive modules (slash commands etc)

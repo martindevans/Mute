@@ -1,9 +1,9 @@
-﻿using Discord.Interactions;
-using Mute.Moe.Discord.Services.Responses;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
+using Discord.Interactions;
+using Mute.Moe.Discord.Services.Responses;
 
-namespace Mute.Moe.Discord.Interactions;
+namespace Mute.Moe.Discord.Interaction;
 
 /// <summary>
 /// Interactions to do with LLM chat
