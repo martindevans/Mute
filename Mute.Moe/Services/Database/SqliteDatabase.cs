@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using System.Data;
 using System.Data.SQLite;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Database;
@@ -12,6 +13,7 @@ public abstract class BaseSqliteDatabase
     : IDatabaseService
 {
     private readonly string _dbConnStr;
+    private readonly Lock _loadLock = new();
 
     /// <summary>
     /// Create new DB
@@ -23,21 +25,28 @@ public abstract class BaseSqliteDatabase
         _dbConnStr = connection;
         
         // Get a connection and dispose it now, should surface any errors earlier doing this.
-        GetSqliteConnection().Dispose();
+        GetConnection().Dispose();
     }
 
     /// <summary>
     /// Get an <see cref="SQLiteConnection"/>
     /// </summary>
     /// <returns></returns>
-    public SQLiteConnection GetSqliteConnection()
+    public SQLiteConnection GetSqliteConnection(params Span<string> extensions)
     {
         var connection = new SQLiteConnection(_dbConnStr);
         connection.Open();
 
-        connection.EnableExtensions(true);
-        connection.LoadExtension("vector");
-        connection.EnableExtensions(false);
+        if (extensions.Length > 0)
+        {
+            lock (_loadLock)
+            {
+                connection.EnableExtensions(true);
+                foreach (var extension in extensions)
+                    connection.LoadExtension(extension);
+                connection.EnableExtensions(false);
+            }
+        }
 
         return connection;
     }
@@ -45,7 +54,7 @@ public abstract class BaseSqliteDatabase
     /// <inheritdoc />
     public IDbConnection GetConnection()
     {
-        return GetSqliteConnection();
+        return GetSqliteConnection("vector");
     }
 
     /// <summary>
