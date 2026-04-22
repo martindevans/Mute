@@ -13,7 +13,7 @@ public abstract class BaseSqliteDatabase
     : IDatabaseService
 {
     private readonly string _dbConnStr;
-    private Lock _loadLock = new();
+    private readonly Lock _loadLock = new();
 
     /// <summary>
     /// Create new DB
