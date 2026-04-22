@@ -25,7 +25,7 @@ public abstract class BaseSqliteDatabase
         _dbConnStr = connection;
         
         // Get a connection and dispose it now, should surface any errors earlier doing this.
-        GetSqliteConnection().Dispose();
+        GetConnection().Dispose();
     }
 
     /// <summary>
