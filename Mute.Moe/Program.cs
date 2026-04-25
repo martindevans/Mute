@@ -21,8 +21,10 @@ public static class Program
     /// </summary>
     public static async Task Main(string[] args)
     {
+        // Check native deps can be loaded, throws if not
         DependencyHelper.TestDependencies();
 
+        // Load config file
         var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)))
                   ?? throw new InvalidOperationException("Config was null");
 
@@ -30,16 +32,14 @@ public static class Program
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
             .CreateLogger();
-        Log.Information("Version: {0}", 12);
+        Log.Information("Version: {0}", 13);
 
         // Build DI container
         var collection = new ServiceCollection();
-        collection.AddSingleton<ServiceHost>();
-        var startup = new Startup(config);
-        startup.ConfigureServices(collection);
+        new Startup(config).ConfigureServices(collection);
         var provider = collection.BuildServiceProvider();
 
-        // Run some service setup stuff
+        // Ensure tool index is up to date
         await provider.GetRequiredService<IToolIndex>().Update();
 
         // Connect to Discord
@@ -57,9 +57,13 @@ public static class Program
         await interactions.RegisterCommandsGloballyAsync(true);
 #endif
 
+        // Wait for "exit" to be typed in
         WaitForExitSignal();
 
+        // Disconnect from Discord
         await bot.StopAsync();
+        
+        // Stop long running services
         await provider.GetRequiredService<ServiceHost>().StopAsync(default);
     }
 

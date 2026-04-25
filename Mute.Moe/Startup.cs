@@ -76,6 +76,8 @@ public record Startup(Configuration Configuration)
         services.AddSingleton(services);
         services.AddSingleton(s => new InteractiveService(s.GetRequiredService<BaseSocketClient>()));
 
+        services.AddSingleton<ServiceHost>();
+
         services.AddTransient<Random>();
         services.AddTransient<IDiceRoller, CryptoDiceRoller>();
 
