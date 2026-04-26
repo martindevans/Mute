@@ -6,8 +6,6 @@ using Mute.Moe.Tools;
 using System.Text;
 using System.Threading.Tasks;
 using Mute.Moe.Discord.Interaction;
-using Mute.Moe.Services.LLM.Memory;
-using Serilog;
 
 namespace Mute.Moe.Discord.Modules.Personality;
 
@@ -44,7 +42,7 @@ public partial class Chat(ConversationalResponseService _conversations)
 
 [UsedImplicitly]
 [Group("llm")]
-public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEndpoint> _backends, IAgentMemoryStorage _memory)
+public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEndpoint> _backends)
     : MuteBaseModule
 {
     [Command("tools"), Summary("Search for tools")]
@@ -171,62 +169,5 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
             .WithFooter("🧠 Mugunghwa AI Cluster");
 
         await ReplyAsync(embed: embed.Build());
-    }
-
-    [Command("memory"), Summary("Search for memories similar to the query string")]
-    [UsedImplicitly]
-    public async Task MemorySearch([Remainder] string query)
-    {
-        Log.Information("Search for memories in context: {0}", Context.AgentMemoryContextId);
-
-        var items = (await _memory.FindSimilar(Context.AgentMemoryContextId, query, 16))
-                   .OrderBy(a => a.Distance)
-                   .ToList();
-
-        if (items.Count == 0)
-        {
-            await ReplyAsync("No relevant memories found");
-            return;
-        }
-
-        var builder = new StringBuilder();
-        foreach (var item in items)
-        {
-            builder.AppendLine($" - '{item.Memory.Text}' (Conf:{item.Memory.ConfidenceLogit.LogitToProbability():P2}, Dist:{item.Distance:0.###})");
-        }
-
-        await LongReplyAsync(builder.ToString());
-
-    }
-
-    [Command("delete-memory"), Summary("I will delete a specific memory (by ID)")]
-    [UsedImplicitly]
-    [RequireOwner]
-    public async Task DeleteMemory(int id)
-    {
-        var memory = await _memory.Get(id);
-        if (memory == null)
-        {
-            await ReplyAsync($"No memory with ID='{id}'");
-            return;
-        }
-
-        await ReplyAsync($"Really delete (y/n)?\n> {memory.Text}");
-        var next = await NextMessageAsync(fromSourceUser: true, inSourceChannel: true, timeout: TimeSpan.FromSeconds(30));
-
-        if (next == null)
-        {
-            await ReplyAsync("No confirmation detected, not deleting memory");
-            return;
-        }
-
-        if (!string.Equals(next.CleanContent, "y", StringComparison.OrdinalIgnoreCase))
-        {
-            await ReplyAsync("Confirmation message must be 'y' to confirm");
-            return;
-        }
-
-        await _memory.Delete(id);
-        await ReplyAsync($"Deleted memory ID='{id}'");
     }
 }

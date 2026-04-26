@@ -19,7 +19,6 @@ public class ConversationalResponseService
     private readonly DiscordSocketClient _client;
     private readonly ChatConversationFactory _chatFactory;
     private readonly IConversationStateStorage _chatStorage;
-    private readonly IMemoryExtractAndStoreQueue _memory;
     private readonly IImageAnalyser _analyser;
     private readonly IHttpClientFactory _httpFactory;
 
@@ -39,7 +38,6 @@ public class ConversationalResponseService
         DiscordSocketClient client,
         ChatConversationFactory chatFactory,
         IConversationStateStorage chatStorage,
-        IMemoryExtractAndStoreQueue memory,
         IImageAnalyser analyser,
         IHttpClientFactory httpFactory
     )
@@ -47,7 +45,6 @@ public class ConversationalResponseService
         _client = client;
         _chatFactory = chatFactory;
         _chatStorage = chatStorage;
-        _memory = memory;
         _analyser = analyser;
         _httpFactory = httpFactory;
     }
@@ -107,7 +104,6 @@ public class ConversationalResponseService
                     channel,
                     _client,
                     _chatStorage,
-                    _memory,
                     _analyser,
                     _httpFactory
                 );

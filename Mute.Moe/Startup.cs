@@ -92,10 +92,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
         services.AddSingleton<IFaceDetectorWithLandmarks>(_ => new ScrfdDetector(new ScrfdDetectorOptions { ModelPath = Path.Combine(AppContext.BaseDirectory, "onnx", "scrfd_2.5g_kps.onnx") }));
 
-        services.AddSingleton<IAgentMemoryStorage, DatabaseAgentMemoryStorage>();
-        services.AddHostedService<AgentMemoryConfidenceDecayOverTime>();
         services.AddSingleton<FactExtractionService>();
-        services.AddHostedService<IMemoryExtractAndStoreQueue, DatabaseMemoryExtractAndStoreQueue>();
         services.AddSingleton<IKeyValueStorage<AgentDomainDocument>, AgentDomainDocumentStorage>();
 
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
@@ -165,8 +162,6 @@ public record Startup(Configuration Configuration)
         );
 
         services.AddSingleton<IConversationStateStorage, ConversationStateStorage>();
-
-        services.AddSingleton<IAgentMemoryStorage, DatabaseAgentMemoryStorage>();
     }
 
     /// <summary>
@@ -246,7 +241,6 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, UserInfoToolProvider>();
         services.AddSingleton<IToolProvider, GuildInfoToolProvider>();
         services.AddSingleton<IToolProvider, ClockProvider>();
-        services.AddSingleton<IToolProvider, MemoryManagementProvider>();
         services.AddSingleton<IToolProvider, BraveWebSearchProvider>();
     }
 }
