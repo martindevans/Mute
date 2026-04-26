@@ -35,6 +35,8 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
 
     private async Task ThreadEntry(CancellationToken token)
     {
+        await Task.Delay(1500, token);
+        
         try
         {
             while (!token.IsCancellationRequested)

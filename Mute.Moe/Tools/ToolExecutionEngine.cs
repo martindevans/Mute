@@ -285,24 +285,17 @@ public class ToolExecutionEngine
         Log.Information("Tool search: {0}", query);
 
         // Find all tools, ordered by similarity to query embedding
-        var results = (await _allTools.Find(query, limit: 5)).Where(x => !_bannedTools.Contains(x.Tool.Name)).ToList();
+        var results = (await _allTools.Find(query, topK: 5, topP: 0.9f)).Where(x => !_bannedTools.Contains(x.Tool.Name)).ToList();
 
         // Add tools
         var matches = new List<string>();
         if (results.Count > 0)
         {
-            var top = results[0].Relevance;
-            var threshold1 = top * 0.9;
-
             // Ensure tools list is not null before we add to it
             _requestParameters.Tools ??= [];
 
-            foreach (var (similarity, tool) in results)
+            foreach (var (_, tool) in results)
             {
-                // Ignore tools below thresholds
-                if (similarity < threshold1)
-                    continue;
-
                 // Add to the list of results returned to the LLM
                 matches.Add(tool.Name);
 

@@ -39,8 +39,8 @@ public static class Program
         new Startup(config).ConfigureServices(collection);
         var provider = collection.BuildServiceProvider();
 
-        // Ensure tool index is up to date
-        await provider.GetRequiredService<IToolIndex>().Update();
+        // Get the tool index. This ensures it begins it's internal update process
+        provider.GetRequiredService<IToolIndex>();
 
         // Connect to Discord
         var bot = provider.GetRequiredService<HostedDiscordBot>();

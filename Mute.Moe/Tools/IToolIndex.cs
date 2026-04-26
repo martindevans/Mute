@@ -1,4 +1,4 @@
-﻿using System.Data;
+﻿using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Dapper;
@@ -27,28 +27,20 @@ public interface IToolIndex
     IReadOnlyDictionary<string, ITool> Tools { get; }
 
     /// <summary>
-    /// Do one time update of the index
-    /// </summary>
-    /// <returns></returns>
-    Task Update(bool force = false);
-
-    /// <summary>
     /// Fuzzy find tools for the given natural language query
     /// </summary>
     /// <param name="query"></param>
-    /// <param name="limit"></param>
+    /// <param name="topK">Only the K best results will be returned</param>
+    /// <param name="topP">Only results with relevance over best * topP will be returned</param>
     /// <returns></returns>
-    Task<IEnumerable<(float Relevance, ITool Tool)>> Find(string query, int limit);
+    Task<IEnumerable<(float Relevance, ITool Tool)>> Find(string query, int topK = 5, float topP = 0.5f);
 }
 
 /// <inheritdoc />
 public class DatabaseToolIndex
     : IToolIndex
 {
-    /// <summary>
-    /// The database backing this index
-    /// </summary>
-    private readonly IDatabaseService _database;
+    private static readonly ILogger _logger = Log.ForContext<DatabaseToolIndex>();
 
     /// <summary>
     /// Embeddings provider for tool descriptions
@@ -60,16 +52,16 @@ public class DatabaseToolIndex
     /// </summary>
     private readonly IReranking _reranking;
 
-    /// <summary>
-    /// Indicates if the <see cref="Update"/> method has been run
-    /// </summary>
-    private bool _updated;
-
     /// <inheritdoc />
     public IToolProvider[] Providers { get; }
 
     /// <inheritdoc />
     public IReadOnlyDictionary<string, ITool> Tools { get; }
+
+    /// <summary>
+    /// Map from tool name to embedding
+    /// </summary>
+    private readonly Task<IReadOnlyDictionary<string, ReadOnlyMemory<float>>> _toolEmbeddings;
 
     /// <summary>
     /// Create a new <see cref="DatabaseToolIndex"/>
@@ -80,61 +72,130 @@ public class DatabaseToolIndex
     /// <param name="reranking"></param>
     public DatabaseToolIndex(IEnumerable<IToolProvider> providers, IDatabaseService database, IEmbeddings embeddings, IReranking reranking)
     {
-        _database = database;
         _embeddings = embeddings;
         _reranking = reranking;
         Providers = [ ..providers ];
 
+        // Build dictionary of tools by name
         Tools = (
             from provider in Providers
             from tool in provider.Tools
             select tool
         ).ToDictionary(a => a.Name, a => a);
+
+        // Create table to cache embeddings
+        using var db = database.GetConnection();
+        db.Execute("CREATE TABLE IF NOT EXISTS `ToolDescriptionEmbeddings` (`Name` TEXT NOT NULL, `Description` TEXT NOT NULL, `Model` TEXT NOT NULL, `Embedding` BLOB)");
+
+        // Start task to build embedding index
+        _toolEmbeddings = Task.Run(async () => await BuildEmbeddingTable(Tools, database, embeddings));
+    }
+
+    private static async Task<IReadOnlyDictionary<string, ReadOnlyMemory<float>>> BuildEmbeddingTable(IReadOnlyDictionary<string, ITool> tools, IDatabaseService database, IEmbeddings embeddings)
+    {
+        using var db = database.GetConnection();
+
+        // Delete all tools from DB which no longer exist or have a different description
+        using (var tsx = db.BeginTransaction())
+        {
+            foreach (var item in await db.QueryAsync<ToolDescriptionEmbedding>("SELECT * From `ToolDescriptionEmbeddings`"))
+                if (!tools.TryGetValue(item.Name, out var tool) || tool.Description != item.Description)
+                    await db.ExecuteAsync("DELETE FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name)", new { Name = item.Name }, tsx);
+
+            tsx.Commit();
+        }
+
+        // Build dictionary of tool name => embedding
+        var results = new Dictionary<string, ReadOnlyMemory<float>>();
+
+        // Insert all tools into DB which aren't already there
+        using (var tsx = db.BeginTransaction())
+        {
+            foreach (var (name, tool) in tools)
+            {
+                // Check description validity
+                if (string.IsNullOrWhiteSpace(tool.Description))
+                {
+                    _logger.Warning("Tool '{name}' has empty/null description!", name);
+                    await Console.Error.WriteLineAsync($"Tool '{name}' has empty/null description!");
+                    continue;
+                }
+
+                // Try to get the embedding for this tool from the DB cache
+                var embeddingBlob = await db.QuerySingleOrDefaultAsync<byte[]>(
+                    "SELECT Embedding From `ToolDescriptionEmbeddings` WHERE (Name = @Name AND Model = @Model)",
+                    new
+                    {
+                        Name = name,
+                        Model = embeddings.Model
+                    }
+                );
+
+                // If we didn't find a cached embedding, generate it now
+                if (embeddingBlob == null)
+                {
+                    // Generate
+                    var embeddingResult = await embeddings.Embed(tool.Description);
+                    if (embeddingResult == null)
+                    {
+                        _logger.Warning("Tool '{name}' generated a null embedding!", name);
+                        continue;
+                    }
+
+                    // Convert to BLOB
+                    embeddingBlob = MemoryMarshal.Cast<float, byte>(embeddingResult.Result.Span).ToArray();
+
+                    // Insert into DB cache
+                    Log.Information("Inserting new tool: {0}", tool.Name);
+                    await db.InsertAsync(
+                        new ToolDescriptionEmbedding
+                        {
+                            Name = tool.Name,
+                            Description = tool.Description,
+                            Model = embeddings.Model,
+                            Embedding = embeddingBlob,
+                        },
+                        tsx
+                    );
+                }
+
+                // Convert blob to float
+                var embeddingFloat = MemoryMarshal.Cast<byte, float>(embeddingBlob).ToArray();
+                results.Add(tool.Name, embeddingFloat);
+            }
+
+            tsx.Commit();
+        }
+
+        return results;
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<(float Relevance, ITool Tool)>> Find(string query, int limit)
+    public async Task<IEnumerable<(float Relevance, ITool Tool)>> Find(string query, int topK = 5, float topP = 0.5f)
     {
-        await Update();
-
         var embedding = await _embeddings.Embed(query);
         if (embedding == null)
             return [ ];
 
-        const string SQL = """
-            SELECT t.Name, v.distance
-            FROM ToolDescriptionEmbeddings AS t
-            JOIN vector_quantize_scan(
-                'ToolDescriptionEmbeddings',
-                'Embedding',
-                @QueryEmbedding,
-                @TopK
-            ) AS v
-            ON t.rowid = v.rowid
-            ORDER BY v.distance ASC;
-        """;
 
-        using var connection = _database.GetConnection();
-        await PrepareVectorLookup(connection);
-        
-        var result = connection.Query<(string Name, float distance)>(SQL, new
-        {
-            QueryEmbedding = MemoryMarshal.Cast<float, byte>(embedding.Result.Span).ToArray(),
-            TopK = limit
-        });
-
-        // Select results from embedding query
-        var results = (from r in result
-                      let similarity = (2 - r.distance) / 2
-                      where !float.IsNaN(similarity)
-                      where !float.IsInfinity(similarity)
-                      let tool = Tools.GetValueOrDefault(r.Name)
-                      where tool != null
-                      select (similarity, tool)).ToList();
+        // Get tools with dot product to query embedding
+        var toolEmbeddings = await _toolEmbeddings;
+        var results = (
+            from item in Tools
+            let name = item.Key
+            let tool = item.Value
+            where tool != null
+            let toolEmbedding = toolEmbeddings.GetValueOrDefault(name, Array.Empty<float>())
+            where !toolEmbedding.IsEmpty
+            let dot = TensorPrimitives.Dot(embedding.Result.Span, toolEmbedding.Span)
+            where !float.IsNaN(dot) && !float.IsInfinity(dot)
+            orderby dot descending
+            select (dot, tool)
+        ).Take(topK).ToArray();
 
         // Early exit if there's no real re-ranker, just to skip the useless work
         if (_reranking is NullRerank)
-            return results;
+            return TopP(results, topP);
 
         var rerankPrompt = $"""
                            Task: Score how appropriate each tool is for accomplishing the goal.
@@ -154,91 +215,25 @@ public class DatabaseToolIndex
         foreach (var rank in reranking)
             rerankedResults.Add((rank.Relevance, results[rank.Index].tool));
 
-        return rerankedResults;
+        return TopP(rerankedResults, topP); ;
     }
 
-    private async Task PrepareVectorLookup(IDbConnection connection)
+    private static IEnumerable<(float, ITool)> TopP(IEnumerable<(float Relevance, ITool Tool)> values, float topP)
     {
-        await connection.ExecuteAsync($"SELECT vector_init('ToolDescriptionEmbeddings', 'Embedding', 'type=FLOAT32,dimension={_embeddings.Dimensions},distance=cosine');");
-        await connection.ExecuteAsync( "SELECT vector_quantize('ToolDescriptionEmbeddings', 'Embedding');");
-    }
-
-    /// <inheritdoc />
-    public async Task Update(bool force = false)
-    {
-        if (_updated && !force)
-            return;
-        _updated = true;
-
-        // Create table
-        using var db = _database.GetConnection();
-        await db.ExecuteAsync("CREATE TABLE IF NOT EXISTS `ToolDescriptionEmbeddings` (`Name` TEXT NOT NULL, `Description` TEXT NOT NULL, `Model` TEXT NOT NULL, `Embedding` BLOB)");
-
-        // Initialise the column as a vector store
-        await PrepareVectorLookup(db);
-
-        // Delete all tools from DB which no longer exist in the toolset or have a different description
-        using (var tsx = db.BeginTransaction())
+        float? first = default;
+        foreach (var (relevance, item) in values)
         {
-            foreach (var item in await db.QueryAsync<ToolDescriptionEmbedding>("SELECT * From `ToolDescriptionEmbeddings`"))
-                if (!Tools.TryGetValue(item.Name, out var tool) || tool.Description != item.Description)
-                    await db.ExecuteAsync("DELETE FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name)", new { Name = item.Name }, tsx);
-
-            tsx.Commit();
-        }
-
-        // Delete all tools from the DB which have a different embedding model
-        using (var tsx = db.BeginTransaction())
-        {
-            await db.ExecuteAsync("DELETE FROM `ToolDescriptionEmbeddings` WHERE (Model != @Model)", new { Model = _embeddings.Model }, tsx);
-            tsx.Commit();
-        }
-
-        // Insert all tools into DB which aren't already there
-        using (var tsx = db.BeginTransaction())
-        {
-            foreach (var (name, tool) in Tools)
+            if (!first.HasValue)
             {
-                // Check description validity
-                if (string.IsNullOrWhiteSpace(tool.Description))
-                {
-                    await Console.Error.WriteLineAsync($"Tool '{name}' has empty/null description!");
-                    continue;
-                }
-
-                // Get count of tools with this name
-                var count = await db.ExecuteScalarAsync<int>(
-                    "SELECT Count(*) FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name)",
-                    new
-                    {
-                        Name = name,
-                        Model = _embeddings.Model
-                    }
-                );
-
-                // if there were not tools insert it now
-                if (0 == count)
-                {
-                    Log.Information("Inserting new tool: {0}", tool.Name);
-
-                    var embedding = await _embeddings.Embed(tool.Description);
-                    if (embedding == null)
-                        continue;
-
-                    await db.InsertAsync(
-                        new ToolDescriptionEmbedding
-                        {
-                            Name = tool.Name,
-                            Description = tool.Description,
-                            Model = embedding.Model,
-                            Embedding = MemoryMarshal.Cast<float, byte>(embedding.Result.Span).ToArray(),
-                        },
-                        tsx
-                    );
-                }
+                first = relevance;
+            }
+            else
+            {
+                if (relevance < first * topP)
+                    yield break;
             }
 
-            tsx.Commit();
+            yield return (relevance, item);
         }
     }
 

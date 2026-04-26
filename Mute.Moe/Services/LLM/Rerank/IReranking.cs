@@ -14,7 +14,7 @@ public interface IReranking
     /// <param name="query"></param>
     /// <param name="documents"></param>
     /// <param name="cancellation"></param>
-    /// <returns>Rerank results, in order of relevance</returns>
+    /// <returns>Rerank results, in order of relevance (most relevant first)</returns>
     Task<List<RerankResult>> Rerank(string query, IReadOnlyList<string> documents, CancellationToken cancellation = default);
 }
 
