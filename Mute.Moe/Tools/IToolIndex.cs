@@ -181,9 +181,10 @@ public class DatabaseToolIndex
             select (dot, tool)
         ).Take(topK).ToArray();
 
-        // Early exit if there's no real re-ranker, just to skip the useless work
+        // Early exit if there's no real re-ranker, just to skip the useless work.
+        // Does not apply TopP, since raw embedding dot product is not meaningful enough for that.
         if (_reranking is NullRerank)
-            return TopP(results, topP);
+            return results;
 
         var rerankPrompt = $"""
                            Task: Score how appropriate each tool is for accomplishing the goal.
