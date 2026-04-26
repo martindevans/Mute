@@ -134,12 +134,8 @@ public class DatabaseToolIndex
                     continue;
                 }
 
-                // Normalise embedding
-                var embeddingSpan = embeddingResult.Result.Span;
-                TensorPrimitives.Divide(embeddingSpan, TensorPrimitives.Norm(embeddingSpan), embeddingSpan);
-
                 // Convert to BLOB
-                embeddingBlob = MemoryMarshal.Cast<float, byte>(embeddingSpan).ToArray();
+                embeddingBlob = MemoryMarshal.Cast<float, byte>(embeddingResult.Result.Span).ToArray();
 
                 // Insert into DB cache
                 Log.Information("Inserting new tool: {0}", tool.Name);
@@ -179,7 +175,7 @@ public class DatabaseToolIndex
             where tool != null
             let toolEmbedding = toolEmbeddings.GetValueOrDefault(name, Array.Empty<float>())
             where !toolEmbedding.IsEmpty
-            let dot = TensorPrimitives.Dot(embedding.Result.Span, toolEmbedding.Span) / TensorPrimitives.Norm(embedding.Result.Span)
+            let dot = TensorPrimitives.CosineSimilarity(embedding.Result.Span, toolEmbedding.Span)
             where !float.IsNaN(dot) && !float.IsInfinity(dot)
             orderby dot descending
             select (dot, tool)
