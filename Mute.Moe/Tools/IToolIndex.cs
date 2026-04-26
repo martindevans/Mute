@@ -1,13 +1,13 @@
-﻿using System.Numerics.Tensors;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Dapper;
-using Mute.Moe.Services.Database;
+﻿using Dapper;
 using Dapper.Contrib.Extensions;
-using Mute.Moe.Tools.Providers;
+using Mute.Moe.Services.Database;
 using Mute.Moe.Services.LLM.Embedding;
 using Mute.Moe.Services.LLM.Rerank;
+using Mute.Moe.Tools.Providers;
 using Serilog;
+using System.Numerics.Tensors;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Tools;
 
@@ -134,8 +134,12 @@ public class DatabaseToolIndex
                     continue;
                 }
 
+                // Normalise embedding
+                var embeddingSpan = embeddingResult.Result.Span;
+                TensorPrimitives.Divide(embeddingSpan, TensorPrimitives.Norm(embeddingSpan), embeddingSpan);
+
                 // Convert to BLOB
-                embeddingBlob = MemoryMarshal.Cast<float, byte>(embeddingResult.Result.Span).ToArray();
+                embeddingBlob = MemoryMarshal.Cast<float, byte>(embeddingSpan).ToArray();
 
                 // Insert into DB cache
                 Log.Information("Inserting new tool: {0}", tool.Name);
@@ -175,7 +179,7 @@ public class DatabaseToolIndex
             where tool != null
             let toolEmbedding = toolEmbeddings.GetValueOrDefault(name, Array.Empty<float>())
             where !toolEmbedding.IsEmpty
-            let dot = TensorPrimitives.Dot(embedding.Result.Span, toolEmbedding.Span)
+            let dot = TensorPrimitives.Dot(embedding.Result.Span, toolEmbedding.Span) / TensorPrimitives.Norm(embedding.Result.Span)
             where !float.IsNaN(dot) && !float.IsInfinity(dot)
             orderby dot descending
             select (dot, tool)
