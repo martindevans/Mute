@@ -126,7 +126,7 @@ public static class FuzzyParsing
             var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2.datetime"));
             if (dt == null)
             {
-                var d = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2.datetime"));
+                var d = results.FirstOrDefault(d => d.TypeName is "datetimeV2.datetime" or "datetimeV2.date");
                 if (d == null)
                     return null;
 

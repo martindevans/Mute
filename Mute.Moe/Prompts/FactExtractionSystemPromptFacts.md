@@ -35,7 +35,7 @@ For every piece of information, ask: **"Will this information still be useful/tr
 Alice: "I'm working on Project Orion. It's a Ruby script that scrapes Reddit, but the API limit is annoying."
 
 ## Example Output Facts
-- We learned that Alice is working on a project called "Project Orion".
-- We learned that "Project Orion" is a Ruby script designed to scrape Reddit.
-- We learned that the Alice possesses knowledge of the Ruby programming language.
-- We learned that the Alice is frustrated by Reddit's API limits regarding "Project Orion".
+- Alice is working on a project called "Project Orion".
+- "Project Orion" is a Ruby script designed to scrape Reddit.
+- Alice possesses knowledge of the Ruby programming language.
+- Alice is frustrated by Reddit's API limits regarding "Project Orion".
