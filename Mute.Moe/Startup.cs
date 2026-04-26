@@ -156,7 +156,12 @@ public record Startup(Configuration Configuration)
         services.AddTransient<IReranking, LlamaServerReranking>();
 
         services.AddSingleton<IToolIndex, DatabaseToolIndex>(svc =>
-            new DatabaseToolIndex(svc.GetServices<IToolProvider>(), svc.GetRequiredService<IDatabaseService>(), svc.GetRequiredService<IEmbeddings>(), svc.GetRequiredService<IReranking>())
+            new DatabaseToolIndex(
+                svc.GetServices<IToolProvider>(),
+                svc.GetRequiredService<IDatabaseService>(),
+                svc.GetRequiredService<IEmbeddings>(),
+                svc.GetRequiredService<IReranking>()
+            )
         );
 
         services.AddSingleton<IConversationStateStorage, ConversationStateStorage>();

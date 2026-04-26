@@ -69,7 +69,7 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
         else
         {
             // Do tool search
-            var results = (await _tools.Find(query, 5)).ToArray();
+            var results = (await _tools.Find(query, topK:5, topP:0)).ToArray();
 
             // Display results
             await DisplayItemList(

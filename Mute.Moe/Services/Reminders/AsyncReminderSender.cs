@@ -37,6 +37,8 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
     {
         try
         {
+            await Task.Delay(1500, token);
+
             while (!token.IsCancellationRequested)
             {
                 // Get the first unsent reminder
