@@ -96,75 +96,63 @@ public class DatabaseToolIndex
         using var db = database.GetConnection();
 
         // Delete all tools from DB which no longer exist or have a different description
-        using (var tsx = db.BeginTransaction())
-        {
-            foreach (var item in await db.QueryAsync<ToolDescriptionEmbedding>("SELECT * From `ToolDescriptionEmbeddings`"))
-                if (!tools.TryGetValue(item.Name, out var tool) || tool.Description != item.Description)
-                    await db.ExecuteAsync("DELETE FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name)", new { Name = item.Name }, tsx);
-
-            tsx.Commit();
-        }
+        foreach (var item in await db.QueryAsync<ToolDescriptionEmbedding>("SELECT * From `ToolDescriptionEmbeddings`"))
+            if (!tools.TryGetValue(item.Name, out var tool) || tool.Description != item.Description)
+                await db.ExecuteAsync("DELETE FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name)", new { Name = item.Name });
 
         // Build dictionary of tool name => embedding
         var results = new Dictionary<string, ReadOnlyMemory<float>>();
 
         // Insert all tools into DB which aren't already there
-        using (var tsx = db.BeginTransaction())
+        foreach (var (name, tool) in tools)
         {
-            foreach (var (name, tool) in tools)
+            // Check description validity
+            if (string.IsNullOrWhiteSpace(tool.Description))
             {
-                // Check description validity
-                if (string.IsNullOrWhiteSpace(tool.Description))
+                _logger.Warning("Tool '{name}' has empty/null description!", name);
+                continue;
+            }
+
+            // Try to get the embedding for this tool from the DB cache
+            var embeddingBlob = await db.QuerySingleOrDefaultAsync<byte[]>(
+                "SELECT Embedding From `ToolDescriptionEmbeddings` WHERE (Name = @Name AND Model = @Model)",
+                new
                 {
-                    _logger.Warning("Tool '{name}' has empty/null description!", name);
-                    await Console.Error.WriteLineAsync($"Tool '{name}' has empty/null description!");
+                    Name = name,
+                    Model = embeddings.Model
+                }
+            );
+
+            // If we didn't find a cached embedding, generate it now
+            if (embeddingBlob == null)
+            {
+                // Generate
+                var embeddingResult = await embeddings.Embed(tool.Description);
+                if (embeddingResult == null)
+                {
+                    _logger.Warning("Tool '{name}' generated a null embedding!", name);
                     continue;
                 }
 
-                // Try to get the embedding for this tool from the DB cache
-                var embeddingBlob = await db.QuerySingleOrDefaultAsync<byte[]>(
-                    "SELECT Embedding From `ToolDescriptionEmbeddings` WHERE (Name = @Name AND Model = @Model)",
-                    new
+                // Convert to BLOB
+                embeddingBlob = MemoryMarshal.Cast<float, byte>(embeddingResult.Result.Span).ToArray();
+
+                // Insert into DB cache
+                Log.Information("Inserting new tool: {0}", tool.Name);
+                await db.InsertAsync(
+                    new ToolDescriptionEmbedding
                     {
-                        Name = name,
-                        Model = embeddings.Model
+                        Name = tool.Name,
+                        Description = tool.Description,
+                        Model = embeddings.Model,
+                        Embedding = embeddingBlob,
                     }
                 );
-
-                // If we didn't find a cached embedding, generate it now
-                if (embeddingBlob == null)
-                {
-                    // Generate
-                    var embeddingResult = await embeddings.Embed(tool.Description);
-                    if (embeddingResult == null)
-                    {
-                        _logger.Warning("Tool '{name}' generated a null embedding!", name);
-                        continue;
-                    }
-
-                    // Convert to BLOB
-                    embeddingBlob = MemoryMarshal.Cast<float, byte>(embeddingResult.Result.Span).ToArray();
-
-                    // Insert into DB cache
-                    Log.Information("Inserting new tool: {0}", tool.Name);
-                    await db.InsertAsync(
-                        new ToolDescriptionEmbedding
-                        {
-                            Name = tool.Name,
-                            Description = tool.Description,
-                            Model = embeddings.Model,
-                            Embedding = embeddingBlob,
-                        },
-                        tsx
-                    );
-                }
-
-                // Convert blob to float
-                var embeddingFloat = MemoryMarshal.Cast<byte, float>(embeddingBlob).ToArray();
-                results.Add(tool.Name, embeddingFloat);
             }
 
-            tsx.Commit();
+            // Convert blob to float
+            var embeddingFloat = MemoryMarshal.Cast<byte, float>(embeddingBlob).ToArray();
+            results.Add(tool.Name, embeddingFloat);
         }
 
         return results;
@@ -215,7 +203,7 @@ public class DatabaseToolIndex
         foreach (var rank in reranking)
             rerankedResults.Add((rank.Relevance, results[rank.Index].tool));
 
-        return TopP(rerankedResults, topP); ;
+        return TopP(rerankedResults, topP);
     }
 
     private static IEnumerable<(float, ITool)> TopP(IEnumerable<(float Relevance, ITool Tool)> values, float topP)
