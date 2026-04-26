@@ -54,7 +54,7 @@ public abstract class BaseSqliteDatabase
     /// <inheritdoc />
     public IDbConnection GetConnection()
     {
-        return GetSqliteConnection("vector");
+        return GetSqliteConnection();
     }
 
     /// <summary>
