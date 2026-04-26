@@ -7,7 +7,6 @@ using Mute.Moe.Utilities;
 using Serilog;
 using System.Threading.Tasks;
 using Mute.Moe.Services.ImageGen;
-using Mute.Moe.Services.LLM.Memory.Extraction;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
@@ -31,7 +30,6 @@ public class ConversationalResponseService
     /// <param name="client"></param>
     /// <param name="chatFactory"></param>
     /// <param name="chatStorage"></param>
-    /// <param name="memory"></param>
     /// <param name="analyser"></param>
     /// <param name="httpFactory"></param>
     public ConversationalResponseService(
