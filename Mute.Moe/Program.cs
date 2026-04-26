@@ -39,7 +39,7 @@ public static class Program
         new Startup(config).ConfigureServices(collection);
         var provider = collection.BuildServiceProvider();
 
-        // Get the tool index. This ensures it begins it's internal update process
+        // Get the tool index. This ensures it begins its internal update process
         provider.GetRequiredService<IToolIndex>();
 
         // Connect to Discord
