@@ -13,7 +13,6 @@ public abstract class BaseSqliteDatabase
     : IDatabaseService
 {
     private readonly string _dbConnStr;
-    private readonly Lock _loadLock = new();
 
     /// <summary>
     /// Create new DB
@@ -32,22 +31,10 @@ public abstract class BaseSqliteDatabase
     /// Get an <see cref="SQLiteConnection"/>
     /// </summary>
     /// <returns></returns>
-    public SQLiteConnection GetSqliteConnection(params Span<string> extensions)
+    public SQLiteConnection GetSqliteConnection()
     {
         var connection = new SQLiteConnection(_dbConnStr);
         connection.Open();
-
-        if (extensions.Length > 0)
-        {
-            lock (_loadLock)
-            {
-                connection.EnableExtensions(true);
-                foreach (var extension in extensions)
-                    connection.LoadExtension(extension);
-                connection.EnableExtensions(false);
-            }
-        }
-
         return connection;
     }
 
