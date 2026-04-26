@@ -7,7 +7,6 @@ using Mute.Moe.Utilities;
 using Serilog;
 using System.Threading.Tasks;
 using Mute.Moe.Services.ImageGen;
-using Mute.Moe.Services.LLM.Memory.Extraction;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
@@ -19,7 +18,6 @@ public class ConversationalResponseService
     private readonly DiscordSocketClient _client;
     private readonly ChatConversationFactory _chatFactory;
     private readonly IConversationStateStorage _chatStorage;
-    private readonly IMemoryExtractAndStoreQueue _memory;
     private readonly IImageAnalyser _analyser;
     private readonly IHttpClientFactory _httpFactory;
 
@@ -32,14 +30,12 @@ public class ConversationalResponseService
     /// <param name="client"></param>
     /// <param name="chatFactory"></param>
     /// <param name="chatStorage"></param>
-    /// <param name="memory"></param>
     /// <param name="analyser"></param>
     /// <param name="httpFactory"></param>
     public ConversationalResponseService(
         DiscordSocketClient client,
         ChatConversationFactory chatFactory,
         IConversationStateStorage chatStorage,
-        IMemoryExtractAndStoreQueue memory,
         IImageAnalyser analyser,
         IHttpClientFactory httpFactory
     )
@@ -47,7 +43,6 @@ public class ConversationalResponseService
         _client = client;
         _chatFactory = chatFactory;
         _chatStorage = chatStorage;
-        _memory = memory;
         _analyser = analyser;
         _httpFactory = httpFactory;
     }
@@ -107,7 +102,6 @@ public class ConversationalResponseService
                     channel,
                     _client,
                     _chatStorage,
-                    _memory,
                     _analyser,
                     _httpFactory
                 );

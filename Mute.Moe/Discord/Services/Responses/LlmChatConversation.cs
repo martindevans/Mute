@@ -4,7 +4,6 @@ using Discord;
 using Discord.WebSocket;
 using Mute.Moe.Discord.Context;
 using Mute.Moe.Services.LLM;
-using Mute.Moe.Services.LLM.Memory.Extraction;
 using Serilog;
 using System.Threading;
 using System.Threading.Channels;
@@ -29,7 +28,6 @@ public class LlmChatConversation
 
     private readonly ulong _memoryContext;
     private readonly IConversationStateStorage _chatStorage;
-    private readonly IMemoryExtractAndStoreQueue _memory;
     private readonly IImageAnalyser _analyser;
     private readonly IHttpClientFactory _httpClient;
 
@@ -76,7 +74,6 @@ public class LlmChatConversation
     /// <param name="channel"></param>
     /// <param name="client"></param>
     /// <param name="chatStorage"></param>
-    /// <param name="memory"></param>
     /// <param name="analyser"></param>
     /// <param name="httpClient"></param>
     public LlmChatConversation(
@@ -85,7 +82,6 @@ public class LlmChatConversation
         IMessageChannel channel,
         DiscordSocketClient client,
         IConversationStateStorage chatStorage,
-        IMemoryExtractAndStoreQueue memory,
         IImageAnalyser analyser,
         IHttpClientFactory httpClient
     )
@@ -95,7 +91,6 @@ public class LlmChatConversation
         _selfUsername = $"@{client.CurrentUser.Username}";
         _memoryContext = memoryContext;
         _chatStorage = chatStorage;
-        _memory = memory;
         _analyser = analyser;
         _httpClient = httpClient;
 
@@ -287,9 +282,6 @@ public class LlmChatConversation
 
         async ValueTask Summarise()
         {
-            var transcript = conversation.Transcript("Assistant");
-            await _memory.Enqueue(_memoryContext, transcript);
-
             Summary = await conversation.AutoSummarise(_stopper.Token);
         }
 
