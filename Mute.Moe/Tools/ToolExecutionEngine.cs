@@ -294,13 +294,20 @@ public class ToolExecutionEngine
         {
             // Log response
             var success = functionCall.Result is { InvocationSucceeded: true };
-            await _toolLogs.Response(new IToolLog.ToolResponse(
-                DateTime.UtcNow,
-                callId,
-                functionCall.Result?.Content,
-                success,
-                _context.Channel.GetAgentMemoryContextId()
-            ));
+            try
+            {
+                await _toolLogs.Response(new IToolLog.ToolResponse(
+                    DateTime.UtcNow,
+                    callId,
+                    functionCall.Result?.Content,
+                    success,
+                    _context.Channel.GetAgentMemoryContextId()
+                ));
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to log tool response for tool call {CallId}", callId);
+            }
         }
     }
 
