@@ -151,7 +151,7 @@ public class DatabaseToolLog
                              FROM `ToolResponseModels`
                              WHERE (@Before IS NULL OR `UnixTimestamp` < @Before)
                                AND (@After IS NULL OR `UnixTimestamp` > @After)
-                               AND (@Id IS NULL OR `Id` = @Id)
+                               AND (@Id IS NULL OR `CallId` = @Id)
                                AND (@CallCtx = `CallContext`)
                              """;
 
