@@ -118,11 +118,11 @@ public class DatabaseToolLog
 
         var results = db.Query<ToolCallModel>(query, new
         {
-            Before = before?.UnixTimestamp(),
-            After = after?.UnixTimestamp(),
+            Before = before?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+            After = after?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
             Name = name,
             Id = id?.ToString(),
-            CallCtx = callContext,
+            CallCtx = callContext.ToString(CultureInfo.InvariantCulture),
         });
         
         return results
@@ -167,10 +167,10 @@ public class DatabaseToolLog
 
         var results = db.Query<ToolResponseModel>(query, new
         { 
-            Before = before?.UnixTimestamp(),
-            After = after?.UnixTimestamp(),
+            Before = before?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+            After = after?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
             Id = id?.ToString(),
-            CallCtx = callContext,
+            CallCtx = callContext.ToString(CultureInfo.InvariantCulture),
         });
 
         return results

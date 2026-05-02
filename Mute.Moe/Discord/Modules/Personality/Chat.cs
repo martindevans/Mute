@@ -179,6 +179,7 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
 
         [Command("log"), Summary("Show tool execution log")]
         [UsedImplicitly]
+        [RequireOwner]
         public async Task ShowToolLog(int limit = 8)
         {
             var ctx = Context.AgentMemoryContextId;
@@ -211,12 +212,14 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
                 if (parameters == "\"{}\"")
                     parameters = "";
                 parameters = Regex.Unescape(parameters);
+                parameters = parameters.Replace('`', '\'');
 
                 // Format the response
                 var responseStr = response.Value;
                 if (responseStr is { Length: > 256 })
                     responseStr = $"{responseStr[..256]}...";
-                
+                responseStr = responseStr?.Replace('`', '\'');
+
                 // Failure (orange blob)
                 if (!response.Success)
                     return $"🟠 `{call.Name}({parameters}) => {responseStr}` ({elapsedMs}ms)";
