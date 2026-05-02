@@ -73,10 +73,10 @@ public class GuildInfoToolProvider
         var userCount = guild.ApproximateMemberCount;
 
         // Build a small/summary object for each channel
-        var channels = new List<object>();
+        var channelResults = new List<object>();
         foreach (var channel in await guild.GetChannelsAsync())
         {
-            channels.Add(new
+            channelResults.Add(new
             {
                 name = channel.Name,
                 id = channel.Id,
@@ -90,7 +90,7 @@ public class GuildInfoToolProvider
             id = guild.Id,
             description = desc,
             approx_members = userCount,
-            channels = channels
+            channels = channelResults
         };
     }
 
@@ -107,23 +107,23 @@ public class GuildInfoToolProvider
             return await CannotFindGuildError(id);
 
         var avatar = await _http.GetStreamAsync(guild.IconUrl);
-        var description = await _imageAnalyser.GetImageDescription(avatar);
+        var imgDesc = await _imageAnalyser.GetImageDescription(avatar);
 
         return new
         {
             guild_id = guild.Id,
-            description = description,
+            description = imgDesc,
         };
     }
 
     private async Task<object> CannotFindGuildError(string id)
     {
-        var similar = await FindSimilarGuilds(id, 3).ToArrayAsync();
+        var similarGuildNames = await FindSimilarGuilds(id, 3).ToArrayAsync();
 
         return new
         {
             error = "Could not find guild",
-            similar = similar
+            similar = similarGuildNames
         };
     }
 

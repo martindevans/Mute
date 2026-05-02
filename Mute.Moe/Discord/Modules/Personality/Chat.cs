@@ -4,6 +4,8 @@ using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
 using System.Text;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Mute.Moe.Discord.Interaction;
 
@@ -47,7 +49,7 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
 {
     [Command("tools"), Summary("Search for tools")]
     [UsedImplicitly]
-    public async Task LlmToolSearch([Remainder] string query)
+    public async Task ToolSearch([Remainder] string query)
     {
         if (string.IsNullOrEmpty(query) || query == "*")
         {
@@ -79,57 +81,9 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
         }
     }
 
-    [Command("tool"), Summary("Get all the detailed information for a specific tool")]
-    [UsedImplicitly]
-    public async Task LlmToolInfo([Remainder] string name)
-    {
-        if (!_tools.Tools.TryGetValue(name, out var tool))
-        {
-            // Failed to find tool, find similar names
-            var nearby = (
-                from t in _tools.Tools
-                let dist = t.Value.Name.Levenshtein(name)
-                orderby dist
-                select t.Value
-            ).Take(5);
-
-            var builder = new StringBuilder();
-            builder.AppendLine($"Cannot find tool `{name}`. Did you mean:");
-            foreach (var item in nearby)
-                builder.AppendLine($"- {item.Name}");
-
-            await ReplyAsync(builder.ToString());
-        }
-        else
-        {
-            var description = new StringBuilder();
-            description.AppendLine(tool.Description);
-            description.AppendLine();
-            description.AppendLine("**Parameters**");
-
-            foreach (var parameter in tool.GetParameters())
-            {
-                description.AppendLine($" - **{parameter.Name}** (`{parameter.Type.Type}`)");
-                description.AppendLine($"  - {parameter.Type.Description}");
-                if (!parameter.Type.Required)
-                    description.AppendLine("  - Optional");
-            }
-
-            var embed = new EmbedBuilder()
-                       .WithTitle(tool.Name)
-                       .WithDescription(description.ToString())
-                       .WithColor(tool.IsDefaultTool ? Color.Gold : Color.LightGrey)
-                       .WithFields(
-                            new EmbedFieldBuilder().WithIsInline(true).WithName("Default Tool").WithValue(tool.IsDefaultTool)
-                        );
-
-            await ReplyAsync(embed: embed.Build());
-        }
-    }
-
     [Command("status"), Summary("List all available LLM backends and their current status")]
     [UsedImplicitly]
-    public async Task LlmBackendStatus()
+    public async Task ShowBackendStatus()
     {
         var results = await _backends.GetStatus();
 
@@ -169,5 +123,107 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
             .WithFooter("🧠 Mugunghwa AI Cluster");
 
         await ReplyAsync(embed: embed.Build());
+    }
+
+    [Group("tool")]
+    public class Tool(IToolIndex _tools, MultiEndpointProvider<LLamaServerEndpoint> _backends, IToolLog _log)
+        : MuteBaseModule
+    {
+        [Command, Summary("Get all the detailed information for a specific tool")]
+        [UsedImplicitly]
+        public async Task ShowToolInfo([Remainder] string name)
+        {
+            if (!_tools.Tools.TryGetValue(name, out var tool))
+            {
+                // Failed to find tool, find similar names
+                var nearby = (
+                    from t in _tools.Tools
+                    let dist = t.Value.Name.Levenshtein(name)
+                    orderby dist
+                    select t.Value
+                ).Take(5);
+
+                var builder = new StringBuilder();
+                builder.AppendLine($"Cannot find tool `{name}`. Did you mean:");
+                foreach (var item in nearby)
+                    builder.AppendLine($"- {item.Name}");
+
+                await ReplyAsync(builder.ToString());
+            }
+            else
+            {
+                var description = new StringBuilder();
+                description.AppendLine(tool.Description);
+                description.AppendLine();
+                description.AppendLine("**Parameters**");
+
+                foreach (var parameter in tool.GetParameters())
+                {
+                    description.AppendLine($" - **{parameter.Name}** (`{parameter.Type.Type}`)");
+                    description.AppendLine($"  - {parameter.Type.Description}");
+                    if (!parameter.Type.Required)
+                        description.AppendLine("  - Optional");
+                }
+
+                var embed = new EmbedBuilder()
+                           .WithTitle(tool.Name)
+                           .WithDescription(description.ToString())
+                           .WithColor(tool.IsDefaultTool ? Color.Gold : Color.LightGrey)
+                           .WithFields(
+                                new EmbedFieldBuilder().WithIsInline(true).WithName("Default Tool").WithValue(tool.IsDefaultTool)
+                            );
+
+                await ReplyAsync(embed: embed.Build());
+            }
+        }
+
+        [Command("log"), Summary("Show tool execution log")]
+        [UsedImplicitly]
+        public async Task ShowToolLog(int limit = 8)
+        {
+            var ctx = Context.AgentMemoryContextId;
+            var calls = _log.Calls(ctx).Take(limit).ToArray();
+            var responses = calls
+                .Select(a => (a, _log.Responses(ctx, id: a.Id).SingleOrDefault()))
+                .Where(a => a.Item2 != null)
+                .ToDictionary(a => a.a.Id, a => a.Item2!);
+            
+            await DisplayItemList(
+                calls,
+                () => "No tool calls have been logged",
+                list => $"{list.Count} calls (most recent first):",
+                (a, _) => $" - {SingleItem(a)}"
+            );
+
+            string SingleItem(IToolLog.ToolCall call)
+            {
+                // No response! (red blob)
+                if (!responses.TryGetValue(call.Id, out var response))
+                    return $"🔴 `{call.Name}` **No Response!**";
+
+                var elapsedMs = Math.Round((response.Timestamp - call.Timestamp).TotalMilliseconds);
+
+                // Try to extract "parameters" from call JSON
+                var parameters = call.Parameters;
+                var jobj = JsonNode.Parse(call.Parameters);
+                if (jobj?["arguments"] is JsonNode args)
+                    parameters = args.ToJsonString();
+                if (parameters == "\"{}\"")
+                    parameters = "";
+                parameters = Regex.Unescape(parameters);
+
+                // Format the response
+                var responseStr = response.Value;
+                if (responseStr is { Length: > 256 })
+                    responseStr = $"{responseStr[..256]}...";
+                
+                // Failure (orange blob)
+                if (!response.Success)
+                    return $"🟠 `{call.Name}({parameters}) => {responseStr}` ({elapsedMs}ms)";
+
+                // Success (green blob)
+                return $"🟢 `{call.Name}({parameters}) => {responseStr}` ({elapsedMs}ms)";
+            }
+        }
     }
 }
