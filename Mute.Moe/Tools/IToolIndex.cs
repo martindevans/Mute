@@ -101,7 +101,7 @@ public class DatabaseToolIndex
                 await db.ExecuteAsync("DELETE FROM `ToolDescriptionEmbeddings` WHERE (Name = @Name)", new { Name = item.Name });
         
         // Delete all tools where blob length is invalid (not a factor of 4)
-        await db.ExecuteAsync("DELETE FROM `ToolDescriptionEmbeddings` WHERE WHERE length(Embedding) % 4 != 0");
+        await db.ExecuteAsync("DELETE FROM `ToolDescriptionEmbeddings` WHERE length(Embedding) % 4 != 0");
 
         // Build dictionary of tool name => embedding
         var results = new Dictionary<string, ReadOnlyMemory<float>>();
