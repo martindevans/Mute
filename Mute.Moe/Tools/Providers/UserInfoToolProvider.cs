@@ -83,28 +83,29 @@ public class UserInfoToolProvider
             return await CannotFindUserError(ctx, id);
 
         var avatar = await _http.GetStreamAsync(user.GetDisplayAvatarUrl(ImageFormat.Png));
-        var description = await _imageAnalyser.GetImageDescription(avatar);
+        var imgDesc = await _imageAnalyser.GetImageDescription(avatar);
 
         return new
         {
             user_id = user.Id,
-            description = description,
+            description = imgDesc,
         };
     }
 
     private static async Task<object> CannotFindUserError(ITool.CallContext ctx, string id)
     {
-        var similar = await FindSimilarUsersInChannel(ctx, id, 3)
-                           .Select(a => new
-                            {
-                               name = a.Item2,
-                               id = a.Item1.Id,
-                            }).ToArrayAsync();
+        var similarUsernames = await FindSimilarUsersInChannel(ctx, id, 3)
+                                    .Select(a => new
+                                     {
+                                         name = a.Item2,
+                                         id = a.Item1.Id,
+                                     })
+                                    .ToArrayAsync();
 
         return new
         {
             error = "Could not find user",
-            similar = similar
+            similar = similarUsernames
         };
     }
 

@@ -21,7 +21,7 @@ public static class StringExtensions
             into iso
             select (iso.Key, iso.First().CurrencySymbol)).ToDictionary(x => x.Key, x => x.CurrencySymbol);
 
-        CurrencySymbolToName = new Dictionary<string, string>();
+        CurrencySymbolToName = [ ];
         foreach (var (key, value) in CurrencyNameToSymbol)
             CurrencySymbolToName[value] = key;
     }

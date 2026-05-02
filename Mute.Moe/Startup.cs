@@ -182,9 +182,7 @@ public record Startup(Configuration Configuration)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
         if (Configuration.BraveWebSearch != null)
-        {
             services.AddBraveSearch(Configuration.BraveWebSearch.ApiKey);
-        }
 
         // Create LLM stuff
         services.AddSingleton<ChatConversationFactory>();

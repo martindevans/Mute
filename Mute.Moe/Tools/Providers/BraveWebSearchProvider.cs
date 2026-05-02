@@ -95,7 +95,7 @@ public class BraveWebSearchProvider
 
             var caution = default(string);
             if (IsNearAprilFirst())
-                caution = $"The current date is {DateOnly.FromDateTime(DateTime.UtcNow).ToShortDateString()} - April fools **may** apply to some or all items!";
+                caution = $"The current date is {DateOnly.FromDateTime(DateTime.UtcNow):d} - April fools **may** apply to some or all items!";
 
             return new NewsItem(
                 result.Title,

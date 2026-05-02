@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Globalization;
+using Dapper;
 using Dapper.Contrib.Extensions;
 using Mute.Moe.Services.Database;
 using System.Threading.Tasks;
@@ -24,8 +25,9 @@ public interface IToolLog
     /// <param name="before"></param>
     /// <param name="after"></param>
     /// <param name="name"></param>
+    /// <param name="id"></param>
     /// <returns></returns>
-    public IEnumerable<ToolCall> Calls(ulong callContext, DateTime? before = null, DateTime? after = null, string? name = null);
+    public IEnumerable<ToolCall> Calls(ulong callContext, DateTime? before = null, DateTime? after = null, string? name = null, Guid? id = null);
     
     /// <summary>
     /// Log a tool response
@@ -42,8 +44,8 @@ public interface IToolLog
     /// <param name="after"></param>
     /// <param name="id"></param>
     /// <returns></returns>
-    public IEnumerable<ToolResponse> Responses(ulong callContext, DateTime? before = null, DateTime? after = null, string? id = null);
-    
+    public IEnumerable<ToolResponse> Responses(ulong callContext, DateTime? before = null, DateTime? after = null, Guid? id = null);
+
     /// <summary>
     /// Data about a tool call
     /// </summary>
@@ -51,6 +53,7 @@ public interface IToolLog
     /// <param name="Id"></param>
     /// <param name="Name"></param>
     /// <param name="Parameters"></param>
+    /// <param name="CallContext"></param>
     public record ToolCall(DateTime Timestamp, Guid Id, string Name, string Parameters, ulong CallContext);
 
     /// <summary>
@@ -60,6 +63,7 @@ public interface IToolLog
     /// <param name="Id"></param>
     /// <param name="Value"></param>
     /// <param name="Success"></param>
+    /// <param name="CallContext"></param>
     public record ToolResponse(DateTime Timestamp, Guid Id, string? Value, bool Success, ulong CallContext);
 }
 
@@ -78,8 +82,8 @@ public class DatabaseToolLog
         _database = database;
 
         using var db = _database.GetConnection();
-        db.Execute("CREATE TABLE IF NOT EXISTS `ToolCallModels` (`UnixTimestamp` INTEGER NOT NULL, `CallContext` INTEGER NOT NULL, `CallId` TEXT NOT NULL, `Name` TEXT NOT NULL, `Parameters` TEXT NOT NULL)");
-        db.Execute("CREATE TABLE IF NOT EXISTS `ToolResponseModels` (`UnixTimestamp` INTEGER NOT NULL, `CallContext` INTEGER NOT NULL, `CallId` TEXT NOT NULL, `Value` TEXT, `Success` INTEGER NOT NULL)");
+        db.Execute("CREATE TABLE IF NOT EXISTS `ToolCallModels` (`UnixTimestamp` TEXT NOT NULL, `CallContext` TEXT NOT NULL, `CallId` TEXT NOT NULL, `Name` TEXT NOT NULL, `Parameters` TEXT NOT NULL)");
+        db.Execute("CREATE TABLE IF NOT EXISTS `ToolResponseModels` (`UnixTimestamp` TEXT NOT NULL, `CallContext` TEXT NOT NULL, `CallId` TEXT NOT NULL, `Value` TEXT, `Success` INTEGER NOT NULL)");
     }
 
     /// <inheritdoc />
@@ -88,8 +92,8 @@ public class DatabaseToolLog
         using var db = _database.GetConnection();
 
         await db.InsertAsync(new ToolCallModel(
-            data.Timestamp.UnixTimestamp(),
-            data.CallContext,
+            data.Timestamp.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+            data.CallContext.ToString(CultureInfo.InvariantCulture),
             data.Id.ToString(),
             data.Name,
             data.Parameters
@@ -97,7 +101,7 @@ public class DatabaseToolLog
     }
 
     /// <inheritdoc />
-    public IEnumerable<IToolLog.ToolCall> Calls(ulong callContext, DateTime? before = null, DateTime? after = null, string? name = null)
+    public IEnumerable<IToolLog.ToolCall> Calls(ulong callContext, DateTime? before = null, DateTime? after = null, string? name = null, Guid? id = null)
     {
         const string query = """
                              SELECT *
@@ -105,26 +109,29 @@ public class DatabaseToolLog
                              WHERE (@Before IS NULL OR `UnixTimestamp` < @Before)
                                AND (@After IS NULL OR `UnixTimestamp` > @After)
                                AND (@Name IS NULL OR `Name` = @Name)
+                               AND (@Id IS NULL OR `CallId` = @Id)
                                AND (@CallCtx = `CallContext`)
+                             ORDER BY UnixTimestamp DESC 
                              """;
 
         using var db = _database.GetConnection();
 
         var results = db.Query<ToolCallModel>(query, new
         {
-            Before = before?.UnixTimestamp(),
-            After = after?.UnixTimestamp(),
+            Before = before?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+            After = after?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
             Name = name,
-            CallCtx = callContext,
+            Id = id?.ToString(),
+            CallCtx = callContext.ToString(CultureInfo.InvariantCulture),
         });
         
         return results
            .Select(r => new IToolLog.ToolCall(
-                r.UnixTimestamp.FromUnixTimestamp(),
+                ulong.Parse(r.UnixTimestamp).FromUnixTimestamp(),
                 Guid.Parse(r.CallId),
                 r.Name,
                 r.Parameters,
-                r.CallContext
+                ulong.Parse(r.CallContext)
             )
         );
     }
@@ -135,8 +142,8 @@ public class DatabaseToolLog
         using var db = _database.GetConnection();
 
         await db.InsertAsync(new ToolResponseModel(
-            data.Timestamp.UnixTimestamp(),
-            data.CallContext,
+            data.Timestamp.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+            data.CallContext.ToString(CultureInfo.InvariantCulture),
             data.Id.ToString(),
             data.Value,
             Convert.ToInt32(data.Success)
@@ -144,7 +151,7 @@ public class DatabaseToolLog
     }
 
     /// <inheritdoc />
-    public IEnumerable<IToolLog.ToolResponse> Responses(ulong callContext, DateTime? before = null, DateTime? after = null, string? id = null)
+    public IEnumerable<IToolLog.ToolResponse> Responses(ulong callContext, DateTime? before = null, DateTime? after = null, Guid? id = null)
     {
         const string query = """
                              SELECT *
@@ -153,29 +160,30 @@ public class DatabaseToolLog
                                AND (@After IS NULL OR `UnixTimestamp` > @After)
                                AND (@Id IS NULL OR `CallId` = @Id)
                                AND (@CallCtx = `CallContext`)
+                             ORDER BY UnixTimestamp DESC 
                              """;
 
         using var db = _database.GetConnection();
 
         var results = db.Query<ToolResponseModel>(query, new
         { 
-            Before = before?.UnixTimestamp(),
-            After = after?.UnixTimestamp(),
-            Id = id,
-            CallCtx = callContext,
+            Before = before?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+            After = after?.UnixTimestamp().ToString(CultureInfo.InvariantCulture),
+            Id = id?.ToString(),
+            CallCtx = callContext.ToString(CultureInfo.InvariantCulture),
         });
 
         return results
            .Select(r => new IToolLog.ToolResponse(
-                r.UnixTimestamp.FromUnixTimestamp(),
+                ulong.Parse(r.UnixTimestamp).FromUnixTimestamp(),
                 Guid.Parse(r.CallId),
                 r.Value,
                 Convert.ToBoolean(r.Success),
-                r.CallContext
+                ulong.Parse(r.CallContext)
             )
         );
     }
 
-    private record ToolCallModel(ulong UnixTimestamp, ulong CallContext, string CallId, string Name, string Parameters);
-    private record ToolResponseModel(ulong UnixTimestamp, ulong CallContext, string CallId, string? Value, int Success);
+    private record ToolCallModel(string UnixTimestamp, string CallContext, string CallId, string Name, string Parameters);
+    private record ToolResponseModel(string UnixTimestamp, string CallContext, string CallId, string? Value, long Success);
 }
