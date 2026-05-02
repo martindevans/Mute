@@ -14,6 +14,7 @@ namespace Mute.Moe.Tools;
 public class ToolExecutionEngineFactory
 {
     private readonly IToolIndex _toolsIndex;
+    private readonly IToolLog _toolsLog;
 
     /// <summary>
     /// All tool providers available
@@ -29,9 +30,11 @@ public class ToolExecutionEngineFactory
     /// Create a new factory that can produces <see cref="ToolExecutionEngine"/>s
     /// </summary>
     /// <param name="toolsIndex"></param>
-    public ToolExecutionEngineFactory(IToolIndex toolsIndex)
+    /// <param name="toolsLog"></param>
+    public ToolExecutionEngineFactory(IToolIndex toolsIndex, IToolLog toolsLog)
     {
         _toolsIndex = toolsIndex;
+        _toolsLog = toolsLog;
     }
 
     /// <summary>
@@ -44,7 +47,7 @@ public class ToolExecutionEngineFactory
     /// <returns></returns>
     public ToolExecutionEngine GetExecutionEngine(ChatRequest requestParameters, ITool.CallContext context, bool toolSearch = true, bool defaultTools = true)
     {
-        var engine = new ToolExecutionEngine(requestParameters, _toolsIndex, toolSearch, defaultTools, context);
+        var engine = new ToolExecutionEngine(requestParameters, _toolsIndex, _toolsLog, toolSearch, defaultTools, context);
         return engine;
     }
 }
@@ -56,6 +59,7 @@ public class ToolExecutionEngine
 {
     private readonly ChatRequest _requestParameters;
     private readonly IToolIndex _allTools;
+    private readonly IToolLog _toolLogs;
     private readonly ITool.CallContext _context;
     private readonly Dictionary<string, ITool> _availableTools = [ ];
     private readonly HashSet<string> _bannedTools = [ ];
@@ -79,13 +83,15 @@ public class ToolExecutionEngine
     /// </summary>
     /// <param name="requestParameters"></param>
     /// <param name="tools"></param>
+    /// <param name="toolLogs"></param>
     /// <param name="allowToolSearch"></param>
     /// <param name="addDefaultTools"></param>
     /// <param name="context"></param>
-    public ToolExecutionEngine(ChatRequest requestParameters, IToolIndex tools, bool allowToolSearch, bool addDefaultTools, ITool.CallContext context)
+    public ToolExecutionEngine(ChatRequest requestParameters, IToolIndex tools, IToolLog toolLogs, bool allowToolSearch, bool addDefaultTools, ITool.CallContext context)
     {
         _requestParameters = requestParameters;
         _allTools = tools;
+        _toolLogs = toolLogs;
         _context = context;
 
         // Add the initial toolset
@@ -217,57 +223,84 @@ public class ToolExecutionEngine
     /// <param name="functionCall"></param>
     public async Task Execute(FunctionCall functionCall)
     {
+        // Store calls locally
         _calls.Add((functionCall.Name, functionCall.GetJson()));
 
-        if (_bannedTools.Contains(functionCall.Name))
-        {
-            var error = new
-            {
-                error = $"Tool '{functionCall.Name}' is not allowed in this context"
-            };
+        // Log call
+        var callId = Guid.NewGuid();
+        await _toolLogs.Call(new IToolLog.ToolCall(
+            DateTime.UtcNow,
+            callId,
+            functionCall.Name,
+            functionCall.GetJson(),
+            _context.Channel.GetAgentMemoryContextId()
+        ));
 
-            functionCall.Result = new FunctionResult(functionCall, error, false);
-            return;
+        try
+        {
+
+            if (_bannedTools.Contains(functionCall.Name))
+            {
+                var error = new
+                {
+                    error = $"Tool '{functionCall.Name}' is not allowed in this context"
+                };
+
+                functionCall.Result = new FunctionResult(functionCall, error, false);
+                return;
+            }
+
+            switch (functionCall.Name)
+            {
+                // Meta tool to search for tools
+                case "search_for_tools":
+                {
+                    var (success, result) = await SearchForTools(functionCall);
+                    functionCall.Result = new FunctionResult(functionCall, result, success);
+                    break;
+                }
+
+                // Tool is available
+                case var key when _availableTools.TryGetValue(key, out var tool):
+                {
+                    var (success, result) = await ExecuteTool(functionCall, tool, _context);
+                    functionCall.Result = new FunctionResult(functionCall, result, success);
+                    break;
+                }
+
+                //// Tool exists, but is not available
+                //case var key when _allTools.ContainsKey(key):
+                //{
+                //    functionCall.Result = new FunctionResult(
+                //        functionCall,
+                //        new { error = $"Must call 'get_tool_info' to get detailed tool documentation before attempting to use tool '{key}'" },
+                //        false
+                //    );
+                //    break;
+                //}
+
+                case var unknown:
+                {
+                    functionCall.Result = new FunctionResult(
+                        functionCall,
+                        new { error = $"Unknown tool '{unknown}'" },
+                        false
+                    );
+                    break;
+                }
+            }
         }
-
-        switch (functionCall.Name)
+        finally
         {
-            // Meta tool to search for tools
-            case "search_for_tools":
-            {
-                var (success, result) = await SearchForTools(functionCall);
-                functionCall.Result = new FunctionResult(functionCall, result, success);
-                break;
-            }
-
-            // Tool is available
-            case var key when _availableTools.TryGetValue(key, out var tool):
-            {
-                var (success, result) = await ExecuteTool(functionCall, tool, _context);
-                functionCall.Result = new FunctionResult(functionCall, result, success);
-                break;
-            }
-
-            //// Tool exists, but is not available
-            //case var key when _allTools.ContainsKey(key):
-            //{
-            //    functionCall.Result = new FunctionResult(
-            //        functionCall,
-            //        new { error = $"Must call 'get_tool_info' to get detailed tool documentation before attempting to use tool '{key}'" },
-            //        false
-            //    );
-            //    break;
-            //}
-
-            case var unknown:
-            {
-                functionCall.Result = new FunctionResult(
-                    functionCall,
-                    new { error = $"Unknown tool '{unknown}'" },
-                    false
-                );
-                break;
-            }
+            // Log response
+            var success = functionCall.Result is { InvocationSucceeded: true };
+            await _toolLogs.Response(new IToolLog.ToolResponse(
+                DateTime.UtcNow,
+                callId,
+                functionCall.Result?.Content,
+                success,
+                _context.Channel.GetAgentMemoryContextId()
+            ));
         }
     }
 

@@ -168,7 +168,6 @@ public class DatabaseToolIndex
         if (embedding == null)
             return [ ];
 
-
         // Get tools with dot product to query embedding
         var toolEmbeddings = await _toolEmbeddings;
         var results = (

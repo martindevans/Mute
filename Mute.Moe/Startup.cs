@@ -152,6 +152,7 @@ public record Startup(Configuration Configuration)
         services.AddTransient<IEmbeddings, LLamaServerEmbedding>();
         services.AddTransient<IReranking, LlamaServerReranking>();
 
+        services.AddSingleton<IToolLog, DatabaseToolLog>();
         services.AddSingleton<IToolIndex, DatabaseToolIndex>(svc =>
             new DatabaseToolIndex(
                 svc.GetServices<IToolProvider>(),

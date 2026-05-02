@@ -41,5 +41,6 @@ public interface ITool
     /// <summary>
     /// Context info about where a tool call was made
     /// </summary>
+    /// <param name="Channel">Channel this call was made in</param>
     public record CallContext(IMessageChannel Channel);
 }
