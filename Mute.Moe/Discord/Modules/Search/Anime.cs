@@ -59,11 +59,19 @@ public class Anime(IAnimeInfo _animeSearch)
 
     [Command("season"), Summary("I will list all of the anime airing in a given season")]
     [UsedImplicitly]
-    public async Task AnimeSeason(int year, MediaSeason season)
+    public async Task AnimeSeason(int year = -1, MediaSeason season = (MediaSeason)(-1))
     {
-        var animes = await _animeSearch.GetSeasonAnimes(year, (int)season)
-                                 .Select(a => a.TitleEnglish ?? a.TitleJapanese ?? a.Id.ToString())
-                                 .ToArrayAsync();
+        // Switch to current year and season if not specified
+        if (year == -1)
+            year = DateTime.UtcNow.Year;
+        if (season == (MediaSeason)(-1))
+            season = DateTime.UtcNow.MediaSeason();
+
+        // Do the search
+        var animes = await _animeSearch
+                          .GetSeasonAnimes(year, (int)season)
+                          .Select(a => a.TitleEnglish ?? a.TitleJapanese ?? a.Id.ToString())
+                          .ToArrayAsync();
 
         await DisplayItemList(
             animes,

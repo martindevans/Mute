@@ -47,40 +47,6 @@ public partial class Chat(ConversationalResponseService _conversations)
 public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEndpoint> _backends)
     : MuteBaseModule
 {
-    [Command("tools"), Summary("Search for tools")]
-    [UsedImplicitly]
-    public async Task ToolSearch([Remainder] string query)
-    {
-        if (string.IsNullOrEmpty(query) || query == "*")
-        {
-            // Get all tools, defaults first
-            var defaults = _tools.Tools.Where(t => t.Value.IsDefaultTool).Select(t => t.Value);
-            var others = _tools.Tools.Where(t => !t.Value.IsDefaultTool).Select(t => t.Value);
-            var results = defaults.Concat(others).ToArray();
-
-            // Display results
-            await DisplayItemList(
-                results,
-                () => "No results",
-                rs => $"{rs.Count} results",
-                (item, idx) => $"{idx + 1}. **{item.Name}**"
-            );
-        }
-        else
-        {
-            // Do tool search
-            var results = (await _tools.Find(query, topK:5, topP:0)).ToArray();
-
-            // Display results
-            await DisplayItemList(
-                results,
-                () => "No results",
-                rs => $"{rs.Count} results",
-                (item, idx) => $"{idx + 1}. **{item.Tool.Name}**: {item.Relevance}"
-            );
-        }
-    }
-
     [Command("status"), Summary("List all available LLM backends and their current status")]
     [UsedImplicitly]
     public async Task ShowBackendStatus()
@@ -125,8 +91,42 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
         await ReplyAsync(embed: embed.Build());
     }
 
+    [Command("search"), Summary("Search for tools"), Alias("find")]
+    [UsedImplicitly]
+    public async Task ToolSearch([Remainder] string query)
+    {
+        if (string.IsNullOrEmpty(query) || query == "*")
+        {
+            // Get all tools, defaults first
+            var defaults = _tools.Tools.Where(t => t.Value.IsDefaultTool).Select(t => t.Value);
+            var others = _tools.Tools.Where(t => !t.Value.IsDefaultTool).Select(t => t.Value);
+            var results = defaults.Concat(others).ToArray();
+
+            // Display results
+            await DisplayItemList(
+                results,
+                () => "No results",
+                rs => $"{rs.Count} results",
+                (item, idx) => $"{idx + 1}. **{item.Name}**"
+            );
+        }
+        else
+        {
+            // Do tool search
+            var results = (await _tools.Find(query, topK: 5, topP: 0)).ToArray();
+
+            // Display results
+            await DisplayItemList(
+                results,
+                () => "No results",
+                rs => $"{rs.Count} results",
+                (item, idx) => $"{idx + 1}. **{item.Tool.Name}**: {item.Relevance}"
+            );
+        }
+    }
+
     [Group("tool")]
-    public class Tool(IToolIndex _tools, MultiEndpointProvider<LLamaServerEndpoint> _backends, IToolLog _log)
+    public class Tool(IToolIndex _tools, IToolLog _log)
         : MuteBaseModule
     {
         [Command, Summary("Get all the detailed information for a specific tool")]
@@ -180,10 +180,16 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
         [Command("log"), Summary("Show tool execution log")]
         [UsedImplicitly]
         [RequireOwner]
-        public async Task ShowToolLog(int limit = 8)
+        public async Task ShowToolLog(int limit = 8, string? name = null)
         {
             var ctx = Context.AgentMemoryContextId;
-            var calls = _log.Calls(ctx).Take(limit).ToArray();
+
+            var calls = _log
+                .Calls(ctx)
+                .Where(a => a.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+                .Take(limit)
+                .ToArray();
+            
             var responses = calls
                 .Select(a => (a, _log.Responses(ctx, id: a.Id).SingleOrDefault()))
                 .Where(a => a.Item2 != null)
