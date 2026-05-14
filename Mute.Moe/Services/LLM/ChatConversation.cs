@@ -185,7 +185,7 @@ public class ChatConversation
         {
             if (_toolExecutionEngine != null)
             {
-                await _toolExecutionEngine.ExecuteValueTask(calls);
+                await _toolExecutionEngine.Execute(calls);
             }
             else
             {

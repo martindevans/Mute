@@ -209,15 +209,6 @@ public class ToolExecutionEngine
     }
 
     /// <summary>
-    /// Execute all tool calls in list, returns a value task
-    /// </summary>
-    /// <param name="calls"></param>
-    public async ValueTask ExecuteValueTask(List<FunctionCall> calls)
-    {
-        await Execute(calls);
-    }
-
-    /// <summary>
     /// Execute a single tool call
     /// </summary>
     /// <param name="functionCall"></param>
