@@ -19,8 +19,11 @@ public class LlamaServerModelCapabilityEndpointFilter
     private readonly HttpClient _http;
 
     /// <summary>
-    /// 
+    /// Initializes a new instance of the <see cref="LlamaServerModelCapabilityEndpointFilter"/> class.
     /// </summary>
+    /// <param name="http">
+    /// The <see cref="IHttpClientFactory"/> used to create <see cref="HttpClient"/> instances for interacting with llama-server endpoints.
+    /// </param>
     public LlamaServerModelCapabilityEndpointFilter(IHttpClientFactory http)
     {
         _modelsCache = new FluidCache<CacheItem>(8, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(15), () => DateTime.UtcNow);
