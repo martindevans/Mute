@@ -1,16 +1,10 @@
-﻿using System.Threading.Tasks;
-
-namespace Mute.Moe.Discord.Context.Preprocessing;
+﻿namespace Mute.Moe.Discord.Context.Preprocessing;
 
 /// <summary>
-/// Preprocess messages which do not have a command character prefix
+/// Preprocess all messages which are <b>not</b> being interpreted as a command before
+/// any conversational responses are generated.
 /// </summary>
 public interface IConversationPreprocessor
+    : IContextProcessor
 {
-    /// <summary>
-    /// Preprocess the context, before the conversational response handler is invoked
-    /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
-    Task Process(MuteCommandContext context);
 }

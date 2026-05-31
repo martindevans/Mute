@@ -1,16 +1,9 @@
-﻿using System.Threading.Tasks;
-
-namespace Mute.Moe.Discord.Context.Postprocessing;
+﻿namespace Mute.Moe.Discord.Context.Postprocessing;
 
 /// <summary>
-/// After every successfully executed command, all services registered to DI which implement this will be invoked
+/// Postprocess a context for messages which have a command character prefix, after the command handler was invoked and returned successfully.
 /// </summary>
 public interface ISuccessfulCommandPostprocessor
+    : IContextProcessor
 {
-    /// <summary>
-    /// Process the context of the successful command that was just run
-    /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
-    Task Process(MuteCommandContext context);
 }
