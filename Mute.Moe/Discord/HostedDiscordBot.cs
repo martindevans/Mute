@@ -268,7 +268,7 @@ public class HostedDiscordBot
             if (result.IsSuccess)
                 await ExecuteContextProcessor<ISuccessfulCommandPostprocessor>(context);
             else
-                await ExecuteUnsuccessfultResultContextProcessor(context, result);
+                await ExecuteUnsuccessfulCommandPostprocessor(context, result);
         }
         catch (Exception ex)
         {
@@ -349,7 +349,7 @@ public class HostedDiscordBot
         }
     }
 
-    private static async Task ExecuteUnsuccessfultResultContextProcessor(MuteCommandContext context, IResult result)
+    private static async Task ExecuteUnsuccessfulCommandPostprocessor(MuteCommandContext context, IResult result)
     {
         foreach (var processor in context.Services.GetServices<IUnsuccessfulCommandPostprocessor>().OrderBy(a => a.Order))
         {
