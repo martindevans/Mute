@@ -1,10 +1,12 @@
 ﻿using Discord.Addons.Interactive;
 using Discord.WebSocket;
+using FaceAiSharp;
 using LlmTornado.Chat.Models;
 using LlmTornado.Code;
 using LlmTornado.Embedding.Models;
 using LlmTornado.Rerank.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Mute.BraveSearch;
 using Mute.Moe.Discord;
 using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Context.Preprocessing;
@@ -35,6 +37,7 @@ using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.LLM.Embedding;
 using Mute.Moe.Services.LLM.Memory;
+using Mute.Moe.Services.LLM.Memory.Extraction;
 using Mute.Moe.Services.LLM.Rerank;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Services.Notifications.RSS;
@@ -45,6 +48,7 @@ using Mute.Moe.Services.Reminders;
 using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
+using Mute.Moe.Services.Telemetry;
 using Mute.Moe.Tools;
 using Mute.Moe.Tools.Providers;
 using Serpent;
@@ -52,10 +56,11 @@ using Serpent.Loading;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
-using FaceAiSharp;
-using Mute.BraveSearch;
-using Mute.Moe.Services.LLM.Memory.Extraction;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
 using Wasmtime;
+using OpenTelemetry.Trace;
 
 namespace Mute.Moe;
 
@@ -75,6 +80,16 @@ public record Startup(Configuration Configuration)
 
         services.AddSingleton(services);
         services.AddSingleton(s => new InteractiveService(s.GetRequiredService<BaseSocketClient>()));
+
+        services.AddSingleton<Instrumentation>();
+        services
+           .AddOpenTelemetry()
+           .WithTracing(tracing =>
+            {
+                tracing.AddSource(Instrumentation.ActivitySourceName);
+                tracing.AddHttpClientInstrumentation();
+                //todo: add exporter! tracing.AddConsoleExporter();
+            });
 
         services.AddSingleton<ServiceHost>();
 
@@ -137,7 +152,7 @@ public record Startup(Configuration Configuration)
 
         services.AddSingleton<IMessagePreprocessor, MobileAudioMessageTranscriptionPreprocessor>();
 
-        services.AddSingleton<Status>();
+        services.AddSingleton<Services.Introspection.Status>();
         services.AddSingleton<ConversationalResponseService>();
         services.AddHostedService<GameService>();
         services.AddSingleton<ComponentActionService>();

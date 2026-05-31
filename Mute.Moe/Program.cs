@@ -4,6 +4,7 @@ using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
 using Mute.Moe.Tools;
 using Newtonsoft.Json;
+using OpenTelemetry.Trace;
 using Serilog;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -38,6 +39,10 @@ public static class Program
         var collection = new ServiceCollection();
         new Startup(config).ConfigureServices(collection);
         var provider = collection.BuildServiceProvider();
+
+        // Tracer provider must be initialised before we do any tracing/telemetry! Get the
+        // service right now to ensure it's initialised.
+        provider.GetRequiredService<TracerProvider>();
 
         // Get the tool index. This ensures it begins its internal update process
         provider.GetRequiredService<IToolIndex>();
