@@ -70,7 +70,7 @@ public static class Keys
             /// <summary>
             /// Type of the message context processor (the actual concrete type)
             /// </summary>
-            public const string ContextProcessorConcreteType = "mute.context_preocessor.concrete_type";
+            public const string ContextProcessorConcreteType = "mute.context_processor.concrete_type";
         }
     }
 }
