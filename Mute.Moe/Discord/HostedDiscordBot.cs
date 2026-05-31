@@ -189,7 +189,7 @@ public class HostedDiscordBot
             activity.SetTag(Keys.Tag.Discord.ChannelId, socketMessage.Channel.Id.ToString());
             activity.SetTag(Keys.Tag.Discord.UserId, socketMessage.Author.Id.ToString());
             if (socketMessage.Channel is IGuildChannel gc)
-                activity.SetTag(Keys.Tag.Discord.GuildId, gc.GuildId);
+                activity.SetTag(Keys.Tag.Discord.GuildId, gc.GuildId.ToString());
         }
 
         try

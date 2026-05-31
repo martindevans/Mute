@@ -1,11 +1,9 @@
-﻿using System.Diagnostics;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Threading.Tasks;
 using Concentus;
 using Concentus.Oggfile;
 using Discord;
 using Mute.Moe.Services.Speech.STT;
-using Mute.Moe.Services.Telemetry;
 using Mute.Moe.Utilities;
 using NAudio.Wave;
 
