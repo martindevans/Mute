@@ -40,7 +40,7 @@ public class MobileAudioMessageTranscriptionPreprocessor
         if (audio == null)
             return;
 
-        var transcription = context.GetOrAdd<ITranscriptionReceiver>(() => new AudioTranscription());
+        ITranscriptionReceiver transcription = context.GetOrAdd(() => new AudioTranscription());
 
         await context.Message.AddReactionAsync(new Emoji(EmojiLookup.StudioMicrophone));
 
