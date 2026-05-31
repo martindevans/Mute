@@ -73,6 +73,7 @@
     <PackageReference Include="Mute.Anilist" Version="2.2.0" />
     <PackageReference Include="Mute.BraveSearch" Version="3.0.0" />
     <PackageReference Include="NAudio" Version="2.3.0" />
+    <PackageReference Include="NSec.Cryptography" Version="26.4.0" />
     <PackageReference Include="OpenTelemetry" Version="1.15.3" />
     <PackageReference Include="OpenTelemetry.Api.ProviderBuilderExtensions" Version="1.15.3" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
@@ -98,12 +99,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Discord.Addons.Interactive\Discord.Addons.Interactive\Discord.Addons.Interactive.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="libsodium.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
