@@ -56,9 +56,6 @@ using Serpent.Loading;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
-using OpenTelemetry.Exporter;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Resources;
 using Wasmtime;
 using OpenTelemetry.Trace;
 
