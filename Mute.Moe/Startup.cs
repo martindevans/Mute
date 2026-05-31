@@ -82,21 +82,13 @@ public record Startup(Configuration Configuration)
         services.AddSingleton(s => new InteractiveService(s.GetRequiredService<BaseSocketClient>()));
 
         services.AddSingleton<Instrumentation>();
-        //services
-        //   .AddOpenTelemetry()
-        //   .ConfigureResource(resource => resource
-        //       .AddService(serviceName: Instrumentation.ActivitySourceName))
-        //   .WithTracing(tracing => tracing
-        //       .AddConsoleExporter()
-        //   );
-
         services
            .AddOpenTelemetry()
            .WithTracing(tracing =>
             {
-                tracing.SetSampler(new AlwaysOnSampler());
                 tracing.AddSource(Instrumentation.ActivitySourceName);
-                tracing.AddConsoleExporter();
+                tracing.AddHttpClientInstrumentation();
+                //todo: add exporter! tracing.AddConsoleExporter();
             });
 
         services.AddSingleton<ServiceHost>();
