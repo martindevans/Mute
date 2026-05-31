@@ -52,7 +52,7 @@ public static class Keys
             public const string ChannelId = "discord.channel.id";
             
             /// <summary>
-            /// Discrd user ID of sender.
+            /// Discord user ID of sender.
             /// </summary>
             public const string UserId = "discord.user.id";
         }
