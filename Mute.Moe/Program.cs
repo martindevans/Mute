@@ -90,10 +90,6 @@ public static class Program
 
 internal static partial class DependencyHelper
 {
-    [LibraryImport("opus", EntryPoint = "opus_get_version_string")]
-    [UnmanagedCallConv(CallConvs = [ typeof(System.Runtime.CompilerServices.CallConvCdecl) ])]
-    private static partial nint OpusVersionString();
-
     [LibraryImport("libsodium", EntryPoint = "sodium_version_string")]
     [UnmanagedCallConv(CallConvs = [ typeof(System.Runtime.CompilerServices.CallConvCdecl) ])]
     private static partial nint SodiumVersionString();
@@ -102,9 +98,6 @@ internal static partial class DependencyHelper
     {
         // These calls are important, they load the string from the DLL. So successfully making
         // these calls indicates that the deps are loaded.
-
-        var opusVersion = Marshal.PtrToStringAnsi(OpusVersionString());
-        Log.Information("Loaded opus: {0}", opusVersion);
 
         var sodiumVersion = Marshal.PtrToStringAnsi(SodiumVersionString());
         Log.Information("Loaded sodium: {0}", sodiumVersion);
