@@ -259,7 +259,7 @@ public class HostedDiscordBot
         try
         {
             // Execute all ICommandPreprocessor(s)
-            await ExecuteContextProcessor<ICommandPreprocessor>(context);
+            await ExecuteContextProcessor<ICommandPreprocessor>(context, rethrow:true);
             
             // Execute the command
             var result = await _commands.ExecuteAsync(context, offset, _services);
@@ -326,7 +326,7 @@ public class HostedDiscordBot
     }
 
     #region helpers
-    private static async Task<bool> ExecuteContextProcessor<T>(MuteCommandContext context)
+    private static async Task<bool> ExecuteContextProcessor<T>(MuteCommandContext context, bool rethrow = false)
         where T : IContextProcessor
     {
         bool failed = false;
@@ -349,6 +349,9 @@ public class HostedDiscordBot
                 Log.Error(ex, "Context processor {0} threw an exception", processor.GetType().Name);
                 activity?.AddException(ex);
                 failed = true;
+
+                if (rethrow)
+                    throw;
             }
         }
 
