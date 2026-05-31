@@ -184,10 +184,10 @@ public class HostedDiscordBot
         if (activity is not null)
         {
             activity.SetTag(Keys.Tag.Messaging.MessagingSystem, "Discord");
-            activity.SetTag(Keys.Tag.Messaging.MessageId, socketMessage.Id);
+            activity.SetTag(Keys.Tag.Messaging.MessageId, socketMessage.Id.ToString());
             activity.SetTag(Keys.Tag.Messaging.MessageBodySize, socketMessage.Content.Length);
-            activity.SetTag(Keys.Tag.Discord.ChannelId, socketMessage.Channel.Id);
-            activity.SetTag(Keys.Tag.Discord.UserId, socketMessage.Author.Id);
+            activity.SetTag(Keys.Tag.Discord.ChannelId, socketMessage.Channel.Id.ToString());
+            activity.SetTag(Keys.Tag.Discord.UserId, socketMessage.Author.Id.ToString());
             if (socketMessage.Channel is IGuildChannel gc)
                 activity.SetTag(Keys.Tag.Discord.GuildId, gc.GuildId);
         }
@@ -346,6 +346,7 @@ public class HostedDiscordBot
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Context processor {0} threw an exception", processor.GetType().Name);
                 activity?.AddException(ex);
                 failed = true;
             }
@@ -372,6 +373,7 @@ public class HostedDiscordBot
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Unsuccessful context processor {0} threw an exception", processor.GetType().Name);
                 activity?.AddException(ex);
             }
         }
