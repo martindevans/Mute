@@ -58,6 +58,7 @@ using System.IO.Abstractions;
 using System.Net.Http;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
 using Wasmtime;
 using OpenTelemetry.Trace;
 
@@ -81,24 +82,22 @@ public record Startup(Configuration Configuration)
         services.AddSingleton(s => new InteractiveService(s.GetRequiredService<BaseSocketClient>()));
 
         services.AddSingleton<Instrumentation>();
-        services.AddOpenTelemetry()
-                .WithLogging(logging =>
-                     logging.AddConsoleExporter()
-                 )
-                .WithTracing(tracing => tracing
-                    .AddSource(Instrumentation.ActivitySourceName)
-                    .AddHttpClientInstrumentation()
-                    //todo:.AddOtlpExporter(options =>
-                    // {
-                    //     options.Endpoint = new Uri("https://ingest.us.signoz.cloud:443/v1/traces");
-                    //     options.Headers = "signoz-ingestion-key=<your-ingestion-key>";
-                    //     options.Protocol = OtlpExportProtocol.HttpProtobuf;
-                    // })
-                    .AddConsoleExporter(options =>
-                    {
-                      options.Targets = ConsoleExporterOutputTargets.Console;
-                    })
-                );
+        //services
+        //   .AddOpenTelemetry()
+        //   .ConfigureResource(resource => resource
+        //       .AddService(serviceName: Instrumentation.ActivitySourceName))
+        //   .WithTracing(tracing => tracing
+        //       .AddConsoleExporter()
+        //   );
+
+        services
+           .AddOpenTelemetry()
+           .WithTracing(tracing =>
+            {
+                tracing.SetSampler(new AlwaysOnSampler());
+                tracing.AddSource(Instrumentation.ActivitySourceName);
+                tracing.AddConsoleExporter();
+            });
 
         services.AddSingleton<ServiceHost>();
 

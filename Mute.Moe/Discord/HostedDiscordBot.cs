@@ -183,6 +183,8 @@ public class HostedDiscordBot
         activity?.SetTag("message.id", socketMessage.Id);
         activity?.SetTag("message.channel", socketMessage.Channel.Id);
 
+        activity?.AddEvent(new ActivityEvent("hello"));
+        
         try
         {
             // Don't process the command if it was a System Message
