@@ -65,7 +65,7 @@ public static class Keys
             /// <summary>
             /// Type of the message context processor interface
             /// </summary>
-            public const string ContextProcessorInterfaceType = "mute.context_preocessor.interface_type";
+            public const string ContextProcessorInterfaceType = "mute.context_processor.interface_type";
 
             /// <summary>
             /// Type of the message context processor (the actual concrete type)
