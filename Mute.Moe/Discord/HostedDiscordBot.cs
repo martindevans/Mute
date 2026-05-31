@@ -13,6 +13,7 @@ using Serilog.Events;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
+using Mute.Moe.Services.Telemetry;
 using ExecuteResult = Discord.Commands.ExecuteResult;
 using IResult = Discord.Commands.IResult;
 using RunMode = Discord.Commands.RunMode;
@@ -28,6 +29,7 @@ public class HostedDiscordBot
     private readonly CommandService _commands;
     private readonly IServiceProvider _services;
     private readonly InteractionService _interactions;
+    private readonly Instrumentation _instrumentation;
 
     /// <summary>
     /// The <see cref="DiscordSocketClient"/> in use
@@ -42,8 +44,9 @@ public class HostedDiscordBot
     /// <param name="commands"></param>
     /// <param name="services"></param>
     /// <param name="interactions"></param>
+    /// <param name="instrumentation"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services, InteractionService interactions)
+    public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services, InteractionService interactions, Instrumentation instrumentation)
     {
         Client = client ?? throw new ArgumentNullException(nameof(client));
 
@@ -51,6 +54,7 @@ public class HostedDiscordBot
         _commands = commands ?? throw new ArgumentNullException(nameof(commands));
         _services = services ?? throw new ArgumentNullException(nameof(services));
         _interactions = interactions ?? throw new ArgumentNullException(nameof(interactions));
+        _instrumentation = instrumentation ?? throw new ArgumentNullException(nameof(instrumentation));
 
         Client.Log += LogAsync;
     }
@@ -175,6 +179,10 @@ public class HostedDiscordBot
 
     private async Task HandleMessage(SocketMessage socketMessage)
     {
+        using var activity = _instrumentation.ActivitySource.StartActivity();
+        activity?.SetTag("message.id", socketMessage.Id);
+        activity?.SetTag("message.channel", socketMessage.Channel.Id);
+
         try
         {
             // Don't process the command if it was a System Message
@@ -203,7 +211,7 @@ public class HostedDiscordBot
             }
 
             // Create a context for this message
-            await using var context = new MuteCommandContext(Client, message, _services);
+            await using var context = new MuteCommandContext(Client, message, _services, _instrumentation);
 
             // Apply generic message preproccessors
             var preprocessors = _services.GetServices<IMessagePreprocessor>().ToList();
@@ -233,6 +241,7 @@ public class HostedDiscordBot
         }
         catch (Exception ex)
         {
+            activity?.AddException(ex);
             Log.Error(ex, "Message handler threw exception");
             throw;
         }
@@ -240,6 +249,8 @@ public class HostedDiscordBot
 
     private async Task ProcessAsCommand(int offset, MuteCommandContext context)
     {
+        using var activity = _instrumentation.ActivitySource.StartActivity();
+
         // When there's a mention the command may or may not include the prefix. Check if it does include it and skip over it if so
         if (context.Message.Content[offset] == _config.PrefixCharacter)
             offset++;

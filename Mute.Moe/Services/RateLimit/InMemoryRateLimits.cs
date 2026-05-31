@@ -1,10 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using Mute.Moe.Services.Telemetry;
 
 namespace Mute.Moe.Services.RateLimit;
 
 /// <inheritdoc />
-public class InMemoryRateLimits
+public class InMemoryRateLimits(Instrumentation _instrumentation)
     : IRateLimit
 {
     private readonly ConcurrentDictionary<(Guid, ulong), RateLimitState> _used = new();
