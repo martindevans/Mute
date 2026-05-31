@@ -157,8 +157,6 @@ public class AudioTranscription
 
     void MobileAudioMessageTranscriptionPreprocessor.ITranscriptionReceiver.Complete(string result)
     {
-        Activity.Current?.SetTag(Keys.Tag.Discord.Transcription, result);
-        
         _tcs.SetResult(result);
     }
 

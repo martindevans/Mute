@@ -37,11 +37,6 @@ public static class Keys
         public static class Discord
         {
             /// <summary>
-            /// Transcription from audio message
-            /// </summary>
-            public const string Transcription = "discord.message.transcription";
-
-            /// <summary>
             /// Discord Guild ID, not set if it's a private message
             /// </summary>
             public const string GuildId = "discord.guild.id";
