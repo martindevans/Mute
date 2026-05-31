@@ -11,7 +11,7 @@ public sealed class Instrumentation
     /// <summary>
     /// Name used in activity source
     /// </summary>
-    public const string ActivitySourceName = "*Mute";
+    public const string ActivitySourceName = "Mute.Moe";
     
     /// <summary>
     /// Version used in activity source
