@@ -326,9 +326,11 @@ public class HostedDiscordBot
     }
 
     #region helpers
-    private static async Task ExecuteContextProcessor<T>(MuteCommandContext context)
+    private static async Task<bool> ExecuteContextProcessor<T>(MuteCommandContext context)
         where T : IContextProcessor
     {
+        bool failed = false;
+        
         foreach (var processor in context.Services.GetServices<T>())
         {
             using var activity = context.Activity?.Source.StartActivity();
@@ -345,8 +347,11 @@ public class HostedDiscordBot
             catch (Exception ex)
             {
                 activity?.AddException(ex);
+                failed = true;
             }
         }
+
+        return failed;
     }
 
     private static async Task ExecuteUnsuccessfulCommandPostprocessor(MuteCommandContext context, IResult result)
