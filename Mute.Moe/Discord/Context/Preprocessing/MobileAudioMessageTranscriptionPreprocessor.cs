@@ -1,9 +1,11 @@
-﻿using System.Net.Http;
+﻿using System.Diagnostics;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Concentus;
 using Concentus.Oggfile;
 using Discord;
 using Mute.Moe.Services.Speech.STT;
+using Mute.Moe.Services.Telemetry;
 using Mute.Moe.Utilities;
 using NAudio.Wave;
 
@@ -38,7 +40,7 @@ public class MobileAudioMessageTranscriptionPreprocessor
         if (audio == null)
             return;
 
-        var transcription = (ITranscriptionReceiver)context.GetOrAdd(() => new AudioTranscription());
+        var transcription = context.GetOrAdd<ITranscriptionReceiver>(() => new AudioTranscription());
 
         await context.Message.AddReactionAsync(new Emoji(EmojiLookup.StudioMicrophone));
 
@@ -155,6 +157,8 @@ public class AudioTranscription
 
     void MobileAudioMessageTranscriptionPreprocessor.ITranscriptionReceiver.Complete(string result)
     {
+        Activity.Current?.SetTag(Keys.Tag.Discord.Transcription, result);
+        
         _tcs.SetResult(result);
     }
 

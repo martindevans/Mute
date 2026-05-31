@@ -8,12 +8,12 @@ using Mute.Moe.Discord.Context;
 using Mute.Moe.Discord.Context.Postprocessing;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Discord.Services.Responses;
+using Mute.Moe.Services.Telemetry;
 using Serilog;
 using Serilog.Events;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
-using Mute.Moe.Services.Telemetry;
 using ExecuteResult = Discord.Commands.ExecuteResult;
 using IResult = Discord.Commands.IResult;
 using RunMode = Discord.Commands.RunMode;
@@ -179,9 +179,18 @@ public class HostedDiscordBot
 
     private async Task HandleMessage(SocketMessage socketMessage)
     {
+        // Telemetry
         using var activity = _instrumentation.ActivitySource.StartActivity();
-        activity?.SetTag("message.id", socketMessage.Id);
-        activity?.SetTag("message.channel", socketMessage.Channel.Id);
+        if (activity is not null)
+        {
+            activity.SetTag(Keys.Tag.Messaging.MessagingSystem, "Discord");
+            activity.SetTag(Keys.Tag.Messaging.MessageId, socketMessage.Id);
+            activity.SetTag(Keys.Tag.Messaging.MessageBodySize, socketMessage.Content.Length);
+            activity.SetTag(Keys.Tag.Discord.ChannelId, socketMessage.Channel.Id);
+            activity.SetTag(Keys.Tag.Discord.UserId, socketMessage.Author.Id);
+            if (socketMessage.Channel is IGuildChannel gc)
+                activity.SetTag(Keys.Tag.Discord.GuildId, gc.GuildId);
+        }
 
         try
         {
@@ -214,18 +223,7 @@ public class HostedDiscordBot
             await using var context = new MuteCommandContext(Client, message, _services, _instrumentation);
 
             // Apply generic message preproccessors
-            var preprocessors = _services.GetServices<IMessagePreprocessor>().ToList();
-            foreach (var pre in preprocessors)
-            {
-                try
-                {
-                    await pre.Process(context);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Generic command preprocessor failed: {0}", pre.GetType().Name);
-                }
-            }
+            await ExecuteContextProcessor<IMessagePreprocessor>(context);
 
             // Either process as command or try to process conversationally
             if (hasPrefix)
@@ -234,8 +232,10 @@ public class HostedDiscordBot
             }
             else
             {
-                foreach (var pre in _services.GetServices<IConversationPreprocessor>())
-                    await pre.Process(context);
+                // Apply conversation message preprocessors
+                await ExecuteContextProcessor<IConversationPreprocessor>(context);
+
+                // Generate a conversational response
                 await _services.GetRequiredService<ConversationalResponseService>().Respond(context);
             }
         }
@@ -258,25 +258,22 @@ public class HostedDiscordBot
         // Execute the command
         try
         {
-            foreach (var pre in _services.GetServices<ICommandPreprocessor>())
-                await pre.Process(context);
-
+            // Execute all ICommandPreprocessor(s)
+            await ExecuteContextProcessor<ICommandPreprocessor>(context);
+            
+            // Execute the command
             var result = await _commands.ExecuteAsync(context, offset, _services);
+            
+            // Execute command postprocessors
             if (result.IsSuccess)
-            {
-                foreach (var post in _services.GetServices<ISuccessfulCommandPostprocessor>())
-                    await post.Process(context);
-            }
+                await ExecuteContextProcessor<ISuccessfulCommandPostprocessor>(context);
             else
-            {
-                foreach (var post in _services.GetServices<IUnsuccessfulCommandPostprocessor>().OrderBy(a => a.Order))
-                    if (await post.Process(context, result))
-                        break;
-            }
+                await ExecuteUnsuccessfultResultContextProcessor(context, result);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Log.Error(e, "Executing command threw an exception");
+            activity?.AddException(ex);
+            Log.Error(ex, "Executing command threw an exception");
         }
     }
 
@@ -327,4 +324,52 @@ public class HostedDiscordBot
         Log.Write(severity, message.Exception, "[{Source}] {Message}", message.Source, message.Message);
         await Task.CompletedTask;
     }
+
+    #region helpers
+    private static async Task ExecuteContextProcessor<T>(MuteCommandContext context)
+        where T : IContextProcessor
+    {
+        foreach (var processor in context.Services.GetServices<T>())
+        {
+            using var activity = context.Activity?.Source.StartActivity();
+            if (activity is not null)
+            {
+                activity.SetTag(Keys.Tag.Mute.ContextProcessorInterfaceType, typeof(T).Name);
+                activity.SetTag(Keys.Tag.Mute.ContextProcessorConcreteType, processor.GetType().Name);
+            }
+
+            try
+            {
+                await processor.Process(context);
+            }
+            catch (Exception ex)
+            {
+                activity?.AddException(ex);
+            }
+        }
+    }
+
+    private static async Task ExecuteUnsuccessfultResultContextProcessor(MuteCommandContext context, IResult result)
+    {
+        foreach (var processor in context.Services.GetServices<IUnsuccessfulCommandPostprocessor>().OrderBy(a => a.Order))
+        {
+            using var activity = context.Activity?.Source.StartActivity();
+            if (activity is not null)
+            {
+                activity.SetTag(Keys.Tag.Mute.ContextProcessorInterfaceType, nameof(IUnsuccessfulCommandPostprocessor));
+                activity.SetTag(Keys.Tag.Mute.ContextProcessorConcreteType, processor.GetType().Name);
+            }
+
+            try
+            {
+                if (await processor.Process(context, result))
+                    break;
+            }
+            catch (Exception ex)
+            {
+                activity?.AddException(ex);
+            }
+        }
+    }
+    #endregion
 }
