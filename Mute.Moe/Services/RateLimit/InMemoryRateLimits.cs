@@ -5,7 +5,7 @@ using Mute.Moe.Services.Telemetry;
 namespace Mute.Moe.Services.RateLimit;
 
 /// <inheritdoc />
-public class InMemoryRateLimits(Instrumentation _instrumentation)
+public class InMemoryRateLimits
     : IRateLimit
 {
     private readonly ConcurrentDictionary<(Guid, ulong), RateLimitState> _used = new();

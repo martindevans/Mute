@@ -24,7 +24,7 @@ public sealed class MuteCommandContext
     /// <summary>
     /// Instrumentation activity
     /// </summary>
-    public Activity? Activity { get; set; }
+    public Activity? Activity { get; }
 
     /// <summary>
     /// Get the context ID to use for memories
