@@ -88,16 +88,6 @@ public static class Program
                 return;
         }
     }
-
-    /// <summary>
-    /// Get the total uptime of the current program
-    /// </summary>
-    /// <returns></returns>
-    [ExcludeFromCodeCoverage]
-    public static TimeSpan Uptime()
-    {
-        return DateTime.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime();
-    }
 }
 
 [ExcludeFromCodeCoverage]

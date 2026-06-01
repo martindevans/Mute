@@ -122,7 +122,7 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IPendingTransactions, DatabasePendingTransactions>();
 
         services.AddSingleton<ICryptocurrencyInfo, ProCoinMarketCapCrypto>();
-        services.AddSingleton<IUptime>(new ProgramUptime());
+        services.AddSingleton<IUptime>(new ProcessUptime());
         services.AddSingleton<IStockQuotes, AlphaAdvantageStocks>();
         services.AddSingleton<IForexInfo, AlphaAdvantageForex>();
         services.AddSingleton<IStockSearch, AlphaVantageStockSearch>();
