@@ -1,9 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Groups;
 
@@ -17,17 +18,17 @@ public class DatabaseGroupServiceTests
     {
         var service = new DatabaseGroupService(new SqliteInMemoryDatabase());
         var guild = CreateGuild(1, "Guild");
-        var role = CreateRole(guild.Object, 10, "Role");
+        var role = CreateRole(guild, 10, "Role");
 
-        Assert.IsFalse(await service.IsUnlocked(role.Object));
+        Assert.IsFalse(await service.IsUnlocked(role));
 
-        await service.Unlock(role.Object);
+        await service.Unlock(role);
 
-        Assert.IsTrue(await service.IsUnlocked(role.Object));
+        Assert.IsTrue(await service.IsUnlocked(role));
 
-        await service.Lock(role.Object);
+        await service.Lock(role);
 
-        Assert.IsFalse(await service.IsUnlocked(role.Object));
+        Assert.IsFalse(await service.IsUnlocked(role));
     }
 
     [TestMethod]
@@ -35,17 +36,15 @@ public class DatabaseGroupServiceTests
     {
         var service = new DatabaseGroupService(new SqliteInMemoryDatabase());
         var guild = CreateGuild(1, "Guild");
-        var alpha = CreateRole(guild.Object, 10, "Alpha");
+        var alpha = CreateRole(guild, 10, "Alpha");
+        SetRoleResult(guild, 10, alpha);
 
-        guild.Setup(g => g.GetRoleAsync(10, It.IsAny<RequestOptions>()))
-             .ReturnsAsync(alpha.Object);
+        await service.Unlock(alpha);
+        await service.Unlock(alpha);
 
-        await service.Unlock(alpha.Object);
-        await service.Unlock(alpha.Object);
+        var unlocked = (await service.GetUnlocked(guild)).ToArray();
 
-        var unlocked = (await service.GetUnlocked(guild.Object)).ToArray();
-
-        CollectionAssert.AreEqual(new[] { alpha.Object }, unlocked);
+        CollectionAssert.AreEqual(new[] { alpha }, unlocked);
     }
 
     [TestMethod]
@@ -54,24 +53,21 @@ public class DatabaseGroupServiceTests
         var service = new DatabaseGroupService(new SqliteInMemoryDatabase());
         var guild = CreateGuild(1, "Guild");
         var otherGuild = CreateGuild(2, "Other Guild");
-        var zebra = CreateRole(guild.Object, 10, "Zebra");
-        var alpha = CreateRole(guild.Object, 11, "Alpha");
-        var other = CreateRole(otherGuild.Object, 12, "Other");
+        var zebra = CreateRole(guild, 10, "Zebra");
+        var alpha = CreateRole(guild, 11, "Alpha");
+        var other = CreateRole(otherGuild, 12, "Other");
 
-        guild.Setup(g => g.GetRoleAsync(10, It.IsAny<RequestOptions>()))
-             .ReturnsAsync(zebra.Object);
-        guild.Setup(g => g.GetRoleAsync(11, It.IsAny<RequestOptions>()))
-             .ReturnsAsync(alpha.Object);
-        guild.Setup(g => g.GetRoleAsync(12, It.IsAny<RequestOptions>()))
-             .ThrowsAsync(new AssertFailedException("Should not fetch roles from another guild"));
+        SetRoleResult(guild, 10, zebra);
+        SetRoleResult(guild, 11, alpha);
+        SetRoleException(guild, 12, new AssertFailedException("Should not fetch roles from another guild"));
 
-        await service.Unlock(zebra.Object);
-        await service.Unlock(alpha.Object);
-        await service.Unlock(other.Object);
+        await service.Unlock(zebra);
+        await service.Unlock(alpha);
+        await service.Unlock(other);
 
-        var unlocked = (await service.GetUnlocked(guild.Object)).ToArray();
+        var unlocked = (await service.GetUnlocked(guild)).ToArray();
 
-        CollectionAssert.AreEqual(new[] { alpha.Object, zebra.Object }, unlocked);
+        CollectionAssert.AreEqual(new[] { alpha, zebra }, unlocked);
     }
 
     [TestMethod]
@@ -79,36 +75,87 @@ public class DatabaseGroupServiceTests
     {
         var service = new DatabaseGroupService(new SqliteInMemoryDatabase());
         var guild = CreateGuild(1, "Guild");
-        var valid = CreateRole(guild.Object, 10, "Alpha");
-        var missing = CreateRole(guild.Object, 11, "Missing");
+        var valid = CreateRole(guild, 10, "Alpha");
+        var missing = CreateRole(guild, 11, "Missing");
 
-        guild.Setup(g => g.GetRoleAsync(10, It.IsAny<RequestOptions>()))
-             .ReturnsAsync(valid.Object);
-        guild.Setup(g => g.GetRoleAsync(11, It.IsAny<RequestOptions>()))
-             .ThrowsAsync(new InvalidOperationException("Missing role"));
+        SetRoleResult(guild, 10, valid);
+        SetRoleException(guild, 11, new InvalidOperationException("Missing role"));
 
-        await service.Unlock(valid.Object);
-        await service.Unlock(missing.Object);
+        await service.Unlock(valid);
+        await service.Unlock(missing);
 
-        var unlocked = (await service.GetUnlocked(guild.Object)).ToArray();
+        var unlocked = (await service.GetUnlocked(guild)).ToArray();
 
-        CollectionAssert.AreEqual(new[] { valid.Object }, unlocked);
+        CollectionAssert.AreEqual(new[] { valid }, unlocked);
     }
 
-    private static Mock<IGuild> CreateGuild(ulong id, string name)
+    private static IGuild CreateGuild(ulong id, string name)
     {
-        var guild = new Mock<IGuild>();
-        guild.SetupGet(g => g.Id).Returns(id);
-        guild.SetupGet(g => g.Name).Returns(name);
+        var guild = DispatchProxy.Create<IGuild, InterfaceProxy<IGuild>>();
+        var proxy = (InterfaceProxy<IGuild>)(object)guild;
+        proxy.Handler = (method, args) => method.Name switch
+        {
+            "get_Id" => id,
+            "get_Name" => name,
+            "GetRoleAsync" => GetRole(proxy.RoleResults, args),
+            _ => throw new NotImplementedException(method.Name)
+        };
+
         return guild;
     }
 
-    private static Mock<IRole> CreateRole(IGuild guild, ulong id, string name)
+    private static IRole CreateRole(IGuild guild, ulong id, string name)
     {
-        var role = new Mock<IRole>();
-        role.SetupGet(r => r.Guild).Returns(guild);
-        role.SetupGet(r => r.Id).Returns(id);
-        role.SetupGet(r => r.Name).Returns(name);
-        return role;
+        return CreateProxy<IRole>((method, _) => method.Name switch
+        {
+            "get_Guild" => guild,
+            "get_Id" => id,
+            "get_Name" => name,
+            _ => throw new NotImplementedException(method.Name)
+        });
+    }
+
+    private static void SetRoleResult(IGuild guild, ulong id, IRole role)
+    {
+        var roles = GetRoleStore(guild);
+        roles[id] = () => Task.FromResult(role);
+    }
+
+    private static void SetRoleException(IGuild guild, ulong id, Exception exception)
+    {
+        var roles = GetRoleStore(guild);
+        roles[id] = () => Task.FromException<IRole>(exception);
+    }
+
+    private static Task<IRole> GetRole(Dictionary<ulong, Func<Task<IRole>>> roles, object?[]? args)
+    {
+        var id = (ulong)args![0]!;
+        if (roles.TryGetValue(id, out var getter))
+            return getter();
+
+        throw new KeyNotFoundException($"No role configured for {id}");
+    }
+
+    private static Dictionary<ulong, Func<Task<IRole>>> GetRoleStore(IGuild guild)
+        => ((InterfaceProxy<IGuild>)(object)guild).RoleResults;
+
+    private static T CreateProxy<T>(Func<MethodInfo, object?[]?, object?> handler)
+        where T : class
+    {
+        var proxy = DispatchProxy.Create<T, InterfaceProxy<T>>();
+        ((InterfaceProxy<T>)(object)proxy).Handler = handler;
+        return proxy;
+    }
+
+    private sealed class InterfaceProxy<T>
+        : DispatchProxy
+        where T : class
+    {
+        public Func<MethodInfo, object?[]?, object?> Handler { get; set; } = default!;
+
+        public Dictionary<ulong, Func<Task<IRole>>> RoleResults { get; } = new();
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+            => Handler(targetMethod ?? throw new ArgumentNullException(nameof(targetMethod)), args);
     }
 }
