@@ -9,7 +9,6 @@ namespace Mute.Moe.Extensions;
 public static class StringExtensions
 {
     private static readonly Dictionary<string, string> CurrencyNameToSymbol;
-    private static readonly Dictionary<string, string> CurrencySymbolToName;
 
     static StringExtensions()
     {
@@ -20,10 +19,6 @@ public static class StringExtensions
             group ri by ri.ISOCurrencySymbol.ToLowerInvariant()
             into iso
             select (iso.Key, iso.First().CurrencySymbol)).ToDictionary(x => x.Key, x => x.CurrencySymbol);
-
-        CurrencySymbolToName = [ ];
-        foreach (var (key, value) in CurrencyNameToSymbol)
-            CurrencySymbolToName[value] = key;
     }
 
     private static RegionInfo? RegionInfo(int lcid)
@@ -46,16 +41,6 @@ public static class StringExtensions
     public static string TryGetCurrencySymbol(this string isoCurrencySymbol)
     {
         return CurrencyNameToSymbol.GetValueOrDefault(isoCurrencySymbol.ToLowerInvariant(), defaultValue: isoCurrencySymbol);
-    }
-
-    /// <summary>
-    /// Try to get the ISO name of a currency. e.g. £ => GBP
-    /// </summary>
-    /// <param name="symbol"></param>
-    /// <returns></returns>
-    public static string? TryGetCurrencyIsoName(this string symbol)
-    {
-        return CurrencySymbolToName.GetValueOrDefault(symbol);
     }
 
     /// <summary>
@@ -102,41 +87,6 @@ public static class StringExtensions
     }
 
     /// <summary>
-    /// Find all mentions of users, returns the IDs
-    /// </summary>
-    /// <param name="str"></param>
-    /// <returns></returns>
-    public static IEnumerable<ulong> FindUserMentions(this string str)
-    {
-        return str.FindMentions('@');
-    }
-
-    /// <summary>
-    /// Find all mentions of channels, returns the IDs
-    /// </summary>
-    /// <param name="str"></param>
-    /// <returns></returns>
-    public static IEnumerable<ulong> FindChannelMentions(this string str)
-    {
-        return str.FindMentions('#');
-    }
-
-    /// <summary>
-    /// Find mentions, returns them
-    /// </summary>
-    /// <param name="str"></param>
-    /// <param name="prefix"></param>
-    /// <returns></returns>
-    private static IEnumerable<ulong> FindMentions(this string str, char prefix)
-    {
-        var r = new Regex($@"\<{prefix}(!?)(?<id>[0-9]+)\>");
-
-        var matches = r.Matches(str);
-
-        return matches.SelectMany(m => m.Groups["id"].Captures.Select(c => c.Value)).Select(ulong.Parse);
-    }
-
-    /// <summary>
     /// string.split, but returning an enumerable of <see cref="ReadOnlyMemory{T}"/>
     /// </summary>
     /// <param name="str"></param>
@@ -176,20 +126,6 @@ public static class StringExtensions
             return str[..maxLength];
 
         return str[..(maxLength - 1)] + '…';
-    }
-
-    /// <summary>
-    /// Get just the first line of a string
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    public static string FirstLine(this string input)
-    {
-        if (string.IsNullOrEmpty(input))
-            return input;
-
-        var index = input.IndexOfAny([ '\r', '\n' ]);
-        return index == -1 ? input : input[..index];
     }
 
     /// <summary>

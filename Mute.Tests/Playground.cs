@@ -18,6 +18,8 @@ public class Playground
         Assert.IsFalse(C("No that's not it"));
         Assert.IsFalse(C("no ty"));
         Assert.IsFalse(C("noty"));
+        Assert.IsFalse(C("nope"));
+        Assert.IsFalse(C("nah"));
 
         Assert.IsTrue(C("yes"));
         Assert.IsTrue(C("Yes I agree that is an excellent idea"));
