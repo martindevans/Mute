@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Mute.Moe.Services.Telemetry;
 
 /// <summary>
 /// Provides <see cref="ActivitySource"/> for instrumentation
 /// </summary>
+[ExcludeFromCodeCoverage]
 public sealed class Instrumentation
     : IDisposable
 {

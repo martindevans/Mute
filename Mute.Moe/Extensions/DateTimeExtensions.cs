@@ -1,6 +1,4 @@
-﻿using Mute.Anilist;
-
-namespace Mute.Moe.Extensions;
+﻿namespace Mute.Moe.Extensions;
 
 /// <summary>
 /// Extensions to <see cref="DateTime"/>
@@ -19,23 +17,6 @@ public static class DateTimeExtensions
         public ulong UnixTimestamp()
         {
             return (ulong)time.Subtract(DateTime.UnixEpoch).TotalSeconds;
-        }
-
-        /// <summary>
-        /// Get the media season this date is in
-        /// </summary>
-        /// <returns></returns>
-        public MediaSeason MediaSeason()
-        {
-                var month = DateTime.Now.Month;
-
-                return month switch
-                {
-                    >= 0 and <= 2 => Anilist.MediaSeason.Winter,
-                    >= 3 and <= 5 => Anilist.MediaSeason.Spring,
-                    >= 6 and <= 8 => Anilist.MediaSeason.Summer,
-                    _ => Anilist.MediaSeason.Fall,
-                };
         }
     }
 

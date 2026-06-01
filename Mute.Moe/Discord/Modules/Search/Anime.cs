@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Commands;
 using Mute.Anilist;
+using Mute.Anilist.Extensions;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Information.Anime;
 

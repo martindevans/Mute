@@ -1,4 +1,6 @@
-﻿using Discord.Interactions;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
@@ -86,8 +88,19 @@ public static class Program
                 return;
         }
     }
+
+    /// <summary>
+    /// Get the total uptime of the current program
+    /// </summary>
+    /// <returns></returns>
+    [ExcludeFromCodeCoverage]
+    public static TimeSpan Uptime()
+    {
+        return DateTime.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime();
+    }
 }
 
+[ExcludeFromCodeCoverage]
 internal static partial class DependencyHelper
 {
     [LibraryImport("libsodium", EntryPoint = "sodium_version_string")]
