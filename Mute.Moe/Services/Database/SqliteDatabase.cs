@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using Mute.Moe.Services.Database.Functions;
+using Serilog;
 using System.Data;
 using System.Data.SQLite;
 using System.Threading.Tasks;
@@ -34,6 +35,9 @@ public abstract class BaseSqliteDatabase
     {
         var connection = new SQLiteConnection(_dbConnStr);
         connection.Open();
+
+        connection.BindFunction(new RegExSQLiteFunction());
+
         return connection;
     }
 
