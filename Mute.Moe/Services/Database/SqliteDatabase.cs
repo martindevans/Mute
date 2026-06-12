@@ -126,5 +126,5 @@ public class SqliteInMemoryDatabase
         _root = GetConnection();
     }
 
-    private static string RandomName() => Random.Shared.GetHexString(32);
+    private static string RandomName() => Random.Shared.GetHexString(128);
 }
