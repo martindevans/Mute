@@ -1,8 +1,8 @@
-﻿using Mute.Moe.Services.Database.Functions;
-using Serilog;
+﻿using Serilog;
 using System.Data;
 using System.Data.SQLite;
 using System.Threading.Tasks;
+using Mute.Moe.Services.Database.Functions;
 
 namespace Mute.Moe.Services.Database;
 
@@ -35,8 +35,9 @@ public abstract class BaseSqliteDatabase
     {
         var connection = new SQLiteConnection(_dbConnStr);
         connection.Open();
-
-        connection.BindFunction(new RegExSQLiteFunction());
+        
+        //todo:not needed, build of SQLite contains native REGEXP function
+        //connection.BindFunction(new RegExSQLiteFunction());
 
         return connection;
     }

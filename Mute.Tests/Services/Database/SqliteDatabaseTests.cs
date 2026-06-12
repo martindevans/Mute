@@ -24,4 +24,15 @@ public class SqliteDatabaseTests
         using var conn = db.GetConnection();
         conn.Execute("CREATE TABLE `test` (`foo` TEXT NOT NULL)");
     }
+
+    [TestMethod]
+    public void RegexpExists()
+    {
+        var db = new SqliteInMemoryDatabase();
+
+        using var conn = db.GetConnection();
+        var exists = conn.QuerySingle<int>("SELECT EXISTS (SELECT 1 FROM pragma_function_list WHERE name = 'regexp');");
+        
+        Assert.AreEqual(1, exists);
+    }
 }
