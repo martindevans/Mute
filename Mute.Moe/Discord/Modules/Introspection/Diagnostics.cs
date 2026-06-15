@@ -4,7 +4,6 @@ using Discord.Commands;
 using Humanizer;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.Introspection;
-using Mute.Moe.Services.Introspection.Uptime;
 using System.Runtime.Intrinsics.X86;
 using System.Threading.Tasks;
 

@@ -1,7 +1,18 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Mute.Moe.Services.Introspection.Uptime;
+namespace Mute.Moe.Services.Introspection;
+
+/// <summary>
+/// Measures process uptime
+/// </summary>
+public interface IUptime
+{
+    /// <summary>
+    /// Get total uptime of this process
+    /// </summary>
+    TimeSpan Uptime { get; }
+}
 
 /// <summary>
 /// Gets uptime from helper in <see cref="Program"/>
@@ -11,7 +22,7 @@ public class ProcessUptime
     : IUptime
 {
     private DateTime? _startTimeCache;
-    
+
     /// <inheritdoc />
     public TimeSpan Uptime
     {

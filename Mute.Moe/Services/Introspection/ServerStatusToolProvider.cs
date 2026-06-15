@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Humanizer;
-using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
 using Mute.Moe.Tools.Providers;

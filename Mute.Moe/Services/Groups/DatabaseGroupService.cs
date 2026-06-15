@@ -68,10 +68,10 @@ public class DatabaseGroupService
 
         return await unlockeds
               .ToAsyncEnumerable()
-              .Select(async (u, _, _) => await GetRole(u))
-              .Where(a => a != null)
-              .Select(a => a!)
-              .OrderBy(a => a.Name)
+              .Select(async (u, _, _) => await GetRole(u))  // Get the role object from Discord
+              .Where(a => a != null)                        // Ignore null results
+              .Select(a => a!)                              // Declare that it's not null (we just checked)
+              .OrderBy(a => a.Name)                         // Order by name
               .ToArrayAsync();
 
         async ValueTask<IRole?> GetRole(UnlockedRole unlocked)

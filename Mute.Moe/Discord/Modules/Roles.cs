@@ -123,7 +123,7 @@ public class Roles(IGroups _groups, IUserService _users)
             await TypingReplyAsync($"The role `{role.Name}` is **locked**");
     }
 
-    [RequireOwner, Command("unlock"), Summary("I will unlock the given role (allow anyone to join/leave it)")]
+    [RequireUserPermission(GuildPermission.ManageRoles), Command("unlock"), Summary("I will unlock the given role (allow anyone to join/leave it)")]
     [UsedImplicitly]
     public async Task UnlockRole(IRole role)
     {
@@ -131,7 +131,7 @@ public class Roles(IGroups _groups, IUserService _users)
         await TypingReplyAsync($"Unlocked `{role.Name}`");
     }
 
-    [RequireOwner, Command("lock"), Summary("I will lock the given role (stop allowing anyone to join/leave it)")]
+    [RequireUserPermission(GuildPermission.ManageRoles), Command("lock"), Summary("I will lock the given role (stop allowing anyone to join/leave it)")]
     [UsedImplicitly]
     public async Task LockRole(IRole role)
     {

@@ -33,7 +33,6 @@ using Mute.Moe.Services.Information.UrbanDictionary;
 using Mute.Moe.Services.Information.Weather;
 using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Introspection;
-using Mute.Moe.Services.Introspection.Uptime;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.LLM.Embedding;
 using Mute.Moe.Services.LLM.Memory;

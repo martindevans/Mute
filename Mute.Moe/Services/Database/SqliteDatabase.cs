@@ -2,7 +2,6 @@
 using System.Data;
 using System.Data.SQLite;
 using System.Threading.Tasks;
-using Mute.Moe.Services.Database.Functions;
 
 namespace Mute.Moe.Services.Database;
 

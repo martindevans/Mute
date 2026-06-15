@@ -24,16 +24,6 @@ To build and run the project, you will need the .NET SDK.
 dotnet build
 ```
 
-### Running
-
-The bot requires a `config.json` file for configuration. A `config.json` file is not checked into source control, so you will need to create one. Based on the `.gitignore` file, the `config.json` file should be placed in the `Mute.Moe` directory.
-
-Once the configuration file is in place, you can run the bot with the following command:
-
-```
-dotnet run --project Mute.Moe/Mute.Moe.csproj -- "Mute.Moe/config.json"
-```
-
 ## Development Conventions
 
 *   **Dependency Injection:** The project uses dependency injection extensively, with services configured in the `Startup.cs` file.
