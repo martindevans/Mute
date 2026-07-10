@@ -25,7 +25,7 @@ public class ClockProvider
         {
             utc = now.ToString("yyyy-MM-dd HH:mm:ss"),
             local = local.ToString("yyyy-MM-dd HH:mm:ss"),
-            tz = TimeZoneInfo.Local.Id,
+            tz = TimeZoneInfo.Local.StandardName,
         };
     }
 }

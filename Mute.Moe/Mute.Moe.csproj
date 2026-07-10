@@ -58,8 +58,8 @@
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="Humanizer.Core" Version="3.0.10" />
     <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" />
-    <PackageReference Include="LlmTornado" Version="3.8.60" />
-    <PackageReference Include="LlmTornado.Agents" Version="1.0.56" />
+    <PackageReference Include="LlmTornado" Version="3.8.63" />
+    <PackageReference Include="LlmTornado.Agents" Version="1.0.59" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.9" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.27.0" />
     <PackageReference Include="Microsoft.Recognizers.Text" Version="1.8.13" />
@@ -79,7 +79,7 @@
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
     <PackageReference Include="Pegasus" Version="4.1.0" />
-    <PackageReference Include="Serilog" Version="4.3.1" />
+    <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serpent" Version="0.0.41" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
