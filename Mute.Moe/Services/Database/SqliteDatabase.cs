@@ -1,5 +1,4 @@
 ﻿using HandyAgentFramework.SqliteSessionStore;
-using Serilog;
 using System.Data;
 using System.Data.SQLite;
 using System.Threading.Tasks;
@@ -20,8 +19,6 @@ public abstract class BaseSqliteDatabase
     /// </summary>
     public BaseSqliteDatabase(string connection)
     {
-        Log.Information("DB Connection String: {0}", connection);
-
         _dbConnStr = connection;
         
         // Get a connection and dispose it now, should surface any errors earlier doing this.

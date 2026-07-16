@@ -1,8 +1,8 @@
 ﻿using Mute.Moe.Services.Host;
-using Serilog;
 using System.Data.SQLite;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Services.Database;
@@ -22,10 +22,10 @@ public interface IDatabaseBackupService
 /// Runs a backup of the main database each day
 /// </summary>
 [UsedImplicitly]
-public class SqliteDatabaseDailyBackup
+public partial class SqliteDatabaseDailyBackup
     : BaseDailyHostedService<SqliteDatabaseDailyBackup>, IDatabaseBackupService
 {
-    private static readonly ILogger _logger = Log.ForContext<SqliteDatabaseDailyBackup>();
+    private readonly ILogger<SqliteDatabaseDailyBackup> _logger;
 
     private readonly IDatabaseService _database;
     private readonly string? _connectionString;
@@ -33,10 +33,11 @@ public class SqliteDatabaseDailyBackup
     private readonly AsyncLock _lock = new();
 
     /// <inheritdoc />
-    public SqliteDatabaseDailyBackup(Configuration config, IDatabaseService database)
-        : base(nameof(SqliteDatabaseDailyBackup), new TimeOnly(6, 5, 4))
+    public SqliteDatabaseDailyBackup(Configuration config, IDatabaseService database, ILogger<SqliteDatabaseDailyBackup> logger)
+        : base(nameof(SqliteDatabaseDailyBackup), new TimeOnly(6, 5, 4), logger)
     {
         _database = database;
+        _logger = logger;
         _connectionString = config.Database?.BackupConnectionString;
     }
 
@@ -54,14 +55,14 @@ public class SqliteDatabaseDailyBackup
             // Check if we have a destination
             if (_connectionString == null)
             {
-                _logger.Information("Cancelling backup - no connection string provided");
+                _logger.LogInformation("Cancelling backup - no connection string provided");
                 return;
             }
 
             // Check source is compatible
             if (_database is not BaseSqliteDatabase sqlite)
             {
-                _logger.Warning("Cannot backup non SQLite database");
+                _logger.LogWarning("Cannot backup non SQLite database");
                 return;
             }
 
@@ -70,14 +71,19 @@ public class SqliteDatabaseDailyBackup
                                            .Replace("{{day_of_year}}", now.DayOfYear.ToString());
 
             // Open backup file
-            _logger.Information("Opening backup DB: {0}", connStr);
+            LogOpeningBackupDb(connStr);
             await using var backup = new SQLiteConnection(connStr);
             backup.Open();
 
             // Do backup
-            _logger.Information("Beginning backup");
+            _logger.LogInformation("Beginning backup");
             await sqlite.Backup(backup);
-            _logger.Information("Completed backup");
+            _logger.LogInformation("Completed backup");
         }
     }
+
+    #region logging
+    [LoggerMessage(LogLevel.Information, "Opening backup DB: {connStr}")]
+    private partial void LogOpeningBackupDb(string connStr);
+    #endregion
 }

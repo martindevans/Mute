@@ -2,7 +2,6 @@
 using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
-using Serilog;
 
 namespace Mute.Moe.Services.Database;
 
@@ -41,18 +40,9 @@ public abstract class SimpleJsonBlobTable<TBlob>
         _countSql = $"SELECT COUNT(*) FROM {tableName}";
         _randomSql = $"SELECT Json FROM {tableName} ORDER BY RANDOM() LIMIT 1;";
 
-        try
-        {
-            using (var connection = _database.GetConnection())
-            {
-                connection.Execute($"CREATE TABLE IF NOT EXISTS `{tableName}` (`ID` TEXT NOT NULL, `Json` TEXT NOT NULL)");
-                connection.Execute($"CREATE INDEX IF NOT EXISTS `{tableName}ById` ON '{tableName}' (ID ASC);");
-            }
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Creating SimpleJsonBlobTable '{0}' failed", tableName);
-        }
+        using var connection = _database.GetConnection();
+        connection.Execute($"CREATE TABLE IF NOT EXISTS `{tableName}` (`ID` TEXT NOT NULL, `Json` TEXT NOT NULL)");
+        connection.Execute($"CREATE INDEX IF NOT EXISTS `{tableName}ById` ON '{tableName}' (ID ASC);");
     }
 
     /// <inheritdoc />

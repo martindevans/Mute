@@ -10,10 +10,10 @@ using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.Telemetry;
 using Serilog;
-using Serilog.Events;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using ExecuteResult = Discord.Commands.ExecuteResult;
 using IResult = Discord.Commands.IResult;
 using RunMode = Discord.Commands.RunMode;
@@ -23,13 +23,14 @@ namespace Mute.Moe.Discord;
 /// <summary>
 /// Connects to discord, receives events, dispatches them to various bot systems. Really the heart of the bot.
 /// </summary>
-public class HostedDiscordBot
+public partial class HostedDiscordBot
 {
     private readonly Configuration _config;
     private readonly CommandService _commands;
     private readonly IServiceProvider _services;
     private readonly InteractionService _interactions;
     private readonly Instrumentation _instrumentation;
+    private readonly ILogger<HostedDiscordBot> _logger;
 
     /// <summary>
     /// The <see cref="DiscordSocketClient"/> in use
@@ -45,8 +46,9 @@ public class HostedDiscordBot
     /// <param name="services"></param>
     /// <param name="interactions"></param>
     /// <param name="instrumentation"></param>
+    /// <param name="logger"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services, InteractionService interactions, Instrumentation instrumentation)
+    public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services, InteractionService interactions, Instrumentation instrumentation, ILogger<HostedDiscordBot> logger)
     {
         Client = client ?? throw new ArgumentNullException(nameof(client));
 
@@ -55,6 +57,7 @@ public class HostedDiscordBot
         _services = services ?? throw new ArgumentNullException(nameof(services));
         _interactions = interactions ?? throw new ArgumentNullException(nameof(interactions));
         _instrumentation = instrumentation ?? throw new ArgumentNullException(nameof(instrumentation));
+        _logger = logger;
 
         Client.Log += LogAsync;
     }
@@ -85,7 +88,7 @@ public class HostedDiscordBot
             Log.Error(e, "Exception while adding modules and interactions");
             throw;
         }
-
+        
         // Hook the MessageReceived Event into our Command Handler
         Client.MessageReceived += HandleMessage;
         _commands.CommandExecuted += CommandExecuted;
@@ -309,22 +312,6 @@ public class HostedDiscordBot
         services.AddTransient<IUnsuccessfulCommandPostprocessor, DisplayCommandError>();
     }
 
-    private static async Task LogAsync(LogMessage message)
-    {
-        var severity = message.Severity switch
-        {
-            LogSeverity.Critical => LogEventLevel.Fatal,
-            LogSeverity.Error => LogEventLevel.Error,
-            LogSeverity.Warning => LogEventLevel.Warning,
-            LogSeverity.Info => LogEventLevel.Information,
-            LogSeverity.Verbose => LogEventLevel.Verbose,
-            LogSeverity.Debug => LogEventLevel.Debug,
-            _ => LogEventLevel.Information
-        };
-        Log.Write(severity, message.Exception, "[{Source}] {Message}", message.Source, message.Message);
-        await Task.CompletedTask;
-    }
-
     #region helpers
     private static async Task<bool> ExecuteContextProcessor<T>(MuteCommandContext context, bool rethrow = false)
         where T : IContextProcessor
@@ -381,5 +368,51 @@ public class HostedDiscordBot
             }
         }
     }
+    #endregion
+
+    #region logging
+    private async Task LogAsync(LogMessage message)
+    {
+        switch (message.Severity)
+        {
+            case LogSeverity.Critical:
+                LogCallbackCritical(message.Source, message.Message);
+                break;
+            
+            case LogSeverity.Error:
+                LogCallbackError(message.Source, message.Message);
+                break;
+            
+            case LogSeverity.Warning:
+                LogCallbackWarning(message.Source, message.Message);
+                break;
+            
+            case LogSeverity.Info:
+                LogCallbackInformation(message.Source, message.Message);
+                break;
+            
+            case LogSeverity.Verbose:
+            case LogSeverity.Debug:
+                LogCallbackDebug(message.Source, message.Message);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+    
+    [LoggerMessage(LogLevel.Critical, "[{Source}]: {Message}")]
+    private partial void LogCallbackCritical(string source, string message);
+
+    [LoggerMessage(LogLevel.Error, "[{Source}]: {Message}")]
+    private partial void LogCallbackError(string source, string message);
+
+    [LoggerMessage(LogLevel.Warning, "[{Source}]: {Message}")]
+    private partial void LogCallbackWarning(string source, string message);
+    
+    [LoggerMessage(LogLevel.Information, "[{Source}]: {Message}")]
+    private partial void LogCallbackInformation(string source, string message);
+
+    [LoggerMessage(LogLevel.Debug, "[{Source}]: {Message}")]
+    private partial void LogCallbackDebug(string source, string message);
     #endregion
 }

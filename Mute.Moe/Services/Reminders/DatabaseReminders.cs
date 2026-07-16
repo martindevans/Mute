@@ -1,13 +1,13 @@
-﻿using System.Globalization;
-using Dapper;
+﻿using Dapper;
+using Microsoft.Extensions.Logging;
 using Mute.Moe.Services.Database;
-using Serilog;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Reminders;
 
 /// <inheritdoc />
-public class DatabaseReminders
+public partial class DatabaseReminders
     : IReminders
 {
     private const string InsertReminder = "INSERT into Reminders2 (InstantUnix, ChannelId, Prelude, Message, Deleted, UserId) values(@InstantUnix, @ChannelId, @Prelude, @Message, False, @UserId); SELECT last_insert_rowid();";
@@ -23,6 +23,7 @@ public class DatabaseReminders
                                                    "LIMIT @Limit";
 
     private readonly IDatabaseService _database;
+    private readonly ILogger<DatabaseReminders> _logger;
 
     /// <inheritdoc />
     public event Action<Reminder>? ReminderCreated;
@@ -34,19 +35,14 @@ public class DatabaseReminders
     /// Create a new reminder service that stores reminders in the given database
     /// </summary>
     /// <param name="database"></param>
-    public DatabaseReminders(IDatabaseService database)
+    /// <param name="logger"></param>
+    public DatabaseReminders(IDatabaseService database, ILogger<DatabaseReminders> logger)
     {
         _database = database;
+        _logger = logger;
 
-        try
-        {
-            using var connection = _database.GetConnection();
-            connection.Execute("CREATE TABLE IF NOT EXISTS `Reminders2` (`InstantUnix` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `Prelude` TEXT, `Message` TEXT NOT NULL, `Deleted` BOOLEAN NOT NULL, `UserId` TEXT NOT NULL)");
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Creating 'Reminders2' table failed");
-        }
+        using var connection = _database.GetConnection();
+        connection.Execute("CREATE TABLE IF NOT EXISTS `Reminders2` (`InstantUnix` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `Prelude` TEXT, `Message` TEXT NOT NULL, `Deleted` BOOLEAN NOT NULL, `UserId` TEXT NOT NULL)");
     }
 
     /// <inheritdoc />
@@ -75,9 +71,9 @@ public class DatabaseReminders
 
             return reminder;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Log.Error(e, "Creating reminder {0} {1} @ {2} (user:{3}) failed", prelude, msg, triggerTime, userId);
+            LogFailedToCreateReminder(prelude, msg, triggerTime, userId, ex);
             throw;
         }
     }
@@ -137,4 +133,9 @@ public class DatabaseReminders
             );
         }
     }
+
+    #region logging
+    [LoggerMessage(LogLevel.Error, "Creating reminder {prelude} {msg} @ {triggerTime} (user:{userId}) failed")]
+    private partial void LogFailedToCreateReminder(string prelude, string msg, DateTime triggerTime, ulong userId, Exception ex);
+    #endregion
 }

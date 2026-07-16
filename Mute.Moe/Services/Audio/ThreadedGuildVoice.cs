@@ -1,12 +1,11 @@
-﻿using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Audio;
 using Discord.WebSocket;
 using Mute.Moe.Services.Audio.Mixing;
 using NAudio.Wave;
-using Serilog;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Audio;
 
@@ -167,7 +166,7 @@ public class ThreadedGuildVoice
             }
             catch (Exception e)
             {
-                Log.Error(e, $"Exception killed {nameof(ThreadedGuildVoice)} thread");
+                //todo:Log.Error(e, $"Exception killed {nameof(ThreadedGuildVoice)} thread");
                 throw;
             }
 

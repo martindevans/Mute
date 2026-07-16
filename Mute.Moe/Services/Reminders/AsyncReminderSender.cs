@@ -1,14 +1,14 @@
 ﻿using BalderHash;
 using Discord;
 using Discord.WebSocket;
-using Serilog;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Mute.Moe.Services.Reminders;
 
 /// <inheritdoc />
-public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _client)
+public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _client, ILogger<AsyncReminderSender> _logger)
     : IReminderSender
 {
     private CancellationTokenSource? _cts;
@@ -62,7 +62,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         }
         catch (Exception e)
         {
-            Log.Error(e, $"Exception killed {nameof(AsyncReminderSender)} thread");
+            _logger.LogError(e, $"Exception killed {nameof(AsyncReminderSender)} thread");
         }
     }
 
@@ -80,7 +80,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         var reminder = await tcs.Task;
 
         // If something happened, return the reminder
-        return new EventCreatedAction(reminder);
+        return new EventCreatedAction(reminder, _logger);
     }
 
     private async Task<BaseEventAction> WaitForDeletion(CancellationToken ct)
@@ -97,7 +97,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         var id = await tcs.Task;
 
         // If something happened, return the reminder
-        return new EventDeletedAction(id);
+        return new EventDeletedAction(id, _logger);
     }
 
     private async Task<BaseEventAction> WaitForTimeout(CancellationToken ct, Reminder? next)
@@ -116,7 +116,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
             await Task.Delay(delay, ct);
         }
 
-        return new EventTimeoutAction(next, _reminders, _client);
+        return new EventTimeoutAction(next, _reminders, _client, _logger);
     }
 
     private abstract class BaseEventAction
@@ -124,12 +124,12 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         public abstract Task Run(ref Reminder? next);
     }
 
-    private class EventCreatedAction(Reminder _reminder)
+    private class EventCreatedAction(Reminder _reminder, ILogger _logger)
         : BaseEventAction
     {
         public override Task Run(ref Reminder? next)
         {
-            Log.Information("Created reminder: {0}", _reminder.ID);
+            _logger.LogInformation("Created reminder: {0}", _reminder.ID);
 
             if (next == null || _reminder.TriggerTime < next.TriggerTime)
                 next = _reminder;
@@ -138,12 +138,12 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         }
     }
 
-    private class EventDeletedAction(uint _id)
+    private class EventDeletedAction(uint _id, ILogger _logger)
         : BaseEventAction
     {
         public override Task Run(ref Reminder? next)
         {
-            Log.Information("Deleted reminder: {0}", _id);
+            _logger.LogInformation("Deleted reminder: {0}", _id);
 
             if (_id == next?.ID)
                 next = null;
@@ -151,12 +151,12 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
         }
     }
 
-    private class EventTimeoutAction(Reminder _reminder, IReminders _reminders, DiscordSocketClient _client)
+    private class EventTimeoutAction(Reminder _reminder, IReminders _reminders, DiscordSocketClient _client, ILogger _logger)
         : BaseEventAction
     {
         public override Task Run(ref Reminder? _)
         {
-            Log.Information("Sending reminder: {0}", _reminder.ID);
+            _logger.LogInformation("Sending reminder: {0}", _reminder.ID);
 
             return Task.Run(async () =>
             {
@@ -179,7 +179,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
                     }
                     else
                     {
-                        Log.Warning("Sending reminder {0}, but channel {1} is null", _reminder.ID, _reminder.ChannelId);
+                        _logger.LogWarning("Sending reminder {0}, but channel {1} is null", _reminder.ID, _reminder.ChannelId);
 
                         var user = await _client.GetUserAsync(_reminder.UserId);
                         if (user != null)
@@ -196,7 +196,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
                         }
                         else
                         {
-                            Log.Warning("Failed to send reminder {0}! Channel {1} and user {2} are both null", _reminder.ID, _reminder.ChannelId, _reminder.UserId);
+                            _logger.LogWarning("Failed to send reminder {0}! Channel {1} and user {2} are both null", _reminder.ID, _reminder.ChannelId, _reminder.UserId);
                         }
                     }
 
@@ -204,7 +204,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Failed to send reminder {0}", _reminder.ID);
+                    _logger.LogError(ex, "Failed to send reminder {0}", _reminder.ID);
                 }
             });
         }

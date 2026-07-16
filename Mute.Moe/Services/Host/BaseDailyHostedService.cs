@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
-using Serilog;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Mute.Moe.Services.Host;
 
@@ -11,7 +11,7 @@ namespace Mute.Moe.Services.Host;
 public abstract class BaseDailyHostedService<TSelf>
     : IHostedService
 {
-    private static readonly ILogger _logger = Log.ForContext<TSelf>();
+    private readonly ILogger<TSelf> _logger;
 
     private CancellationTokenSource _cancellation = new();
     private Task? _task;
@@ -32,10 +32,12 @@ public abstract class BaseDailyHostedService<TSelf>
     /// </summary>
     /// <param name="name"></param>
     /// <param name="time"></param>
+    /// <param name="logger"></param>
     /// <param name="jitter"></param>
-    public BaseDailyHostedService(string name, TimeOnly time, TimeSpan? jitter = null)
+    public BaseDailyHostedService(string name, TimeOnly time, ILogger<TSelf> logger, TimeSpan? jitter = null)
     {
         _name = name;
+        _logger = logger;
         Time = time;
         Jitter = jitter ?? TimeSpan.FromSeconds(1);
     }
@@ -83,17 +85,17 @@ public abstract class BaseDailyHostedService<TSelf>
             if (cancellation.IsCancellationRequested)
                 break;
 
-            _logger.Information("Beginning daily task: '{0}'", _name);
+            _logger.LogInformation("Beginning daily task: '{name}'", _name);
 
             // Enter a loop, retrying the task if it fails
             var timer = new Stopwatch();
             timer.Start();
             var success = false;
             const int RETRIES_MAX = 8;
-            var attemptIndex = 0;
+            int attemptIndex;
             for (attemptIndex = 0; attemptIndex < RETRIES_MAX; attemptIndex++)
             {
-                _logger.Information("Attempting daily task: '{0}' {1}/{2}", _name, attemptIndex + 1, RETRIES_MAX);
+                _logger.LogInformation("Attempting daily task: '{name}' {attempt}/{max_retries}", _name, attemptIndex + 1, RETRIES_MAX);
 
                 try
                 {
@@ -106,7 +108,7 @@ public abstract class BaseDailyHostedService<TSelf>
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "Daily task {0} failed", _name);
+                    _logger.LogError(ex, "Daily task {name} failed", _name);
                 }
 
                 // Early out for cancellation
@@ -119,9 +121,9 @@ public abstract class BaseDailyHostedService<TSelf>
             timer.Stop();
             
             if (success)
-                _logger.Information("Completed daily task: '{0}' with {1} attempts in {2}", _name, attemptIndex + 1, timer.Elapsed);
+                _logger.LogInformation("Completed daily task: '{name}' with {attemps} attempts in {elapsed}", _name, attemptIndex + 1, timer.Elapsed);
             else
-                _logger.Information("Failed to complete daily task: '{0}' after {1} attempts in {2}", _name, RETRIES_MAX, timer.Elapsed);
+                _logger.LogInformation("Failed to complete daily task: '{name}' after {attempts} attempts in {elapsed}", _name, RETRIES_MAX, timer.Elapsed);
         }
     }
 
@@ -132,7 +134,7 @@ public abstract class BaseDailyHostedService<TSelf>
 
     private async Task WaitForNextTime(int hour, int min, int sec, CancellationToken cancellation)
     {
-        _logger.Information("Daily task '{0}' waiting for time: {1}:{2}:{3}", _name, hour, min, sec);
+        _logger.LogInformation("Daily task '{name}' waiting for time: {hour}:{min}:{sec}", _name, hour, min, sec);
 
         var now = DateTime.Now;
         var next4AM = new DateTime(now.Year, now.Month, now.Day, hour, min, sec);

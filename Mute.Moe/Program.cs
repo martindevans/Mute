@@ -5,10 +5,11 @@ using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
 using Newtonsoft.Json;
 using OpenTelemetry.Trace;
-using Serilog;
+
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace Mute.Moe;
 
@@ -34,7 +35,8 @@ public static class Program
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
             .CreateLogger();
-        Log.Information("Version: {0}", 13);
+
+        Console.WriteLine("### Version: 14");
 
         // Build DI container
         var collection = new ServiceCollection();
@@ -75,7 +77,7 @@ public static class Program
     /// </summary>
     private static void WaitForExitSignal()
     {
-        Log.Information("Type 'exit' to exit");
+        Console.WriteLine("### Type 'exit' to exit ###");
 
         while (true)
         {
