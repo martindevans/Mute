@@ -5,11 +5,9 @@ using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
 using Newtonsoft.Json;
 using OpenTelemetry.Trace;
-
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Serilog;
 
 namespace Mute.Moe;
 
@@ -29,12 +27,6 @@ public static class Program
         // Load config file
         var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)))
                   ?? throw new InvalidOperationException("Config was null");
-
-        //todo: remove serilog
-        // Setup logger
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
-            .CreateLogger();
 
         Console.WriteLine("### Version: 14");
 
@@ -101,6 +93,6 @@ internal static partial class DependencyHelper
         // these calls indicates that the deps are loaded.
 
         var sodiumVersion = Marshal.PtrToStringAnsi(SodiumVersionString());
-        Log.Information("Loaded sodium: {0}", sodiumVersion);
+        //Log.Information("Loaded sodium: {0}", sodiumVersion);
     }
 }
