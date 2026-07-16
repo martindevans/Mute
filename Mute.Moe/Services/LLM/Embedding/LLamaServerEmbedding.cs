@@ -1,4 +1,5 @@
-﻿using LlmTornado.Embedding.Models;
+﻿using HandyAgentFramework.Embedding;
+using MultiBackendServiceProvider;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -16,15 +17,15 @@ namespace Mute.Moe.Services.LLM.Embedding;
 public class LLamaServerEmbedding
     : IEmbeddings
 {
-    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
+    private readonly MultiBackendServiceProvider<LLamaServerEndpoint> _endpoints;
     private readonly HttpClient _http;
-    private readonly EmbeddingModel _model;
+    private readonly AgentEmbeddingModel _model;
 
     /// <inheritdoc />
     public string Model => _model.Name;
 
     /// <inheritdoc />
-    public int Dimensions => _model.OutputDimensions ?? 0;
+    public int Dimensions => (int)_model.EmbeddingDimensions;
 
     /// <summary>
     /// Create a new reranker
@@ -32,28 +33,28 @@ public class LLamaServerEmbedding
     /// <param name="http"></param>
     /// <param name="model"></param>
     /// <param name="endpoints"></param>
-    public LLamaServerEmbedding(IHttpClientFactory http, LlmEmbeddingModel model, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
+    public LLamaServerEmbedding(IHttpClientFactory http, AgentEmbeddingModel model, MultiBackendServiceProvider<LLamaServerEndpoint> endpoints)
     {
         _endpoints = endpoints;
         _http = http.CreateClient();
 
-        _model = model.Model;
+        _model = model;
     }
 
     /// <inheritdoc />
-    public async Task<EmbeddingResult?> Embed(string text, CancellationToken cancellation = default)
+    public async Task<EmbeddingResult> Embed(string text, CancellationToken cancellation = default)
     {
         var results = await Embed([ text ], cancellation);
-        return results?[0];
+        return results[0];
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<EmbeddingResult>?> Embed(string[] text, CancellationToken cancellation = default)
+    public async Task<IReadOnlyList<EmbeddingResult>> Embed(IReadOnlyList<string> text, CancellationToken cancellation = default)
     {
         // Get an endpoint
-        using var endpoint = await _endpoints.GetEndpoint([ Model ], cancellation);
+        using var endpoint = await _endpoints.Acquire([ Model ], cancellation);
         if (endpoint == null)
-            return null;
+            throw new InvalidOperationException("Cannot retrieve server backend");
 
         // Create content
         var json = JsonSerializer.Serialize(new
@@ -65,9 +66,9 @@ public class LLamaServerEmbedding
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Create request
-        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new(endpoint.Endpoint.Url), "/v1/embeddings"));
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new(endpoint.Backend.Value.Url), "/v1/embeddings"));
         request.Content = content;
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", endpoint.Endpoint.Key);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", endpoint.Backend.Value.Key);
 
         // Send request
         using var res = await _http.SendAsync(request, cancellation);
@@ -86,32 +87,23 @@ public class LLamaServerEmbedding
     private class EmbeddingResponse
     {
         [JsonPropertyName("data")]
+        [UsedImplicitly]
         public required EmbeddingItem[] Data { get; init; }
 
         [JsonPropertyName("model")]
+        [UsedImplicitly]
         public required string Model { get; init; }
-
-        [JsonPropertyName("usage")]
-        public required EmbeddingUsage Usage { get; init; }
     }
 
     [UsedImplicitly]
     private class EmbeddingItem
     {
         [JsonPropertyName("embedding")]
+        [UsedImplicitly]
         public required float[] Embedding { get; init; }
 
         [JsonPropertyName("index")]
+        [UsedImplicitly]
         public required int Index { get; init; }
-    }
-
-    [UsedImplicitly]
-    private class EmbeddingUsage
-    {
-        [JsonPropertyName("prompt_tokens")]
-        public int PromptTokens { get; init; }
-
-        [JsonPropertyName("total_tokens")]
-        public int TotalTokens { get; init; }
     }
 }

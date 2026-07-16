@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using HandyAgentFramework;
 using Serpent;
 using Wasmtime;
 using Wazzy.Async;
@@ -17,7 +18,7 @@ public class PythonToolProvider
     private readonly PythonBuilder _builder;
 
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IReadOnlyList<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create <see cref="PythonToolProvider"/>
@@ -29,7 +30,7 @@ public class PythonToolProvider
 
         Tools =
         [
-            new AutoTool("python", true, ExecutePython),
+            new DocStringTool(ToolGroups.CodeExecution.Python, "run", ExecutePython),
         ];
     }
 

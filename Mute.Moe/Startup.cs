@@ -1,12 +1,7 @@
 ﻿using Discord.Addons.Interactive;
 using Discord.WebSocket;
 using FaceAiSharp;
-using LlmTornado.Chat.Models;
-using LlmTornado.Code;
-using LlmTornado.Embedding.Models;
-using LlmTornado.Rerank.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Mute.BraveSearch;
 using Mute.Moe.Discord;
 using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Context.Preprocessing;
@@ -36,7 +31,6 @@ using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.LLM.Embedding;
 using Mute.Moe.Services.LLM.Memory;
-using Mute.Moe.Services.LLM.Memory.Extraction;
 using Mute.Moe.Services.LLM.Rerank;
 using Mute.Moe.Services.Notifications.Cron;
 using Mute.Moe.Services.Notifications.RSS;
@@ -48,15 +42,25 @@ using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Telemetry;
-using Mute.Moe.Tools;
 using Mute.Moe.Tools.Providers;
 using Serpent;
 using Serpent.Loading;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
+using HandyAgentFramework.Embedding;
+using HandyAgentFramework.FunctionCall.Middleware.ToolSearch;
+using HandyAgentFramework.Persistence;
+using HandyAgentFramework.SqliteSessionStore;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
+using MultiBackendServiceProvider;
+using Mute.Moe.Services.LLM.Chat;
+using Mute.Moe.Services.LLM.Client;
+using Mute.Moe.Tools.Index;
 using Wasmtime;
 using OpenTelemetry.Trace;
+using IImageGenerator = Mute.Moe.Services.ImageGen.IImageGenerator;
 
 namespace Mute.Moe;
 
@@ -77,6 +81,12 @@ public record Startup(Configuration Configuration)
         services.AddSingleton(services);
         services.AddSingleton(s => new InteractiveService(s.GetRequiredService<BaseSocketClient>()));
 
+        services.AddLogging(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Debug);
+            builder.AddConsole();
+        });
+        
         services.AddSingleton<Instrumentation>();
         services
            .AddOpenTelemetry()
@@ -84,7 +94,7 @@ public record Startup(Configuration Configuration)
             {
                 tracing.AddSource(Instrumentation.ActivitySourceName);
                 tracing.AddHttpClientInstrumentation();
-                //todo: add exporter! tracing.AddConsoleExporter();
+                //todo: add tracing exporter! tracing.AddConsoleExporter();
             });
 
         services.AddSingleton<ServiceHost>();
@@ -103,7 +113,6 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
         services.AddSingleton<IFaceDetectorWithLandmarks>(_ => new ScrfdDetector(new ScrfdDetectorOptions { ModelPath = Path.Combine(AppContext.BaseDirectory, "onnx", "scrfd_2.5g_kps.onnx") }));
 
-        services.AddSingleton<FactExtractionService>();
         services.AddSingleton<IKeyValueStorage<AgentDomainDocument>, AgentDomainDocumentStorage>();
 
         services.AddSingleton<IRateLimit, InMemoryRateLimits>();
@@ -150,30 +159,22 @@ public record Startup(Configuration Configuration)
 
         services.AddSingleton<Services.Introspection.Status>();
         services.AddSingleton<ConversationalResponseService>();
+        services.AddSingleton<LlmChatConversationFactory>();
         services.AddHostedService<GameService>();
         services.AddSingleton<ComponentActionService>();
 
         services.AddTransient<IConversationPreprocessor, CommandWordService>();
         services.AddTransient<ICommandWordHandler, RemindersCommandWord>();
 
-        services.AddSingleton<ToolExecutionEngineFactory>();
         AddToolProviders(services);
 
-        services.AddTransient<IImageAnalyser, TornadoImageAnalyser>();
+        services.AddTransient<IImageAnalyser, AgentImageAnalyser<AgentVisionModel, IChatClient>>();
         services.AddTransient<IEmbeddings, LLamaServerEmbedding>();
         services.AddTransient<IReranking, LlamaServerReranking>();
 
-        services.AddSingleton<IToolLog, DatabaseToolLog>();
-        services.AddSingleton<IToolIndex, DatabaseToolIndex>(svc =>
-            new DatabaseToolIndex(
-                svc.GetServices<IToolProvider>(),
-                svc.GetRequiredService<IDatabaseService>(),
-                svc.GetRequiredService<IEmbeddings>(),
-                svc.GetRequiredService<IReranking>()
-            )
-        );
+        services.AddSingleton<IToolSet, NullToolSet>();
 
-        services.AddSingleton<IConversationStateStorage, ConversationStateStorage>();
+        services.AddSingleton<ISessionStore, SqliteSessionStore>();
     }
 
     /// <summary>
@@ -192,45 +193,49 @@ public record Startup(Configuration Configuration)
         if (Configuration.Auth == null)
             throw new InvalidOperationException("Cannot start bot: Config.Auth is null");
 
-        if (Configuration.BraveWebSearch != null)
-            services.AddBraveSearch(Configuration.BraveWebSearch.ApiKey);
+        Configuration.BraveWebSearch?.Bind(services);
 
         // Create LLM stuff
-        services.AddSingleton<ChatConversationFactory>();
         if (Configuration.LLM != null)
         {
             var llm = Configuration.LLM;
 
             // Load system prompts
             services.AddSingleton(new ChatConversationSystemPrompt(File.ReadAllText(llm.ChatSystemPromptPath)));
-            services.AddSingleton(new AgentFactExtractionSystemPrompt(File.ReadAllText(Configuration.Agent.FactExtraction.SystemPromptFacts)));
 
             // Create endpoints for llama-server
-            var endpoints = new List<MultiEndpointProvider<LLamaServerEndpoint>.EndpointConfig>();
+            var endpoints = new List<MultiBackendServiceProvider<LLamaServerEndpoint>.BackendConfig>();
             foreach (var endpoint in llm.Endpoints)
             {
-                endpoints.Add(new MultiEndpointProvider<LLamaServerEndpoint>.EndpointConfig(
-                    new LLamaServerEndpoint(endpoint.ID, endpoint.Endpoint, endpoint.Key, endpoint.ModelsBlacklist.ToHashSet()), endpoint.Slots, new(new(endpoint.Endpoint), endpoint.HealthCheck)
+                endpoints.Add(new MultiBackendServiceProvider<LLamaServerEndpoint>.BackendConfig(
+                    new LLamaServerEndpoint(endpoint.ID, endpoint.Endpoint, endpoint.Key, endpoint.ModelsBlacklist.ToHashSet()),
+                    endpoint.Slots,
+                    new Uri(new Uri(endpoint.Endpoint), endpoint.HealthCheck)
                 ));
             }
-            services.AddSingleton<MultiEndpointProvider<LLamaServerEndpoint>>(provider => new(
-                provider.GetRequiredService<IHttpClientFactory>(),
-                new LlamaServerModelCapabilityEndpointFilter(provider.GetRequiredService<IHttpClientFactory>()),
-                [ ..endpoints ]
+
+            // Create llama-server provider
+            services.AddTransient<LlamaServerModelCapabilityEndpointFilter>();
+            services.AddSingleton<MultiBackendServiceProvider<LLamaServerEndpoint>>(provider => new(
+                provider.GetRequiredService<ILogger<MultiBackendServiceProvider<LLamaServerEndpoint>>>(),
+                provider.GetRequiredService<LlamaServerModelCapabilityEndpointFilter>(),
+                new FirstSelector<LLamaServerEndpoint>(),
+                endpoints.ToArray()
             ));
 
+            // Add chat client wrapping llama multi provider
+            services.AddSingleton<IChatClient, MultiBackendChatClient>();
+
             // Define models to use
-            services.AddSingleton(new LlmChatModel(
-                new ChatModel(llm.ChatLanguageModel.ModelName, LLmProviders.Custom, llm.ChatLanguageModel.ContextSize),
-                llm.ChatLanguageModel.Sampling
-            ));
-            services.AddSingleton(new LlmFactModel(
-                new ChatModel(llm.FactLanguageModel.ModelName, LLmProviders.Custom, llm.FactLanguageModel.ContextSize),
-                llm.FactLanguageModel.Sampling
-            ));
-            services.AddSingleton(new LlmEmbeddingModel(new EmbeddingModel(llm.EmbeddingModel.ModelName, LLmProviders.Custom, llm.EmbeddingModel.ContextSize, llm.EmbeddingModel.EmbeddingDims)));
-            services.AddSingleton(new LlmVisionModel(new ChatModel(llm.VisionLanguageModel.ModelName, LLmProviders.Custom, llm.VisionLanguageModel.ContextSize)));
-            services.AddSingleton(new LlmRerankModel(new RerankModel(llm.RerankingModel.ModelName, LLmProviders.Custom)));
+            services.AddSingleton(Configuration.LLM.GeneralChatModel);
+            services.AddSingleton(Configuration.LLM.VisionLanguageModel);
+            services.AddSingleton(Configuration.LLM.EmbeddingModel);
+            services.AddSingleton(Configuration.LLM.RerankingModel);
+
+            services.AddSingleton<ChatAgentFactory>();
+            services.AddSingleton<ISqliteSessionStoreConnectionProvider>(services =>
+                (ISqliteSessionStoreConnectionProvider)services.GetRequiredService<IDatabaseService>()
+            );
         }
     }
 
@@ -245,9 +250,9 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IToolProvider, StockToolProvider>();
         services.AddSingleton<IToolProvider, ServerStatusToolProvider>();
         services.AddSingleton<IToolProvider, WikipediaToolProvider>();
-        services.AddSingleton<IToolProvider, DiceRollToolProvider>();
+        services.AddSingleton<IToolProvider, MathematicsProvider>();
         services.AddSingleton<IToolProvider, PythonToolProvider>();
-        services.AddSingleton<IToolProvider, SubAgentCreationToolProvider>();
+        //todo:services.AddSingleton<IToolProvider, SubAgentCreationToolProvider>();
         services.AddSingleton<IToolProvider, UserInfoToolProvider>();
         services.AddSingleton<IToolProvider, GuildInfoToolProvider>();
         services.AddSingleton<IToolProvider, ClockProvider>();

@@ -1,4 +1,6 @@
-﻿namespace Mute.Moe.Tools.Providers;
+﻿using HandyAgentFramework;
+
+namespace Mute.Moe.Tools.Providers;
 
 /// <summary>
 /// Provides a set of tools for LLM usage
@@ -8,5 +10,5 @@ public interface IToolProvider
     /// <summary>
     /// All tools provided by this provider
     /// </summary>
-    IReadOnlyList<ITool> Tools { get; }
+    IReadOnlyList<ToolDefinition> Tools { get; }
 }

@@ -2,6 +2,7 @@
 using Mute.BraveSearch.Models;
 using System.Threading.Tasks;
 using Discord;
+using HandyAgentFramework;
 
 namespace Mute.Moe.Tools.Providers;
 
@@ -12,24 +13,29 @@ public class BraveWebSearchProvider
     : IToolProvider
 {
     private readonly IBraveSearchClient _client;
+    private readonly IDiscordClient _discord;
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="client"></param>
-    public BraveWebSearchProvider(IBraveSearchClient client)
+    /// <param name="discord"></param>
+    public BraveWebSearchProvider(IBraveSearchClient client, IDiscordClient discord)
     {
         _client = client;
+        _discord = discord;
 
         Tools =
         [
-            new AutoTool("web_search_news", true, NewsSearch),
-            //todo: new AutoTool("web_search", true, WebSearch), /* disabled for now, need to investigate filtering or white/blacklisting of URLs */
+            new DocStringTool(ToolGroups.Info.WebSearch, "search_news", NewsSearch),
+            
+            //todo: disabled for now, need to investigate filtering or white/blacklisting of URLs
+            //new DocStringTool(ToolGroups.Info.WebSearch, "search_web", WebSearch),
         ];
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IReadOnlyList<ToolDefinition> Tools { get; }
 
     #region news
     /// <summary>
@@ -43,18 +49,18 @@ public class BraveWebSearchProvider
     /// <param name="query">Web news search query.</param>
     /// <returns></returns>
 #pragma warning disable CS1573 // Parameter has no matching param tag in the XML comment (but other parameters do)
-    private async Task<NewsItem[]> NewsSearch(ITool.CallContext callCtx, string query)
+    private async Task<NewsItem[]> NewsSearch(string query)
 #pragma warning restore CS1573 // Parameter has no matching param tag in the XML comment (but other parameters do)
     {
-        // Automatically turn off moderate filtering in DM and NSFW channels
-        var dm = callCtx.Channel is IDMChannel;
-        var nsfw = callCtx.Channel is ITextChannel { IsNsfw: true };
-
+        // Check if we show allow NSFW results in the search
+        var context = await MuteAgentContext.GetContext(_discord);
+        var nsfw = context?.IsNsfw ?? false;
+        
         // Run query
         var results = await _client.NewsSearchAsync(new NewsSearchRequest(query)
         {
             ExtraSnippets = true,
-            SafeSearch = dm || nsfw ? SafeSearch.Off : SafeSearch.Moderate,
+            SafeSearch = nsfw ? SafeSearch.Off : SafeSearch.Moderate,
         });
 
         // Extract results
@@ -134,11 +140,12 @@ public class BraveWebSearchProvider
     /// <param name="maxAgeDays">Maximum age of search results (in days). Specify -1 for no age limit.</param>
     /// <returns></returns>
     #pragma warning disable CS1573 // Parameter has no matching param tag in the XML comment (but other parameters do)
-    private async Task<WebItem[]> WebSearch(ITool.CallContext callCtx, string query, int maxAgeDays)
+    private async Task<WebItem[]> WebSearch(string query, int maxAgeDays)
 #pragma warning restore CS1573 // Parameter has no matching param tag in the XML comment (but other parameters do)
     {
-        // Automatically turn off moderate filtering in DM and NSFW channels
-        var nsfw = callCtx.Channel is IDMChannel or ITextChannel { IsNsfw: true };
+        // Check if we show allow NSFW results in the search
+        var context = await MuteAgentContext.GetContext(_discord);
+        var nsfw = context?.IsNsfw ?? false;
 
         // Age limit
         var freshness = default(SearchFreshness);

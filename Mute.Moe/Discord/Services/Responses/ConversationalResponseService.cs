@@ -1,25 +1,21 @@
-﻿using System.Net.Http;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 using Mute.Moe.Discord.Context;
-using Mute.Moe.Services.LLM;
 using Mute.Moe.Utilities;
-using Serilog;
 using System.Threading.Tasks;
-using Mute.Moe.Services.ImageGen;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
 /// <summary>
 /// Maintains an LLM conversation thread per channel.
 /// </summary>
-public class ConversationalResponseService
+public partial class ConversationalResponseService
 {
+    private readonly ILogger<ConversationalResponseService> _logger;
+    private readonly LlmChatConversationFactory _conversationFactory;
+
     private readonly DiscordSocketClient _client;
-    private readonly ChatConversationFactory _chatFactory;
-    private readonly IConversationStateStorage _chatStorage;
-    private readonly IImageAnalyser _analyser;
-    private readonly IHttpClientFactory _httpFactory;
 
     private readonly AsyncLock _lookupLock = new();
     private readonly Dictionary<ulong, LlmChatConversation> _conversationsByChannel = [ ];
@@ -28,23 +24,17 @@ public class ConversationalResponseService
     /// Create a new <see cref="ConversationalResponseService"/>
     /// </summary>
     /// <param name="client"></param>
-    /// <param name="chatFactory"></param>
-    /// <param name="chatStorage"></param>
-    /// <param name="analyser"></param>
-    /// <param name="httpFactory"></param>
+    /// <param name="logger"></param>
+    /// <param name="conversationFactory"></param>
     public ConversationalResponseService(
         DiscordSocketClient client,
-        ChatConversationFactory chatFactory,
-        IConversationStateStorage chatStorage,
-        IImageAnalyser analyser,
-        IHttpClientFactory httpFactory
+        ILogger<ConversationalResponseService> logger,
+        LlmChatConversationFactory conversationFactory
     )
     {
         _client = client;
-        _chatFactory = chatFactory;
-        _chatStorage = chatStorage;
-        _analyser = analyser;
-        _httpFactory = httpFactory;
+        _logger = logger;
+        _conversationFactory = conversationFactory;
     }
 
     /// <summary>
@@ -87,7 +77,7 @@ public class ConversationalResponseService
             {
                 if (conv.IsComplete)
                 {
-                    Log.Warning("Removing conversation for channel: {0}", channelId);
+                    LogRemovingConversation(channelId);
                     _conversationsByChannel.Remove(channelId);
                 }
             }
@@ -95,17 +85,9 @@ public class ConversationalResponseService
             // Get or create conversation for channel
             if (!_conversationsByChannel.TryGetValue(channel.Id, out var chat))
             {
-                Log.Warning("Creating new chat conversation for channel: {0} ({1})", channel.Name, channel.Id);
-                chat = new LlmChatConversation(
-                    channel.GetAgentMemoryContextId(),
-                    await _chatFactory.Create(channel),
-                    channel,
-                    _client,
-                    _chatStorage,
-                    _analyser,
-                    _httpFactory
-                );
+                LogCreatingConversation(channel.Name, channel.Id);
 
+                chat = await _conversationFactory.Create(channel);
                 _conversationsByChannel[channel.Id] = chat;
             }
             return chat;
@@ -121,4 +103,12 @@ public class ConversationalResponseService
     {
         return await GetOrCreateConversation(channel);
     }
+
+    #region logging
+    [LoggerMessage(LogLevel.Information, "Creating conversation for channel: {name} ({id})")]
+    private partial void LogCreatingConversation(string name, ulong id);
+
+    [LoggerMessage(LogLevel.Warning, "Removing conversation for channel: {id}")]
+    private partial void LogRemovingConversation(ulong id);
+    #endregion
 }

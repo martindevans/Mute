@@ -1,8 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using HandyAgentFramework;
 using Humanizer;
+using MultiBackendServiceProvider;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
-using Mute.Moe.Tools.Providers;
+using System.Threading.Tasks;
+using IToolProvider = Mute.Moe.Tools.Providers.IToolProvider;
 
 namespace Mute.Moe.Services.Introspection;
 
@@ -14,10 +17,10 @@ public class ServerStatusToolProvider
 {
     private readonly IUptime _uptime;
     private readonly Status _status;
-    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
+    private readonly MultiBackendServiceProvider<LLamaServerEndpoint> _endpoints;
 
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IReadOnlyList<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Construct <see cref="ServerStatusToolProvider"/>
@@ -25,7 +28,7 @@ public class ServerStatusToolProvider
     /// <param name="uptime"></param>
     /// <param name="status"></param>
     /// <param name="endpoints"></param>
-    public ServerStatusToolProvider(IUptime uptime, Status status, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
+    public ServerStatusToolProvider(IUptime uptime, Status status, MultiBackendServiceProvider<LLamaServerEndpoint> endpoints)
     {
         _uptime = uptime;
         _status = status;
@@ -33,10 +36,10 @@ public class ServerStatusToolProvider
 
         Tools =
         [
-            new AutoTool("get_self_uptime", false, GetUptime),
-            new AutoTool("get_self_latency", false, GetLatency),
-            new AutoTool("get_self_memory", false, GetMemory),
-            new AutoTool("get_llm_cluster_status", false, GetLlmClusterStatus),
+            new DocStringTool(ToolGroups.Info.SelfStatus, "get_uptime", GetUptime),
+            new DocStringTool(ToolGroups.Info.SelfStatus, "get_latency", GetLatency),
+            new DocStringTool(ToolGroups.Info.SelfStatus, "get_memory", GetMemory),
+            new DocStringTool(ToolGroups.Info.SelfStatus, "get_llm_cluster_availability", GetLlmClusterStatus),
         ];
     }
 
@@ -93,22 +96,20 @@ public class ServerStatusToolProvider
     /// - Current usage
     /// </summary>
     /// <returns></returns>
-    private async Task<object> GetLlmClusterStatus()
+    private async Task<object> GetLlmClusterStatus(CancellationToken cancellation)
     {
         var results = new Dictionary<string, object>();
-
-        foreach (var endpoint in await _endpoints.GetStatus())
+        
+        foreach (var endpoint in _endpoints.Backends)
         {
-            var load = (endpoint.MaxSlots - endpoint.AvailableSlots) / (float)endpoint.MaxSlots;
+            var load = (endpoint.TotalSlots - endpoint.AvailableSlots) / (float)endpoint.TotalSlots;
+            var healthy = await endpoint.CheckHealth(cancellation);
 
-            results.Add(endpoint.Endpoint.ID, new
+            results.Add(endpoint.Value.ID, new
             {
-                id = endpoint.Endpoint.ID,
-
-                available = endpoint.Healthy,
-
-                latency_ms = endpoint.Healthy ? (double?)endpoint.Latency.TotalMilliseconds : null,
-                system_load = endpoint.Healthy ? load.ToString("P1") : null,
+                id = endpoint.Value.ID,
+                available = await endpoint.CheckHealth(cancellation),
+                system_load = healthy ? load.ToString("P1") : null,
             });
         }
 

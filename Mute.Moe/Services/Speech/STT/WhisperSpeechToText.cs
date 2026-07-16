@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using Whisper.Runtime;
 using static Whisper.Runtime.WhisperRuntime;
 
@@ -15,6 +15,8 @@ namespace Mute.Moe.Services.Speech.STT;
 public class WhisperSpeechToText
     : ISpeechToText
 {
+    private readonly ILogger<WhisperSpeechToText> _logger;
+    
     private readonly uint _threads;
     private readonly string _model;
     private readonly TimeSpan _modelUnloadTimeout;
@@ -22,15 +24,17 @@ public class WhisperSpeechToText
     private DateTime _lastUse;
     private whisper_context? _context;
     private readonly object _contextLock = new();
-    
+
     /// <summary>
     /// Create a new whisper STT processor
     /// </summary>
     /// <param name="config"></param>
     /// <param name="cron"></param>
+    /// <param name="logger"></param>
     /// <exception cref="FileNotFoundException"></exception>
-    public WhisperSpeechToText(Configuration config, ICron cron)
+    public WhisperSpeechToText(Configuration config, ICron cron, ILogger<WhisperSpeechToText> logger)
     {
+        _logger = logger;
         ArgumentNullException.ThrowIfNull(config.STT?.Whisper, nameof(config.STT.Whisper));
 
         var model = config.STT.Whisper.ModelPath;
@@ -120,7 +124,7 @@ public class WhisperSpeechToText
                 return;
 
             // Free the model
-            Log.Information("Auto cleanup of whisper_context");
+            _logger.LogInformation("Auto cleanup of whisper_context");
             whisper_free(_context);
             _context = null;
         }

@@ -1,9 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Mute.Moe.Discord.Services.Users;
 using Mute.Moe.Services.ImageGen;
 using System.Net.Http;
 using System.Threading.Tasks;
+using HandyAgentFramework;
 
 namespace Mute.Moe.Tools.Providers;
 
@@ -13,32 +13,29 @@ namespace Mute.Moe.Tools.Providers;
 public class UserInfoToolProvider
     : IToolProvider
 {
-    private readonly IUserService _users;
     private readonly DiscordSocketClient _client;
     private readonly IImageAnalyser _imageAnalyser;
     private readonly HttpClient _http;
 
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IReadOnlyList<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="UserInfoToolProvider"/>
     /// </summary>
-    /// <param name="users"></param>
     /// <param name="client"></param>
     /// <param name="imageAnalyser"></param>
     /// <param name="http"></param>
-    public UserInfoToolProvider(IUserService users, DiscordSocketClient client, IImageAnalyser imageAnalyser, IHttpClientFactory http)
+    public UserInfoToolProvider(DiscordSocketClient client, IImageAnalyser imageAnalyser, IHttpClientFactory http)
     {
-        _users = users;
         _client = client;
         _imageAnalyser = imageAnalyser;
         _http = http.CreateClient();
 
         Tools =
         [
-            new AutoTool("user_info", isDefault:false, BasicUserInfo),
-            new AutoTool("user_avatar_info", isDefault:false, UserAvatarInfo),
+            new DocStringTool(ToolGroups.Info.Users, "get_info", BasicUserInfo),
+            new DocStringTool(ToolGroups.Info.Users, "get_avatar_info", UserAvatarInfo),
         ];
     }
 
@@ -50,14 +47,15 @@ public class UserInfoToolProvider
     ///  - ID: Unique ID for this user.
     ///  - Bot: Indicate if this user is a bot.
     /// </summary>
-    /// <param name="ctx"></param>
     /// <param name="id">The name, nickname, username or numeric ID of the user</param>
     /// <returns></returns>
-    private async Task<object> BasicUserInfo(ITool.CallContext ctx, string id)
+    private async Task<object> BasicUserInfo(string id)
     {
-        var user = await TryFindUser(ctx, id);
+        var context = await MuteAgentContext.GetContext(_client);
+
+        var user = await TryFindUser(context, id);
         if (user == null)
-            return await CannotFindUserError(ctx, id);
+            return await CannotFindUserError(context, id);
 
         return new
         {
@@ -73,14 +71,15 @@ public class UserInfoToolProvider
     /// <summary>
     /// Get information about the avatar of a specific user, including a description.
     /// </summary>
-    /// <param name="ctx"></param>
     /// <param name="id">The name, nickname, username or numeric ID of the user</param>
     /// <returns></returns>
-    private async Task<object> UserAvatarInfo(ITool.CallContext ctx, string id)
+    private async Task<object> UserAvatarInfo(string id)
     {
-        var user = await TryFindUser(ctx, id);
+        var context = await MuteAgentContext.GetContext(_client);
+
+        var user = await TryFindUser(context, id);
         if (user == null)
-            return await CannotFindUserError(ctx, id);
+            return await CannotFindUserError(context, id);
 
         var avatar = await _http.GetStreamAsync(user.GetDisplayAvatarUrl(ImageFormat.Png));
         var imgDesc = await _imageAnalyser.GetImageDescription(avatar);
@@ -92,7 +91,7 @@ public class UserInfoToolProvider
         };
     }
 
-    private static async Task<object> CannotFindUserError(ITool.CallContext ctx, string id)
+    private static async Task<object> CannotFindUserError(MuteAgentContext? ctx, string id)
     {
         var similarUsernames = await FindSimilarUsersInChannel(ctx, id, 3)
                                     .Select(a => new
@@ -109,7 +108,7 @@ public class UserInfoToolProvider
         };
     }
 
-    private async Task<IUser?> TryFindUser(ITool.CallContext ctx, string id)
+    private async Task<IUser?> TryFindUser(MuteAgentContext? ctx, string id)
     {
         IUser? result;
 
@@ -127,7 +126,7 @@ public class UserInfoToolProvider
             return result;
 
         // Try a guild nickname
-        var guild = (ctx.Channel as IGuildChannel)?.Guild;
+        var guild = (ctx?.Channel as IGuildChannel)?.Guild;
         if (guild != null)
         {
             var guildUsers = await guild.GetUsersAsync();
@@ -146,11 +145,12 @@ public class UserInfoToolProvider
         return null;
     }
 
-    private static IAsyncEnumerable<(IUser, string)> FindSimilarUsersInChannel(ITool.CallContext ctx, string id, int k)
+    private static IAsyncEnumerable<(IUser, string)> FindSimilarUsersInChannel(MuteAgentContext? ctx, string id, int k)
     {
         // Calculate levenshtein distance to the different types of name, take the best matches
         return (
-            from user in ctx.Channel.GetUsersAsync().SelectMany(a => a)
+            from user in ctx?.Channel.GetUsersAsync().SelectMany(a => a)
+            where user != null
             let global_dist = user.GlobalName?.Levenshtein(id) ?? int.MaxValue
             let username_dist = user.Username.Levenshtein(id)
             let nick = (user as IGuildUser)?.Nickname

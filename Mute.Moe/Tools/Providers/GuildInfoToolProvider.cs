@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using Mute.Moe.Services.ImageGen;
 using System.Net.Http;
 using System.Threading.Tasks;
+using HandyAgentFramework;
 
 namespace Mute.Moe.Tools.Providers;
 
@@ -17,7 +18,7 @@ public class GuildInfoToolProvider
     private readonly HttpClient _http;
 
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IReadOnlyList<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="GuildInfoToolProvider"/>
@@ -33,8 +34,8 @@ public class GuildInfoToolProvider
 
         Tools =
         [
-            new AutoTool("guild_info", isDefault:false, BasicGuildInfo),
-            new AutoTool("guild_icon_info", isDefault:false, GuildIconInfo),
+            new DocStringTool(ToolGroups.Info.Guilds, "get_info", BasicGuildInfo),
+            new DocStringTool(ToolGroups.Info.Guilds, "get_icon_info", GuildIconInfo),
         ];
     }
 
@@ -46,10 +47,9 @@ public class GuildInfoToolProvider
     ///  - Member Count: Number of members in this guild (may be null for large guilds)
     ///  - Channels: Summary of channels in guild.
     /// </summary>
-    /// <param name="ctx"></param>
     /// <param name="id">The name or unique ID of the guild</param>
     /// <returns></returns>
-    private async Task<object> BasicGuildInfo(ITool.CallContext ctx, string id)
+    private async Task<object> BasicGuildInfo(string id)
     {
         var guild = await TryFindGuild(id);
         if (guild == null)
@@ -97,10 +97,9 @@ public class GuildInfoToolProvider
     /// <summary>
     /// Get information about the icon of a specific guild/server, including a description.
     /// </summary>
-    /// <param name="ctx"></param>
     /// <param name="id">The name or unique ID of the guild</param>
     /// <returns></returns>
-    private async Task<object> GuildIconInfo(ITool.CallContext ctx, string id)
+    private async Task<object> GuildIconInfo(string id)
     {
         var guild = await TryFindGuild(id);
         if (guild == null)

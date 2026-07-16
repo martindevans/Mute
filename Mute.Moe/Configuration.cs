@@ -1,5 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Services.LLM;
+using System.Diagnostics.CodeAnalysis;
+using Mute.BraveSearch;
 
 namespace Mute.Moe;
 
@@ -18,7 +20,6 @@ public class Configuration
     [UsedImplicitly] public UrbanDictionaryConfig? UrbanDictionary;
     [UsedImplicitly] public STTConfig? STT;
     [UsedImplicitly] public LLMConfig? LLM;
-    [UsedImplicitly] public required AgentConfig Agent;
     [UsedImplicitly] public Automatic1111Config? Automatic1111;
     [UsedImplicitly] public GlobalImageGenerationConfig? ImageGeneration;
     [UsedImplicitly] public LocationConfig? Location;
@@ -213,27 +214,12 @@ public class LLMConfig
 
     [UsedImplicitly] public required LLamaServerEndpoint[] Endpoints;
 
-    [UsedImplicitly] public required LocalModel ChatLanguageModel;
-    [UsedImplicitly] public required LocalModel FactLanguageModel;
-    [UsedImplicitly] public required LocalModel VisionLanguageModel;
-    [UsedImplicitly] public required LocalEmbeddingModel EmbeddingModel;
-    [UsedImplicitly] public required LocalModel RerankingModel;
+    [UsedImplicitly] public required AgentChatModel GeneralChatModel;
+    [UsedImplicitly] public required AgentVisionModel VisionLanguageModel;
+    [UsedImplicitly] public required AgentEmbeddingModel EmbeddingModel;
+    [UsedImplicitly] public required AgentRerankModel RerankingModel;
 
     [UsedImplicitly] public required string ChatSystemPromptPath;
-
-    public class LocalModel
-    {
-        [UsedImplicitly] public required string ModelName;
-        [UsedImplicitly] public required int ContextSize;
-
-        [UsedImplicitly] public SamplingParameters? Sampling;
-    }
-
-    public class LocalEmbeddingModel
-        : LocalModel
-    {
-        [UsedImplicitly] public int EmbeddingDims;
-    }
 
     public class LLamaServerEndpoint
     {
@@ -250,29 +236,6 @@ public class LLMConfig
 }
 
 /// <summary>
-/// Config for agent stuff
-/// </summary>
-[ExcludeFromCodeCoverage]
-public class AgentConfig
-{
-    /// <summary>
-    /// Extracting facts from conversation transcripts
-    /// </summary>
-    [UsedImplicitly] public required FactExtractionConfig FactExtraction;
-
-    /// <summary>
-    /// Config for memory extraction
-    /// </summary>
-    public class FactExtractionConfig
-    {
-        /// <summary>
-        /// Path to the system prompt to use for fact extraction
-        /// </summary>
-        [UsedImplicitly] public required string SystemPromptFacts;
-    }
-}
-
-/// <summary>
 /// Config for brave web search
 /// </summary>
 [ExcludeFromCodeCoverage]
@@ -282,6 +245,15 @@ public class BraveWebSearchConfig
     /// API key for brave web search
     /// </summary>
     [UsedImplicitly] public string ApiKey = "";
+
+    /// <summary>
+    /// Bind brave web search services using the current configuration
+    /// </summary>
+    /// <param name="builder"></param>
+    public void Bind(IServiceCollection builder)
+    {
+        builder.AddBraveSearch(ApiKey);
+    }
 }
 
 /// <summary>

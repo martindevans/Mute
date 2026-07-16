@@ -10,7 +10,7 @@ namespace Mute.Moe.Services.LLM;
 /// Get the models list from llama-server and filters out servers which do not include the filter strings in the model list
 /// </summary>
 public class LlamaServerModelCapabilityEndpointFilter
-    : MultiEndpointProvider<LLamaServerEndpoint>.IEndpointFilter
+    : MultiBackendServiceProvider.IBackendFilter<LLamaServerEndpoint>
 {
     // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
     private readonly FluidCache<CacheItem> _modelsCache;
@@ -33,18 +33,18 @@ public class LlamaServerModelCapabilityEndpointFilter
     }
 
     /// <inheritdoc />
-    public async ValueTask<bool> FilterEndpoint(LLamaServerEndpoint endpoint, string[] filters)
+    public async ValueTask<bool> Filter(LLamaServerEndpoint backend, IReadOnlyCollection<string> tags)
     {
         // Check blacklist doesn't ban any of the requested items
-        foreach (var filter in filters)
-            if (endpoint.ModelsBlacklist.Contains(filter))
+        foreach (var filter in tags)
+            if (backend.ModelsBlacklist.Contains(filter))
                 return false;
 
         // Get backend models list
-        var models = await _modelsByBackendId.GetItem(endpoint.ID, _ => GetBackendModelList(endpoint));
+        var models = await _modelsByBackendId.GetItem(backend.ID, _ => GetBackendModelList(backend));
 
         // Check if backend is missing any of the requested models
-        foreach (var filter in filters)
+        foreach (var filter in tags)
             if (!models.Models.Contains(filter))
                 return false;
 
@@ -75,7 +75,7 @@ public class LlamaServerModelCapabilityEndpointFilter
     [UsedImplicitly]
     private class ModelItem
     {
-        [JsonPropertyName("id")]
+        [JsonPropertyName("id"), UsedImplicitly]
         public required string ID { get; init; }
     }
 }

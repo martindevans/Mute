@@ -18,11 +18,6 @@ public partial class ChatInteractions(ConversationalResponseService _conversatio
     public const string InteractionIdClearConversationState = nameof(ChatInteractions) + nameof(InteractionIdClearConversationState);
 
     /// <summary>
-    /// ID for forcing summarisation of the conversation state in the current channel
-    /// </summary>
-    public const string InteractionIdSummariseConversationState = nameof(ChatInteractions) + nameof(InteractionIdSummariseConversationState);
-
-    /// <summary>
     /// ID for refreshing an existing embed
     /// </summary>
     private const string InteractionIdRefreshEmbedConversationState = nameof(ChatInteractions) + nameof(InteractionIdRefreshEmbedConversationState);
@@ -51,23 +46,6 @@ public partial class ChatInteractions(ConversationalResponseService _conversatio
         await conv.Clear();
 
         await FollowupAsync("Cleared conversation state. Wait... what were we talking about again?");
-        await DeleteOriginalResponseAsync();
-    }
-
-    /// <summary>
-    /// Force summarisation of the conversation state in this channel
-    /// </summary>
-    /// <returns></returns>
-    [ComponentInteraction(InteractionIdSummariseConversationState, ignoreGroupNames: true)]
-    [UsedImplicitly]
-    public async Task SummariseConversationState()
-    {
-        await RespondAsync("Summarising...");
-
-        var conv = await _conversations.GetConversation(Context.Channel);
-        await conv.ForceSummary();
-
-        await FollowupAsync($"Summarisation completed:\n{conv.Summary}");
         await DeleteOriginalResponseAsync();
     }
 

@@ -213,6 +213,8 @@ public class OpenWeatherMapService
 
         public string Description { get; }
 
+        public DateTime Timestamp => _weather.Timestamp;
+
         public float TemperatureCelsius => _weather.Main.Temp;
         public float? TemperatureCelsiusFeelsLike => _weather.Main.FeelsLike;
 

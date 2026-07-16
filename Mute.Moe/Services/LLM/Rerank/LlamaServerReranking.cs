@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using HandyAgentFramework.Embedding;
+using MultiBackendServiceProvider;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -15,7 +17,7 @@ namespace Mute.Moe.Services.LLM.Rerank;
 public sealed class LlamaServerReranking
     : IReranking
 {
-    private readonly MultiEndpointProvider<LLamaServerEndpoint> _endpoints;
+    private readonly MultiBackendServiceProvider<LLamaServerEndpoint> _endpoints;
     private readonly HttpClient _http;
     private readonly string _model;
 
@@ -25,37 +27,37 @@ public sealed class LlamaServerReranking
     /// <param name="http"></param>
     /// <param name="model"></param>
     /// <param name="endpoints"></param>
-    public LlamaServerReranking(IHttpClientFactory http, LlmRerankModel model, MultiEndpointProvider<LLamaServerEndpoint> endpoints)
+    public LlamaServerReranking(IHttpClientFactory http, AgentRerankModel model, MultiBackendServiceProvider<LLamaServerEndpoint> endpoints)
     {
         _endpoints = endpoints;
         _http = http.CreateClient();
 
-        _model = model.Model;
+        _model = model.Name;
     }
 
     /// <inheritdoc />
     public async Task<List<RerankResult>> Rerank(string query, IReadOnlyList<string> documents, CancellationToken cancellation = default)
     {
         // Get an endpoint
-        using var endpoint = await _endpoints.GetEndpoint([ _model ], cancellation);
+        using var endpoint = await _endpoints.Acquire([ _model ], cancellation);
         if (endpoint == null)
             return await new NullRerank().Rerank(query, documents, cancellation);
 
         // Create content
-        var json = JsonSerializer.Serialize(new
-        {
-            model = _model,
+        var json = JsonSerializer.Serialize(new RerankRequest
+        (
+            _model,
             query,
-            top_n = documents.Count,
+            documents.Count,
             documents
-        });
+        ));
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
-        content.Headers.Add("Bearer", endpoint.Endpoint.Key);
+        content.Headers.Add("Bearer", endpoint.Backend.Value.Key);
 
         // Create request
-        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new(endpoint.Endpoint.Url), "/v1/rerank"));
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(new(endpoint.Backend.Value.Url), "/v1/rerank"));
         request.Content = content;
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", endpoint.Endpoint.Key);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", endpoint.Backend.Value.Key);
 
         // Send request
         using var res = await _http.SendAsync(request, cancellation);
@@ -66,31 +68,34 @@ public sealed class LlamaServerReranking
         var result = await JsonSerializer.DeserializeAsync<RerankResponse>(stream, cancellationToken: cancellation)
                   ?? throw new InvalidDataException("Invalid rerank response");
 
-        // Convert to result type
-        var results = new List<RerankResult>(result.Results.Length);
-        foreach (var r in result.Results)
-            results.Add(new RerankResult(r.Index, r.RelevanceScore));
+        // Convert to result type, sorted highest relevance first
+        var results = (
+            from item in result.Results
+            orderby item.RelevanceScore descending 
+            select new RerankResult(documents[item.Index], item.Index, item.RelevanceScore)
+        ).ToList();
 
-        // Sort into order, highest relevance first
-        return results.OrderByDescending(a => a.Relevance).ToList();
+        return results;
     }
 
     #region JSON model
+    private sealed record RerankRequest(
+        [property: JsonPropertyName("model"), UsedImplicitly] string Model,
+        [property: JsonPropertyName("query"), UsedImplicitly] string Query,
+        [property: JsonPropertyName("top_n"), UsedImplicitly] int Count,
+        [property: JsonPropertyName("documents"), UsedImplicitly] IReadOnlyList<string> Documents
+        
+    );
+    
     [UsedImplicitly]
-    private sealed class RerankResponse
-    {
-        [JsonPropertyName("results")]
-        public RerankItem[] Results { get; init; } = [ ];
-    }
-
+    private sealed record RerankResponse(
+        [property: JsonPropertyName("results")] RerankItem[] Results
+    );
+    
     [UsedImplicitly]
-    private sealed class RerankItem
-    {
-        [JsonPropertyName("index")]
-        public int Index { get; init; }
-
-        [JsonPropertyName("relevance_score")]
-        public float RelevanceScore { get; init; }
-    }
+    private sealed record RerankItem(
+        [property: JsonPropertyName("index")] int Index,
+        [property: JsonPropertyName("relevance_score")] float RelevanceScore
+    );
     #endregion
 }

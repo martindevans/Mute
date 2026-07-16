@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
+using HandyAgentFramework;
 using Mute.Moe.Tools;
-using Mute.Moe.Tools.Providers;
+using IToolProvider = Mute.Moe.Tools.Providers.IToolProvider;
 
 namespace Mute.Moe.Services.Information.Wikipedia;
 
@@ -48,7 +49,7 @@ public class WikipediaToolProvider
     private readonly IWikipedia _wiki;
 
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IReadOnlyList<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Construct a new <see cref="WikipediaToolProvider"/>
@@ -60,7 +61,7 @@ public class WikipediaToolProvider
 
         Tools =
         [
-            new AutoTool("get_wikipedia_definition", true, GetDefinition)
+            new DocStringTool(ToolGroups.Info.WebSearch, "get_wikipedia_definition", GetDefinition)
         ];
     }
 

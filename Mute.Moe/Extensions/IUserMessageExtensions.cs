@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.IO;
+using Discord;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -65,6 +66,48 @@ public static class IUserMessageExtensions
             urls.AddRange(message.ReferencedMessage.GetMessageImageUrls(false));
 
         return urls;
+    }
+
+    /// <summary>
+    /// Get all images from this message or the message it references
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="http"></param>
+    /// <returns></returns>
+    public static async Task<StreamsCollection> GetMessageImageStreams(this IUserMessage message, HttpClient http)
+    {
+        var images = message.GetMessageImageUrls();
+
+        var result = await images
+                          .ToAsyncEnumerable()
+                          .Select(async (url, ct) => await http.GetAsync(url, ct))
+                          .Where(IsSuccess)
+                          .Select(async (resp, ct) => await resp.Content.ReadAsStreamAsync(ct))
+                          .ToListAsync();
+
+        return new(result);
+
+        static bool IsSuccess(HttpResponseMessage message)
+        {
+            if (!message.IsSuccessStatusCode)
+                message.Dispose();
+            return message.IsSuccessStatusCode;
+        }
+    }
+
+    /// <summary>
+    /// A collection of streams that can be disposed together
+    /// </summary>
+    /// <param name="Streams"></param>
+    public record StreamsCollection(IReadOnlyList<Stream> Streams)
+        : IAsyncDisposable
+    {
+        /// <inheritdoc />
+        public async ValueTask DisposeAsync()
+        {
+            foreach (var stream in Streams)
+                await stream.DisposeAsync();
+        }
     }
 
     /// <summary>

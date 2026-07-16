@@ -1,13 +1,12 @@
 ﻿using Discord;
 using Discord.Commands;
+using HandyAgentFramework.FunctionCall.Middleware.ToolSearch;
+using MultiBackendServiceProvider;
+using Mute.Moe.Discord.Interaction;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.LLM;
-using Mute.Moe.Tools;
 using System.Text;
-using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Mute.Moe.Discord.Interaction;
 
 namespace Mute.Moe.Discord.Modules.Personality;
 
@@ -32,8 +31,7 @@ public partial class Chat(ConversationalResponseService _conversations)
         // Action buttons
         var buttonRow = new ActionRowBuilder();
         buttonRow.AddComponent(ButtonBuilder.CreateDangerButton("Destroy", ChatInteractions.InteractionIdClearConversationState));
-        buttonRow.AddComponent(ButtonBuilder.CreateSecondaryButton("Summarise", ChatInteractions.InteractionIdSummariseConversationState));
-        buttonRow.AddComponent(ButtonBuilder.CreateSecondaryButton("Update", ChatInteractions.GetInteractionRefreshId(message)));
+        buttonRow.AddComponent(ButtonBuilder.CreateSecondaryButton("Refresh", ChatInteractions.GetInteractionRefreshId(message)));
         var components = new ComponentBuilder();
         components.AddRow(buttonRow);
 
@@ -44,35 +42,34 @@ public partial class Chat(ConversationalResponseService _conversations)
 
 [UsedImplicitly]
 [Group("llm")]
-public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEndpoint> _backends)
+public partial class LLM(IToolSet _tools, MultiBackendServiceProvider<LLamaServerEndpoint> _backends)
     : MuteBaseModule
 {
     [Command("status"), Summary("List all available LLM backends and their current status")]
     [UsedImplicitly]
     public async Task ShowBackendStatus()
     {
-        var results = await _backends.GetStatus();
+        var results = await _backends.GetStatus(default);
 
         var count = 0;
         var desc = new StringBuilder();
         foreach (var result in results)
         {
-            desc.AppendLine($"**{result.Endpoint.ID}**");
+            desc.AppendLine($"**{result.Backend.ID}**");
 
-            if (result.Healthy)
+            if (result.IsHealthy)
             {
+                count++;
+
                 desc.AppendLine( " - Online 🟢");
-                desc.AppendLine($" - Available: {result.AvailableSlots}/{result.MaxSlots}");
+                desc.AppendLine($" - Available: {result.AvailableSlots}/{result.TotalSlots}");
                 desc.AppendLine($" - Latency: {result.Latency.TotalMilliseconds:##.#}ms");
             }
             else
             {
                 desc.AppendLine(" - Offline 🔴");
-                desc.AppendLine($" - Available: 0/{result.MaxSlots}");
+                desc.AppendLine($" - Available: 0/{result.TotalSlots}");
             }
-
-            if (result.Healthy)
-                count++;
         }
 
         var color = count switch
@@ -98,8 +95,8 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
         if (string.IsNullOrEmpty(query) || query == "*")
         {
             // Get all tools, defaults first
-            var defaults = _tools.Tools.Where(t => t.Value.IsDefaultTool).Select(t => t.Value);
-            var others = _tools.Tools.Where(t => !t.Value.IsDefaultTool).Select(t => t.Value);
+            var defaults = _tools.Tools().Where(t => t.IsDefault);
+            var others = _tools.Tools().Where(t => !t.IsDefault);
             var results = defaults.Concat(others).ToArray();
 
             // Display results
@@ -107,131 +104,77 @@ public partial class LLM(IToolIndex _tools, MultiEndpointProvider<LLamaServerEnd
                 results,
                 () => "No results",
                 rs => $"{rs.Count} results",
-                (item, idx) => $"{idx + 1}. **{item.Name}**"
+                (item, idx) => $"{idx + 1}. **{item.Function.Name}**"
             );
         }
         else
         {
             // Do tool search
-            var results = (await _tools.Find(query, topK: 5, topP: 0)).ToArray();
+            var results = (await _tools.Search(query, topK: 5)).ToArray();
 
             // Display results
             await DisplayItemList(
                 results,
                 () => "No results",
                 rs => $"{rs.Count} results",
-                (item, idx) => $"{idx + 1}. **{item.Tool.Name}**: {item.Relevance}"
+                (item, idx) => $"{idx + 1}. **{item.Name}**: {item.Relevance}"
             );
         }
     }
 
     [Group("tool")]
-    public class Tool(IToolIndex _tools, IToolLog _log)
+    public class Tool(IToolSet _tools)
         : MuteBaseModule
     {
         [Command, Summary("Get all the detailed information for a specific tool")]
         [UsedImplicitly]
         public async Task ShowToolInfo([Remainder] string name)
         {
-            if (!_tools.Tools.TryGetValue(name, out var tool))
+            var tool = _tools.TryGetTool(name);
+
+            if (tool == null)
             {
                 // Failed to find tool, find similar names
                 var nearby = (
-                    from t in _tools.Tools
-                    let dist = t.Value.Name.Levenshtein(name)
+                    from t in _tools.Tools()
+                    let dist = t.Function.Name.Levenshtein(name)
                     orderby dist
-                    select t.Value
+                    select t
                 ).Take(5);
 
                 var builder = new StringBuilder();
                 builder.AppendLine($"Cannot find tool `{name}`. Did you mean:");
                 foreach (var item in nearby)
-                    builder.AppendLine($"- {item.Name}");
+                    builder.AppendLine($"- {item.Function.Name}");
 
                 await ReplyAsync(builder.ToString());
             }
             else
             {
                 var description = new StringBuilder();
-                description.AppendLine(tool.Description);
+                description.AppendLine(tool.Function.Description);
                 description.AppendLine();
                 description.AppendLine("**Parameters**");
 
-                foreach (var parameter in tool.GetParameters())
-                {
-                    description.AppendLine($" - **{parameter.Name}** (`{parameter.Type.Type}`)");
-                    description.AppendLine($"  - {parameter.Type.Description}");
-                    if (!parameter.Type.Required)
-                        description.AppendLine("  - Optional");
-                }
+                throw new NotImplementedException("Parse arguments from schema");
+                
+                //foreach (var parameter in tool.GetParameters())
+                //{
+                //    description.AppendLine($" - **{parameter.Name}** (`{parameter.Type.Type}`)");
+                //    description.AppendLine($"  - {parameter.Type.Description}");
+                //    if (!parameter.Type.Required)
+                //        description.AppendLine("  - Optional");
+                //}
 
-                var embed = new EmbedBuilder()
-                           .WithTitle(tool.Name)
-                           .WithDescription(description.ToString())
-                           .WithColor(tool.IsDefaultTool ? Color.Gold : Color.LightGrey)
-                           .WithFields(
-                                new EmbedFieldBuilder().WithIsInline(true).WithName("Default Tool").WithValue(tool.IsDefaultTool)
-                            );
+                //var embed = new EmbedBuilder()
+                //           .WithTitle(tool.Function.Name)
+                //           .WithDescription(description.ToString())
+                //           .WithColor(tool.IsDefault ? Color.Gold : Color.LightGrey)
+                //           .WithFields(
+                //                new EmbedFieldBuilder().WithIsInline(true).WithName("Default Tool").WithValue(tool.IsDefault)
+                //            );
 
-                await ReplyAsync(embed: embed.Build());
-            }
-        }
-
-        [Command("log"), Summary("Show tool execution log")]
-        [UsedImplicitly]
-        [RequireOwner]
-        public async Task ShowToolLog(int limit = 8, string? name = null)
-        {
-            var ctx = Context.AgentMemoryContextId;
-
-            var calls = _log
-                .Calls(ctx)
-                .Where(a => a.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
-                .Take(limit)
-                .ToArray();
-            
-            var responses = calls
-                .Select(a => (a, _log.Responses(ctx, id: a.Id).SingleOrDefault()))
-                .Where(a => a.Item2 != null)
-                .ToDictionary(a => a.a.Id, a => a.Item2!);
-            
-            await DisplayItemList(
-                calls,
-                () => "No tool calls have been logged",
-                list => $"{list.Count} calls (most recent first):",
-                (a, _) => $" - {SingleItem(a)}"
-            );
-
-            string SingleItem(IToolLog.ToolCall call)
-            {
-                // No response! (red blob)
-                if (!responses.TryGetValue(call.Id, out var response))
-                    return $"🔴 `{call.Name}` **No Response!**";
-
-                var elapsedMs = Math.Round((response.Timestamp - call.Timestamp).TotalMilliseconds);
-
-                // Try to extract "parameters" from call JSON
-                var parameters = call.Parameters;
-                var jobj = JsonNode.Parse(call.Parameters);
-                if (jobj?["arguments"] is JsonNode args)
-                    parameters = args.ToJsonString();
-                if (parameters == "\"{}\"")
-                    parameters = "";
-                parameters = Regex.Unescape(parameters);
-                parameters = parameters.Replace('`', '\'');
-
-                // Format the response
-                var responseStr = response.Value;
-                if (responseStr is { Length: > 256 })
-                    responseStr = $"{responseStr[..256]}...";
-                responseStr = responseStr?.Replace('`', '\'');
-
-                // Failure (orange blob)
-                if (!response.Success)
-                    return $"🟠 `{call.Name}({parameters}) => {responseStr}` ({elapsedMs}ms)";
-
-                // Success (green blob)
-                return $"🟢 `{call.Name}({parameters}) => {responseStr}` ({elapsedMs}ms)";
+                //await ReplyAsync(embed: embed.Build());
             }
         }
     }

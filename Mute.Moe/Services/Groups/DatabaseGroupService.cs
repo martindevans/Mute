@@ -1,13 +1,13 @@
 ﻿using Discord;
 using Mute.Moe.Services.Database;
-using Serilog;
 using System.Threading.Tasks;
 using Dapper;
+using Microsoft.Extensions.Logging;
 
 namespace Mute.Moe.Services.Groups;
 
 /// <inheritdoc />
-public class DatabaseGroupService
+public partial class DatabaseGroupService
     : IGroups
 {
     #region SQL
@@ -18,26 +18,22 @@ public class DatabaseGroupService
     private const string DeleteUnlockSql = "Delete from UnlockedRoles Where RoleId = @RoleId AND GuildId = @GuildId";
     #endregion
 
+    private readonly ILogger<DatabaseGroupService> _logger;
     private readonly IDatabaseService _database;
 
     /// <summary>
     /// Create a new <see cref="DatabaseGroupService"/>
     /// </summary>
     /// <param name="database"></param>
-    public DatabaseGroupService(IDatabaseService database)
+    /// <param name="logger"></param>
+    public DatabaseGroupService(IDatabaseService database, ILogger<DatabaseGroupService> logger)
     {
         _database = database;
+        _logger = logger;
 
         // Create database structure
-        try
-        {
-            using var connection = _database.GetConnection();
-            connection.Execute("CREATE TABLE IF NOT EXISTS `UnlockedRoles` (`RoleId` TEXT NOT NULL, `GuildId` TEXT NOT NULL, PRIMARY KEY(`RoleId`,`GuildId`))");
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Creating 'UnlockedRoles' table failed");
-        }
+        using var connection = _database.GetConnection();
+        connection.Execute("CREATE TABLE IF NOT EXISTS `UnlockedRoles` (`RoleId` TEXT NOT NULL, `GuildId` TEXT NOT NULL, PRIMARY KEY(`RoleId`,`GuildId`))");
     }
 
     /// <inheritdoc />
@@ -82,7 +78,7 @@ public class DatabaseGroupService
             }
             catch (Exception exception)
             {
-                Log.Error("Failed to fetch guild role Guild={0} ID={1} Ex={2}", guild.Name, unlocked.RoleId, exception);
+                LogFailedToFetchRole(guild.Name, unlocked.RoleId, exception);
                 return null;
             }
         }
@@ -117,4 +113,9 @@ public class DatabaseGroupService
     }
 
     private record UnlockedRole(string RoleId, string GuildId);
+
+    #region logging
+    [LoggerMessage(LogLevel.Error, "Failed to fetch guild role Guild={guild} ID={role}")]
+    private partial void LogFailedToFetchRole(string guild, string role, Exception ex);
+    #endregion
 }

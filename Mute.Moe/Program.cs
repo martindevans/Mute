@@ -1,10 +1,8 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
-using Mute.Moe.Tools;
 using Newtonsoft.Json;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -31,6 +29,7 @@ public static class Program
         var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)))
                   ?? throw new InvalidOperationException("Config was null");
 
+        //todo: remove serilog
         // Setup logger
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
@@ -45,9 +44,6 @@ public static class Program
         // Tracer provider must be initialised before we do any tracing/telemetry! Get the
         // service right now to ensure it's initialised.
         provider.GetRequiredService<TracerProvider>();
-
-        // Get the tool index. This ensures it begins its internal update process
-        provider.GetRequiredService<IToolIndex>();
 
         // Connect to Discord
         var bot = provider.GetRequiredService<HostedDiscordBot>();
