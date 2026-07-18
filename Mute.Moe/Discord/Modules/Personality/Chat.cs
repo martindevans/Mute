@@ -122,60 +122,60 @@ public partial class LLM(IToolSet _tools, MultiBackendServiceProvider<LLamaServe
         }
     }
 
-    [Group("tool")]
-    public class Tool(IToolSet _tools)
-        : MuteBaseModule
-    {
-        [Command, Summary("Get all the detailed information for a specific tool")]
-        [UsedImplicitly]
-        public async Task ShowToolInfo([Remainder] string name)
-        {
-            var tool = _tools.TryGetTool(name);
+    //[Group("tool")]
+    //public class Tool(IToolSet _tools)
+    //    : MuteBaseModule
+    //{
+    //    [Command, Summary("Get all the detailed information for a specific tool")]
+    //    [UsedImplicitly]
+    //    public async Task ShowToolInfo([Remainder] string name)
+    //    {
+    //        var tool = _tools.TryGetTool(name);
 
-            if (tool == null)
-            {
-                // Failed to find tool, find similar names
-                var nearby = (
-                    from t in _tools.Tools()
-                    let dist = t.Function.Name.Levenshtein(name)
-                    orderby dist
-                    select t
-                ).Take(5);
+    //        if (tool == null)
+    //        {
+    //            // Failed to find tool, find similar names
+    //            var nearby = (
+    //                from t in _tools.Tools()
+    //                let dist = t.Function.Name.Levenshtein(name)
+    //                orderby dist
+    //                select t
+    //            ).Take(5);
 
-                var builder = new StringBuilder();
-                builder.AppendLine($"Cannot find tool `{name}`. Did you mean:");
-                foreach (var item in nearby)
-                    builder.AppendLine($"- {item.Function.Name}");
+    //            var builder = new StringBuilder();
+    //            builder.AppendLine($"Cannot find tool `{name}`. Did you mean:");
+    //            foreach (var item in nearby)
+    //                builder.AppendLine($"- {item.Function.Name}");
 
-                await ReplyAsync(builder.ToString());
-            }
-            else
-            {
-                var description = new StringBuilder();
-                description.AppendLine(tool.Function.Description);
-                description.AppendLine();
-                description.AppendLine("**Parameters**");
+    //            await ReplyAsync(builder.ToString());
+    //        }
+    //        else
+    //        {
+    //            var description = new StringBuilder();
+    //            description.AppendLine(tool.Function.Description);
+    //            description.AppendLine();
+    //            description.AppendLine("**Parameters**");
 
-                throw new NotImplementedException("Parse arguments from schema");
+    //            throw new NotImplementedException("Parse arguments from schema");
                 
-                //foreach (var parameter in tool.GetParameters())
-                //{
-                //    description.AppendLine($" - **{parameter.Name}** (`{parameter.Type.Type}`)");
-                //    description.AppendLine($"  - {parameter.Type.Description}");
-                //    if (!parameter.Type.Required)
-                //        description.AppendLine("  - Optional");
-                //}
+    //            //foreach (var parameter in tool.GetParameters())
+    //            //{
+    //            //    description.AppendLine($" - **{parameter.Name}** (`{parameter.Type.Type}`)");
+    //            //    description.AppendLine($"  - {parameter.Type.Description}");
+    //            //    if (!parameter.Type.Required)
+    //            //        description.AppendLine("  - Optional");
+    //            //}
 
-                //var embed = new EmbedBuilder()
-                //           .WithTitle(tool.Function.Name)
-                //           .WithDescription(description.ToString())
-                //           .WithColor(tool.IsDefault ? Color.Gold : Color.LightGrey)
-                //           .WithFields(
-                //                new EmbedFieldBuilder().WithIsInline(true).WithName("Default Tool").WithValue(tool.IsDefault)
-                //            );
+    //            //var embed = new EmbedBuilder()
+    //            //           .WithTitle(tool.Function.Name)
+    //            //           .WithDescription(description.ToString())
+    //            //           .WithColor(tool.IsDefault ? Color.Gold : Color.LightGrey)
+    //            //           .WithFields(
+    //            //                new EmbedFieldBuilder().WithIsInline(true).WithName("Default Tool").WithValue(tool.IsDefault)
+    //            //            );
 
-                //await ReplyAsync(embed: embed.Build());
-            }
-        }
-    }
+    //            //await ReplyAsync(embed: embed.Build());
+    //        }
+    //    }
+    //}
 }

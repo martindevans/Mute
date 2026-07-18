@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.IO;
+using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.ImageGen;
@@ -65,12 +66,12 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
     public async Task Analyse()
     {
         var streams = await GetMessageImageStreams(Context.Message);
-        if (streams == null)
+        if (streams.Count == 0)
             return;
 
-        await using (streams)
+        foreach (var stream in streams)
         {
-            foreach (var stream in streams.Streams)
+            using (stream)
             {
                 var (title, desc) = await _analyser.GetImageDescription(stream);
 
@@ -86,13 +87,13 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
         }
     }
 
-    private async Task<IUserMessageExtensions.StreamsCollection?> GetMessageImageStreams(IUserMessage message)
+    private async Task<IReadOnlyList<MemoryStream>> GetMessageImageStreams(IUserMessage message)
     {
         var result = await message.GetMessageImageStreams(_http);
-        if (result.Streams.Count == 0)
+        if (result.Count == 0)
         {
             await TypingReplyAsync("Please include some image attachments or reply to another message with image attachments!");
-            return null;
+            return [];
         }
 
         return result;

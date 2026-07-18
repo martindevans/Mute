@@ -90,28 +90,27 @@ public class ServerStatusToolProvider
     ///
     /// Includes:<br />
     /// - ID<br />
-    /// - Availability check<br />
-    /// - Latency (milliseconds)<br />
-    /// - Current usage
+    /// - Availability<br />
+    /// - Current load percentage
     /// </summary>
     /// <returns></returns>
-    private async Task<object> GetLlmClusterStatus(CancellationToken cancellation)
+    private async Task<Dictionary<string, LlmClusterNodeStatus>> GetLlmClusterStatus(CancellationToken cancellation)
     {
-        var results = new Dictionary<string, object>();
+        var results = new Dictionary<string, LlmClusterNodeStatus>();
         
         foreach (var endpoint in _endpoints.Backends)
         {
             var load = (endpoint.TotalSlots - endpoint.AvailableSlots) / (float)endpoint.TotalSlots;
             var healthy = await endpoint.CheckHealth(cancellation);
 
-            results.Add(endpoint.Value.ID, new
-            {
-                id = endpoint.Value.ID,
-                available = await endpoint.CheckHealth(cancellation),
-                system_load = healthy ? load.ToString("P1") : null,
-            });
+            results.Add(endpoint.Value.ID, new(
+                Available: healthy,
+                Load: healthy ? load.ToString("P1") : null
+            ));
         }
 
         return results;
     }
+
+    private record LlmClusterNodeStatus(bool Available, string? Load);
 }

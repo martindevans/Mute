@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using Discord;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Extensions;
@@ -73,40 +74,36 @@ public static class IUserMessageExtensions
     /// </summary>
     /// <param name="message"></param>
     /// <param name="http"></param>
+    /// <param name="cancellation"></param>
     /// <returns></returns>
-    public static async Task<StreamsCollection> GetMessageImageStreams(this IUserMessage message, HttpClient http)
+    public static async Task<IReadOnlyList<MemoryStream>> GetMessageImageStreams(this IUserMessage message, HttpClient http, CancellationToken cancellation = default)
     {
+        // Find the image URLs
         var images = message.GetMessageImageUrls();
 
-        var result = await images
-                          .ToAsyncEnumerable()
-                          .Select(async (url, ct) => await http.GetAsync(url, ct))
-                          .Where(IsSuccess)
-                          .Select(async (resp, ct) => await resp.Content.ReadAsStreamAsync(ct))
-                          .ToListAsync();
+        // Try to fetch them all
+        var streams = (await Task.WhenAll(images.Select(url => FetchOneImage(url, cancellation))))
+            .Where(a => a != null)
+            .Select(a => a!)
+            .ToList();
 
-        return new(result);
+        return streams;
 
-        static bool IsSuccess(HttpResponseMessage message)
+        async Task<MemoryStream?> FetchOneImage(string url, CancellationToken ct)
         {
-            if (!message.IsSuccessStatusCode)
-                message.Dispose();
-            return message.IsSuccessStatusCode;
-        }
-    }
+            try
+            {
+                using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+                if (!response.IsSuccessStatusCode)
+                    return null;
 
-    /// <summary>
-    /// A collection of streams that can be disposed together
-    /// </summary>
-    /// <param name="Streams"></param>
-    public record StreamsCollection(IReadOnlyList<Stream> Streams)
-        : IAsyncDisposable
-    {
-        /// <inheritdoc />
-        public async ValueTask DisposeAsync()
-        {
-            foreach (var stream in Streams)
-                await stream.DisposeAsync();
+                var array = await response.Content.ReadAsByteArrayAsync(ct);
+                return new MemoryStream(array, writable: false);
+            }
+            catch (IOException)
+            {
+                return null;
+            }
         }
     }
 
