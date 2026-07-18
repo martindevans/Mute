@@ -1,4 +1,5 @@
-﻿using Discord.Addons.Interactive;
+﻿using System.Diagnostics;
+using Discord.Addons.Interactive;
 using Discord.WebSocket;
 using FaceAiSharp;
 using HandyAgentFramework.Embedding;
@@ -84,7 +85,7 @@ public record Startup(Configuration Configuration)
 
         services.AddLogging(builder =>
         {
-            builder.SetMinimumLevel(LogLevel.Debug);
+            builder.SetMinimumLevel(Debugger.IsAttached ? LogLevel.Debug : LogLevel.Information);
             builder.AddConsole();
         });
         
