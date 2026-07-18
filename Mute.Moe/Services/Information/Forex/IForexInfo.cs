@@ -1,6 +1,6 @@
 ﻿using Mute.Moe.Tools;
-using Mute.Moe.Tools.Providers;
 using System.Threading.Tasks;
+using HandyAgentFramework;
 
 namespace Mute.Moe.Services.Information.Forex;
 
@@ -58,7 +58,7 @@ public class ForexToolProvider
     private readonly IForexInfo _info;
 
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="ForexToolProvider"/>
@@ -70,7 +70,7 @@ public class ForexToolProvider
 
         Tools =
         [
-            new AutoTool("get_currency_exchange_rate", false, GetInfo)
+            new DocStringTool(ToolGroups.Info.Currency, "get_forex", GetInfo)
         ];
     }
 

@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using HandyAgentFramework.Embedding;
 
 namespace Mute.Moe.Services.LLM.Rerank;
 
@@ -21,7 +22,7 @@ public class NullRerank
             var t = i / (float)documents.Count;
             var r = float.Lerp(1, 0.9f, t);
 
-            results.Add(new RerankResult(i, r));
+            results.Add(new RerankResult(documents[i], i, r));
         }
 
         return Task.FromResult(results);

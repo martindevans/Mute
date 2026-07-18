@@ -1,5 +1,4 @@
-﻿using SixLabors.ImageSharp.Formats.Png;
-using System.IO;
+﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,22 +20,7 @@ public interface IImageAnalyser
     /// <param name="image"></param>
     /// <param name="cancellation"></param>
     /// <returns></returns>
-    public Task<ImageAnalysisResult?> GetImageDescription(Stream image, CancellationToken cancellation = default);
-
-    /// <summary>
-    /// Given an image, describe it
-    /// </summary>
-    /// <param name="image"></param>
-    /// <param name="cancellation"></param>
-    /// <returns></returns>
-    public async Task<ImageAnalysisResult?> GetImageDescription(SixLabors.ImageSharp.Image image, CancellationToken cancellation = default)
-    {
-        var mem = new MemoryStream();
-        await image.SaveAsync(mem, new PngEncoder(), cancellation);
-        mem.Position = 0;
-
-        return await GetImageDescription(mem, cancellation);
-    }
+    public Task<ImageAnalysisResult> GetImageDescription(Stream image, CancellationToken cancellation = default);
 }
 
 /// <summary>
@@ -44,4 +28,4 @@ public interface IImageAnalyser
 /// </summary>
 /// <param name="Title"></param>
 /// <param name="Description"></param>
-public record ImageAnalysisResult(string? Title, string Description);
+public record ImageAnalysisResult(string Title, string Description);

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
+using HandyAgentFramework;
 using Mute.Moe.Tools;
-using Mute.Moe.Tools.Providers;
 
 namespace Mute.Moe.Services.Information.Anime;
 
@@ -68,7 +68,7 @@ public class MangaToolProvider
     : IToolProvider
 {
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// 
@@ -78,8 +78,8 @@ public class MangaToolProvider
     {
         Tools =
         [
-            new AutoTool("manga_info", false, info.GetMangaInfoAsync),
-            new AutoTool("manga_search", false, info.GetMangasInfoAsync, postprocess: AutoTool.AsyncEnumerableToEnumerable<IAnime>),
+            new DocStringTool(ToolGroups.Info.Weeb, "manga_info", info.GetMangaInfoAsync),
+            new DocStringTool(ToolGroups.Info.Weeb, "manga_search", info.GetMangasInfoAsync),
         ];
     }
 }

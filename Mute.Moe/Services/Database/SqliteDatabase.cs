@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using HandyAgentFramework.Embedding.SqliteCache;
+using HandyAgentFramework.SqliteSessionStore;
 using System.Data;
 using System.Data.SQLite;
 using System.Threading.Tasks;
@@ -9,7 +10,9 @@ namespace Mute.Moe.Services.Database;
 /// SQLite database
 /// </summary>
 public abstract class BaseSqliteDatabase
-    : IDatabaseService
+    : IDatabaseService,
+      ISqliteSessionStoreConnectionProvider,
+      ISqliteEmbeddingCacheConnectionProvider
 {
     private readonly string _dbConnStr;
 
@@ -18,8 +21,6 @@ public abstract class BaseSqliteDatabase
     /// </summary>
     public BaseSqliteDatabase(string connection)
     {
-        Log.Information("DB Connection String: {0}", connection);
-
         _dbConnStr = connection;
         
         // Get a connection and dispose it now, should surface any errors earlier doing this.
@@ -35,13 +36,13 @@ public abstract class BaseSqliteDatabase
         var connection = new SQLiteConnection(_dbConnStr);
         connection.Open();
         
-        //todo:not needed, build of SQLite contains native REGEXP function
+        // not currently needed: build of SQLite contains native REGEXP function
         //connection.BindFunction(new RegExSQLiteFunction());
 
         return connection;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc cref="IDatabaseService" />
     public IDbConnection GetConnection()
     {
         return GetSqliteConnection();

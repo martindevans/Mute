@@ -1,21 +1,92 @@
-﻿using System.Net.Http;
-using System.Text;
-using Discord;
-using Discord.WebSocket;
+﻿using Discord;
+using HandyAgentFramework.Persistence;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using Mute.Moe.Discord.Context;
-using Mute.Moe.Services.LLM;
-using Serilog;
+using Mute.Moe.Tools;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Mute.Moe.Services.ImageGen;
+using Mute.Moe.Services.LLM.Chat;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
 /// <summary>
+/// Factory class responsible for creating instances of <see cref="LlmChatConversation"/>.
+/// </summary>
+public class LlmChatConversationFactory
+{
+    private readonly IDiscordClient _discord;
+    private readonly ChatAgentFactory _agentFactory;
+    private readonly ISessionStore _chatStorage;
+    private readonly IHttpClientFactory _httpFactory;
+    private readonly ILogger<LlmChatConversation> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LlmChatConversationFactory"/> class.
+    /// </summary>
+    /// <param name="discord">
+    /// The Discord client used for interacting with Discord services.
+    /// </param>
+    /// <param name="agentFactory">
+    /// The factory responsible for creating chat agents.
+    /// </param>
+    /// <param name="chatStorage">
+    /// The session store used for persisting chat data.
+    /// </param>
+    /// <param name="httpFactory">
+    /// The HTTP client factory used for creating HTTP clients.
+    /// </param>
+    /// <param name="logger">
+    /// The logger instance for logging messages related to <see cref="LlmChatConversation"/>.
+    /// </param>
+    public LlmChatConversationFactory(
+        IDiscordClient discord,
+        ChatAgentFactory agentFactory,
+        ISessionStore chatStorage,
+        IHttpClientFactory httpFactory,
+        ILogger<LlmChatConversation> logger
+    )
+    {
+        _discord = discord;
+        _agentFactory = agentFactory;
+        _chatStorage = chatStorage;
+        _httpFactory = httpFactory;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Create an LLM chat conversation bound to the given channel
+    /// </summary>
+    /// <param name="channel"></param>
+    /// <returns></returns>
+    public async Task<LlmChatConversation> Create(IMessageChannel channel)
+    {
+        var template = new Dictionary<string, string>
+        {
+            { "self_name", _discord.CurrentUser.Username },
+            { "guild", channel is IDMChannel ? "none (direct message)" : ((IGuildChannel)channel).Guild.Name },
+            { "channel", channel.Name },
+        };
+
+        return new LlmChatConversation(
+            await _agentFactory.Create(template),
+            _agentFactory.ContextSize,
+            channel,
+            _discord,
+            _chatStorage,
+            _httpFactory,
+            _logger
+        );
+    }
+}
+
+/// <summary>
 /// A chat conversation that uses LLMs to respond
 /// </summary>
-public class LlmChatConversation
+public partial class LlmChatConversation
 {
     /// <summary>
     /// The channel this conversation is bound to
@@ -26,20 +97,21 @@ public class LlmChatConversation
     private readonly Channel<BaseProcessEvent> _messages = System.Threading.Channels.Channel.CreateUnbounded<BaseProcessEvent>();
     private readonly string _selfUsername;
 
-    private readonly ulong _memoryContext;
-    private readonly IConversationStateStorage _chatStorage;
-    private readonly IImageAnalyser _analyser;
+    private readonly AIAgent _agent;
+    private readonly int _contextSize;
+    private readonly ISessionStore _sessionStorage;
     private readonly IHttpClientFactory _httpClient;
+    private readonly AgentRunOptions? _options;
+
+    private readonly ILogger<LlmChatConversation> _logger;
+
+    private readonly string _sessionContext;
+    private readonly string _sessionKey;
 
     /// <summary>
     /// Indicates if this conversation is complete and should not be used again
     /// </summary>
     public bool IsComplete { get; private set; }
-
-    /// <summary>
-    /// The last time this conversation was updated
-    /// </summary>
-    public DateTime LastUpdated { get; private set; }
 
     /// <summary>
     /// Number of messages waiting for processing
@@ -52,292 +124,183 @@ public class LlmChatConversation
     public ProcessingState State { get; private set; } = ProcessingState.Loading;
 
     /// <summary>
-    /// The last summary that was generated for this conversation
+    /// The last time this conversation state was updated
     /// </summary>
-    public string? Summary { get; private set; }
+    public DateTime LastUpdated { get; private set; }
 
     /// <summary>
-    /// Get the current number of messages in this conversation
+    /// Context usage statistics from the last generation call
     /// </summary>
-    public int MessageCount { get; private set; }
-
-    /// <summary>
-    /// Get how much of the context is currently used (0 to 1)
-    /// </summary>
-    public float ContextUsage { get; private set; }
+    public ContextStats ContextStatistics { get; private set; }
 
     /// <summary>
     /// Create a new <see cref="LlmChatConversation"/> for the given channel.
     /// </summary>
-    /// <param name="memoryContext"></param>
-    /// <param name="conversation"></param>
+    /// <param name="agent"></param>
+    /// <param name="contextSize"></param>
     /// <param name="channel"></param>
     /// <param name="client"></param>
-    /// <param name="chatStorage"></param>
-    /// <param name="analyser"></param>
+    /// <param name="sessionStorage"></param>
     /// <param name="httpClient"></param>
+    /// <param name="logger"></param>
     public LlmChatConversation(
-        ulong memoryContext,
-        ChatConversation conversation,
+        AIAgent agent,
+        int contextSize,
         IMessageChannel channel,
-        DiscordSocketClient client,
-        IConversationStateStorage chatStorage,
-        IImageAnalyser analyser,
-        IHttpClientFactory httpClient
+        IDiscordClient client,
+        ISessionStore sessionStorage,
+        IHttpClientFactory httpClient,
+        ILogger<LlmChatConversation> logger
     )
     {
         Channel = channel;    
 
         _selfUsername = $"@{client.CurrentUser.Username}";
-        _memoryContext = memoryContext;
-        _chatStorage = chatStorage;
-        _analyser = analyser;
+        _agent = agent;
+        _contextSize = contextSize;
         _httpClient = httpClient;
+        _logger = logger;
 
-        Task.Run(async () => await MessageConsumer(conversation));
+        _sessionStorage = sessionStorage;
+        _sessionContext = channel.GetAgentMemoryContextId().ToString();
+        _sessionKey = Channel.Id.ToString();
+
+        _options = new AgentRunOptions();
+        _options.AttachMuteContext(new MuteAgentContext(channel));
+
+        ContextStatistics = new(contextSize);
+
+
+        Task.Run(async () => await MessageConsumer());
     }
 
-    private async Task MessageConsumer(ChatConversation conversation)
+    private async Task MessageConsumer()
     {
-        // There are three compression thresholds. Compress if:
-        // - There's no work and the conversation is a bit full
-        // - There's some work but the conversation is quite full
-        // - The conversation is nearly overflowing
-        var contextTokens = conversation.Model.Model.ContextTokens ?? 4096;
-        var LowCompressThreshold = (int)MathF.Floor(contextTokens * 0.5f);
-        var MidCompressThreshold = (int)MathF.Floor(contextTokens * 0.7f);
-        var HighCompressThreshold = (int)MathF.Floor(contextTokens * 0.9f);
-
         try
         {
-            State = ProcessingState.Loading;
-
-            // Try to load conversation state
-            var state = await _chatStorage.Get(Channel.Id);
-            if (state != null)
-            {
-                conversation.Load(state.Json);
-                Summary = conversation.FindSummaryMessage();
-            }
-            UpdateStats();
-
             State = ProcessingState.Waiting;
 
-            // Event processing loop, processes:
-            // - A message arrives that needs a response
-            // - A summary is needed and a timeout happens
-            var reader = _messages.Reader;
-            var summaryNeeded = false;
-            while (!_stopper.IsCancellationRequested && !reader.Completion.IsCompleted)
+            await foreach (var @event in _messages.Reader.ReadAllAsync(_stopper.Token))
             {
-                State = ProcessingState.Waiting;
-
-                // Wait for an event:
-                // - Something is ready to read
-                // - Timeout to auto summary
-                // - Cancellation (_stopper throws an exception)
-                var waitResult = await reader.WaitToReadWithTimeout(summaryNeeded ? TimeSpan.FromMinutes(15) : TimeSpan.FromDays(1), _stopper.Token);
-
-                // Check if no more messages will ever arrive: break out of loop.
-                if (waitResult == ChannelReaderExtensions.WaitToReadResult.EndOfStream)
+                // Load conversation state
+                State = ProcessingState.Loading;
+                await using (var session = await _sessionStorage.GetSessionScope(_sessionContext, _sessionKey, _agent, _stopper.Token))
                 {
-                    Log.Warning("EndOfStream for conversation processor for channel {0} ({1})", Channel.Name, Channel.Id);
-                    break;
-                }
-
-                // Check if the timeout occured: auto summarise
-                if (waitResult == ChannelReaderExtensions.WaitToReadResult.Timeout)
-                {
-                    Log.Information("LLM conversation auto summarisation for '{0}'", Channel.Name);
-
-                    if (summaryNeeded)
-                    {
-                        State = ProcessingState.Summarising;
-                        await Summarise();
-                        summaryNeeded = false;
-                        State = ProcessingState.Waiting;
-                    }
-
-                    continue;
-                }
-
-                if (waitResult == ChannelReaderExtensions.WaitToReadResult.ReadyToRead)
-                {
-                    // We know the channel is ready to be read from, read now.
-                    var @event = await reader.ReadAsync(_stopper.Token);
-
+                    // Process the event
+                    State = ProcessingState.Generating;
                     switch (@event)
                     {
                         case BaseProcessEvent.Message message:
                         {
-                            // LLM call to generate a response
                             using (Channel.EnterTypingState())
                             {
-                                State = ProcessingState.Generating;
-                                var response = await GenerateResponse(message, cancellation: _stopper.Token);
-                                summaryNeeded = true;
+                                var response = await GenerateResponse(session.Session, message, cancellation: _stopper.Token);
                                 if (!string.IsNullOrWhiteSpace(response))
                                     await Channel.SendLongMessageAsync(response);
                                 else
-                                    Log.Warning("LLM conversation failed to generate response");
-                                State = ProcessingState.Waiting;
+                                    _logger.LogWarning("LLM conversation failed to generate response");
                             }
-
-                            // Run cleanup
-                            if (await Cleanup())
-                                summaryNeeded = false;
-
                             break;
                         }
 
                         case BaseProcessEvent.Clear:
                         {
-                            conversation.Clear();
-                            summaryNeeded = false;
-                            Summary = null;
-                            break;
-                        }
-
-                        case BaseProcessEvent.Summarise:
-                        {
-                            await Summarise();
-                            summaryNeeded = false;
+                            session.Session.SetInMemoryChatHistory([]);
+                            ContextStatistics = new ContextStats(_contextSize);
                             break;
                         }
                     }
 
+                    // Mark the event as completed
                     @event.Complete();
+
+                    // We're about to save state (done automatically at closing brace). Set the saving state.
+                    State = ProcessingState.Saving;
                 }
 
-                // Always update stats
-                UpdateStats();
-
-                // Always save state
-                await _chatStorage.Put(Channel.Id, new(conversation.Save()));
+                // Enter waiting state before looping around
+                State = ProcessingState.Waiting;
             }
         }
         catch (OperationCanceledException)
         {
-            Log.Warning("Conversation processor OperationCanceledException for channel {0} ({1})", Channel.Name, Channel.Id);
-            await _chatStorage.Put(Channel.Id, new(conversation.Save()));
+            LogConversationOperationCanceledException(Channel.Name, Channel.Id);
             throw;
         }
         catch (Exception ex)
         {
-            Log.Error("Exception killed conversation processor for channel {0} ({1}): {2}", Channel.Name, Channel.Id, ex);
+            LogConversationException(Channel.Name, Channel.Id, ex);
+            throw;
         }
         finally
         {
-            Log.Warning("Conversation processor marked IsComplete=true for channel {0} ({1})", Channel.Name, Channel.Id);
+            LogConversationIsCompleted(Channel.Name, Channel.Id);
             IsComplete = true;
         }
 
-        void UpdateStats()
+        async ValueTask<string?> GenerateResponse(AgentSession session, BaseProcessEvent.Message input, CancellationToken cancellation = default)
         {
-            MessageCount = conversation.MessageCount;
-            ContextUsage = conversation.EstimateTokenCount() / (float)contextTokens;
-        }
-
-        async ValueTask<bool> Cleanup()
-        {
-            var summarised = false;
-
-            // Clean up "buried" tool messages
-            conversation.CleanBuriedToolMessages(3);
-
-            // Summarise the conversation if there's no work pending
-            if (conversation.TotalTokens > LowCompressThreshold && _messages.Reader.Count == 0)
+            // Create message with text content
+            var message = new ChatMessage
             {
-                await Summarise();
-                summarised = true;
-            }
+                AuthorName = input.User.GlobalName ?? input.User.Username,
+                Contents = [
+                    new TextContent(input.Content)
+                ]
+            };
 
-            // Summarise the conversation even if there's work pending
-            else if (conversation.TotalTokens > MidCompressThreshold)
+            // Attach images
+            if (input.AttachedImageUrls.Length > 0)
             {
-                summarised = true;
-                await Summarise();
-            }
-
-            // Summarisation failed, try to sweep up tool messages. Removing them oldest first until
-            // We're below the target size.
-            if (conversation.TotalTokens > HighCompressThreshold)
-            {
-                conversation.SweepToolMessages(HighCompressThreshold);
-            }
-
-            // Summarisation failed, just clear the state.
-            if (conversation.TotalTokens > HighCompressThreshold)
-            {
-                Log.Warning("Compression failed for conversation state in channel {0} ({1})", Channel.Name, Channel.Id);
-                conversation.Clear();
-                Summary = null;
-
-                // Technically we didn't summarise, but we did something even more aggressive so return true
-                summarised = true;
-            }
-
-            return summarised;
-        }
-
-        async ValueTask Summarise()
-        {
-            Summary = await conversation.AutoSummarise(_stopper.Token);
-        }
-
-        async ValueTask<string?> GenerateResponse(BaseProcessEvent.Message context, int maxIters = 8, CancellationToken cancellation = default)
-        {
-            // Add the text message
-            conversation.AddUserMessage(
-                context.User.GlobalName ?? context.User.Username,
-                context.Content
-            );
-
-            if (context.AttachedImages.Length > 0)
-            {
-                var descriptions = new List<string>();
                 using var http = _httpClient.CreateClient();
 
-                // Fetch all the images
-                var images = await context.AttachedImages
-                    .ToAsyncEnumerable()
+                // Start downloading all images
+                var downloads = input
+                    .AttachedImageUrls
                     // ReSharper disable once AccessToDisposedClosure
-                    .Select(async (url, ct) => await http.GetAsync(url, ct))
-                    .Where(a => a.IsSuccessStatusCode)
-                    .Select(async (resp, ct) => await SixLabors.ImageSharp.Image.LoadAsync(await resp.Content.ReadAsStreamAsync(ct), ct))
-                    .ToListAsync(cancellationToken: cancellation);
+                    .Select(url => http.GetAsync(url, cancellation))
+                    .ToList();
 
-                // Describe all the images
-                foreach (var image in images)
+                // Process them in order
+                foreach (var task in downloads)
                 {
-                    var desc = await _analyser.GetImageDescription(image, cancellation);
-                    if (desc == null)
+                    // Skip failed requests
+                    using var httpResponse = await task;
+                    if (!httpResponse.IsSuccessStatusCode)
+                    {
+                        message.Contents.Add(new TextContent($"Image failed to load! Response code: {httpResponse.StatusCode}"));
                         continue;
+                    }
 
-                    descriptions.Add(desc.Description);
-                }
-
-                // Clean up the images
-                foreach (var image in images)
-                    image.Dispose();
-
-                // Add another message with image descriptions
-                if (descriptions.Count > 0)
-                {
-                    var builder = new StringBuilder();
-                    builder.AppendLine("## AUTO IMAGE ANALYSIS");
-                    builder.AppendLine($"There are {descriptions.Count} image(s) attached to the previous message. Descriptions:");
-                    foreach (var desc in descriptions)
-                        builder.AppendLine($" - {desc}");
-
-                    conversation.AddAnonymousUserMessage(builder.ToString());
+                    // Add content to message
+                    var mime = httpResponse.Content.Headers.ContentType?.MediaType;
+                    await using var content = await httpResponse.Content.ReadAsStreamAsync(cancellation);
+                    message.Contents.Add(await DataContent.LoadFromAsync(content, mime, cancellation));
                 }
             }
+            
+            // Generate LLM response
+            var response = await _agent.RunAsync(message, session, _options, cancellation);
 
-            return await conversation.GenerateResponseMultiStep(maxIters, cancellation);
+            // Extract stats
+            if (response.Usage is UsageDetails usage)
+            {
+                session.TryGetInMemoryChatHistory(out var messages);
+                ContextStatistics = new ContextStats(
+                    _contextSize,
+                    usage.InputTokenCount,
+                    usage.ReasoningTokenCount,
+                    usage.OutputTokenCount,
+                    usage.TotalTokenCount,
+                    messages?.Count
+                );
+            }
+
+            return response.Text;
         }
     }
 
+    #region event input
     /// <summary>
     /// Enqueue a message to be added to the conversation
     /// </summary>
@@ -353,12 +316,10 @@ public class LlmChatConversation
         var images = context.Message.GetMessageImageUrls().ToArray();
 
         // Strip bot mention from start of string
-        var content = context
-            .Message
-            .Resolve(userHandling: TagHandling.Name)
-            .Trim()
-            .TrimStart(_selfUsername)
-            .TrimStart();
+        var content = context.Message.Resolve(userHandling: TagHandling.Name).AsSpan();
+        content = content.Trim();
+        content = content.TrimStart(_selfUsername);
+        content = content.TrimStart();
 
         // Enqueue work
         await _messages.Writer.WriteAsync(new BaseProcessEvent.Message(
@@ -372,21 +333,9 @@ public class LlmChatConversation
     /// Clear this conversation state
     /// </summary>
     /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
     public async Task Clear()
     {
         var evt = new BaseProcessEvent.Clear();
-        await _messages.Writer.WriteAsync(evt);
-        await evt.Completed;
-    }
-
-    /// <summary>
-    /// Force summarisation of this state
-    /// </summary>
-    /// <returns></returns>
-    public async Task ForceSummary()
-    {
-        var evt = new BaseProcessEvent.Summarise();
         await _messages.Writer.WriteAsync(evt);
         await evt.Completed;
     }
@@ -402,12 +351,11 @@ public class LlmChatConversation
             _completionSource.SetResult();
         }
 
-        public sealed record Message(IUser User, string Content, string[] AttachedImages) : BaseProcessEvent;
+        public sealed record Message(IUser User, string Content, string[] AttachedImageUrls) : BaseProcessEvent;
 
         public sealed record Clear : BaseProcessEvent;
-
-        public sealed record Summarise : BaseProcessEvent;
     }
+    #endregion
 
     /// <summary>
     /// Current state of the processing task for this conversation
@@ -420,14 +368,9 @@ public class LlmChatConversation
         Waiting,
 
         /// <summary>
-        /// Generating an response using the LLM
+        /// Generating a response using the LLM
         /// </summary>
         Generating,
-
-        /// <summary>
-        /// Running context summarisation
-        /// </summary>
-        Summarising,
 
         /// <summary>
         /// Interacting with persistent storage
@@ -439,4 +382,33 @@ public class LlmChatConversation
         /// </summary>
         Saving,
     }
+
+    /// <summary>
+    /// Statistics about context usage
+    /// </summary>
+    /// <param name="ContextSize">Total context size</param>
+    /// <param name="InputTokens">Input tokens for the last message</param>
+    /// <param name="ReasoningTokens">Reasoning tokens for the last message</param>
+    /// <param name="OutputTokens">Output tokens for the last message</param>
+    /// <param name="TotalTokens">Total tokens in the context</param>
+    /// <param name="Messages">Total message count</param>
+    public record ContextStats(
+        int ContextSize,
+        long? InputTokens = default,
+        long? ReasoningTokens = default,
+        long? OutputTokens = default,
+        long? TotalTokens = default,
+        int? Messages = default
+    );
+
+    #region logging
+    [LoggerMessage(LogLevel.Warning, "Conversation processor OperationCanceledException for channel {name} ({id})")]
+    private partial void LogConversationOperationCanceledException(string name, ulong id);
+    
+    [LoggerMessage(LogLevel.Error, "Exception killed conversation processor for channel {name} ({id})")]
+    private partial void LogConversationException(string name, ulong id, Exception ex);
+
+    [LoggerMessage(LogLevel.Warning, "Conversation processor marked IsComplete=true for channel {name} ({id})")]
+    private partial void LogConversationIsCompleted(string name, ulong id);
+    #endregion
 }

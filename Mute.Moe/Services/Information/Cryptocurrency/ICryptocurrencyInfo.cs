@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
+using HandyAgentFramework;
 using Mute.Moe.Tools;
-using Mute.Moe.Tools.Providers;
 
 
 namespace Mute.Moe.Services.Information.Cryptocurrency;
@@ -131,7 +131,7 @@ public class CryptocurrencyInfoToolProvider
     private readonly ICryptocurrencyInfo _info;
 
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="CryptocurrencyInfoToolProvider"/>
@@ -143,12 +143,13 @@ public class CryptocurrencyInfoToolProvider
 
         Tools =
         [
-            new AutoTool("get_cryptocurrency_info", false, GetInfo)
+            new DocStringTool(ToolGroups.Info.Currency, "get_cryptocurrency_info", GetInfo)
         ];
     }
 
     /// <summary>
-    /// Given a cryptocurrency name (e.g. Bitcoin) or a ticker symbol (e.g. BTC) retrieve price information about the currency, including ticker in various other currencies.
+    /// Given a cryptocurrency name (e.g. Bitcoin) or a ticker symbol (e.g. BTC) retrieve price information about the currency, including
+    /// ticker in various other currencies.
     /// </summary>
     /// <param name="query">The name or symbol to query</param>
     /// <returns></returns>

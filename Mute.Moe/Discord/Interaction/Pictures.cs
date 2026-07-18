@@ -90,16 +90,9 @@ public class Pictures
     {
         await DeferAsync();
 
-        var image = await attachment.GetPngStream(_http);
-        if (image == null)
-        {
-            await FollowupAsync("Please include an image attachment!");
-            return;
-        }
+        await using var stream = await attachment.GetStream(_http);
 
-        var analysis = await _analyser.GetImageDescription(image);
-        var desc = analysis?.Description ?? "Something went wrong analysing that image";
-        var title = analysis?.Title ?? attachment.Title ?? "Image Analysis";
+        var (title, desc) = await _analyser.GetImageDescription(stream);
 
         var embed = new EmbedBuilder()
                    .WithImageUrl(attachment.Url)

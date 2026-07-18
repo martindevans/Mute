@@ -1,4 +1,6 @@
-﻿namespace Mute.Moe.Tools.Providers;
+﻿using HandyAgentFramework;
+
+namespace Mute.Moe.Tools.Providers;
 
 /// <summary>
 /// Provides date and time info
@@ -7,10 +9,18 @@ public class ClockProvider
     : IToolProvider
 {
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; } =
-    [
-        new AutoTool("clock", true, GetClock)
-    ];
+    public IEnumerable<ToolDefinition> Tools { get; }
+
+    /// <summary>
+    /// Create a new <see cref="ClockProvider"/>
+    /// </summary>
+    public ClockProvider()
+    {
+        Tools =
+        [
+            new DocStringTool(ToolGroups.Info.Time, "get_datetime", GetClock)
+        ];
+    }
 
     /// <summary>
     /// Get the current date and time

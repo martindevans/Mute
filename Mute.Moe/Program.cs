@@ -1,13 +1,10 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Discord.Interactions;
 using Microsoft.Extensions.DependencyInjection;
 using Mute.Moe.Discord;
 using Mute.Moe.Services.Host;
-using Mute.Moe.Tools;
 using Newtonsoft.Json;
 using OpenTelemetry.Trace;
-using Serilog;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -31,11 +28,7 @@ public static class Program
         var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)))
                   ?? throw new InvalidOperationException("Config was null");
 
-        // Setup logger
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
-            .CreateLogger();
-        Log.Information("Version: {0}", 13);
+        Console.WriteLine("### Version: 14");
 
         // Build DI container
         var collection = new ServiceCollection();
@@ -45,9 +38,6 @@ public static class Program
         // Tracer provider must be initialised before we do any tracing/telemetry! Get the
         // service right now to ensure it's initialised.
         provider.GetRequiredService<TracerProvider>();
-
-        // Get the tool index. This ensures it begins its internal update process
-        provider.GetRequiredService<IToolIndex>();
 
         // Connect to Discord
         var bot = provider.GetRequiredService<HostedDiscordBot>();
@@ -79,7 +69,7 @@ public static class Program
     /// </summary>
     private static void WaitForExitSignal()
     {
-        Log.Information("Type 'exit' to exit");
+        Console.WriteLine("### Type 'exit' to exit ###");
 
         while (true)
         {
@@ -103,6 +93,6 @@ internal static partial class DependencyHelper
         // these calls indicates that the deps are loaded.
 
         var sodiumVersion = Marshal.PtrToStringAnsi(SodiumVersionString());
-        Log.Information("Loaded sodium: {0}", sodiumVersion);
+        //Log.Information("Loaded sodium: {0}", sodiumVersion);
     }
 }

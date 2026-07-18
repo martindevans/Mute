@@ -1,7 +1,7 @@
 ﻿using Mute.Moe.Tools;
-using Mute.Moe.Tools.Providers;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using HandyAgentFramework;
 using Mute.Anilist;
 
 
@@ -109,38 +109,40 @@ public partial class AnimeToolProvider
     private readonly IAnimeInfo _info;
 
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
-    /// 
+    /// Initializes a new instance of the <see cref="AnimeToolProvider"/> class.
     /// </summary>
-    /// <param name="info"></param>
+    /// <param name="info">
+    /// An implementation of <see cref="IAnimeInfo"/> used to retrieve information about anime series.
+    /// </param>
     public AnimeToolProvider(IAnimeInfo info)
     {
         _info = info;
 
-        var tools = new List<AutoTool>
+        var tools = new List<ToolDefinition>
         {
-            new("anime_info", false, info.GetAnimeInfoAsync),
-            new("anime_search", false, GetAnimesInfoAsync, postprocess: AutoTool.AsyncEnumerableToEnumerable<IAnime>),
-            new("anime_season", false, GetSeasonAnimes),
+            new DocStringTool(ToolGroups.Info.Weeb, "anime_info", info.GetAnimeInfoAsync),
+            new DocStringTool(ToolGroups.Info.Weeb, "anime_search", GetAnimesInfoAsync),
+            new DocStringTool(ToolGroups.Info.Weeb, "anime_season", GetSeasonAnimes),
         };
 
-        if (info is MuteAnilistInfoService anilist)
+        if (info is MuteAnilistInfoService)
         {
-            tools.Add(new("anime_manga_related_media", false, GetRelatedAnimeMedias));
+            tools.Add(new DocStringTool(ToolGroups.Info.Weeb, "anime_manga_related_media", GetRelatedAnimeMedias));
         }
 
-        Tools = tools;
+        Tools = tools.Cast<ToolDefinition>().ToArray();
     }
 
     /// <summary>
     /// Search for anime, anime movies, ONA, OVA etc. Search string could be part of the title, a character name, or part of the description.
     /// </summary>
     /// <param name="search">The term to search for - could be part of the title, a character name or part of the description</param>
-    /// <param name="limit">Maximum number of results to return (max 16)</param>
+    /// <param name="limit">Maximum number of results to return (must not exceed 16)</param>
     /// <returns></returns>
-    private async Task<IAsyncEnumerable<IAnime>> GetAnimesInfoAsync(string search, int limit)
+    private async Task<IAsyncEnumerable<IAnime>> GetAnimesInfoAsync(string search, int limit = 16)
     {
         return _info.GetAnimesInfoAsync(
             search,

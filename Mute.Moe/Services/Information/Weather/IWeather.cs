@@ -1,6 +1,6 @@
-﻿using Mute.Moe.Tools;
-using Mute.Moe.Tools.Providers;
+﻿using HandyAgentFramework;
 using System.Threading.Tasks;
+using Mute.Moe.Tools;
 
 namespace Mute.Moe.Services.Information.Weather;
 
@@ -94,6 +94,11 @@ public interface IWeatherForecast
     public float Longitude { get; }
 
     /// <summary>
+    /// The point in time that this weather forecast is for.
+    /// </summary>
+    public DateTime Timestamp { get; }
+
+    /// <summary>
     /// Human readable description of this forecast
     /// </summary>
     public string Description { get; }
@@ -121,7 +126,7 @@ public class WeatherToolProvider
     : IToolProvider
 {
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="WeatherToolProvider"/>
@@ -131,7 +136,8 @@ public class WeatherToolProvider
     {
         Tools =
         [
-            new AutoTool("get_current_weather", false, weather.GetCurrentWeather),
+            new DocStringTool(ToolGroups.Info.Weather, "get_current", weather.GetCurrentWeather),
+            new DocStringTool(ToolGroups.Info.Weather, "get_forecast", weather.GetWeatherForecast),
         ];
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mute.Moe.Extensions;
 using Mute.Moe.Services.Database;
@@ -15,7 +16,7 @@ public class DatabaseRemindersTests
     public async Task CreateReminderDoesNotThrow()
     {
         var db = new SqliteInMemoryDatabase();
-        var rm = new DatabaseReminders(db);
+        var rm = new DatabaseReminders(db, new NullLogger<DatabaseReminders>());
 
         var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
         var r = await rm.Create(t, "pre", "msg", 17, 28);
@@ -31,7 +32,7 @@ public class DatabaseRemindersTests
     public async Task GetByUserId()
     {
         var db = new SqliteInMemoryDatabase();
-        var rm = new DatabaseReminders(db);
+        var rm = new DatabaseReminders(db, new NullLogger<DatabaseReminders>());
 
         var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
         var r = await rm.Create(t, "pre", "msg", 17, 28);
@@ -45,7 +46,7 @@ public class DatabaseRemindersTests
     public async Task GetByMinTime()
     {
         var db = new SqliteInMemoryDatabase();
-        var rm = new DatabaseReminders(db);
+        var rm = new DatabaseReminders(db, new NullLogger<DatabaseReminders>());
 
         var t = DateTime.UtcNow;
         await rm.Create(t, "pre", "msg2", 17, 28);
@@ -60,7 +61,7 @@ public class DatabaseRemindersTests
     public async Task GetByMaxTime()
     {
         var db = new SqliteInMemoryDatabase();
-        var rm = new DatabaseReminders(db);
+        var rm = new DatabaseReminders(db, new NullLogger<DatabaseReminders>());
 
         var t = DateTime.UtcNow;
         var r1 = await rm.Create(t, "pre", "msg2", 17, 28);
@@ -75,7 +76,7 @@ public class DatabaseRemindersTests
     public async Task GetByChannel()
     {
         var db = new SqliteInMemoryDatabase();
-        var rm = new DatabaseReminders(db);
+        var rm = new DatabaseReminders(db, new NullLogger<DatabaseReminders>());
 
         var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
         var r = await rm.Create(t, "pre", "msg", 17, 28);
@@ -89,7 +90,7 @@ public class DatabaseRemindersTests
     public async Task GetWithLimit()
     {
         var db = new SqliteInMemoryDatabase();
-        var rm = new DatabaseReminders(db);
+        var rm = new DatabaseReminders(db, new NullLogger<DatabaseReminders>());
 
         var t = DateTime.UtcNow;
         for (var i = 0; i < 10; i++)
@@ -107,7 +108,7 @@ public class DatabaseRemindersTests
     public async Task Delete()
     {
         var db = new SqliteInMemoryDatabase();
-        var rm = new DatabaseReminders(db);
+        var rm = new DatabaseReminders(db, new NullLogger<DatabaseReminders>());
 
         var t = DateTime.UtcNow + TimeSpan.FromMinutes(1);
         var r = await rm.Create(t, "pre", "msg", 17, 28);

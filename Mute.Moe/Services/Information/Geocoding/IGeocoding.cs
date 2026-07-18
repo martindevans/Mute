@@ -1,6 +1,6 @@
 ﻿using Mute.Moe.Tools;
-using Mute.Moe.Tools.Providers;
 using System.Threading.Tasks;
+using HandyAgentFramework;
 
 namespace Mute.Moe.Services.Information.Geocoding;
 
@@ -50,7 +50,7 @@ public class GeocodingToolProvider
     : IToolProvider
 {
     /// <inheritdoc />
-    public IReadOnlyList<ITool> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Construct a new <see cref="GeocodingToolProvider"/>
@@ -60,7 +60,7 @@ public class GeocodingToolProvider
     {
         Tools =
         [
-            new AutoTool("geocoding_lookup", false, geocoding.LookupLocation)
+            new DocStringTool(ToolGroups.Info.Weather, "geocoding_lookup", geocoding.LookupLocation)
         ];
     }
 }

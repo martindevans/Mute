@@ -107,50 +107,73 @@ public static class IMessageChannelExtensions
         /// <returns></returns>
         public async Task<EmbedBuilder> GetConversationStateEmbed(ConversationalResponseService conversations)
         {
-            // Get the conversation. If it's loading wait a little bit, hopefully we get better stats that way.
+            // Get the conversation
             var conversation = await conversations.GetConversation(@this);
-            if (conversation.State == LlmChatConversation.ProcessingState.Loading)
-                await Task.Delay(250);
 
             var embed = new EmbedBuilder()
                        .WithTitle($"Conversation for {conversation.Channel.Name}")
-                       .WithCurrentTimestamp()
-                       .WithDescription(conversation.Summary ?? "No summary available");
+                       .WithCurrentTimestamp();
 
-            embed.WithFields(
-                new EmbedFieldBuilder().WithIsInline(true).WithName("Event Queue").WithValue(conversation.QueueCount.ToString()),
-                new EmbedFieldBuilder().WithIsInline(true).WithName("Message Count").WithValue(conversation.MessageCount.ToString()),
-                new EmbedFieldBuilder().WithIsInline(true).WithName("Context Usage").WithValue(conversation.ContextUsage.ToString("P1", CultureInfo.InvariantCulture)),
-                new EmbedFieldBuilder().WithIsInline(true).WithName("Processing State").WithValue(conversation.State.ToString())
-            );
-
-            // Color ramp based on context usage
-            (float r, float g, float b) color = conversation.ContextUsage switch
+            var fields = new List<EmbedFieldBuilder>
             {
-                < 0.15f => (0.0f, 1.0f, 0.0f),   // green
-                < 0.22f => (0.0f, 0.8f, 0.4f),   // green-cyan
-                < 0.30f => (0.0f, 0.5f, 1.0f),   // blue
-                < 0.38f => (0.4f, 0.7f, 1.0f),   // light blue
-                < 0.46f => (1.0f, 1.0f, 0.0f),   // yellow
-                < 0.54f => (1.0f, 0.8f, 0.0f),   // yellow-orange
-                < 0.62f => (1.0f, 0.5f, 0.0f),   // orange
-                < 0.75f => (1.0f, 0.25f, 0.0f),  // deep orange
-                _ => (1.0f, 0.0f, 0.0f),         // red
+                new EmbedFieldBuilder().WithIsInline(true).WithName("Processing State").WithValue(conversation.State.ToString()),
+                new EmbedFieldBuilder().WithIsInline(true).WithName("Event Queue").WithValue(conversation.QueueCount.ToString()),
             };
-            embed.WithColor(color.r, color.g, color.b);
+
+            var stats = conversation.ContextStatistics;
+            double? usage = null;
+            if (stats.TotalTokens is long total)
+            {
+                fields.Add(
+                    new EmbedFieldBuilder()
+                       .WithIsInline(true)
+                       .WithName("Total Tokens")
+                       .WithValue(total)
+                );
+
+                usage = ((double)total) / stats.ContextSize;
+                if (usage.HasValue)
+                {
+                    fields.Add(
+                        new EmbedFieldBuilder()
+                           .WithIsInline(true)
+                           .WithName("Usage")
+                           .WithValue(usage.Value.ToString("P1", CultureInfo.InvariantCulture))
+                    );
+                }
+            }
+
+            if (stats.Messages is int messageCount)
+            {
+                fields.Add(
+                    new EmbedFieldBuilder()
+                       .WithIsInline(true)
+                       .WithName("Total Messages")
+                       .WithValue(messageCount)
+                );
+            }
+
+            embed.WithFields(fields);
+            
+            // Color ramp based on context usage
+            if (usage.HasValue)
+            {
+                (float r, float g, float b) color = usage.Value switch
+                {
+                    < 0.15f => (0.0f, 1.0f, 0.0f), // green
+                    < 0.22f => (0.0f, 0.8f, 0.4f), // green-cyan
+                    < 0.30f => (0.0f, 0.5f, 1.0f), // blue
+                    < 0.38f => (0.4f, 0.7f, 1.0f), // light blue
+                    < 0.46f => (1.0f, 1.0f, 0.0f), // yellow
+                    < 0.54f => (1.0f, 0.8f, 0.0f), // yellow-orange
+                    < 0.62f => (1.0f, 0.5f, 0.0f), // orange
+                    < 0.75f => (1.0f, 0.25f, 0.0f), // deep orange
+                    _ => (1.0f, 0.0f, 0.0f), // red
+                };
+                embed.WithColor(color.r, color.g, color.b);
+            }
 
             return embed;
-        }
-
-        /// <summary>
-        /// Get the context ID to use for memory storage and retrieval in this channel
-        /// </summary>
-        /// <returns></returns>
-        public ulong GetAgentMemoryContextId()
-        {
-            if (@this is IGuildChannel gc)
-                return gc.GuildId;
-            return @this.Id;
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using Discord.Commands;
 using Mute.Moe.Services.Database;
-using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.LLM.Memory;
 using Mute.Moe.Utilities;
 using System.Threading.Tasks;
@@ -11,7 +10,7 @@ namespace Mute.Moe.Discord.Modules.Personality;
 
 [UsedImplicitly]
 [RequireOwner]
-public partial class Dev(LlmChatModel model, IKeyValueStorage<AgentDomainDocument> docs, MultiEndpointProvider<LLamaServerEndpoint> server)
+public partial class Dev(IKeyValueStorage<AgentDomainDocument> docs)
     : MuteBaseModule
 {
     [Command("create_domain_doc")]

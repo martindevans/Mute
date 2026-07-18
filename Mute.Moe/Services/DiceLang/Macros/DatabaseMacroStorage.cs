@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Dapper;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.DiceLang.AST;
-using Serilog;
 
 namespace Mute.Moe.Services.DiceLang.Macros;
 
@@ -21,15 +20,8 @@ public class DatabaseMacroStorage
     {
         _database = database;
 
-        try
-        {
-            using var connection = _database.GetConnection();
-            connection.Execute("CREATE TABLE IF NOT EXISTS `DiceMacros` (`JSON` TEXT NOT NULL, `Namespace` TEXT NOT NULL, `Name` TEXT NOT NULL)");
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Creating 'DiceMacros' table failed");
-        }
+        using var connection = _database.GetConnection();
+        connection.Execute("CREATE TABLE IF NOT EXISTS `DiceMacros` (`JSON` TEXT NOT NULL, `Namespace` TEXT NOT NULL, `Name` TEXT NOT NULL)");
     }
 
     /// <inheritdoc />

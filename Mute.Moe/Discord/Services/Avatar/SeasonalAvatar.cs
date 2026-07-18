@@ -4,7 +4,7 @@ using Mute.Moe.Services.Notifications.Cron;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Mute.Moe.Discord.Services.Avatar;
 
@@ -12,11 +12,12 @@ namespace Mute.Moe.Discord.Services.Avatar;
 /// Picks avatars based on the date
 /// </summary>
 [UsedImplicitly]
-public class SeasonalAvatar
+public partial class SeasonalAvatar
     : IAvatarPicker
 {
     private readonly ICron _cron;
     private readonly DiscordSocketClient _discord;
+    private readonly ILogger<SeasonalAvatar> _logger;
     private readonly IReadOnlyList<AvatarConfig.AvatarSet>? _config;
     private readonly Random _rng;
 
@@ -28,10 +29,12 @@ public class SeasonalAvatar
     /// <param name="cron"></param>
     /// <param name="discord"></param>
     /// <param name="config"></param>
-    public SeasonalAvatar(ICron cron, DiscordSocketClient discord, Configuration config)
+    /// <param name="logger"></param>
+    public SeasonalAvatar(ICron cron, DiscordSocketClient discord, Configuration config, ILogger<SeasonalAvatar> logger)
     {
         _cron = cron;
         _discord = discord;
+        _logger = logger;
         _rng = new Random();
 
         if (config.Avatar?.Avatars == null)
@@ -61,7 +64,7 @@ public class SeasonalAvatar
         if (!avatars.Contains(path))
             return new AvatarPickResult(avatars, null);
 
-        Log.Information("Setting avatar to: `{0}`", path);
+        LogSettingAvatar(path);
         await using (var stream = File.OpenRead(path))
         {
             var image = new Image(stream);
@@ -109,4 +112,7 @@ public class SeasonalAvatar
         if (_cts != null)
             await _cts.CancelAsync();
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Setting avatar to: `{path}`")]
+    private partial void LogSettingAvatar(string path);
 }

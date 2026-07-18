@@ -1,12 +1,11 @@
 ﻿using Dapper;
 using Mute.Moe.Services.Database;
-using Serilog;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.Notifications.RSS;
 
 /// <inheritdoc />
-public class DatabaseRssNotifications
+public partial class DatabaseRssNotifications
     : IRssNotifications
 {
     private const string InsertSubscriptionSql = "INSERT into `RssSubscriptions` (Url, ChannelId, MentionGroup) values(@Url, @ChannelId, @MentionGroup)";
@@ -23,15 +22,8 @@ public class DatabaseRssNotifications
     {
         _database = database;
 
-        try
-        {
-            using var connection = _database.GetConnection();
-            connection.Execute("CREATE TABLE IF NOT EXISTS `RssSubscriptions` (`Url` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `MentionGroup` TEXT)");
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Creating 'RssSubscriptions' table failed");
-        }
+        using var connection = _database.GetConnection();
+        connection.Execute("CREATE TABLE IF NOT EXISTS `RssSubscriptions` (`Url` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `MentionGroup` TEXT)");
     }
 
     /// <inheritdoc />

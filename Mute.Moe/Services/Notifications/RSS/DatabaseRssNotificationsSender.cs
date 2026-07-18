@@ -3,24 +3,25 @@ using Discord;
 using Discord.WebSocket;
 using Mute.Moe.Services.Database;
 using Mute.Moe.Services.Information.RSS;
-using Serilog;
 using System.ServiceModel.Syndication;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.Extensions.Logging;
 
 namespace Mute.Moe.Services.Notifications.RSS;
 
 /// <summary>
 /// Send RSS notifications from subscriptions stored in the database
 /// </summary>
-public class DatabaseRssNotificationsSender
+public partial class DatabaseRssNotificationsSender
     : IRssNotificationsSender
 {
     private const string InsertNotificationSql = "INSERT into RssNotificationsSent (ChannelId, FeedUrl, UniqueId) values(@ChannelId, @FeedUrl, @UniqueId)";
     private const string HasPublishedNotification = "SELECT Count(*) FROM RssNotificationsSent Where (ChannelId = @ChannelId) AND (FeedUrl = @FeedUrl) AND (UniqueId = @UniqueId)";
 
     private readonly IDatabaseService _database;
+    private readonly ILogger<DatabaseRssNotificationsSender> _logger;
     private readonly DiscordSocketClient _client;
     private readonly IRssNotifications _notifications;
     private readonly IRss _rss;
@@ -36,22 +37,17 @@ public class DatabaseRssNotificationsSender
     /// <param name="notifications"></param>
     /// <param name="rss"></param>
     /// <param name="database"></param>
-    public DatabaseRssNotificationsSender(DiscordSocketClient client, IRssNotifications notifications, IRss rss, IDatabaseService database)
+    /// <param name="logger"></param>
+    public DatabaseRssNotificationsSender(DiscordSocketClient client, IRssNotifications notifications, IRss rss, IDatabaseService database, ILogger<DatabaseRssNotificationsSender> logger)
     {
         _database = database;
+        _logger = logger;
         _client = client;
         _notifications = notifications;
         _rss = rss;
 
-        try
-        {
-            using var connection = _database.GetConnection();
-            connection.Execute("CREATE TABLE IF NOT EXISTS `RssNotificationsSent` (`ChannelId` TEXT NOT NULL, `FeedUrl` TEXT NOT NULL, `UniqueId` TEXT)");
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Creating 'RssNotificationsSent' table failed");
-        }
+        using var connection = _database.GetConnection();
+        connection.Execute("CREATE TABLE IF NOT EXISTS `RssNotificationsSent` (`ChannelId` TEXT NOT NULL, `FeedUrl` TEXT NOT NULL, `UniqueId` TEXT)");
     }
 
     /// <inheritdoc />
@@ -91,7 +87,7 @@ public class DatabaseRssNotificationsSender
                     }
                     catch (Exception e)
                     {
-                        Log.Error(e, "Exception while processing RSS feed '{0}'", feed.FeedUrl);
+                        LogRssFeedException(feed.FeedUrl, e);
 
                         // Wait a bit before processing the next feed, just in case there's some transient network error
                         await Task.Delay(TimeSpan.FromSeconds(30), token);
@@ -183,4 +179,9 @@ public class DatabaseRssNotificationsSender
 
         await channel.SendMessageAsync(mention, embed: FormatMessage(item).Build());
     }
+
+    #region logging
+    [LoggerMessage(LogLevel.Error, "Exception while processing RSS feed: '{url}'")]
+    private partial void LogRssFeedException(string url, Exception ex);
+    #endregion
 }

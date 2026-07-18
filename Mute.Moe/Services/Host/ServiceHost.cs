@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Mute.Moe.Services.Host;
 
@@ -10,7 +10,8 @@ namespace Mute.Moe.Services.Host;
 /// Start and stop everything that implements <see cref="IHostedService"/>
 /// </summary>
 /// <param name="provider"></param>
-public class ServiceHost(IServiceProvider provider)
+/// <param name="logger"></param>
+public class ServiceHost(IServiceProvider provider, ILogger<ServiceHost> logger)
 {
     private readonly List<IHostedService> _services = [ ];
 
@@ -25,7 +26,7 @@ public class ServiceHost(IServiceProvider provider)
 
         foreach (var service in services)
         {
-            Log.Information("StartAsync: {0}", service.GetType().Name);
+            logger.LogInformation("StartAsync: {0}", service.GetType().Name);
             await service.StartAsync(cancel);
             _services.Add(service);
         }
@@ -39,7 +40,7 @@ public class ServiceHost(IServiceProvider provider)
     {
         foreach (var service in _services)
         {
-            Log.Information("StopAsync: {0}", service.GetType().Name);
+            logger.LogInformation("StopAsync: {0}", service.GetType().Name);
             await service.StopAsync(cancel);
         }
         _services.Clear();

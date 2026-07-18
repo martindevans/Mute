@@ -34,4 +34,15 @@ public static class IAttachmentExtensions
         output.Position = 0;
         return output;
     }
+
+    /// <summary>
+    /// Get a stream to the contents of this attachment
+    /// </summary>
+    /// <param name="attachment"></param>
+    /// <param name="http"></param>
+    /// <returns></returns>
+    public static async Task<Stream> GetStream(this IAttachment attachment, HttpClient http)
+    {
+        return await http.GetStreamAsync(attachment.Url);
+    }
 }

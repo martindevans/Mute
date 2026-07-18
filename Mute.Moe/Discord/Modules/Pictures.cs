@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.IO;
+using Discord;
 using Discord.Commands;
 using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.ImageGen;
@@ -64,33 +65,39 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
     [UsedImplicitly]
     public async Task Analyse()
     {
-        var images = await GetMessageImages(Context.Message);
-        if (images == null)
+        var streams = await GetMessageImageStreams(Context.Message);
+        if (streams.Count == 0)
             return;
 
-        var success = false;
-        foreach (var stream in images)
+        foreach (var stream in streams)
         {
-            var analysis = await _analyser.GetImageDescription(stream);
-            var desc = analysis?.Description ?? "Something went wrong analysing that image";
-            var title = analysis?.Title ?? "Image Analysis";
+            using (stream)
+            {
+                var (title, desc) = await _analyser.GetImageDescription(stream);
 
-            success = true;
+                var embed = new EmbedBuilder()
+                           .WithFooter($"🧠 {_analyser.ModelName}")
+                           .WithDescription(desc)
+                           .WithTitle(title)
+                           .Build();
+                await ReplyAsync(embed: embed);
 
-            var embed = new EmbedBuilder()
-                       .WithFooter($"🧠 {_analyser.ModelName}")
-                       .WithDescription(desc)
-                       .WithTitle(title)
-                       .Build();
-            await ReplyAsync(embed: embed);
+                await Task.Delay(250);
+            }
+        }
+    }
 
-            await Task.Delay(250);
+    private async Task<IReadOnlyList<MemoryStream>> GetMessageImageStreams(IUserMessage message)
+    {
+        var result = await message.GetMessageImageStreams(_http);
+        if (result.Count == 0)
+        {
+            await TypingReplyAsync("Please include some image attachments or reply to another message with image attachments!");
+            return [];
         }
 
-        if (!success)
-            await ReplyAsync("I couldn't find any metadata in any of those images");
+        return result;
     }
-    
 
     private async Task<IReadOnlyList<Image>?> GetMessageImages(IUserMessage message)
     {

@@ -1,5 +1,7 @@
-﻿using Discord;
+﻿using System.IO;
+using Discord;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mute.Moe.Extensions;
@@ -65,6 +67,44 @@ public static class IUserMessageExtensions
             urls.AddRange(message.ReferencedMessage.GetMessageImageUrls(false));
 
         return urls;
+    }
+
+    /// <summary>
+    /// Get all images from this message or the message it references
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="http"></param>
+    /// <param name="cancellation"></param>
+    /// <returns></returns>
+    public static async Task<IReadOnlyList<MemoryStream>> GetMessageImageStreams(this IUserMessage message, HttpClient http, CancellationToken cancellation = default)
+    {
+        // Find the image URLs
+        var images = message.GetMessageImageUrls();
+
+        // Try to fetch them all
+        var streams = (await Task.WhenAll(images.Select(url => FetchOneImage(url, cancellation))))
+            .Where(a => a != null)
+            .Select(a => a!)
+            .ToList();
+
+        return streams;
+
+        async Task<MemoryStream?> FetchOneImage(string url, CancellationToken ct)
+        {
+            try
+            {
+                using var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+                if (!response.IsSuccessStatusCode)
+                    return null;
+
+                var array = await response.Content.ReadAsByteArrayAsync(ct);
+                return new MemoryStream(array, writable: false);
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+        }
     }
 
     /// <summary>

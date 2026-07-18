@@ -9,11 +9,10 @@ using Mute.Moe.Discord.Context.Postprocessing;
 using Mute.Moe.Discord.Context.Preprocessing;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.Telemetry;
-using Serilog;
-using Serilog.Events;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using ExecuteResult = Discord.Commands.ExecuteResult;
 using IResult = Discord.Commands.IResult;
 using RunMode = Discord.Commands.RunMode;
@@ -23,13 +22,14 @@ namespace Mute.Moe.Discord;
 /// <summary>
 /// Connects to discord, receives events, dispatches them to various bot systems. Really the heart of the bot.
 /// </summary>
-public class HostedDiscordBot
+public partial class HostedDiscordBot
 {
     private readonly Configuration _config;
     private readonly CommandService _commands;
     private readonly IServiceProvider _services;
     private readonly InteractionService _interactions;
     private readonly Instrumentation _instrumentation;
+    private readonly ILogger<HostedDiscordBot> _logger;
 
     /// <summary>
     /// The <see cref="DiscordSocketClient"/> in use
@@ -45,8 +45,9 @@ public class HostedDiscordBot
     /// <param name="services"></param>
     /// <param name="interactions"></param>
     /// <param name="instrumentation"></param>
+    /// <param name="logger"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services, InteractionService interactions, Instrumentation instrumentation)
+    public HostedDiscordBot(DiscordSocketClient client, Configuration config, CommandService commands, IServiceProvider services, InteractionService interactions, Instrumentation instrumentation, ILogger<HostedDiscordBot> logger)
     {
         Client = client ?? throw new ArgumentNullException(nameof(client));
 
@@ -55,6 +56,7 @@ public class HostedDiscordBot
         _services = services ?? throw new ArgumentNullException(nameof(services));
         _interactions = interactions ?? throw new ArgumentNullException(nameof(interactions));
         _instrumentation = instrumentation ?? throw new ArgumentNullException(nameof(instrumentation));
+        _logger = logger;
 
         Client.Log += LogAsync;
     }
@@ -82,10 +84,10 @@ public class HostedDiscordBot
         }
         catch (Exception e)
         {
-            Log.Error(e, "Exception while adding modules and interactions");
+            _logger.LogError(e, "Exception while adding modules and interactions");
             throw;
         }
-
+        
         // Hook the MessageReceived Event into our Command Handler
         Client.MessageReceived += HandleMessage;
         _commands.CommandExecuted += CommandExecuted;
@@ -93,7 +95,7 @@ public class HostedDiscordBot
         // Hook up interactions
         Client.InteractionCreated += async interaction =>
         {
-            Log.Information("InteractionCreated Start: {0}", interaction.Id);
+            _logger.LogInformation("InteractionCreated Start: {0}", interaction.Id);
 
             var ctx = new SocketInteractionContext(Client, interaction);
             try
@@ -107,7 +109,7 @@ public class HostedDiscordBot
             }
             catch (Exception ex)
             {
-                Log.Error("InteractionCreated Error: {0}: {1}", interaction.Id, ex);
+                _logger.LogError("InteractionCreated Error: {0}: {1}", interaction.Id, ex);
 
                 if (ctx.Interaction.HasResponded)
                     await ctx.Interaction.ModifyOriginalResponseAsync(props => props.Content = ex.Message);
@@ -116,7 +118,7 @@ public class HostedDiscordBot
             }
             finally
             {
-                Log.Information("InteractionCreated End: {0}", interaction.Id);
+                _logger.LogInformation("InteractionCreated End: {0}", interaction.Id);
             }
         };
 
@@ -156,14 +158,14 @@ public class HostedDiscordBot
         await Task.Delay(1000);
     }
 
-    private static async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context,  IResult result)
+    private async Task CommandExecuted(Optional<CommandInfo> command, ICommandContext context,  IResult result)
     {
         // Only pay attention to commands which fail due to an exception
         if (result.IsSuccess || result.Error is not CommandError.Exception)
             return;
 
         if (result is ExecuteResult er)
-            Log.Error(er.Exception, "CommandExecuted completed with: {0}", er.ErrorReason);
+            _logger.LogError(er.Exception, "CommandExecuted completed with: {0}", er.ErrorReason);
 
         await context.Channel.SendMessageAsync("Command Exception! " + result.ErrorReason);
     }
@@ -223,7 +225,7 @@ public class HostedDiscordBot
             await using var context = new MuteCommandContext(Client, message, _services, _instrumentation);
 
             // Apply generic message preproccessors
-            await ExecuteContextProcessor<IMessagePreprocessor>(context);
+            await ExecuteContextProcessor<IMessagePreprocessor>(context, _logger);
 
             // Either process as command or try to process conversationally
             if (hasPrefix)
@@ -233,7 +235,7 @@ public class HostedDiscordBot
             else
             {
                 // Apply conversation message preprocessors
-                await ExecuteContextProcessor<IConversationPreprocessor>(context);
+                await ExecuteContextProcessor<IConversationPreprocessor>(context, _logger);
 
                 // Generate a conversational response
                 await _services.GetRequiredService<ConversationalResponseService>().Respond(context);
@@ -242,7 +244,7 @@ public class HostedDiscordBot
         catch (Exception ex)
         {
             activity?.AddException(ex);
-            Log.Error(ex, "Message handler threw exception");
+            _logger.LogError(ex, "Message handler threw exception");
             throw;
         }
     }
@@ -259,21 +261,21 @@ public class HostedDiscordBot
         try
         {
             // Execute all ICommandPreprocessor(s)
-            await ExecuteContextProcessor<ICommandPreprocessor>(context, rethrow:true);
+            await ExecuteContextProcessor<ICommandPreprocessor>(context, _logger, rethrow:true);
             
             // Execute the command
             var result = await _commands.ExecuteAsync(context, offset, _services);
             
             // Execute command postprocessors
             if (result.IsSuccess)
-                await ExecuteContextProcessor<ISuccessfulCommandPostprocessor>(context);
+                await ExecuteContextProcessor<ISuccessfulCommandPostprocessor>(context, _logger);
             else
-                await ExecuteUnsuccessfulCommandPostprocessor(context, result);
+                await ExecuteUnsuccessfulCommandPostprocessor(context, result, _logger);
         }
         catch (Exception ex)
         {
             activity?.AddException(ex);
-            Log.Error(ex, "Executing command threw an exception");
+            _logger.LogError(ex, "Executing command threw an exception");
         }
     }
 
@@ -309,24 +311,8 @@ public class HostedDiscordBot
         services.AddTransient<IUnsuccessfulCommandPostprocessor, DisplayCommandError>();
     }
 
-    private static async Task LogAsync(LogMessage message)
-    {
-        var severity = message.Severity switch
-        {
-            LogSeverity.Critical => LogEventLevel.Fatal,
-            LogSeverity.Error => LogEventLevel.Error,
-            LogSeverity.Warning => LogEventLevel.Warning,
-            LogSeverity.Info => LogEventLevel.Information,
-            LogSeverity.Verbose => LogEventLevel.Verbose,
-            LogSeverity.Debug => LogEventLevel.Debug,
-            _ => LogEventLevel.Information
-        };
-        Log.Write(severity, message.Exception, "[{Source}] {Message}", message.Source, message.Message);
-        await Task.CompletedTask;
-    }
-
     #region helpers
-    private static async Task<bool> ExecuteContextProcessor<T>(MuteCommandContext context, bool rethrow = false)
+    private static async Task<bool> ExecuteContextProcessor<T>(MuteCommandContext context, ILogger logger, bool rethrow = false)
         where T : IContextProcessor
     {
         bool failed = false;
@@ -346,7 +332,7 @@ public class HostedDiscordBot
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Context processor {0} threw an exception", processor.GetType().Name);
+                logger.LogError(ex, "Context processor {0} threw an exception", processor.GetType().Name);
                 activity?.AddException(ex);
                 failed = true;
 
@@ -358,7 +344,7 @@ public class HostedDiscordBot
         return failed;
     }
 
-    private static async Task ExecuteUnsuccessfulCommandPostprocessor(MuteCommandContext context, IResult result)
+    private static async Task ExecuteUnsuccessfulCommandPostprocessor(MuteCommandContext context, IResult result, ILogger<HostedDiscordBot> logger)
     {
         foreach (var processor in context.Services.GetServices<IUnsuccessfulCommandPostprocessor>().OrderBy(a => a.Order))
         {
@@ -376,10 +362,56 @@ public class HostedDiscordBot
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Unsuccessful context processor {0} threw an exception", processor.GetType().Name);
+                logger.LogError(ex, "Unsuccessful context processor {0} threw an exception", processor.GetType().Name);
                 activity?.AddException(ex);
             }
         }
     }
+    #endregion
+
+    #region logging
+    private async Task LogAsync(LogMessage message)
+    {
+        switch (message.Severity)
+        {
+            case LogSeverity.Critical:
+                LogCallbackCritical(message.Source, message.Message);
+                break;
+            
+            case LogSeverity.Error:
+                LogCallbackError(message.Source, message.Message);
+                break;
+            
+            case LogSeverity.Warning:
+                LogCallbackWarning(message.Source, message.Message);
+                break;
+            
+            case LogSeverity.Info:
+                LogCallbackInformation(message.Source, message.Message);
+                break;
+            
+            case LogSeverity.Verbose:
+            case LogSeverity.Debug:
+                LogCallbackDebug(message.Source, message.Message);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+    
+    [LoggerMessage(LogLevel.Critical, "[{Source}]: {Message}")]
+    private partial void LogCallbackCritical(string source, string message);
+
+    [LoggerMessage(LogLevel.Error, "[{Source}]: {Message}")]
+    private partial void LogCallbackError(string source, string message);
+
+    [LoggerMessage(LogLevel.Warning, "[{Source}]: {Message}")]
+    private partial void LogCallbackWarning(string source, string message);
+    
+    [LoggerMessage(LogLevel.Information, "[{Source}]: {Message}")]
+    private partial void LogCallbackInformation(string source, string message);
+
+    [LoggerMessage(LogLevel.Debug, "[{Source}]: {Message}")]
+    private partial void LogCallbackDebug(string source, string message);
     #endregion
 }
