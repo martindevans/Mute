@@ -4,9 +4,9 @@ using HandyAgentFramework.FunctionCall.Middleware.ToolSearch;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Compaction;
 using Microsoft.Extensions.AI;
-using System.Threading.Tasks;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.LLM.Chat.Middleware;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.LLM.Chat;
 
@@ -67,7 +67,7 @@ public class ChatAgentFactory
             ModelId = _model.Name,
         };
 
-#pragma warning disable MAAI001 (experimental features)
+#pragma warning disable MAAI001 // (experimental features)
         var reducer = new PipelineCompactionStrategy(
             new EphemeralMessageCompaction(),
             new ToolResultCompactionStrategy(CompactionTriggers.TokensExceed(contextSize / 4)),
@@ -77,9 +77,8 @@ public class ChatAgentFactory
 #pragma warning restore MAAI001
         ).AsChatReducer();
 
-        // todo: tools index
         var toolSearch = new ToolSearchProvider(_tools);
-
+        
         var context = new AIContextProvider[]
         {
             //todo: SQL files? new FileMemoryProvider(new FileSystemAgentFileStore("memory")),

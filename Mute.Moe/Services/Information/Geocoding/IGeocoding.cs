@@ -1,7 +1,6 @@
 ﻿using Mute.Moe.Tools;
 using System.Threading.Tasks;
 using HandyAgentFramework;
-using IToolProvider = Mute.Moe.Tools.Providers.IToolProvider;
 
 namespace Mute.Moe.Services.Information.Geocoding;
 
@@ -51,7 +50,7 @@ public class GeocodingToolProvider
     : IToolProvider
 {
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Construct a new <see cref="GeocodingToolProvider"/>

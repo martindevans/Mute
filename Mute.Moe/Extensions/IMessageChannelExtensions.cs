@@ -107,10 +107,8 @@ public static class IMessageChannelExtensions
         /// <returns></returns>
         public async Task<EmbedBuilder> GetConversationStateEmbed(ConversationalResponseService conversations)
         {
-            // Get the conversation. If it's loading wait a little bit, hopefully we get better stats that way.
+            // Get the conversation
             var conversation = await conversations.GetConversation(@this);
-            if (conversation.State == LlmChatConversation.ProcessingState.Loading)
-                await Task.Delay(250);
 
             var embed = new EmbedBuilder()
                        .WithTitle($"Conversation for {conversation.Channel.Name}")
@@ -134,15 +132,18 @@ public static class IMessageChannelExtensions
                 );
 
                 usage = ((double)total) / stats.ContextSize;
-                fields.Add(
-                    new EmbedFieldBuilder()
-                       .WithIsInline(true)
-                       .WithName("Usage")
-                       .WithValue(total.ToString("P1", CultureInfo.InvariantCulture))
-                );
+                if (usage.HasValue)
+                {
+                    fields.Add(
+                        new EmbedFieldBuilder()
+                           .WithIsInline(true)
+                           .WithName("Usage")
+                           .WithValue(usage.Value.ToString("P1", CultureInfo.InvariantCulture))
+                    );
+                }
             }
 
-            if (stats.messages is int messageCount)
+            if (stats.Messages is int messageCount)
             {
                 fields.Add(
                     new EmbedFieldBuilder()

@@ -9,7 +9,7 @@ public class ClockProvider
     : IToolProvider
 {
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="ClockProvider"/>

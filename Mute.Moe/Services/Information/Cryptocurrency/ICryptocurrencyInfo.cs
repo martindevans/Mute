@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using HandyAgentFramework;
 using Mute.Moe.Tools;
-using IToolProvider = Mute.Moe.Tools.Providers.IToolProvider;
 
 
 namespace Mute.Moe.Services.Information.Cryptocurrency;
@@ -132,7 +131,7 @@ public class CryptocurrencyInfoToolProvider
     private readonly ICryptocurrencyInfo _info;
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="CryptocurrencyInfoToolProvider"/>

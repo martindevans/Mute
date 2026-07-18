@@ -55,6 +55,15 @@ public class ChatAgentImageAnalysisMiddleware
         ).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Replaces message with images with a message with a text description
+    /// </summary>
+    /// <param name="messages"></param>
+    /// <param name="session"></param>
+    /// <param name="options"></param>
+    /// <param name="innerAgent"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async IAsyncEnumerable<AgentResponseUpdate> MiddlewareStreaming(
         IEnumerable<ChatMessage> messages,
         AgentSession? session,

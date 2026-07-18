@@ -1,4 +1,5 @@
-﻿using HandyAgentFramework.SqliteSessionStore;
+﻿using HandyAgentFramework.Embedding.SqliteCache;
+using HandyAgentFramework.SqliteSessionStore;
 using System.Data;
 using System.Data.SQLite;
 using System.Threading.Tasks;
@@ -10,7 +11,8 @@ namespace Mute.Moe.Services.Database;
 /// </summary>
 public abstract class BaseSqliteDatabase
     : IDatabaseService,
-      ISqliteSessionStoreConnectionProvider
+      ISqliteSessionStoreConnectionProvider,
+      ISqliteEmbeddingCacheConnectionProvider
 {
     private readonly string _dbConnStr;
 

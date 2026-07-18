@@ -10,6 +10,7 @@ namespace Mute.Moe.Services.Host;
 /// Start and stop everything that implements <see cref="IHostedService"/>
 /// </summary>
 /// <param name="provider"></param>
+/// <param name="logger"></param>
 public class ServiceHost(IServiceProvider provider, ILogger<ServiceHost> logger)
 {
     private readonly List<IHostedService> _services = [ ];

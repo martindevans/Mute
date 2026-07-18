@@ -25,7 +25,7 @@ public class LLamaServerEmbedding
     public string Model => _model.Name;
 
     /// <inheritdoc />
-    public int Dimensions => (int)_model.EmbeddingDimensions;
+    public int Dimensions => _model.EmbeddingDimensions;
 
     /// <summary>
     /// Create a new reranker

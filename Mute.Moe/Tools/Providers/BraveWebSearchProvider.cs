@@ -35,7 +35,7 @@ public class BraveWebSearchProvider
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     #region news
     /// <summary>

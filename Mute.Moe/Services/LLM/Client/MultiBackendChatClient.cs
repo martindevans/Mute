@@ -102,8 +102,5 @@ public sealed class MultiBackendChatClient
     /// <summary>
     /// Failed to acquire a scope from any backend LLM provider
     /// </summary>
-    public class FailedToAcquireScope
-        : Exception
-    {
-    }
+    public class FailedToAcquireScope : Exception;
 }

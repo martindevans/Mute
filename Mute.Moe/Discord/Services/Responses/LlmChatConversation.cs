@@ -386,17 +386,19 @@ public partial class LlmChatConversation
     /// <summary>
     /// Statistics about context usage
     /// </summary>
+    /// <param name="ContextSize">Total context size</param>
     /// <param name="InputTokens">Input tokens for the last message</param>
     /// <param name="ReasoningTokens">Reasoning tokens for the last message</param>
     /// <param name="OutputTokens">Output tokens for the last message</param>
     /// <param name="TotalTokens">Total tokens in the context</param>
+    /// <param name="Messages">Total message count</param>
     public record ContextStats(
         int ContextSize,
         long? InputTokens = default,
         long? ReasoningTokens = default,
         long? OutputTokens = default,
         long? TotalTokens = default,
-        int? messages = default
+        int? Messages = default
     );
 
     #region logging

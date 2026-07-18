@@ -123,10 +123,10 @@ public interface IWeatherForecast
 /// Provide weather related tools for LLMs
 /// </summary>
 public class WeatherToolProvider
-    : Mute.Moe.Tools.Providers.IToolProvider
+    : IToolProvider
 {
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="WeatherToolProvider"/>

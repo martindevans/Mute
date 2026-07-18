@@ -1,7 +1,6 @@
 ﻿using Mute.Moe.Tools;
 using System.Threading.Tasks;
 using HandyAgentFramework;
-using IToolProvider = Mute.Moe.Tools.Providers.IToolProvider;
 
 namespace Mute.Moe.Services.Information.Stocks;
 
@@ -64,7 +63,7 @@ public class StockToolProvider
     private readonly IStockSearch _search;
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="StockToolProvider"/>

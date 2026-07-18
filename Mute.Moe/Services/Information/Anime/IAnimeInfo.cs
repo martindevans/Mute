@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HandyAgentFramework;
 using Mute.Anilist;
-using IToolProvider = Mute.Moe.Tools.Providers.IToolProvider;
 
 
 namespace Mute.Moe.Services.Information.Anime;
@@ -110,7 +109,7 @@ public partial class AnimeToolProvider
     private readonly IAnimeInfo _info;
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AnimeToolProvider"/> class.

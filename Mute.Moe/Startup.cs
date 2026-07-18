@@ -1,7 +1,15 @@
 ﻿using Discord.Addons.Interactive;
 using Discord.WebSocket;
 using FaceAiSharp;
+using HandyAgentFramework.Embedding;
+using HandyAgentFramework.Embedding.SqliteCache;
+using HandyAgentFramework.FunctionCall.Middleware.ToolSearch;
+using HandyAgentFramework.Persistence;
+using HandyAgentFramework.SqliteSessionStore;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MultiBackendServiceProvider;
 using Mute.Moe.Discord;
 using Mute.Moe.Discord.Commands;
 using Mute.Moe.Discord.Context.Preprocessing;
@@ -29,6 +37,8 @@ using Mute.Moe.Services.Information.Weather;
 using Mute.Moe.Services.Information.Wikipedia;
 using Mute.Moe.Services.Introspection;
 using Mute.Moe.Services.LLM;
+using Mute.Moe.Services.LLM.Chat;
+using Mute.Moe.Services.LLM.Client;
 using Mute.Moe.Services.LLM.Embedding;
 using Mute.Moe.Services.LLM.Memory;
 using Mute.Moe.Services.LLM.Rerank;
@@ -42,24 +52,15 @@ using Mute.Moe.Services.Speech;
 using Mute.Moe.Services.Speech.STT;
 using Mute.Moe.Services.Speech.TTS;
 using Mute.Moe.Services.Telemetry;
-using Mute.Moe.Tools.Providers;
+using Mute.Moe.Tools.Index;
+using OpenTelemetry.Trace;
 using Serpent;
 using Serpent.Loading;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
-using HandyAgentFramework.Embedding;
-using HandyAgentFramework.FunctionCall.Middleware.ToolSearch;
-using HandyAgentFramework.Persistence;
-using HandyAgentFramework.SqliteSessionStore;
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
-using MultiBackendServiceProvider;
-using Mute.Moe.Services.LLM.Chat;
-using Mute.Moe.Services.LLM.Client;
-using Mute.Moe.Tools.Index;
+using HandyAgentFramework;
 using Wasmtime;
-using OpenTelemetry.Trace;
 using IImageGenerator = Mute.Moe.Services.ImageGen.IImageGenerator;
 
 namespace Mute.Moe;
@@ -172,7 +173,15 @@ public record Startup(Configuration Configuration)
         services.AddTransient<IEmbeddings, LLamaServerEmbedding>();
         services.AddTransient<IReranking, LlamaServerReranking>();
 
-        services.AddSingleton<IToolSet, NullToolSet>();
+        services.AddSingleton<IToolSet, SemanticSearchToolSet>(services => 
+            new SemanticSearchToolSet(
+                services.GetRequiredService<IEmbeddings>(),
+                services.GetRequiredService<IReranking>(),
+                services.GetRequiredService<ISqliteEmbeddingCacheConnectionProvider>(),
+                services.GetServices<IToolProvider>().ToArray(),
+                services.GetRequiredService<ILogger<SemanticSearchToolSet>>()
+            )
+        );
 
         services.AddSingleton<ISessionStore, SqliteSessionStore>();
     }
@@ -236,26 +245,16 @@ public record Startup(Configuration Configuration)
             services.AddSingleton<ISqliteSessionStoreConnectionProvider>(services =>
                 (ISqliteSessionStoreConnectionProvider)services.GetRequiredService<IDatabaseService>()
             );
+            services.AddSingleton<ISqliteEmbeddingCacheConnectionProvider>(services =>
+                (ISqliteEmbeddingCacheConnectionProvider)services.GetRequiredService<IDatabaseService>()
+            );
         }
     }
 
     private static void AddToolProviders(IServiceCollection services)
     {
-        services.AddSingleton<IToolProvider, GeocodingToolProvider>();
-        services.AddSingleton<IToolProvider, WeatherToolProvider>();
-        services.AddSingleton<IToolProvider, MangaToolProvider>();
-        services.AddSingleton<IToolProvider, AnimeToolProvider>();
-        services.AddSingleton<IToolProvider, CryptocurrencyInfoToolProvider>();
-        services.AddSingleton<IToolProvider, ForexToolProvider>();
-        services.AddSingleton<IToolProvider, StockToolProvider>();
-        services.AddSingleton<IToolProvider, ServerStatusToolProvider>();
-        services.AddSingleton<IToolProvider, WikipediaToolProvider>();
-        services.AddSingleton<IToolProvider, MathematicsProvider>();
-        services.AddSingleton<IToolProvider, PythonToolProvider>();
-        //todo:services.AddSingleton<IToolProvider, SubAgentCreationToolProvider>();
-        services.AddSingleton<IToolProvider, UserInfoToolProvider>();
-        services.AddSingleton<IToolProvider, GuildInfoToolProvider>();
-        services.AddSingleton<IToolProvider, ClockProvider>();
-        services.AddSingleton<IToolProvider, BraveWebSearchProvider>();
+        //todo: subagent tool
+        
+        services.RegisterImplementationsOf(typeof(IToolProvider), [ typeof(Startup).Assembly ], ServiceLifetime.Singleton);
     }
 }

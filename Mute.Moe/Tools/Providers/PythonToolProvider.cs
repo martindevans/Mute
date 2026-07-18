@@ -18,7 +18,7 @@ public class PythonToolProvider
     private readonly PythonBuilder _builder;
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create <see cref="PythonToolProvider"/>

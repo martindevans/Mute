@@ -18,7 +18,7 @@ public class GuildInfoToolProvider
     private readonly HttpClient _http;
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Create a new <see cref="GuildInfoToolProvider"/>

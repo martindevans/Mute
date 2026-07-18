@@ -5,7 +5,6 @@ using MultiBackendServiceProvider;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Tools;
 using System.Threading.Tasks;
-using IToolProvider = Mute.Moe.Tools.Providers.IToolProvider;
 
 namespace Mute.Moe.Services.Introspection;
 
@@ -20,7 +19,7 @@ public class ServerStatusToolProvider
     private readonly MultiBackendServiceProvider<LLamaServerEndpoint> _endpoints;
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Construct <see cref="ServerStatusToolProvider"/>

@@ -65,7 +65,7 @@ public static class IAsyncEnumerableExtensions
 
         return Core(source, count);
 
-        static async IAsyncEnumerable<IList<TSource>> Core(IAsyncEnumerable<TSource> source, int count, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        static async IAsyncEnumerable<IList<TSource>> Core(IAsyncEnumerable<TSource> source, int count, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var buffer = new List<TSource>(count);
 

@@ -17,7 +17,7 @@ public class MathematicsProvider
     private readonly IDiceRoller _dice;
 
     /// <inheritdoc />
-    public IReadOnlyList<ToolDefinition> Tools { get; }
+    public IEnumerable<ToolDefinition> Tools { get; }
 
     /// <summary>
     /// Construct <see cref="MathematicsProvider"/>

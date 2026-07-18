@@ -1,8 +1,12 @@
 ﻿using System.Threading.Tasks;
 using Discord.Commands;
 
-
 namespace Mute.Moe.Discord.Context.Postprocessing;
+
+/// <summary>
+/// Postprocess a context for messages which have a command character prefix, after the command handler was invoked and returned successfully.
+/// </summary>
+public interface ISuccessfulCommandPostprocessor : IContextProcessor;
 
 /// <summary>
 /// After every unsuccessfully executed command, all services registered to DI which implement this will be invoked

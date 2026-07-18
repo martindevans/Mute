@@ -56,10 +56,11 @@
     <PackageReference Include="FaceAiSharp.Bundle" Version="0.6.35" />
     <PackageReference Include="FluidCaching" Version="1.3.2" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
-    <PackageReference Include="HandyAgentFramework" Version="3.0.0" />
+    <PackageReference Include="HandyAgentFramework" Version="4.0.0" />
     <PackageReference Include="HandyAgentFramework.Compaction" Version="1.0.0" />
     <PackageReference Include="HandyAgentFramework.Embedding" Version="1.0.0" />
-    <PackageReference Include="HandyAgentFramework.FunctionCall" Version="3.0.0" />
+    <PackageReference Include="HandyAgentFramework.Embedding.SqliteCache" Version="3.0.0" />
+    <PackageReference Include="HandyAgentFramework.FunctionCall" Version="4.0.0" />
     <PackageReference Include="HandyAgentFramework.SqliteFileStore" Version="1.0.0" />
     <PackageReference Include="HandyAgentFramework.SqliteSessionStore" Version="3.0.0" />
     <PackageReference Include="Humanizer.Core" Version="3.0.10" />
@@ -84,7 +85,7 @@
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
     <PackageReference Include="Pegasus" Version="4.1.0" />
     <PackageReference Include="Serpent" Version="0.0.41" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
