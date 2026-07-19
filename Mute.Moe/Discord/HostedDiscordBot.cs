@@ -315,7 +315,7 @@ public partial class HostedDiscordBot
     private static async Task<bool> ExecuteContextProcessor<T>(MuteCommandContext context, ILogger logger, bool rethrow = false)
         where T : IContextProcessor
     {
-        bool failed = false;
+        var failed = false;
         
         foreach (var processor in context.Services.GetServices<T>())
         {
@@ -332,7 +332,7 @@ public partial class HostedDiscordBot
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Context processor {0} threw an exception", processor.GetType().Name);
+                logger.LogError(ex, "Context processor {type} threw an exception", processor.GetType().Name);
                 activity?.AddException(ex);
                 failed = true;
 

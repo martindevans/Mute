@@ -60,22 +60,22 @@ public class OpenWeatherMapGeocoding
     [UsedImplicitly]
     private class GeocodingResponseItem
     {
-        [JsonPropertyName("name")]
+        [JsonPropertyName("name"), UsedImplicitly]
         public required string Name { get; init; }
 
-        //[JsonPropertyName("local_names")]
+        //[JsonPropertyName("local_names"), UsedImplicitly]
         //public required Dictionary<string, string> LocalNames { get; init; }
 
-        [JsonPropertyName("lat")]
+        [JsonPropertyName("lat"), UsedImplicitly]
         public required double Latitude { get; init; }
 
-        [JsonPropertyName("lon")]
+        [JsonPropertyName("lon"), UsedImplicitly]
         public required double Longitude { get; init; }
 
-        [JsonPropertyName("country")]
+        [JsonPropertyName("country"), UsedImplicitly]
         public string? Country { get; init; }
 
-        [JsonPropertyName("state")]
+        [JsonPropertyName("state"), UsedImplicitly]
         public string? State { get; init; }
     }
 }

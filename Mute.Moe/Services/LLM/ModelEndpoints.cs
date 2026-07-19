@@ -14,19 +14,23 @@ public record LLamaServerEndpoint(string ID, string Url, string Key, IReadOnlySe
 /// <summary>
 /// LLM to use for chat based features
 /// </summary>
+[UsedImplicitly]
 public record AgentChatModel(string Name, int ContextSize, bool IsVisionModel) : IChatModel;
 
 /// <summary>
 /// Model to use for generating embeddings
 /// </summary>
+[UsedImplicitly]
 public record AgentEmbeddingModel(string Name, int ContextSize, int EmbeddingDimensions) : IEmbeddingModel;
 
 /// <summary>
 /// VLM to use for vision based features
 /// </summary>
+[UsedImplicitly]
 public record AgentVisionModel(string Name, int ContextSize) : IChatModel;
 
 /// <summary>
 /// Model to use for query reranking
 /// </summary>
+[UsedImplicitly]
 public record AgentRerankModel(string Name, int ContextSize) : IRerankingModel;

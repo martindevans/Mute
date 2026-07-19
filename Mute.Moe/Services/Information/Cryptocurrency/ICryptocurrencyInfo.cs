@@ -125,6 +125,7 @@ public interface ICurrency
 /// <summary>
 /// Provides cryptocurrency related tools
 /// </summary>
+[UsedImplicitly]
 public class CryptocurrencyInfoToolProvider
     : IToolProvider
 {
@@ -164,5 +165,6 @@ public class CryptocurrencyInfoToolProvider
         return new CryptoInfo(currency, ticker);
     }
 
+    [UsedImplicitly]
     private record CryptoInfo(ICurrency Currency, ITicker? Ticker);
 }

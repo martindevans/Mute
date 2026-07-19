@@ -9,6 +9,7 @@ namespace Mute.Moe.Tools.Providers;
 /// <summary>
 /// Provides web search through the brave API
 /// </summary>
+[UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
 public class BraveWebSearchProvider
     : IToolProvider
 {

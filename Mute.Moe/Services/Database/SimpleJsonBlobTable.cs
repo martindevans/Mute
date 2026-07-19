@@ -20,7 +20,6 @@ public abstract class SimpleJsonBlobTable<TBlob>
     private readonly string _countSql;
     private readonly string _randomSql;
 
-    private readonly string _tableName;
     private readonly IDatabaseService _database;
 
     /// <summary>
@@ -30,7 +29,6 @@ public abstract class SimpleJsonBlobTable<TBlob>
     /// <param name="database"></param>
     protected SimpleJsonBlobTable(string tableName, IDatabaseService database)
     {
-        _tableName = tableName;
         _database = database;
 
         _putSql = $"INSERT into {tableName} (ID, Json) values(@ID, @Json)";

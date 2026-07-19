@@ -56,6 +56,7 @@ public interface IStockQuote
 /// <summary>
 /// Provides stock price related tools
 /// </summary>
+[UsedImplicitly]
 public class StockToolProvider
     : IToolProvider
 {

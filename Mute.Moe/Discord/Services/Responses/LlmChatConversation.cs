@@ -288,10 +288,7 @@ public partial class LlmChatConversation
                 session.TryGetInMemoryChatHistory(out var messages);
                 ContextStatistics = new ContextStats(
                     _contextSize,
-                    usage.InputTokenCount,
-                    usage.ReasoningTokenCount,
-                    usage.OutputTokenCount,
-                    usage.TotalTokenCount,
+                    usage,
                     messages?.Count
                 );
             }
@@ -387,17 +384,11 @@ public partial class LlmChatConversation
     /// Statistics about context usage
     /// </summary>
     /// <param name="ContextSize">Total context size</param>
-    /// <param name="InputTokens">Input tokens for the last message</param>
-    /// <param name="ReasoningTokens">Reasoning tokens for the last message</param>
-    /// <param name="OutputTokens">Output tokens for the last message</param>
-    /// <param name="TotalTokens">Total tokens in the context</param>
+    /// <param name="Usage">Usage stats</param>
     /// <param name="Messages">Total message count</param>
     public record ContextStats(
         int ContextSize,
-        long? InputTokens = default,
-        long? ReasoningTokens = default,
-        long? OutputTokens = default,
-        long? TotalTokens = default,
+        UsageDetails? Usage = default,
         int? Messages = default
     );
 

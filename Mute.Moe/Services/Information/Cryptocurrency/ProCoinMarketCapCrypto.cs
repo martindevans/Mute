@@ -14,7 +14,6 @@ public class ProCoinMarketCapCrypto
     : ICryptocurrencyInfo
 {
     private readonly FluidCache<ICurrency> _currencyCache;
-    private readonly IIndex<uint, ICurrency> _currencyById;
     private readonly IIndex<string, ICurrency> _currencyByName;
     private readonly IIndex<string, ICurrency> _currencyBySymbol;
 
@@ -41,7 +40,6 @@ public class ProCoinMarketCapCrypto
         _http = http.CreateClient();
             
         _currencyCache = new FluidCache<ICurrency>(config.CoinMarketCap.CacheSize, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(config.CoinMarketCap.CacheMaxAgeSeconds), () => DateTime.UtcNow);
-        _currencyById = _currencyCache.AddIndex("IndexByUniqueId", a => a.Id);
         _currencyByName = _currencyCache.AddIndex("IndexByName", a => a.Name);
         _currencyBySymbol = _currencyCache.AddIndex("IndexBySymbol", a => a.Symbol);
 
@@ -56,12 +54,6 @@ public class ProCoinMarketCapCrypto
         var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?CMC_PRO_API_KEY={_key}&symbol={symbol}";
         return GetOrDownload<string, ICurrency, CmcCurrencyResponse>(symbol, _currencyCache, _currencyBySymbol, _ => _http.GetAsync(url), a => a.Data.Values);
     }
-
-    //public Task<ICurrency?> FindById(uint id)
-    //{
-    //    var url = $"https://pro-api.coinmarketcap.com/v1/cryptocurrency/info?CMC_PRO_API_KEY={_key}&id={id}";
-    //    return GetOrDownload<uint, ICurrency, CmcCurrencyResponse>(id, _currencyCache, _currencyById, _ => _http.GetAsync(url), a => a.Data.Values);
-    //}
 
     private static async Task<TItem?> GetOrDownload<TKey, TItem, TResponse>(TKey key, FluidCache<TItem> cache, IIndex<TKey, TItem> index, Func<TKey, Task<HttpResponseMessage>> download, Func<TResponse, IEnumerable<TItem>?> extract)
         where TItem : class

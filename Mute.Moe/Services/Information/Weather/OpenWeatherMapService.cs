@@ -112,6 +112,7 @@ public class OpenWeatherMapService
     }
 
     #region report
+    [UsedImplicitly]
     private class WeatherResponse
     {
         public required WeatherResponsePos Coord { get; init; }
@@ -121,11 +122,11 @@ public class OpenWeatherMapService
         public WeatherResponseRain? Rain { get; init; }
     }
 
-    private record WeatherResponsePos(float Lat, float Lon);
-    private record WeatherResponseWeather(string Main, string Description);
-    private record WeatherResponseMain(float Temp, [property: JsonPropertyName("feels_like")] float FeelsLike, float TempMin, float TempMax, float Pressure, float Humidity, float SeaLevel, float GrndLevel);
-    private record WeatherResponseWind(float Speed, float Deg, float Gust);
-    private record WeatherResponseRain([property: JsonPropertyName("1h")] float oneHour);
+    [UsedImplicitly] private record WeatherResponsePos(float Lat, float Lon);
+    [UsedImplicitly] private record WeatherResponseWeather(string Main, string Description);
+    [UsedImplicitly] private record WeatherResponseMain(float Temp, [property: JsonPropertyName("feels_like")] float FeelsLike, float TempMin, float TempMax, float Pressure, float Humidity, float SeaLevel, float GrndLevel);
+    [UsedImplicitly] private record WeatherResponseWind(float Speed, float Deg, float Gust);
+    [UsedImplicitly] private record WeatherResponseRain([property: JsonPropertyName("1h")] float oneHour);
 
     private class WeatherReport
         : IWeatherReport
@@ -159,11 +160,13 @@ public class OpenWeatherMapService
     #endregion
 
     #region forecast
+    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     private class WeatherForecastResponse
     {
         public required WeatherForecastResponseListItem[] List { get; init; }
     }
 
+    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     private class WeatherForecastResponseListItem
     {
         [JsonPropertyName("dt")]
@@ -181,6 +184,7 @@ public class OpenWeatherMapService
         public DateTime Timestamp => UnixTimestamp.FromUnixTimestamp();
     }
 
+    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     private record WeatherForecastResponseMain(
         [property: JsonPropertyName("temp")] float Temp,
         [property: JsonPropertyName("feels_like")] float FeelsLike,
@@ -188,6 +192,7 @@ public class OpenWeatherMapService
         [property: JsonPropertyName("temp_max")] float MaxForecastTemp
     );
 
+    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     private record WeatherForecastResponseWeatherItem(
         [property: JsonPropertyName("description")] string Description,
         [property: JsonPropertyName("main")] string Main

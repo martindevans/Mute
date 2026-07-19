@@ -109,10 +109,11 @@ public static class IMessageChannelExtensions
         {
             // Get the conversation
             var conversation = await conversations.GetConversation(@this);
-
+            var stats = conversation.ContextStatistics;
+            
             var embed = new EmbedBuilder()
                        .WithTitle($"Conversation for {conversation.Channel.Name}")
-                       .WithCurrentTimestamp();
+                       .WithTimestamp(conversation.LastUpdated);
 
             var fields = new List<EmbedFieldBuilder>
             {
@@ -120,9 +121,8 @@ public static class IMessageChannelExtensions
                 new EmbedFieldBuilder().WithIsInline(true).WithName("Event Queue").WithValue(conversation.QueueCount.ToString()),
             };
 
-            var stats = conversation.ContextStatistics;
             double? usage = null;
-            if (stats.TotalTokens is long total)
+            if (stats.Usage?.TotalTokenCount is long total)
             {
                 fields.Add(
                     new EmbedFieldBuilder()
@@ -131,7 +131,7 @@ public static class IMessageChannelExtensions
                        .WithValue(total)
                 );
 
-                usage = ((double)total) / stats.ContextSize;
+                usage = (double)total / stats.ContextSize;
                 if (usage.HasValue)
                 {
                     fields.Add(

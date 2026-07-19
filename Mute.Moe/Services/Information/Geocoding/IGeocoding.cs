@@ -19,6 +19,7 @@ public interface IGeocoding
     /// <summary>
     /// Response from a geocoding query
     /// </summary>
+    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public record GeocodingResponse
     {
         /// <summary>
@@ -46,6 +47,7 @@ public interface IGeocoding
 /// <summary>
 /// Provides geocoding related tools
 /// </summary>
+[UsedImplicitly]
 public class GeocodingToolProvider
     : IToolProvider
 {

@@ -11,6 +11,7 @@ namespace Mute.Moe.Services.Introspection;
 /// <summary>
 /// Provide tools related to the status of this server
 /// </summary>
+[UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
 public class ServerStatusToolProvider
     : IToolProvider
 {
@@ -112,5 +113,6 @@ public class ServerStatusToolProvider
         return results;
     }
 
+    [UsedImplicitly]
     private record LlmClusterNodeStatus(bool Available, string? Load);
 }

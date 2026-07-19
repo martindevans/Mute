@@ -58,7 +58,7 @@ public class Iou2
         }
 
         // Parse amount
-        if (!decimal.TryParse(modal.Amount?.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
+        if (!decimal.TryParse(modal.Amount.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
         {
             await ReplyAsync2("Cannot parse amount as a number! **Cancelled transaction**");
             return;

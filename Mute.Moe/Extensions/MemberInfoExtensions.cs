@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
@@ -203,7 +202,4 @@ public static partial class MemberInfoExtensions
     {
         return Path.Combine(AppContext.BaseDirectory, "Mute.Moe.xml");
     }
-
-    [GeneratedRegex(@"\r?\n[ \t]*")]
-    private static partial Regex NewlineAndFollowingSpaces();
 }

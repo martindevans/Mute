@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Mute.Moe.Services.Reminders;
 
 /// <inheritdoc />
+[UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
 public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _client, ILogger<AsyncReminderSender> _logger)
     : IReminderSender
 {

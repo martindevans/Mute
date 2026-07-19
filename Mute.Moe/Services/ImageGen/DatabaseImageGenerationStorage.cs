@@ -17,62 +17,62 @@ public class ImageGenerationConfig
     /// <summary>
     /// Positive prompt
     /// </summary>
-    [JsonPropertyName("pos")] public required string Positive { get; set; }
+    [JsonPropertyName("pos"), UsedImplicitly] public required string Positive { get; set; }
 
     /// <summary>
     /// Negative prompt
     /// </summary>
-    [JsonPropertyName("neg")] public required string Negative { get; set; }
+    [JsonPropertyName("neg"), UsedImplicitly] public required string Negative { get; set; }
 
     /// <summary>
     /// Positive prompt for face
     /// </summary>
-    [JsonPropertyName("fpos")] public string? FacePositive { get; set; }
+    [JsonPropertyName("fpos"), UsedImplicitly] public string? FacePositive { get; set; }
 
     /// <summary>
     /// Negative prompt for face
     /// </summary>
-    [JsonPropertyName("fneg")] public string? FaceNegative { get; set; }
+    [JsonPropertyName("fneg"), UsedImplicitly] public string? FaceNegative { get; set; }
 
     /// <summary>
     /// Positive prompt for hands
     /// </summary>
-    [JsonPropertyName("hpos")] public string? HandPositive { get; set; }
+    [JsonPropertyName("hpos"), UsedImplicitly] public string? HandPositive { get; set; }
 
     /// <summary>
     /// Negative prompt for hands
     /// </summary>
-    [JsonPropertyName("hneg")] public string? HandNegative { get; set; }
+    [JsonPropertyName("hneg"), UsedImplicitly] public string? HandNegative { get; set; }
 
     /// <summary>
     /// Positive prompt for eyes
     /// </summary>
-    [JsonPropertyName("epos")] public string? EyePositive { get; set; }
+    [JsonPropertyName("epos"), UsedImplicitly] public string? EyePositive { get; set; }
 
     /// <summary>
     /// Negative prompt for eyes
     /// </summary>
-    [JsonPropertyName("eneg")] public string? EyeNegative { get; set; }
+    [JsonPropertyName("eneg"), UsedImplicitly] public string? EyeNegative { get; set; }
 
     /// <summary>
     /// Url for reference image, if this is img2img
     /// </summary>
-    [JsonPropertyName("iurl")] public required string? ReferenceImageUrl { get; set; }
+    [JsonPropertyName("iurl"), UsedImplicitly] public required string? ReferenceImageUrl { get; set; }
 
     /// <summary>
     /// Indicates if this image was generated in a private context
     /// </summary>
-    [JsonPropertyName("priv")] public required bool IsPrivate { get; set; }
+    [JsonPropertyName("priv"), UsedImplicitly] public required bool IsPrivate { get; set; }
 
     /// <summary>
     /// Type of image generation
     /// </summary>
-    [JsonPropertyName("type")] public required ImageGenerationType Type { get; set; }
+    [JsonPropertyName("type"), UsedImplicitly] public required ImageGenerationType Type { get; set; }
 
     /// <summary>
     /// How many images to generate in the batch
     /// </summary>
-    [JsonPropertyName("bat")] public required int BatchSize { get; set; }
+    [JsonPropertyName("bat"), UsedImplicitly] public required int BatchSize { get; set; }
 
     /// <summary>
     /// Convert to a prompt

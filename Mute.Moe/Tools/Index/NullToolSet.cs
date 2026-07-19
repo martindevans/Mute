@@ -12,7 +12,7 @@ public class NullToolSet
     : IToolSet
 {
     /// <inheritdoc />
-    public async Task<IReadOnlyList<IToolSet.SearchResult>> Search(string query, int? topK = null, CancellationToken cancellation = new CancellationToken())
+    public async Task<IReadOnlyList<IToolSet.SearchResult>> Search(string query, int? topK = null, CancellationToken cancellation = default)
     {
         return [ ];
     }

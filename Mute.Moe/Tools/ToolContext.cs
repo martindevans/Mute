@@ -68,8 +68,7 @@ public static class AgentRunOptionsExtensions
     /// <returns></returns>
     public static async Task<MuteAgentContext?> GetMuteContext(this AgentRunOptions? options, IDiscordClient client)
     {
-        var model = options?.AdditionalProperties?.GetValueOrDefault(Key, null) as MuteAgentContextModel;
-        if (model == null)
+        if (options?.AdditionalProperties?.GetValueOrDefault(Key, null) is not MuteAgentContextModel model)
             return null;
 
         var channel = await client.GetChannelAsync(model.ChannelId);

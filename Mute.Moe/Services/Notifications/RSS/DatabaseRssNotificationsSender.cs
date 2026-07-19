@@ -14,6 +14,7 @@ namespace Mute.Moe.Services.Notifications.RSS;
 /// <summary>
 /// Send RSS notifications from subscriptions stored in the database
 /// </summary>
+[UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
 public partial class DatabaseRssNotificationsSender
     : IRssNotificationsSender
 {

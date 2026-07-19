@@ -13,14 +13,15 @@ namespace Mute.Moe.Tools.Index;
 /// <summary>
 /// Represents a toolset that uses semantic search capabilities to find tools.
 /// </summary>
-public class SemanticSearchToolSet
+public partial class SemanticSearchToolSet
     : IToolSet
 {
     private const float TopP = 0.5f;
-    
+
+    private readonly ILogger<SemanticSearchToolSet> _logger;
+
     private readonly IEmbeddings _embeddings;
     private readonly IReranking _reranking;
-    private readonly ILogger<SemanticSearchToolSet> _logger;
 
     private readonly Task<State> _state;
     
@@ -64,6 +65,8 @@ public class SemanticSearchToolSet
     /// <inheritdoc />
     public async Task<IReadOnlyList<IToolSet.SearchResult>> Search(string query, int? topK = null, CancellationToken cancellation = default)
     {
+        LogToolSearchQuery(query);
+
         // Embed the query
         var queryEmbed = await _embeddings.Embed(query, cancellation);
         
@@ -171,4 +174,7 @@ public class SemanticSearchToolSet
             return _toolEmbeddings.GetValueOrDefault(tool);
         }
     }
+
+    [LoggerMessage(LogLevel.Information, "Tool search: '{query}'")]
+    private partial void LogToolSearchQuery(string query);
 }

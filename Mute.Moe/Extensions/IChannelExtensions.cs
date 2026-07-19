@@ -1,21 +1,20 @@
 ﻿using Discord;
 
-namespace Mute.Moe.Extensions
+namespace Mute.Moe.Extensions;
+
+/// <summary>
+/// Extensions for <see cref="IChannel"/>
+/// </summary>
+public static class IChannelExtensions
 {
     /// <summary>
-    /// Extensions for <see cref="IChannel"/>
+    /// Get the context ID to use for memory storage and retrieval in this channel
     /// </summary>
-    public static class IChannelExtensions
+    /// <returns></returns>
+    public static ulong GetAgentMemoryContextId(this IChannel channel)
     {
-        /// <summary>
-        /// Get the context ID to use for memory storage and retrieval in this channel
-        /// </summary>
-        /// <returns></returns>
-        public static ulong GetAgentMemoryContextId(this IChannel channel)
-        {
-            if (channel is IGuildChannel gc)
-                return gc.GuildId;
-            return channel.Id;
-        }
+        if (channel is IGuildChannel gc)
+            return gc.GuildId;
+        return channel.Id;
     }
 }

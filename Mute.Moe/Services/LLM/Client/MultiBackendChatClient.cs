@@ -36,7 +36,7 @@ public sealed class MultiBackendChatClient
     }
 
     /// <inheritdoc />
-    public async Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_isDisposed, typeof(MultiBackendChatClient));
 
@@ -45,7 +45,7 @@ public sealed class MultiBackendChatClient
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = new CancellationToken())
+    public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_isDisposed, typeof(MultiBackendChatClient));
 
