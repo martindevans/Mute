@@ -71,7 +71,16 @@ public partial class SemanticSearchToolSet
         var queryEmbed = await _embeddings.Embed(query, cancellation);
         
         // Wait for init to finish and retrieve the result
-        var state = await _state;
+        State state;
+        try
+        {
+            state = await _state;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception initialising SemanticSearchToolSet");
+            throw;
+        }
 
         // Get tools with dot product to query embedding
         var results = (

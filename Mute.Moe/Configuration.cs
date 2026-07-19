@@ -215,6 +215,7 @@ public class LLMConfig
     [UsedImplicitly] public required LLamaServerEndpoint[] Endpoints;
 
     [UsedImplicitly] public required AgentChatModel GeneralChatModel;
+    [UsedImplicitly] public required AgentSummaryModel SummaryModel;
     [UsedImplicitly] public required AgentVisionModel VisionLanguageModel;
     [UsedImplicitly] public required AgentEmbeddingModel EmbeddingModel;
     [UsedImplicitly] public required AgentRerankModel RerankingModel;

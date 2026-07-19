@@ -63,8 +63,14 @@ public sealed class MultiBackendChatClient
     private async Task<ClientScope> AcquireScope(ChatOptions? options, CancellationToken cancellation)
     {
         ObjectDisposedException.ThrowIf(_isDisposed, typeof(MultiBackendChatClient));
+        ArgumentNullException.ThrowIfNull(options?.ModelId, nameof(options));
+        ArgumentNullException.ThrowIfNull(options);
 
-        var tags = options?.ModelId != null ? [ options.ModelId ] : Array.Empty<string>();
+        var modelId = options.ModelId;
+        if (modelId == null)
+            throw new ArgumentException("Must specify a model name", nameof(options));
+
+        var tags = new[] { options.ModelId };
         var server = await _llamaProvider.Acquire(tags, cancellation);
         if (server == null)
             throw new FailedToAcquireScope();
@@ -73,7 +79,7 @@ public sealed class MultiBackendChatClient
                          new ApiKeyCredential(server.Backend.Value.Key),
                          new OpenAIClientOptions { Endpoint = new Uri(server.Backend.Value.Url) }
                      )
-                    .GetChatClient(options?.ModelId ?? "default")
+                    .GetChatClient(modelId)
                     .AsIChatClient();
 
 

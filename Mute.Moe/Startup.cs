@@ -238,6 +238,7 @@ public record Startup(Configuration Configuration)
 
             // Define models to use
             services.AddSingleton(Configuration.LLM.GeneralChatModel);
+            services.AddSingleton(Configuration.LLM.SummaryModel);
             services.AddSingleton(Configuration.LLM.VisionLanguageModel);
             services.AddSingleton(Configuration.LLM.EmbeddingModel);
             services.AddSingleton(Configuration.LLM.RerankingModel);

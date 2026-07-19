@@ -59,7 +59,7 @@
     <PackageReference Include="HandyAgentFramework" Version="4.0.0" />
     <PackageReference Include="HandyAgentFramework.Compaction" Version="1.0.0" />
     <PackageReference Include="HandyAgentFramework.Embedding" Version="1.0.0" />
-    <PackageReference Include="HandyAgentFramework.Embedding.SqliteCache" Version="3.0.0" />
+    <PackageReference Include="HandyAgentFramework.Embedding.SqliteCache" Version="5.0.0" />
     <PackageReference Include="HandyAgentFramework.FunctionCall" Version="4.0.0" />
     <PackageReference Include="HandyAgentFramework.SqliteFileStore" Version="1.0.0" />
     <PackageReference Include="HandyAgentFramework.SqliteSessionStore" Version="3.0.0" />

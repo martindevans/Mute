@@ -18,6 +18,12 @@ public record LLamaServerEndpoint(string ID, string Url, string Key, IReadOnlySe
 public record AgentChatModel(string Name, int ContextSize, bool IsVisionModel) : IChatModel;
 
 /// <summary>
+/// Model to use for generating summaries
+/// </summary>
+[UsedImplicitly]
+public record AgentSummaryModel(string Name, int ContextSize) : IChatModel;
+
+/// <summary>
 /// Model to use for generating embeddings
 /// </summary>
 [UsedImplicitly]

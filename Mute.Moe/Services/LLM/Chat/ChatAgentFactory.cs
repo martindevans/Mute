@@ -15,7 +15,8 @@ namespace Mute.Moe.Services.LLM.Chat;
 /// </summary>
 public class ChatAgentFactory
 {
-    private readonly AgentChatModel _model;
+    private readonly AgentChatModel _chatModel;
+    private readonly AgentSummaryModel _summaryModel;
     private readonly ChatConversationSystemPrompt _prompt;
     private readonly IChatClient _client;
     private readonly IToolSet _tools;
@@ -24,19 +25,21 @@ public class ChatAgentFactory
     /// <summary>
     /// Context size of this agent
     /// </summary>
-    public int ContextSize => _model.ContextSize;
+    public int ContextSize => _chatModel.ContextSize;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ChatAgentFactory"/> class.
     /// </summary>
-    /// <param name="model">The chat model to be used, which defines the context size and other parameters.</param>
+    /// <param name="chatModel">The chat model to be used, which defines the context size and other parameters.</param>
+    /// <param name="summaryModel"></param>
     /// <param name="prompt">The system prompt for initializing the chat conversation.</param>
     /// <param name="client">The chat client responsible for handling communication with the backend.</param>
     /// <param name="tools">The set of tools available to agents</param>
     /// <param name="analyser"></param>
-    public ChatAgentFactory(AgentChatModel model, ChatConversationSystemPrompt prompt, IChatClient client, IToolSet tools, IImageAnalyser analyser)
+    public ChatAgentFactory(AgentChatModel chatModel, AgentSummaryModel summaryModel, ChatConversationSystemPrompt prompt, IChatClient client, IToolSet tools, IImageAnalyser analyser)
     {
-        _model = model;
+        _chatModel = chatModel;
+        _summaryModel = summaryModel;
         _prompt = prompt;
         _client = client;
         _tools = tools;
@@ -49,13 +52,13 @@ public class ChatAgentFactory
     /// <returns></returns>
     public async Task<AIAgent> Create(IReadOnlyDictionary<string, string> promptTemplateParams)
     {
-        var contextSize = _model.ContextSize;
-        var maxResponse = _model.ContextSize / 8;
+        var contextSize = _chatModel.ContextSize;
+        var maxResponse = _chatModel.ContextSize / 8;
 
         var prompt = _prompt.Prompt;
         foreach (var (key, value) in promptTemplateParams)
             prompt = prompt.Replace($"{{{{{key}}}}}", value);
-        prompt = prompt.Replace("{{llm_model_name}}", _model.Name);
+        prompt = prompt.Replace("{{llm_model_name}}", _chatModel.Name);
 
         var options = new ChatOptions
         {
@@ -64,16 +67,33 @@ public class ChatAgentFactory
             AllowMultipleToolCalls = true,
             Tools = [],
             MaxOutputTokens = maxResponse,
-            ModelId = _model.Name,
+            ModelId = _chatModel.Name,
         };
 
+        var summaryClient = _client
+            .AsBuilder()
+            .ConfigureOptions(options =>
+            {
+                options.ModelId ??= _summaryModel.Name;
+            })
+            .Build();
+
 #pragma warning disable MAAI001 // (experimental features)
+        var threshold1 = CompactionTriggers.TokensExceed((int)(contextSize * 0.40f));
+        var threshold2 = CompactionTriggers.TokensExceed((int)(contextSize * 0.70f));
+        var threshold3 = CompactionTriggers.TokensExceed((int)(contextSize * 0.85f));
+
         var reducer = new PipelineCompactionStrategy(
             new EphemeralMessageCompaction(),
-            new ToolResultCompactionStrategy(CompactionTriggers.TokensExceed(contextSize / 4)),
-            new ContextWindowCompactionStrategy(contextSize, maxResponse),
-            new SummarizationCompactionStrategy(_client, CompactionTriggers.TokensExceed(contextSize / 2)),
-            new TruncationCompactionStrategy(CompactionTriggers.TokensExceed(contextSize))
+
+            // 1. Gentle: collapse old tool-call groups into short summaries
+            new ToolResultCompactionStrategy(threshold1, minimumPreservedGroups:8),
+
+            // 2. Moderate: use an LLM to summarize older conversation spans into a concise message
+            new SummarizationCompactionStrategy(summaryClient, threshold2),
+
+            // 4. Emergency: drop oldest groups until under the token budget
+            new TruncationCompactionStrategy(threshold3)
 #pragma warning restore MAAI001
         ).AsChatReducer();
 
@@ -98,7 +118,7 @@ public class ChatAgentFactory
                    .UseToolApproval();
 
         // Add middleware that converts images in inputs into a description of the image
-        if (!_model.IsVisionModel)
+        if (!_chatModel.IsVisionModel)
         {
             var middleware = new ChatAgentImageAnalysisMiddleware(_analyser);
             agent = agent.Use(middleware.Middleware, middleware.MiddlewareStreaming);
