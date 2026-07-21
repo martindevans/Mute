@@ -16,17 +16,18 @@ namespace Mute.Moe.Services.LLM.Chat.Middleware;
 /// It processes chat messages, identifies image content, and replaces it with a description while maintaining
 /// the conversational flow.
 /// </remarks>
-public class ChatAgentImageAnalysisMiddleware
+public class AgentAgentImageAnalysisMiddleware
+    : IAgentMiddleware
 {
     private readonly IImageAnalyser _analyser;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ChatAgentImageAnalysisMiddleware"/> class.
+    /// Initializes a new instance of the <see cref="AgentAgentImageAnalysisMiddleware"/> class.
     /// </summary>
     /// <param name="analyser">
     /// The image analyser used to process and generate descriptions for images.
     /// </param>
-    public ChatAgentImageAnalysisMiddleware(IImageAnalyser analyser)
+    public AgentAgentImageAnalysisMiddleware(IImageAnalyser analyser)
     {
         _analyser = analyser;
     }

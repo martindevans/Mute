@@ -246,7 +246,12 @@ public partial class LlmChatConversation
                 AuthorName = input.User.GlobalName ?? input.User.Username,
                 Contents = [
                     new TextContent(input.Content)
-                ]
+                ],
+                AdditionalProperties = new()
+                {
+                    { MessageMetadataKeys.U64_DiscordAuthorId, input.User.Id },
+                    { MessageMetadataKeys.U64_Timestamp, DateTime.UtcNow.UnixTimestamp() }
+                }
             };
 
             // Attach images

@@ -7,6 +7,8 @@ using Microsoft.Extensions.AI;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.LLM.Chat.Middleware;
 using System.Threading.Tasks;
+using Discord;
+using Mute.Moe.Discord.Services.Users;
 
 namespace Mute.Moe.Services.LLM.Chat;
 
@@ -21,6 +23,8 @@ public class ChatAgentFactory
     private readonly IChatClient _client;
     private readonly IToolSet _tools;
     private readonly IImageAnalyser _analyser;
+    private readonly IDiscordClient _discordClient;
+    private readonly IUserService _users;
 
     /// <summary>
     /// Context size of this agent
@@ -36,7 +40,18 @@ public class ChatAgentFactory
     /// <param name="client">The chat client responsible for handling communication with the backend.</param>
     /// <param name="tools">The set of tools available to agents</param>
     /// <param name="analyser"></param>
-    public ChatAgentFactory(AgentChatModel chatModel, AgentSummaryModel summaryModel, ChatConversationSystemPrompt prompt, IChatClient client, IToolSet tools, IImageAnalyser analyser)
+    /// <param name="discordClient"></param>
+    /// <param name="users"></param>
+    public ChatAgentFactory(
+        AgentChatModel chatModel,
+        AgentSummaryModel summaryModel,
+        ChatConversationSystemPrompt prompt,
+        IChatClient client,
+        IToolSet tools,
+        IImageAnalyser analyser,
+        IDiscordClient discordClient,
+        IUserService users
+    )
     {
         _chatModel = chatModel;
         _summaryModel = summaryModel;
@@ -44,6 +59,8 @@ public class ChatAgentFactory
         _client = client;
         _tools = tools;
         _analyser = analyser;
+        _discordClient = discordClient;
+        _users = users;
     }
 
     /// <summary>
@@ -117,10 +134,14 @@ public class ChatAgentFactory
                    .Use(toolSearch.OnToolCallMiddleware)
                    .UseToolApproval();
 
+        // Add middleware that prepends name to message. Do this before vision middleware!
+        var prepend = new PrependMessageMetadata(_discordClient, _users);
+        agent = agent.Use(prepend.Middleware, prepend.MiddlewareStreaming);
+
         // Add middleware that converts images in inputs into a description of the image
         if (!_chatModel.IsVisionModel)
         {
-            var middleware = new ChatAgentImageAnalysisMiddleware(_analyser);
+            var middleware = new AgentAgentImageAnalysisMiddleware(_analyser);
             agent = agent.Use(middleware.Middleware, middleware.MiddlewareStreaming);
         }
 
