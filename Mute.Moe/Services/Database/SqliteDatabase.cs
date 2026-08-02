@@ -1,8 +1,10 @@
 ﻿using HandyAgentFramework.Embedding.SqliteCache;
+using HandyAgentFramework.SqliteFileStore;
 using HandyAgentFramework.SqliteSessionStore;
 using System.Data;
 using System.Data.SQLite;
 using System.Threading.Tasks;
+using Mute.Moe.Services.Database.Functions;
 
 namespace Mute.Moe.Services.Database;
 
@@ -12,7 +14,8 @@ namespace Mute.Moe.Services.Database;
 public abstract class BaseSqliteDatabase
     : IDatabaseService,
       ISqliteSessionStoreConnectionProvider,
-      ISqliteEmbeddingCacheConnectionProvider
+      ISqliteEmbeddingCacheConnectionProvider,
+      ISqliteFileStoreConnectionProvider
 {
     private readonly string _dbConnStr;
 
@@ -36,8 +39,8 @@ public abstract class BaseSqliteDatabase
         var connection = new SQLiteConnection(_dbConnStr);
         connection.Open();
         
-        // not currently needed: build of SQLite contains native REGEXP function
-        //connection.BindFunction(new RegExSQLiteFunction());
+        // Bind custom functions
+        connection.BindFunction(new HammingDistanceSQLiteFunction());
 
         return connection;
     }

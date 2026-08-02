@@ -1,11 +1,12 @@
-﻿using System.Diagnostics;
-using Discord.Addons.Interactive;
+﻿using Discord.Addons.Interactive;
 using Discord.WebSocket;
 using FaceAiSharp;
+using HandyAgentFramework;
 using HandyAgentFramework.Embedding;
 using HandyAgentFramework.Embedding.SqliteCache;
 using HandyAgentFramework.FunctionCall.Middleware.ToolSearch;
 using HandyAgentFramework.Persistence;
+using HandyAgentFramework.SqliteFileStore;
 using HandyAgentFramework.SqliteSessionStore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,10 +58,11 @@ using Mute.Moe.Tools.Index;
 using OpenTelemetry.Trace;
 using Serpent;
 using Serpent.Loading;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
-using HandyAgentFramework;
+using HandyAgentFramework.Embedding.Adapters;
 using Wasmtime;
 using IImageGenerator = Mute.Moe.Services.ImageGen.IImageGenerator;
 
@@ -171,16 +173,16 @@ public record Startup(Configuration Configuration)
         AddToolProviders(services);
 
         services.AddTransient<IImageAnalyser, AgentImageAnalyser<AgentVisionModel, IChatClient>>();
-        services.AddTransient<IEmbeddings, LLamaServerEmbedding>();
+        services.AddTransient<IEmbeddings<float>, LLamaServerEmbedding>();
         services.AddTransient<IReranking, LlamaServerReranking>();
 
-        services.AddSingleton<IToolSet, SemanticSearchToolSet>(services => 
-            new SemanticSearchToolSet(
-                services.GetRequiredService<IEmbeddings>(),
+        services.AddSingleton<IToolSet, SemanticSearchToolSet<byte>>(services => 
+            new SemanticSearchToolSet<byte>(
+                new BitwiseEmbeddingAdapter(services.GetRequiredService<IEmbeddings<float>>()),
                 services.GetRequiredService<IReranking>(),
                 services.GetRequiredService<ISqliteEmbeddingCacheConnectionProvider>(),
                 services.GetServices<IToolProvider>().ToArray(),
-                services.GetRequiredService<ILogger<SemanticSearchToolSet>>()
+                services.GetRequiredService<ILogger<SemanticSearchToolSet<byte>>>()
             )
         );
 
@@ -212,6 +214,7 @@ public record Startup(Configuration Configuration)
 
             // Load system prompts
             services.AddSingleton(new ChatConversationSystemPrompt(File.ReadAllText(llm.ChatSystemPromptPath)));
+            services.AddSingleton(new FileMemorySystemPrompt(File.ReadAllText(llm.FileMemoryPromptPath)));
 
             // Create endpoints for llama-server
             var endpoints = new List<MultiBackendServiceProvider<LLamaServerEndpoint>.BackendConfig>();
@@ -249,6 +252,9 @@ public record Startup(Configuration Configuration)
             );
             services.AddSingleton<ISqliteEmbeddingCacheConnectionProvider>(services =>
                 (ISqliteEmbeddingCacheConnectionProvider)services.GetRequiredService<IDatabaseService>()
+            );
+            services.AddSingleton<ISqliteFileStoreConnectionProvider>(services =>
+                (ISqliteFileStoreConnectionProvider)services.GetRequiredService<IDatabaseService>()
             );
         }
     }

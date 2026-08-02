@@ -1,14 +1,17 @@
-﻿using HandyAgentFramework.Compaction;
+﻿using Discord;
+using HandyAgentFramework.Compaction;
 using HandyAgentFramework.FunctionCall.Middleware;
 using HandyAgentFramework.FunctionCall.Middleware.ToolSearch;
+using HandyAgentFramework.SqliteFileStore;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Compaction;
 using Microsoft.Extensions.AI;
-using Mute.Moe.Services.ImageGen;
-using Mute.Moe.Services.LLM.Chat.Middleware;
-using System.Threading.Tasks;
-using Discord;
 using Mute.Moe.Discord.Services.Users;
+using Mute.Moe.Services.ImageGen;
+using Mute.Moe.Services.LLM.Chat.Context;
+using Mute.Moe.Services.LLM.Chat.Middleware;
+using System.Globalization;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.LLM.Chat;
 
@@ -25,6 +28,8 @@ public class ChatAgentFactory
     private readonly IImageAnalyser _analyser;
     private readonly IDiscordClient _discordClient;
     private readonly IUserService _users;
+    private readonly ISqliteFileStoreConnectionProvider _filesProvider;
+    private readonly FileMemorySystemPrompt _fileMemoryPrompt;
 
     /// <summary>
     /// Context size of this agent
@@ -42,6 +47,8 @@ public class ChatAgentFactory
     /// <param name="analyser"></param>
     /// <param name="discordClient"></param>
     /// <param name="users"></param>
+    /// <param name="filesProvider"></param>
+    /// <param name="fileMemoryPrompt"></param>
     public ChatAgentFactory(
         AgentChatModel chatModel,
         AgentSummaryModel summaryModel,
@@ -50,7 +57,9 @@ public class ChatAgentFactory
         IToolSet tools,
         IImageAnalyser analyser,
         IDiscordClient discordClient,
-        IUserService users
+        IUserService users,
+        ISqliteFileStoreConnectionProvider filesProvider,
+        FileMemorySystemPrompt fileMemoryPrompt
     )
     {
         _chatModel = chatModel;
@@ -61,13 +70,17 @@ public class ChatAgentFactory
         _analyser = analyser;
         _discordClient = discordClient;
         _users = users;
+        _filesProvider = filesProvider;
+        _fileMemoryPrompt = fileMemoryPrompt;
     }
 
     /// <summary>
     /// Create an agent for chat
     /// </summary>
+    /// <param name="promptTemplateParams">Parameters to fill in the prompt template</param>
+    /// <param name="memoryContext">The memory context to use</param>
     /// <returns></returns>
-    public async Task<AIAgent> Create(IReadOnlyDictionary<string, string> promptTemplateParams)
+    public async Task<AIAgent> Create(IReadOnlyDictionary<string, string> promptTemplateParams, ulong? memoryContext)
     {
         var contextSize = _chatModel.ContextSize;
         var maxResponse = _chatModel.ContextSize / 8;
@@ -98,7 +111,7 @@ public class ChatAgentFactory
 #pragma warning disable MAAI001 // (experimental features)
         var threshold1 = CompactionTriggers.TokensExceed((int)(contextSize * 0.40f));
         var threshold2 = CompactionTriggers.TokensExceed((int)(contextSize * 0.70f));
-        var threshold3 = CompactionTriggers.TokensExceed((int)(contextSize * 0.85f));
+        var threshold3 = CompactionTriggers.TokensExceed((int)(contextSize * 0.90f));
 
         var reducer = new PipelineCompactionStrategy(
             new EphemeralMessageCompaction(),
@@ -114,14 +127,30 @@ public class ChatAgentFactory
 #pragma warning restore MAAI001
         ).AsChatReducer();
 
+        // Setup context providers
         var toolSearch = new ToolSearchProvider(_tools);
-        
-        var context = new AIContextProvider[]
+        var context = new List<AIContextProvider>
         {
-            //todo: SQL files? new FileMemoryProvider(new FileSystemAgentFileStore("memory")),
             new FunctionCallStatisticsMonitor(),
+            new TimeSinceLastMessageContextProvider(TimeSpan.FromHours(1)),
             toolSearch
         };
+
+        // If a memory context was provided, add file store
+        if (memoryContext.HasValue)
+        {
+            var files = new FileMemoryProvider(
+                new SqliteFileStore(
+                    memoryContext.Value.ToString(CultureInfo.InvariantCulture),
+                    _filesProvider
+                ),
+                options: new FileMemoryProviderOptions
+                {
+                    Instructions = _fileMemoryPrompt.Prompt
+                }
+            );
+            context.Add(files);
+        }
 
         var agent = _client
                    .AsAIAgent(

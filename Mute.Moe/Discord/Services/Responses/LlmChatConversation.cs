@@ -72,7 +72,7 @@ public class LlmChatConversationFactory
         };
 
         return new LlmChatConversation(
-            await _agentFactory.Create(template),
+            await _agentFactory.Create(template, channel.GetAgentMemoryContextId()),
             _agentFactory.ContextSize,
             channel,
             _discord,

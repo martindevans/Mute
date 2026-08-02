@@ -1,10 +1,12 @@
 ﻿using Discord;
 using Discord.Commands;
 using HandyAgentFramework.FunctionCall.Middleware.ToolSearch;
+using HandyAgentFramework.SqliteFileStore;
 using MultiBackendServiceProvider;
 using Mute.Moe.Discord.Interaction;
 using Mute.Moe.Discord.Services.Responses;
 using Mute.Moe.Services.LLM;
+using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,7 +19,7 @@ namespace Mute.Moe.Discord.Modules.Personality;
 /// </summary>
 [UsedImplicitly]
 [Group("chat")]
-public partial class Chat(ConversationalResponseService _conversations)
+public partial class Chat(ConversationalResponseService _conversations, ISqliteFileStoreConnectionProvider _sqliteFiles)
     : MuteBaseModule
 {
     [Command("state"), Summary("I will show the conversation state for the current channel")]
@@ -37,6 +39,56 @@ public partial class Chat(ConversationalResponseService _conversations)
 
         // Edit in action buttons
         await message.ModifyAsync(ctx => ctx.Components = components.Build());
+    }
+
+    [Command("memory"), Summary("I will show the conversation file-memories for the current context")]
+    [UsedImplicitly]
+    public async Task ConversationFileContext(string? path = null)
+    {
+        var files = new SqliteFileStore(
+            Context.Channel.GetAgentMemoryContextId().ToString(CultureInfo.InvariantCulture),
+            _sqliteFiles
+        );
+
+        var output = new StringBuilder();
+        if (path == null)
+        {
+            await BuildDirectory("/");
+            await ReplyAsync(output.ToString());
+        }
+        else
+        {
+            var content = await files.ReadAsync(path);
+            if (content == null)
+                await ReplyAsync("File not found");
+            else
+                await ReplyAsync($"```{content}```");
+        }
+
+        async Task BuildDirectory(string path, string prefix = "")
+        {
+            var children = (await files.ListChildrenAsync(path))
+                          .Where(e => !string.IsNullOrWhiteSpace(e.Name) && !string.IsNullOrWhiteSpace(e.Type))
+                          .ToList();
+
+            for (var i = 0; i < children.Count; i++)
+            {
+                var entry = children[i];
+                var last = i == children.Count - 1;
+                var branch = last ? "└─ " : "├─ ";
+
+                if (entry.Type.Equals("file", StringComparison.OrdinalIgnoreCase))
+                {
+                    output.AppendLine($"{prefix}{branch}{entry.Name}");
+                }
+                else
+                {
+                    output.AppendLine($"{prefix}{branch}{entry.Name}");
+                    var childPrefix = prefix + (last ? "   " : "│  ");
+                    await BuildDirectory($"{path}/{entry.Name}", childPrefix);
+                }
+            }
+        }
     }
 }
 

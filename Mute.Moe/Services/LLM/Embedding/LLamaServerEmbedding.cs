@@ -15,7 +15,7 @@ namespace Mute.Moe.Services.LLM.Embedding;
 /// Embeds text using llama-server directly
 /// </summary>
 public class LLamaServerEmbedding
-    : IEmbeddings
+    : IEmbeddings<float>
 {
     private readonly MultiBackendServiceProvider<LLamaServerEndpoint> _endpoints;
     private readonly HttpClient _http;
@@ -42,14 +42,14 @@ public class LLamaServerEmbedding
     }
 
     /// <inheritdoc />
-    public async Task<EmbeddingResult> Embed(string text, CancellationToken cancellation = default)
+    public async Task<IEmbeddingResult<float>> Embed(string text, CancellationToken cancellation = default)
     {
         var results = await Embed([ text ], cancellation);
         return results[0];
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<EmbeddingResult>> Embed(IReadOnlyList<string> text, CancellationToken cancellation = default)
+    public async Task<IReadOnlyList<IEmbeddingResult<float>>> Embed(IReadOnlyList<string> text, CancellationToken cancellation = default)
     {
         // Get an endpoint
         using var endpoint = await _endpoints.Acquire([ Model ], cancellation);
@@ -79,8 +79,17 @@ public class LLamaServerEmbedding
         var result = await JsonSerializer.DeserializeAsync<EmbeddingResponse>(stream, cancellationToken: cancellation)
                   ?? throw new InvalidDataException("Invalid embedding response");
 
-        var results = result.Data.Select(a => new EmbeddingResult(text[a.Index], result.Model, a.Embedding)).ToArray();
-        return results;
+        return result
+            .Data
+            .Select(a => new FloatEmbeddingResult(text[a.Index], result.Model, a.Embedding))
+            .Cast<IEmbeddingResult<float>>()
+            .ToArray();
+    }
+
+    /// <inheritdoc />
+    public IEmbeddingResult<float> Create(string input, Memory<float> elements)
+    {
+        return new FloatEmbeddingResult(input, Model, elements);
     }
 
     [UsedImplicitly]

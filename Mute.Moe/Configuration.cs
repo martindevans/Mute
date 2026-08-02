@@ -221,6 +221,7 @@ public class LLMConfig
     [UsedImplicitly] public required AgentRerankModel RerankingModel;
 
     [UsedImplicitly] public required string ChatSystemPromptPath;
+    [UsedImplicitly] public required string FileMemoryPromptPath;
 
     public class LLamaServerEndpoint
     {

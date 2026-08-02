@@ -3,7 +3,6 @@ using HandyAgentFramework.Embedding;
 using HandyAgentFramework.Embedding.SqliteCache;
 using HandyAgentFramework.FunctionCall.Middleware.ToolSearch;
 using Mute.Moe.Services.LLM.Rerank;
-using System.Numerics.Tensors;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -13,14 +12,14 @@ namespace Mute.Moe.Tools.Index;
 /// <summary>
 /// Represents a toolset that uses semantic search capabilities to find tools.
 /// </summary>
-public partial class SemanticSearchToolSet
-    : IToolSet
+public partial class SemanticSearchToolSet<TEmbeddingElement>
+    : IToolSet where TEmbeddingElement : struct
 {
     private const float TopP = 0.5f;
 
-    private readonly ILogger<SemanticSearchToolSet> _logger;
+    private readonly ILogger<SemanticSearchToolSet<TEmbeddingElement>> _logger;
 
-    private readonly IEmbeddings _embeddings;
+    private readonly IEmbeddings<TEmbeddingElement> _embeddings;
     private readonly IReranking _reranking;
 
     private readonly Task<State> _state;
@@ -30,14 +29,14 @@ public partial class SemanticSearchToolSet
     private readonly Dictionary<string, ToolDefinition[]> _groups;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SemanticSearchToolSet"/> class.
+    /// Initializes a new instance of the <see cref="SemanticSearchToolSet{byte}"/> class.
     /// </summary>
     /// <param name="embeddings">The embeddings provider used for semantic search operations.</param>
     /// <param name="reranking"></param>
     /// <param name="db">The SQLite embedding cache connection provider used to manage cached embeddings.</param>
     /// <param name="tools"></param>
     /// <param name="logger"></param>
-    public SemanticSearchToolSet(IEmbeddings embeddings, IReranking reranking, ISqliteEmbeddingCacheConnectionProvider db, IToolProvider[] tools, ILogger<SemanticSearchToolSet> logger)
+    public SemanticSearchToolSet(IEmbeddings<TEmbeddingElement> embeddings, IReranking reranking, ISqliteEmbeddingCacheConnectionProvider db, IToolProvider[] tools, ILogger<SemanticSearchToolSet<TEmbeddingElement>> logger)
     {
         _embeddings = embeddings;
         _reranking = reranking;
@@ -47,17 +46,17 @@ public partial class SemanticSearchToolSet
         _allTools = tools.SelectMany(a => a.Tools).ToDictionary(a => a.Function.Name.ToLowerInvariant(), a => a);
         _groups = tools.SelectMany(a => a.Tools).GroupBy(a => a.Group).ToDictionary(a => a.Key, a => a.ToArray());
 
-        _state = Task.Run(() => Init(new SqliteEmbeddingCache(embeddings, db), _allTools.Values.ToArray()));
+        _state = Task.Run(() => Init(new SqliteEmbeddingCache<TEmbeddingElement>(embeddings, db), _allTools.Values.ToArray()));
     }
     
-    private static async Task<State> Init(IEmbeddings embedder, IReadOnlyList<ToolDefinition> tools)
+    private static async Task<State> Init(IEmbeddings<TEmbeddingElement> embedder, IReadOnlyList<ToolDefinition> tools)
     {
         var descriptions = tools.Select(a => a.Function.Description).ToArray();
         var embeddings = await embedder.Embed(descriptions);
 
-        var dict = new Dictionary<ToolDefinition, ReadOnlyMemory<float>>();
+        var dict = new Dictionary<ToolDefinition, IEmbeddingResult<TEmbeddingElement>>();
         for (var i = 0; i < tools.Count; i++)
-            dict[tools[i]] = embeddings[i].Result;
+            dict[tools[i]] = embeddings[i];
 
         return new State(dict);
     }
@@ -89,8 +88,8 @@ public partial class SemanticSearchToolSet
             let tool = item.Value
             where tool != null
             let toolEmbedding = state.GetToolEmbedding(tool)
-            where toolEmbedding is { IsEmpty: false }
-            let dot = TensorPrimitives.CosineSimilarity(queryEmbed.Result.Span, toolEmbedding.Value.Span)
+            where toolEmbedding is not null
+            let dot = queryEmbed.Similarity(toolEmbedding)
             where !float.IsNaN(dot) && !float.IsInfinity(dot)
             orderby dot descending
             select new IToolSet.SearchResult(name, dot, tool)
@@ -171,14 +170,14 @@ public partial class SemanticSearchToolSet
 
     private class State
     {
-        private IReadOnlyDictionary<ToolDefinition, ReadOnlyMemory<float>> _toolEmbeddings { get; set; }
+        private readonly Dictionary<ToolDefinition, IEmbeddingResult<TEmbeddingElement>> _toolEmbeddings;
 
-        public State(IReadOnlyDictionary<ToolDefinition, ReadOnlyMemory<float>> toolEmbeddings)
+        public State(Dictionary<ToolDefinition, IEmbeddingResult<TEmbeddingElement>> toolEmbeddings)
         {
             _toolEmbeddings = toolEmbeddings;
         }
 
-        public ReadOnlyMemory<float>? GetToolEmbedding(ToolDefinition tool)
+        public IEmbeddingResult<TEmbeddingElement>? GetToolEmbedding(ToolDefinition tool)
         {
             return _toolEmbeddings.GetValueOrDefault(tool);
         }
