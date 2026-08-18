@@ -196,7 +196,7 @@ public class Pictures
         var firstImage = args.Message.Attachments.FirstOrDefault(a => a.ContentType.StartsWith("image/"));
         if (firstImage != null)
         {
-            var image = await SixLabors.ImageSharp.Image.LoadAsync(await _http.GetStreamAsync(firstImage.Url));
+            using var image = await SixLabors.ImageSharp.Image.LoadAsync(await _http.GetStreamAsync(firstImage.Url));
             var prompt = image.GetGenerationPrompt();
             if (prompt != null)
                 (positive, negative) = prompt.Value;

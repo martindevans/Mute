@@ -109,7 +109,7 @@ public class ChatAgentFactory
             .Build();
 
 #pragma warning disable MAAI001 // (experimental features)
-        var threshold1 = CompactionTriggers.TokensExceed((int)(contextSize * 0.40f));
+        var threshold1 = CompactionTriggers.TokensExceed((int)(contextSize * 0.30f));
         var threshold2 = CompactionTriggers.TokensExceed((int)(contextSize * 0.70f));
         var threshold3 = CompactionTriggers.TokensExceed((int)(contextSize * 0.90f));
 
@@ -118,7 +118,7 @@ public class ChatAgentFactory
 
             // 1. Gentle: collapse old tool-call groups into short summaries
             new ToolResultCompactionStrategy(threshold1, minimumPreservedGroups:8),
-
+            
             // 2. Moderate: use an LLM to summarize older conversation spans into a concise message
             new SummarizationCompactionStrategy(summaryClient, threshold2),
 

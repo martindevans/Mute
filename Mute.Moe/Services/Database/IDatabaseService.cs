@@ -1,6 +1,5 @@
 ﻿using System.Data;
 
-
 namespace Mute.Moe.Services.Database;
 
 /// <summary>
