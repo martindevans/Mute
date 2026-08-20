@@ -100,7 +100,7 @@ public class WhisperSpeechToText
 
         while (true)
         {
-            var read = samples.Read(frame, 0, frame.Length);
+            var read = samples.Read(frame.AsSpan());
             yield return new ArraySegment<float>(frame, 0, read);
 
             if (read != frame.Length)

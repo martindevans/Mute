@@ -88,10 +88,10 @@ public class SimpleQueueChannel<T>
     }
 
     /// <inheritdoc />
-    public int Read(float[] buffer, int offset, int count)
+    public int Read(Span<float> buffer)
     {
         //Clear the buffer before reading into it
-        Array.Clear(buffer, offset, count);
+        buffer.Clear();
 
         //Skip track if requested
         if (_skip)
@@ -108,19 +108,19 @@ public class SimpleQueueChannel<T>
 
         //If we're not playing anything, just return a buffer of zeroes
         if (!_playing.HasValue)
-            return count;
+            return buffer.Length;
             
         //Read audio from source
-        var read = _playing.Value.Samples.Read(buffer, offset, count);
+        var read = _playing.Value.Samples.Read(buffer);
 
         //If the entire buffer was not filled this this item is complete, remove it from _playing. Next time we'll start the next item in the queue
-        if (read < count)
+        if (read < buffer.Length)
         {
             _playing.Value.Dispose();
             _playing = default;
         }
 
-        return count;
+        return buffer.Length;
     }
 
     /// <inheritdoc />

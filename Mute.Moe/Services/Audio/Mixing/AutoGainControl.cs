@@ -56,15 +56,15 @@ public class AutoGainControl
     }
 
     /// <inheritdoc />
-    public int Read(float[] buffer, int offset, int count)
+    public int Read(Span<float> buffer)
     {
         // Read requested data from upstream
-        var read = _upstream.Read(buffer, offset, count);
+        var read = _upstream.Read(buffer);
 
         // Write RMS of these samples into RMS buffer
         for (var i = 0; i < read; i++)
         {
-            var v = buffer[offset + i];
+            var v = buffer[i];
             _rmsBuffer[_rmsWriteHead++ % _rmsBuffer.Length] = v * v;
         }
 

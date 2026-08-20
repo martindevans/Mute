@@ -13,12 +13,12 @@ public partial class SoftClipSampleProvider(ISampleProvider upstream)
     public WaveFormat WaveFormat => upstream.WaveFormat;
 
     /// <inheritdoc />
-    public int Read(float[] buffer, int offset, int count)
+    public int Read(Span<float> buffer)
     {
-        var read = upstream.Read(buffer, offset, count);
+        var read = upstream.Read(buffer);
 
-        var span = buffer.AsSpan(offset, read);
-        
+        var span = buffer.Slice(0, read);
+
         // y = tanh(1.15 * x)
         TensorPrimitives.Multiply(span, 1.15f, span);
         TensorPrimitives.Tanh(span, span);

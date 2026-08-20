@@ -177,7 +177,7 @@ public class ThreadedGuildVoice
                 while (sampleCount > 0)
                 {
                     // Read output from mixer
-                    var mixed = waveSource.Read(buffer, 0, buffer.Length);
+                    var mixed = waveSource.Read(buffer.AsSpan());
                     sampleCount -= mixed;
 
                     // Send the mixed audio buffer to discord

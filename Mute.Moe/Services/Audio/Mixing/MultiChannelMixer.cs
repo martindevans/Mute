@@ -39,9 +39,9 @@ public class MultiChannelMixer
         _output = _inputs.ToMono().AutoGainControl().Resample(OutputFormat.SampleRate).SoftClip().ToStereo().ToWaveProvider16();
     }
 
-    int IWaveProvider.Read(byte[] buffer, int offset, int count)
+    int IWaveProvider.Read(Span<byte> buffer)
     {
-        return _output.Read(buffer, offset, count);
+        return _output.Read(buffer);
     }
 
     /// <summary>

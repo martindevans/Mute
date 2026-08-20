@@ -125,17 +125,17 @@ public class MobileAudioMessageTranscriptionPreprocessor
 
         private int _read;
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
-            for (var i = 0; i < count; i++)
+            for (var i = 0; i < buffer.Length; i++)
             {
-                buffer[i + offset] = _samples[_read++];
+                buffer[i] = _samples[_read++];
 
                 if (_read >= _samples.Count)
                     return i;
             }
 
-            return count;
+            return buffer.Length;
         }
     }
 }

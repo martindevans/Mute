@@ -39,9 +39,9 @@ public sealed class OpenAudioClipSamplesWrapper<T>
     }
 
     /// <inheritdoc />
-    public int Read(float[] buffer, int offset, int count)
+    public int Read(Span<float> buffer)
     {
-        return _upstream.Read(buffer, offset, count);
+        return _upstream.Read(buffer);
     }
 
     /// <inheritdoc />
@@ -82,9 +82,9 @@ public sealed class OpenAudioClipWaveWrapper<T>
     }
 
     /// <inheritdoc />
-    public int Read(float[] buffer, int offset, int count)
+    public int Read(Span<float> buffer)
     {
-        return _samples.Read(buffer, offset, count);
+        return _samples.Read(buffer);
     }
 
     /// <inheritdoc />

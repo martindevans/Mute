@@ -1,4 +1,5 @@
-﻿using Discord.Audio.Streams;
+﻿using System.Buffers;
+using Discord.Audio.Streams;
 using NAudio.Wave;
 
 namespace Mute.Moe.Services.Audio.Mixing.Extensions;
@@ -24,12 +25,21 @@ public static class InputStreamExtensions
     {
         public WaveFormat WaveFormat => _format;
 
-        public int Read(byte[] buffer, int offset, int count)
+        public int Read(Span<byte> buffer)
         {
-            count = Math.Min(1024, count);
+            var count = Math.Min(1024, buffer.Length);
 
-            var r = _input.Read(buffer, offset, count);
-            return r;
+            var rented = ArrayPool<byte>.Shared.Rent(count);
+            try
+            {
+                var r = _input.Read(rented, 0, count);
+                rented.AsSpan(0, r).CopyTo(buffer);
+                return r;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(rented);
+            }
         }
     }
 }
