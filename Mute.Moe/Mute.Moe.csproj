@@ -65,7 +65,7 @@
     <PackageReference Include="HandyAgentFramework.SqliteSessionStore" Version="3.0.0" />
     <PackageReference Include="Humanizer.Core" Version="3.0.10" />
     <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" />
-    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.17.0" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.18.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.11" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
@@ -78,7 +78,7 @@
     <PackageReference Include="MultiBackendServiceProvider" Version="3.1.0" />
     <PackageReference Include="Mute.Anilist" Version="2.4.0" />
     <PackageReference Include="Mute.BraveSearch" Version="3.0.0" />
-    <PackageReference Include="NAudio" Version="2.3.0" />
+    <PackageReference Include="NAudio" Version="3.0.1" />
     <PackageReference Include="NSec.Cryptography" Version="26.4.0" />
     <PackageReference Include="OpenTelemetry" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Api.ProviderBuilderExtensions" Version="1.17.0" />

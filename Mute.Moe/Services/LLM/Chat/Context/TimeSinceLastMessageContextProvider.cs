@@ -36,7 +36,7 @@ public class TimeSinceLastMessageContextProvider(TimeSpan Threshold)
 
         // Inject a fake tool call, informing the AI that some time has passed
         var guid = Guid.NewGuid().ToString();
-        return new AIContext()
+        return new AIContext
         {
             Messages =
             [
