@@ -71,13 +71,13 @@ public class LlamaServerModelCapabilityEndpointFilter
             new Uri(new Uri(url), path)
         );
 
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
+        if (!string.IsNullOrWhiteSpace(key))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
 
         using var response = await _http.SendAsync(request);
 
         if (!response.IsSuccessStatusCode)
             return default;
-        response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadFromJsonAsync<T>();
     }
