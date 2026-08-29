@@ -1,5 +1,6 @@
 ﻿using FluidCaching;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -53,7 +54,7 @@ public class LlamaServerModelCapabilityEndpointFilter
 
     private async Task<CacheItem> GetBackendModelList(LLamaServerEndpoint endpoint)
     {
-        var models = await _http.GetFromJsonAsync<ModelsList>(new Uri(new(endpoint.Url), "models"));
+        var models = await GetFromJsonAsync<ModelsList>(endpoint.Url, endpoint.Key, "models");
         if (models == null)
             return new CacheItem(endpoint.ID, [ ]);
 
@@ -61,6 +62,24 @@ public class LlamaServerModelCapabilityEndpointFilter
             endpoint.ID,
             models.Models.Select(a => a.ID).ToHashSet()
         );
+    }
+
+    private async Task<T?> GetFromJsonAsync<T>(string url, string key, string path)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            new Uri(new Uri(url), path)
+        );
+
+        if (!string.IsNullOrWhiteSpace(key))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
+
+        using var response = await _http.SendAsync(request);
+
+        if (!response.IsSuccessStatusCode)
+            return default;
+
+        return await response.Content.ReadFromJsonAsync<T>();
     }
 
     private record CacheItem(string Id, HashSet<string> Models);

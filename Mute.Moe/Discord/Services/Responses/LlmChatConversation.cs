@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.LLM.Chat;
 
 namespace Mute.Moe.Discord.Services.Responses;
@@ -20,6 +21,7 @@ public class LlmChatConversationFactory
 {
     private readonly IDiscordClient _discord;
     private readonly ChatAgentFactory _agentFactory;
+    private readonly AgentSummaryModel _summaryModel;
     private readonly ISessionStore _chatStorage;
     private readonly IHttpClientFactory _httpFactory;
     private readonly ILogger<LlmChatConversation> _logger;
@@ -33,6 +35,7 @@ public class LlmChatConversationFactory
     /// <param name="agentFactory">
     /// The factory responsible for creating chat agents.
     /// </param>
+    /// <param name="summaryModel">Client to use for summarisation</param>
     /// <param name="chatStorage">
     /// The session store used for persisting chat data.
     /// </param>
@@ -45,6 +48,7 @@ public class LlmChatConversationFactory
     public LlmChatConversationFactory(
         IDiscordClient discord,
         ChatAgentFactory agentFactory,
+        AgentSummaryModel summaryModel,
         ISessionStore chatStorage,
         IHttpClientFactory httpFactory,
         ILogger<LlmChatConversation> logger
@@ -52,6 +56,7 @@ public class LlmChatConversationFactory
     {
         _discord = discord;
         _agentFactory = agentFactory;
+        _summaryModel = summaryModel;
         _chatStorage = chatStorage;
         _httpFactory = httpFactory;
         _logger = logger;
@@ -73,6 +78,8 @@ public class LlmChatConversationFactory
 
         return new LlmChatConversation(
             await _agentFactory.Create(template, channel.GetAgentMemoryContextId()),
+            _agentFactory.ChatClient,
+            _summaryModel,
             _agentFactory.ContextSize,
             channel,
             _discord,
@@ -98,6 +105,7 @@ public partial class LlmChatConversation
     private readonly string _selfUsername;
 
     private readonly AIAgent _agent;
+    private readonly IChatClient _summaryClient;
     private readonly int _contextSize;
     private readonly ISessionStore _sessionStorage;
     private readonly IHttpClientFactory _httpClient;
@@ -137,6 +145,8 @@ public partial class LlmChatConversation
     /// Create a new <see cref="LlmChatConversation"/> for the given channel.
     /// </summary>
     /// <param name="agent"></param>
+    /// <param name="chatClient"></param>
+    /// <param name="summaryModel"></param>
     /// <param name="contextSize"></param>
     /// <param name="channel"></param>
     /// <param name="client"></param>
@@ -145,6 +155,8 @@ public partial class LlmChatConversation
     /// <param name="logger"></param>
     public LlmChatConversation(
         AIAgent agent,
+        IChatClient chatClient,
+        AgentSummaryModel summaryModel,
         int contextSize,
         IMessageChannel channel,
         IDiscordClient client,
@@ -170,6 +182,10 @@ public partial class LlmChatConversation
 
         ContextStatistics = new(contextSize);
 
+        _summaryClient = chatClient
+            .AsBuilder()
+            .ConfigureOptions(options => { options.ModelId = summaryModel.Name; })
+            .Build();
 
         Task.Run(async () => await MessageConsumer());
     }
@@ -207,6 +223,19 @@ public partial class LlmChatConversation
                         {
                             session.Session.SetInMemoryChatHistory([]);
                             ContextStatistics = new ContextStats(_contextSize);
+                            break;
+                        }
+
+                        case BaseProcessEvent.Summarize:
+                        {
+                            if (session.Session.TryGetInMemoryChatHistory(out var messages))
+                            {
+#pragma warning disable MEAI001
+                                var summarizer = new SummarizingChatReducer(_summaryClient, 2, default);
+#pragma warning restore MEAI001
+                                var summary = await summarizer.ReduceAsync(messages, _stopper.Token).ToAsyncEnumerable().ToListAsync();
+                                session.Session.SetInMemoryChatHistory(summary);
+                            }
                             break;
                         }
                     }
@@ -342,6 +371,17 @@ public partial class LlmChatConversation
         await evt.Completed;
     }
 
+    /// <summary>
+    /// Force history summarisation
+    /// </summary>
+    /// <returns></returns>
+    public async Task Summarize()
+    {
+        var evt = new BaseProcessEvent.Summarize();
+        await _messages.Writer.WriteAsync(evt);
+        await evt.Completed;
+    }
+
     private abstract record BaseProcessEvent
     {
         private readonly TaskCompletionSource _completionSource = new();
@@ -356,6 +396,8 @@ public partial class LlmChatConversation
         public sealed record Message(IUser User, string Content, string[] AttachedImageUrls) : BaseProcessEvent;
 
         public sealed record Clear : BaseProcessEvent;
+
+        public sealed record Summarize : BaseProcessEvent;
     }
     #endregion
 

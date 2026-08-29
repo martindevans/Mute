@@ -1,9 +1,9 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using HandyAgentFramework.Compaction;
+﻿using HandyAgentFramework.Compaction;
 using Humanizer;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.LLM.Chat.Context;
 
@@ -40,16 +40,27 @@ public class TimeSinceLastMessageContextProvider(TimeSpan Threshold)
         {
             Messages =
             [
-                new ChatMessage(ChatRole.Tool, [
-                    new FunctionCallContent(guid, "get_time_since_last_message"),
-                    new FunctionResultContent(guid, new { Elapsed = elapsed.Humanize() })
-                ]) {
+                new ChatMessage(ChatRole.Assistant, [
+                    new FunctionCallContent(guid, "get_time_since_last_message", new Dictionary<string, object?>())
+                ])
+                {
                     AdditionalProperties = new()
                     {
                         { EphemeralMessageCompaction.IsEphemeralMarker, true },
                         { EphemeralMessageCompaction.EphemeralGroupId, nameof(TimeSinceLastMessageContextProvider) }
                     }
-                }
+                },
+
+                new ChatMessage(ChatRole.Tool, [
+                    new FunctionResultContent(guid, new { Elapsed = elapsed.Humanize() })
+                ])
+                {
+                    AdditionalProperties = new()
+                    {
+                        { EphemeralMessageCompaction.IsEphemeralMarker, true },
+                        { EphemeralMessageCompaction.EphemeralGroupId, nameof(TimeSinceLastMessageContextProvider) }
+                    }
+                },
             ]
         };
     }
