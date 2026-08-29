@@ -23,7 +23,6 @@ public class ChatAgentFactory
     private readonly AgentChatModel _chatModel;
     private readonly AgentSummaryModel _summaryModel;
     private readonly ChatConversationSystemPrompt _prompt;
-    private readonly IChatClient _client;
     private readonly IToolSet _tools;
     private readonly IImageAnalyser _analyser;
     private readonly IDiscordClient _discordClient;
@@ -35,6 +34,11 @@ public class ChatAgentFactory
     /// Context size of this agent
     /// </summary>
     public int ContextSize => _chatModel.ContextSize;
+
+    /// <summary>
+    /// The chat client in use by this factory
+    /// </summary>
+    public IChatClient ChatClient { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ChatAgentFactory"/> class.
@@ -65,7 +69,7 @@ public class ChatAgentFactory
         _chatModel = chatModel;
         _summaryModel = summaryModel;
         _prompt = prompt;
-        _client = client;
+        ChatClient = client;
         _tools = tools;
         _analyser = analyser;
         _discordClient = discordClient;
@@ -100,7 +104,7 @@ public class ChatAgentFactory
             ModelId = _chatModel.Name,
         };
 
-        var summaryClient = _client
+        var summaryClient = ChatClient
             .AsBuilder()
             .ConfigureOptions(options =>
             {
@@ -109,11 +113,13 @@ public class ChatAgentFactory
             .Build();
 
 #pragma warning disable MAAI001 // (experimental features)
-        var threshold1 = CompactionTriggers.TokensExceed((int)(contextSize * 0.30f));
-        var threshold2 = CompactionTriggers.TokensExceed((int)(contextSize * 0.70f));
-        var threshold3 = CompactionTriggers.TokensExceed((int)(contextSize * 0.90f));
+        var threshold1  = CompactionTriggers.TokensExceed((int)(contextSize * 0.30f));
+        var threshold2  = CompactionTriggers.TokensExceed((int)(contextSize * 0.70f));
+        var threshold3  = CompactionTriggers.TokensExceed((int)(contextSize * 0.90f));
+        var threshold3b = CompactionTriggers.TokensBelow ((int)(contextSize * 0.69f));
 
         var reducer = new PipelineCompactionStrategy(
+            // 0. Always: remove ephemeral messages
             new EphemeralMessageCompaction(),
 
             // 1. Gentle: collapse old tool-call groups into short summaries
@@ -123,7 +129,7 @@ public class ChatAgentFactory
             new SummarizationCompactionStrategy(summaryClient, threshold2),
 
             // 4. Emergency: drop oldest groups until under the token budget
-            new TruncationCompactionStrategy(threshold3)
+            new TruncationCompactionStrategy(threshold3, minimumPreservedGroups:4, target: threshold3b)
 #pragma warning restore MAAI001
         ).AsChatReducer();
 
@@ -152,7 +158,7 @@ public class ChatAgentFactory
             context.Add(files);
         }
 
-        var agent = _client
+        var agent = ChatClient
                    .AsAIAgent(
                         new ChatClientAgentOptions
                         {

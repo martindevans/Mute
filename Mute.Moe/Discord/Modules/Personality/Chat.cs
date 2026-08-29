@@ -32,8 +32,9 @@ public partial class Chat(ConversationalResponseService _conversations, ISqliteF
 
         // Action buttons
         var buttonRow = new ActionRowBuilder();
+        buttonRow.AddComponent(ButtonBuilder.CreatePrimaryButton("Summarise", ChatInteractions.InteractionIdSummarizeConversationState));
+        buttonRow.AddComponent(ButtonBuilder.CreateSuccessButton("Refresh", ChatInteractions.GetInteractionRefreshId(message)));
         buttonRow.AddComponent(ButtonBuilder.CreateDangerButton("Destroy", ChatInteractions.InteractionIdClearConversationState));
-        buttonRow.AddComponent(ButtonBuilder.CreateSecondaryButton("Refresh", ChatInteractions.GetInteractionRefreshId(message)));
         var components = new ComponentBuilder();
         components.AddRow(buttonRow);
 
