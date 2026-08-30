@@ -23,7 +23,7 @@ public interface IChatArchiveHoles
     Task<ChatArchiveHole?> Read();
 
     /// <summary>
-    /// Delete the hole with the give ID
+    /// Delete the hole with the given ID
     /// </summary>
     /// <param name="id"></param>
     /// <returns></returns>

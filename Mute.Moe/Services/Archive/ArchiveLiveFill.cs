@@ -30,9 +30,11 @@ public sealed class ArchiveLiveFill
     }
 
     /// <inheritdoc />
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
         _discord.MessageReceived += OnMessageReceived;
+
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />

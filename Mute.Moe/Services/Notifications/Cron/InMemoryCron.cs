@@ -67,6 +67,11 @@ public sealed class InMemoryCron
         {
             await act();
         }
+        catch (OperationCanceledException)
+        {
+            // Rethrow cancellation to terminate outer loop
+            throw;
+        }
         catch (Exception outerEx)
         {
             _logger.LogError(outerEx, "Cron job failed, retrying in {delay}", RetryDelay);
@@ -76,6 +81,11 @@ public sealed class InMemoryCron
             try
             {
                 await act();
+            }
+            catch (OperationCanceledException)
+            {
+                // Rethrow cancellation to terminate outer loop
+                throw;
             }
             catch (Exception innerEx)
             {
