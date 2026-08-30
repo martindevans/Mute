@@ -11,6 +11,7 @@ namespace Mute.Moe.Services.Archive
     /// <summary>
     /// Tries to fill in holes in the message archive
     /// </summary>
+    [UsedImplicitly]
     public sealed class ArchiveCatchup
         : IHostedService
     {
@@ -50,8 +51,8 @@ namespace Mute.Moe.Services.Archive
 
             // Process holes with a randomised interval to prevent flooding the discord API
             _ = _cron.RandomInterval(
-                TimeSpan.FromSeconds(10),
                 TimeSpan.FromSeconds(30),
+                TimeSpan.FromSeconds(300),
                 ProcessHole,
                 _cts.Token
             );
