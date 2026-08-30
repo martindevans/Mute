@@ -24,9 +24,13 @@ public class ThinkingReplyAttribute(string emote = EmojiLookup.Thinking)
     private class EndExecute(IMessage message, IEmote emote, IUser self)
         : IEndExecute
     {
-        Task IEndExecute.EndExecute()
+        async Task IEndExecute.EndExecute()
         {
-            return message.RemoveReactionAsync(emote, self);
+            var elapsed = DateTimeOffset.UtcNow - message.Timestamp;
+            if (elapsed < TimeSpan.FromMilliseconds(500))
+                await Task.Delay(TimeSpan.FromMilliseconds(500));
+
+            await message.RemoveReactionAsync(emote, self);
         }
     }
 }
