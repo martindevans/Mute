@@ -57,4 +57,23 @@ public class DatabaseChatArchive
 
         return rows > 0;
     }
+
+    /// <inheritdoc />
+    public int Count(ulong context, ulong? channel = null, ulong? senderId = null)
+    {
+        using var connection = _database.GetConnection();
+
+        return connection.ExecuteScalar<int>(
+            "SELECT COUNT(*) FROM `ArchiveMessages` " +
+            "WHERE `Context` = @Context " +
+            "AND (`Channel` = @Channel OR @Channel IS NULL) " +
+            "AND (`Sender` = @SenderId OR @SenderId IS NULL)",
+            new
+            {
+                Context = context.ToString(),
+                Channel = channel?.ToString(),
+                SenderId = senderId?.ToString()
+            }
+        );
+    }
 }

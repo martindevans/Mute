@@ -30,6 +30,13 @@ public interface IChatArchiveHoles
     Task Delete(long id);
 
     /// <summary>
+    /// Get all "holes" in the database, optionally filtered by channel
+    /// </summary>
+    /// <param name="channel"></param>
+    /// <returns></returns>
+    Task<IReadOnlyList<ChatArchiveHole>> List(ulong? channel);
+
+    /// <summary>
     /// Get the number of "holes" in the database. Optionally filtered by channel
     /// </summary>
     /// <returns></returns>

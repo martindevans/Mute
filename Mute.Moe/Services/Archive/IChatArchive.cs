@@ -20,6 +20,15 @@ public interface IChatArchive
     /// <param name="mention">The ID of a message that this message mentions (or null)</param>
     /// <returns>true if record was inserted, false if a record already existed with this message ID</returns>
     Task<bool> Insert(ulong context, ulong channel, ulong messageId, ulong senderId, DateTimeOffset instant, string content, ulong? mention);
+
+    /// <summary>
+    /// Get the number of archived messages in the given context, optionally filtered by channel and sender
+    /// </summary>
+    /// <param name="context">LLM memory context of the messages</param>
+    /// <param name="channel">Channel ID to filter by (or null for all channels)</param>
+    /// <param name="senderId">Discord ID of the sender to filter by (or null for all senders)</param>
+    /// <returns></returns>
+    int Count(ulong context, ulong? channel = null, ulong? senderId = null);
 }
 
 /// <summary>

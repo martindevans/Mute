@@ -162,6 +162,62 @@ public class DatabaseChatArchiveHolesTests
     }
 
     [TestMethod]
+    public async Task List_ReturnsEmpty_WhenNoHoles()
+    {
+        var db = new SqliteInMemoryDatabase();
+        var holes = new DatabaseChatArchiveHoles(db);
+
+        var result = await holes.List(null);
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public async Task List_ReturnsAllHoles_WithoutChannelFilter()
+    {
+        var db = new SqliteInMemoryDatabase();
+        var holes = new DatabaseChatArchiveHoles(db);
+
+        await holes.Create(111, 1, true);
+        await holes.Create(333, 2, false);
+
+        var result = await holes.List(null);
+
+        Assert.AreEqual(2, result.Count);
+        Assert.IsTrue(result.Any(h => h.ChannelId == 111 && h.StartMessageId == 1 && h.Forward));
+        Assert.IsTrue(result.Any(h => h.ChannelId == 333 && h.StartMessageId == 2 && !h.Forward));
+    }
+
+    [TestMethod]
+    public async Task List_ReturnsOnlyHolesForChannel_WithChannelFilter()
+    {
+        var db = new SqliteInMemoryDatabase();
+        var holes = new DatabaseChatArchiveHoles(db);
+
+        await holes.Create(111, 1, true);
+        await holes.Create(111, 2, false);
+        await holes.Create(333, 3, true);
+
+        var result = await holes.List(111);
+
+        Assert.AreEqual(2, result.Count);
+        Assert.IsTrue(result.All(h => h.ChannelId == 111));
+    }
+
+    [TestMethod]
+    public async Task List_ReturnsEmpty_ForUnknownChannel()
+    {
+        var db = new SqliteInMemoryDatabase();
+        var holes = new DatabaseChatArchiveHoles(db);
+
+        await holes.Create(111, 1, true);
+
+        var result = await holes.List(999);
+
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
     public void Count_ReturnsZero_WhenNoHoles()
     {
         var db = new SqliteInMemoryDatabase();

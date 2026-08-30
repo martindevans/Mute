@@ -54,11 +54,11 @@ public class DatabaseChatArchiveHoles
     {
         using var connection = _database.GetConnection();
 
-        var result = await connection.QueryFirstOrDefaultAsync<ArchiveHole>("SELECT `rowid` as Id, `ChannelId`, `StartMessageId`, `Forward` FROM `ArchiveHoles` ORDER BY RANDOM() LIMIT 1");
+        var result = await connection.QueryFirstOrDefaultAsync<ArchiveHole>(
+            "SELECT `rowid` as Id, `ChannelId`, `StartMessageId`, `Forward` FROM `ArchiveHoles` ORDER BY RANDOM() LIMIT 1"
+        );
 
-        return result == null
-             ? null
-             : new ChatArchiveHole(result.Id, ulong.Parse(result.ChannelId), ulong.Parse(result.StartMessageId), Convert.ToBoolean(result.Forward));
+        return result?.ToChatArchiveHole();
     }
 
     /// <inheritdoc />
@@ -75,6 +75,29 @@ public class DatabaseChatArchiveHoles
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<ChatArchiveHole>> List(ulong? channel)
+    {
+        using var connection = _database.GetConnection();
+
+        var rows = await connection.QueryAsync<ArchiveHole>(
+            """
+            SELECT `rowid` as Id, `ChannelId`, `StartMessageId`, `Forward`
+            FROM `ArchiveHoles`
+            WHERE `ChannelId` = @ChannelId OR @ChannelId IS NULL
+            ORDER BY `ChannelId`, `StartMessageId`
+            """,
+            new
+            {
+                ChannelId = channel?.ToString()
+            }
+        );
+
+        return rows
+            .Select(r => r.ToChatArchiveHole())
+            .ToArray();
+    }
+
+    /// <inheritdoc />
     public int Count(ulong? channel)
     {
         using var connection = _database.GetConnection();
@@ -87,5 +110,9 @@ public class DatabaseChatArchiveHoles
               );
     }
 
-    private record ArchiveHole(long Id, string ChannelId, string StartMessageId, long Forward);
+    private record ArchiveHole(long Id, string ChannelId, string StartMessageId, long Forward)
+    {
+        public ChatArchiveHole ToChatArchiveHole()
+            => new(Id, ulong.Parse(ChannelId), ulong.Parse(StartMessageId), Convert.ToBoolean(Forward));
+    }
 }
