@@ -123,7 +123,7 @@ public class SqliteInMemoryDatabase
     /// Create new in-memory DB
     /// </summary>
     public SqliteInMemoryDatabase()
-        : base($"Data Source=file:{RandomName()}?mode=memory&cache=shared")
+        : base($"FullUri=file:{RandomName()}?mode=memory&cache=shared")
     {
         // One connection must always be open, to keep the DB alive
         _root = GetConnection();

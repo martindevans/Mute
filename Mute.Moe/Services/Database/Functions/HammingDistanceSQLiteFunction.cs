@@ -21,6 +21,8 @@ public class HammingDistanceSQLiteFunction
             throw new ArgumentException("HAMMING_DISTANCE requires a BLOB argument");
         if (args[1] is not byte[] data2)
             throw new ArgumentException("HAMMING_DISTANCE requires a BLOB argument");
+        if (data1.Length != data2.Length)
+            throw new ArgumentException("HAMMING_DISTANCE requires BLOB arguments of equal length");
 
         return (ulong)TensorPrimitives.HammingBitDistance(data1.AsSpan(), data2.AsSpan());
     }

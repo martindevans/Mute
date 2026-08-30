@@ -63,6 +63,7 @@ using System.IO;
 using System.IO.Abstractions;
 using System.Net.Http;
 using HandyAgentFramework.Embedding.Adapters;
+using Mute.Moe.Services.Archive;
 using Wasmtime;
 using IImageGenerator = Mute.Moe.Services.ImageGen.IImageGenerator;
 
@@ -155,6 +156,11 @@ public record Startup(Configuration Configuration)
         services.AddSingleton<IMacroStorage, DatabaseMacroStorage>();
         services.AddSingleton<IWeather, OpenWeatherMapService>();
         services.AddSingleton<IGeocoding, OpenWeatherMapGeocoding>();
+
+        services.AddSingleton<IChatArchive, DatabaseChatArchive>();
+        services.AddSingleton<IChatArchiveHoles, DatabaseChatArchiveHoles>();
+        services.AddHostedService<ArchiveLiveFill>();
+        services.AddHostedService<ArchiveCatchup>();
 
         services.AddSingleton(new Engine(new Config().WithFuelConsumption(true)));
         services.AddSingleton(services => PythonBuilder.Load(services.GetRequiredService<Engine>(), new DefaultPythonModuleLoader()));

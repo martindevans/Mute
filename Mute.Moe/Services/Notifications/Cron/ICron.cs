@@ -17,4 +17,14 @@ public interface ICron
     /// <param name="ct"></param>
     /// <returns></returns>
     Task Interval(TimeSpan duration, Func<Task> act, int iterations, CancellationToken ct = default);
+    
+    /// <summary>
+    /// Start a new cron job with randomised intervals
+    /// </summary>
+    /// <param name="min"></param>
+    /// <param name="max"></param>
+    /// <param name="act"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    Task RandomInterval(TimeSpan min, TimeSpan max, Func<Task> act, CancellationToken ct = default);
 }

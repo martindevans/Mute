@@ -18,15 +18,24 @@ public class ThinkingReplyAttribute(string emote = EmojiLookup.Thinking)
     {
         context.Message.AddReactionAsync(_emote);
 
-        return new EndExecute(context.Message, _emote, context.Client.CurrentUser);
+        return new EndExecute(context.Message, _emote, context.Client.CurrentUser, DateTime.UtcNow);
     }
 
-    private class EndExecute(IMessage message, IEmote emote, IUser self)
+    private class EndExecute(IMessage message, IEmote emote, IUser self, DateTime start)
         : IEndExecute
     {
-        Task IEndExecute.EndExecute()
+        async Task IEndExecute.EndExecute()
         {
-            return message.RemoveReactionAsync(emote, self);
+            // How much time elapsed time the start
+            var elapsed = DateTime.UtcNow - start;
+
+            // Ensure that we don't try to remove the reaction too quickly. This makes sure we don't
+            // exhaust rate limits for very fast responses
+            var minDelay = TimeSpan.FromMilliseconds(150);
+            if (elapsed < minDelay)
+                await Task.Delay(minDelay - elapsed);
+
+            await message.RemoveReactionAsync(emote, self);
         }
     }
 }
