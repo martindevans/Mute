@@ -14,11 +14,12 @@ public interface IChatArchive
     /// <param name="context">LLM memory context of this message</param>
     /// <param name="channel">Channel ID this message was sent in</param>
     /// <param name="messageId">Discord ID of this message</param>
+    /// <param name="senderId">The Discord ID of the sender</param>
     /// <param name="instant">Instant in time when this message was sent</param>
     /// <param name="content">Text content of the message</param>
     /// <param name="mention">The ID of a message that this message mentions (or null)</param>
     /// <returns>true if record was inserted, false if a record already existed with this message ID</returns>
-    Task<bool> Insert(ulong context, ulong channel, ulong messageId, DateTimeOffset instant, string content, ulong? mention);
+    Task<bool> Insert(ulong context, ulong channel, ulong messageId, ulong senderId, DateTimeOffset instant, string content, ulong? mention);
 }
 
 /// <summary>
@@ -42,6 +43,7 @@ public static class IChatArchiveExtensions
             socketMessage.Channel.GetAgentMemoryContextId(),
             socketMessage.Channel.Id,
             socketMessage.Id,
+            socketMessage.Author.Id,
             socketMessage.CreatedAt,
             socketMessage.Content ?? "",
             reference

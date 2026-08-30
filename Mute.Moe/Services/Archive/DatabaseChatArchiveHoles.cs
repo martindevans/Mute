@@ -43,7 +43,7 @@ public class DatabaseChatArchiveHoles
             new
             {
                 StartMessageId = startMessage.ToString(),
-                ChannelId = channel,
+                ChannelId = channel.ToString(),
                 Forward = forward ? 1 : 0
             }
         );

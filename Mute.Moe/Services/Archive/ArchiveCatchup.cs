@@ -90,6 +90,8 @@ namespace Mute.Moe.Services.Archive
                 {
                     _logger.LogError(ex, "Failed to schedule catchup for channel {channel}", channel.Id);
                 }
+
+                await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken);
             }
         }
 
