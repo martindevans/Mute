@@ -133,7 +133,10 @@ namespace Mute.Moe.Services.Archive
                     // Insert all these messages
                     var anyNew = false;
                     foreach (var message in messages)
+                    {
                         anyNew |= await _archive.Insert(message);
+                        await Task.Delay(TimeSpan.FromMilliseconds(100));
+                    }
 
                     var continuation = hole.Forward
                         ? messages.MaxBy(a => a.CreatedAt)

@@ -42,7 +42,20 @@ public partial class DatabaseReminders
         _logger = logger;
 
         using var connection = _database.GetConnection();
-        connection.Execute("CREATE TABLE IF NOT EXISTS `Reminders2` (`InstantUnix` TEXT NOT NULL, `ChannelId` TEXT NOT NULL, `Prelude` TEXT, `Message` TEXT NOT NULL, `Deleted` BOOLEAN NOT NULL, `UserId` TEXT NOT NULL)");
+        connection.Execute("""
+                           CREATE TABLE IF NOT EXISTS `Reminders2` (
+                               `InstantUnix` TEXT NOT NULL,
+                               `ChannelId` TEXT NOT NULL,
+                               `Prelude` TEXT,
+                               `Message` TEXT NOT NULL,
+                               `Deleted` BOOLEAN NOT NULL,
+                               `UserId` TEXT NOT NULL
+                           )
+                           """
+        );
+        
+        connection.Execute("CREATE INDEX IF NOT EXISTS `Reminders2ByInstant` ON `Reminders2` (`Deleted`, `InstantUnix`)");
+        connection.Execute("CREATE INDEX IF NOT EXISTS `Reminders2ByUser` ON `Reminders2` (`UserId`, `Deleted`, `InstantUnix`)");
     }
 
     /// <inheritdoc />
