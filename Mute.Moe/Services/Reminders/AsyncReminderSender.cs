@@ -54,7 +54,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
                     var next = (await _reminders.Get(count: 1)).FirstOrDefault();
 
                     // Wait for one of these events to happen
-                    var cts = new CancellationTokenSource();
+                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
                     var evt = await await Task.WhenAny(
                         WaitForCreation(cts.Token),
                         WaitForDeletion(cts.Token),

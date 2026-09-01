@@ -14,9 +14,9 @@ public class DiscordLinks
     /// <param name="channel"></param>
     /// <param name="message"></param>
     /// <returns></returns>
-    private static string Message(ulong guild, ulong channel, ulong message)
+    private static string Message(ulong? guild, ulong channel, ulong message)
     {
-        return $"https://discord.com/channels/{guild}/{channel}/{message}";
+        return $"https://discord.com/channels/{guild?.ToString() ?? "@me"}/{channel}/{message}";
     }
 
     /// <summary>
@@ -44,7 +44,7 @@ public class DiscordLinks
             return Message(gc.Guild, gc, message);
 
         // Other non-guild channels ignore the guild part
-        return Message(0, channel.Id, message.Id);
+        return Message(null, channel.Id, message.Id);
     }
 
     /// <summary>

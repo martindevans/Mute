@@ -135,7 +135,7 @@ namespace Mute.Moe.Services.Archive
                     foreach (var message in messages)
                     {
                         anyNew |= await _archive.Insert(message);
-                        await Task.Delay(TimeSpan.FromMilliseconds(100));
+                        await Task.Delay(TimeSpan.FromMilliseconds(100), _cts.Token);
                     }
 
                     var continuation = hole.Forward
