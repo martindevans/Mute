@@ -36,35 +36,67 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
 
     private async Task ThreadEntry(CancellationToken token)
     {
+        var errorCounter = 0;
+
         try
         {
             await Task.Delay(1500, token);
 
             while (!token.IsCancellationRequested)
             {
-                // Get the first unsent reminder
-                // ReSharper disable once RedundantCast
-                var next = (await _reminders.Get(count: 1)).FirstOrDefault();
+                try
+                {
+                    // If we've had recent errors, back off before retrying
+                    if (errorCounter > 0)
+                        await Task.Delay(ErrorDelay(errorCounter), token);
 
-                // Wait for one of these events to happen
-                var cts = new CancellationTokenSource();
-                var evt = await await Task.WhenAny(
-                    WaitForCreation(cts.Token),
-                    WaitForDeletion(cts.Token),
-                    WaitForTimeout(cts.Token, next)
-                );
+                    // Get the first unsent reminder
+                    var next = (await _reminders.Get(count: 1)).FirstOrDefault();
 
-                // cancel all the others
-                await cts.CancelAsync();
+                    // Wait for one of these events to happen
+                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                    var evt = await await Task.WhenAny(
+                        WaitForCreation(cts.Token),
+                        WaitForDeletion(cts.Token),
+                        WaitForTimeout(cts.Token, next)
+                    );
 
-                // Run whichever one completed
-                await evt.Run(ref next);
+                    // cancel all the others
+                    await cts.CancelAsync();
+
+                    // Run whichever one completed
+                    await evt.Run(ref next);
+
+                    // Successful iteration, slowly reset the error counter
+                    errorCounter = Math.Max(0, errorCounter - 1);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    // Transient error, let the loop resume after a backoff
+                    errorCounter += 10;
+                    _logger.LogError(e, "Transient error in {reminder} loop, will retry (error counter: {counter})", nameof(AsyncReminderSender), errorCounter);
+                }
             }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Normal shutdown
         }
         catch (Exception e)
         {
             _logger.LogError(e, $"Exception killed {nameof(AsyncReminderSender)} thread");
         }
+    }
+
+    private static TimeSpan ErrorDelay(int errorCounter)
+    {
+        // Exponential backoff based on the error counter: 2s, 4s, 8s, 16s... capped at 60s
+        var exponent = Math.Clamp(errorCounter / 10, 0, 6);
+        return TimeSpan.FromSeconds(Math.Min(60, 1 << exponent));
     }
 
     private async Task<BaseEventAction> WaitForCreation(CancellationToken ct)
@@ -130,7 +162,8 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
     {
         public override Task Run(ref Reminder? next)
         {
-            _logger.LogInformation("Created reminder: {0}", _reminder.ID);
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("Created reminder: {ID}", _reminder.ID);
 
             if (next == null || _reminder.TriggerTime < next.TriggerTime)
                 next = _reminder;
@@ -144,7 +177,8 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
     {
         public override Task Run(ref Reminder? next)
         {
-            _logger.LogInformation("Deleted reminder: {0}", _id);
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("Deleted reminder: {ID}", _id);
 
             if (_id == next?.ID)
                 next = null;
@@ -157,7 +191,8 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
     {
         public override Task Run(ref Reminder? _)
         {
-            _logger.LogInformation("Sending reminder: {0}", _reminder.ID);
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("Sending reminder: {ID}", _reminder.ID);
 
             return Task.Run(async () =>
             {
@@ -197,7 +232,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
                         }
                         else
                         {
-                            _logger.LogWarning("Failed to send reminder {0}! Channel {1} and user {2} are both null", _reminder.ID, _reminder.ChannelId, _reminder.UserId);
+                            _logger.LogWarning("Failed to send reminder {ID}! Channel {Channel} and user {User} are both null", _reminder.ID, _reminder.ChannelId, _reminder.UserId);
                         }
                     }
 
@@ -205,7 +240,7 @@ public class AsyncReminderSender(IReminders _reminders, DiscordSocketClient _cli
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to send reminder {0}", _reminder.ID);
+                    _logger.LogError(ex, "Failed to send reminder {ID}", _reminder.ID);
                 }
             });
         }
