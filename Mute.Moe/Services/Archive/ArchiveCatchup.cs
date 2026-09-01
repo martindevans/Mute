@@ -52,7 +52,7 @@ namespace Mute.Moe.Services.Archive
             // Process holes with a randomised interval to prevent flooding the discord API
             _ = _cron.RandomInterval(
                 TimeSpan.FromSeconds(30),
-                TimeSpan.FromSeconds(300),
+                TimeSpan.FromSeconds(90),
                 ProcessHole,
                 _cts.Token
             );

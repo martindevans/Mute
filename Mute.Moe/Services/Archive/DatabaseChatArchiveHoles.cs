@@ -54,8 +54,15 @@ public class DatabaseChatArchiveHoles
     {
         using var connection = _database.GetConnection();
 
+        const string RandomSelectSQL = """
+                                       SELECT `rowid` as ID, `ChannelId`, `StartMessageId`, `Forward` FROM ArchiveHoles
+                                       WHERE rowid = (ABS(RANDOM()) % (SELECT MAX(rowid) FROM ArchiveHoles) + 1)
+                                       OR rowid = (SELECT MAX(rowid) FROM ArchiveHoles)
+                                       ORDER BY rowid LIMIT 1;
+                                       """;
+        
         var result = await connection.QueryFirstOrDefaultAsync<ArchiveHole>(
-            "SELECT `rowid` as Id, `ChannelId`, `StartMessageId`, `Forward` FROM `ArchiveHoles` ORDER BY RANDOM() LIMIT 1"
+            RandomSelectSQL
         );
 
         return result?.ToChatArchiveHole();
