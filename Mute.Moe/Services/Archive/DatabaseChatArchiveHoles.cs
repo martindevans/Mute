@@ -56,8 +56,7 @@ public class DatabaseChatArchiveHoles
 
         const string RandomSelectSQL = """
                                        SELECT `rowid` as ID, `ChannelId`, `StartMessageId`, `Forward` FROM ArchiveHoles
-                                       WHERE rowid = (ABS(RANDOM()) % (SELECT MAX(rowid) FROM ArchiveHoles) + 1)
-                                       OR rowid = (SELECT MAX(rowid) FROM ArchiveHoles)
+                                       WHERE rowid >= (ABS(RANDOM()) % (SELECT MAX(rowid) FROM ArchiveHoles) + 1)
                                        ORDER BY rowid LIMIT 1;
                                        """;
         
