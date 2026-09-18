@@ -49,7 +49,7 @@
     <PackageReference Include="Autofocus.Scripts.UltimateUpscaler" Version="2.0.0" />
     <PackageReference Include="BalderHash" Version="2.1.0" />
     <PackageReference Include="Concentus.OggFile" Version="1.0.7" />
-    <PackageReference Include="Dapper" Version="2.1.79" />
+    <PackageReference Include="Dapper" Version="2.1.86" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
     <PackageReference Include="Discord.Net" Version="3.20.1" />
     <PackageReference Include="FaceAiSharp" Version="0.6.35" />
@@ -66,9 +66,9 @@
     <PackageReference Include="Humanizer.Core" Version="3.0.10" />
     <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.19.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.11" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.11" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.29.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.30.0" />
     <PackageReference Include="Microsoft.Recognizers.Text" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.Choice" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.8.13" />
@@ -78,7 +78,7 @@
     <PackageReference Include="MultiBackendServiceProvider" Version="3.1.0" />
     <PackageReference Include="Mute.Anilist" Version="2.4.0" />
     <PackageReference Include="Mute.BraveSearch" Version="3.0.0" />
-    <PackageReference Include="NAudio" Version="3.0.1" />
+    <PackageReference Include="NAudio" Version="3.1.0" />
     <PackageReference Include="NSec.Cryptography" Version="26.4.0" />
     <PackageReference Include="OpenTelemetry" Version="1.18.0" />
     <PackageReference Include="OpenTelemetry.Api.ProviderBuilderExtensions" Version="1.18.0" />
@@ -90,15 +90,15 @@
     <PackageReference Include="Serpent" Version="0.0.41" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
-    <PackageReference Include="SkiaSharp" Version="4.151.1" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.151.1" />
+    <PackageReference Include="SkiaSharp" Version="4.152.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.1" />
     <PackageReference Include="SourceGear.sqlite3.ext" Version="3.53.4.1" />
     <PackageReference Include="SteamWebAPI2" Version="5.0.0" />
     <PackageReference Include="System.Data.SQLite" Version="2.0.4" />
     <PackageReference Include="System.IO.Abstractions" Version="22.2.0" />
     <PackageReference Include="System.Linq.LevenshteinDistance" Version="0.99.0-beta" />
-    <PackageReference Include="System.Numerics.Tensors" Version="10.0.11" />
-    <PackageReference Include="System.ServiceModel.Syndication" Version="10.0.11" />
+    <PackageReference Include="System.Numerics.Tensors" Version="10.0.12" />
+    <PackageReference Include="System.ServiceModel.Syndication" Version="10.0.12" />
     <PackageReference Include="Whisper.Runtime" Version="1.4.2001" />
   </ItemGroup>
 

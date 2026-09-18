@@ -11,6 +11,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Mute.Moe.Services.LLM;
 using Mute.Moe.Services.LLM.Chat;
+using Mute.Moe.Utilities;
 
 namespace Mute.Moe.Discord.Services.Responses;
 
@@ -211,10 +212,7 @@ public partial class LlmChatConversation
                             using (Channel.EnterTypingState())
                             {
                                 var response = await GenerateResponse(session.Session, message, cancellation: _stopper.Token);
-                                if (!string.IsNullOrWhiteSpace(response))
-                                    await Channel.SendLongMessageAsync(response);
-                                else
-                                    _logger.LogWarning("LLM conversation failed to generate response");
+                                await SendResponse(response);
                             }
                             break;
                         }
@@ -328,6 +326,33 @@ public partial class LlmChatConversation
             }
 
             return response.Text;
+        }
+    }
+
+    private async Task SendResponse(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            _logger.LogWarning("LLM conversation failed to generate response");
+            return;
+        }
+
+        // Split into individual paragraphs
+        var paragraphs = MessageSplitting.SplitIntoParagraphs(message);
+
+        // Merge back together, to achieve the soft limit
+        paragraphs = MessageSplitting.MergeParagraphs(paragraphs, 250);
+
+        // Send messages
+        var rng = new Random();
+        foreach (var paragraph in paragraphs)
+        {
+            await Channel.SendLongMessageAsync(paragraph);
+
+            var delay = rng.Next(250, 1550) + paragraph.Length * 25;
+            delay = Math.Min(delay, 3333);
+
+            await Task.Delay(millisecondsDelay: delay);
         }
     }
 
