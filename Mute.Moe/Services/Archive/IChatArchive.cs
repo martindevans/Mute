@@ -29,7 +29,28 @@ public interface IChatArchive
     /// <param name="senderId">Discord ID of the sender to filter by (or null for all senders)</param>
     /// <returns></returns>
     int Count(ulong context, ulong? channel = null, ulong? senderId = null);
+
+    /// <summary>
+    /// Search the text archive by plain simple text search
+    /// </summary>
+    /// <param name="query"></param>
+    /// <param name="limit"></param>
+    /// <returns></returns>
+    Task<IReadOnlyList<ArchiveFtsSearchResult>> Search(string query, int limit = 25);
 }
+
+/// <summary>
+/// An item in the archive
+/// </summary>
+public record ArchiveItem(ulong Context, ulong Channel, ulong MessageId, ulong SenderId, DateTimeOffset instant, string content, ulong? mention);
+
+/// <summary>
+/// An archive search result from full text search
+/// </summary>
+/// <param name="MessageId"></param>
+/// <param name="Snippet"></param>
+/// <param name="Rank"></param>
+public record ArchiveFtsSearchResult(ulong MessageId, string Snippet, float Rank);
 
 /// <summary>
 /// Extensions to IChatArchive
