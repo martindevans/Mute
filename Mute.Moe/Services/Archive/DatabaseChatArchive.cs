@@ -48,7 +48,7 @@ public class DatabaseChatArchive
     private static void SetupArchiveMessagesFts(IDbConnection connection)
     {
         // Check if this is first time creation of the archive
-        var rebuildRequired = connection.ExecuteScalar<long>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='ArchiveMessages_fts'") > 0;
+        var rebuildRequired = connection.ExecuteScalar<long>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='ArchiveMessages_fts'") == 0;
 
         // Create the FTS5 virtual table if it doesn't exist
         connection.Execute(
@@ -148,7 +148,7 @@ public class DatabaseChatArchive
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<ArchiveFtsSearchResult>> Search(string query, int limit = 25)
+    public async Task<IReadOnlyList<ArchiveFtsSearchResult>> Search(ulong context, string query, int limit = 25)
     {
         if (string.IsNullOrWhiteSpace(query))
             return [];
@@ -160,15 +160,21 @@ public class DatabaseChatArchive
         var rows = connection.Query<RawHit>(
             """
                 SELECT am.MessageId                                     AS MessageId,
-                       highlight(ArchiveMessages_fts, 0, '<b>', '</b>') AS Snippet,
+                       highlight(ArchiveMessages_fts, 0, '**', '**') AS Snippet,
                        bm25(ArchiveMessages_fts)                        AS Rank
                 FROM ArchiveMessages am
-                JOIN ArchiveMessages_fts fts ON am.rowid = fts.rowid
-                WHERE ArchiveMessages_fts MATCH @query
+                JOIN ArchiveMessages_fts ON am.rowid = ArchiveMessages_fts.rowid
+                WHERE am.Context = @context
+                AND ArchiveMessages_fts MATCH @query
                 ORDER BY Rank
                 LIMIT @limit
             """,
-            new { query = ftsQuery, limit }
+            new
+            {
+                query = ftsQuery,
+                context = context.ToString(),
+                limit = limit
+            }
         );
 
         return rows

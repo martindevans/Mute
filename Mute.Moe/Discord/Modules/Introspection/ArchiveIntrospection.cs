@@ -98,10 +98,10 @@ public class ArchiveIntrospection(IChatArchiveHoles _holes, IChatArchive _archiv
 
     [Command("search"), Summary("I will search the text archive")]
     [UsedImplicitly]
-    public async Task Search(string query)
+    public async Task Search([Remainder] string query)
     {
         // Get matches
-        var results = await _archive.Search(query, 10);
+        var results = await _archive.Search(Context.AgentMemoryContextId, query, limit: 10);
         if (results.Count == 0)
         {
             await ReplyAsync("No search results.");
@@ -109,12 +109,12 @@ public class ArchiveIntrospection(IChatArchiveHoles _holes, IChatArchive _archiv
         }
 
         // Convert to messages from ID
-        var messages = new List<IMessage>();
+        var messages = new List<(IMessage, string)>();
         foreach (var item in results)
         {
             var message = await Context.Channel.GetMessageAsync(item.MessageId);
             if (message != null)
-                messages.Add(message);
+                messages.Add((message, item.Snippet));
         }
 
         // Display items
@@ -122,7 +122,7 @@ public class ArchiveIntrospection(IChatArchiveHoles _holes, IChatArchive _archiv
             items: messages,
             nothing: () => "All results have been deleted.",
             manyPrelude: (list) => $"{list.Count} matches",
-            itemToString: (item, index) => $"{index + 1}. {DiscordLinks.Message(item)}"
+            itemToString: (item, index) => $"{index + 1}. {DiscordLinks.Message(item.Item1)}: '{item.Item2}'"
         );
     }
     

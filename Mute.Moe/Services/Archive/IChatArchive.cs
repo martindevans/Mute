@@ -33,10 +33,11 @@ public interface IChatArchive
     /// <summary>
     /// Search the text archive by plain simple text search
     /// </summary>
+    /// <param name="context"></param>
     /// <param name="query"></param>
     /// <param name="limit"></param>
     /// <returns></returns>
-    Task<IReadOnlyList<ArchiveFtsSearchResult>> Search(string query, int limit = 25);
+    Task<IReadOnlyList<ArchiveFtsSearchResult>> Search(ulong context, string query, int limit = 25);
 }
 
 /// <summary>
