@@ -159,9 +159,10 @@ public class DatabaseChatArchive
         using var connection = _database.GetConnection();
         var rows = connection.Query<RawHit>(
             """
-                SELECT am.MessageId                                     AS MessageId,
-                       highlight(ArchiveMessages_fts, 0, '**', '**') AS Snippet,
-                       bm25(ArchiveMessages_fts)                        AS Rank
+                SELECT am.MessageId                                         AS MessageId,
+                       snippet(ArchiveMessages_fts, 0, '**', '**', '…', 20) AS Snippet
+                       highlight(ArchiveMessages_fts, 0, '**', '**')        AS Highlight,
+                       bm25(ArchiveMessages_fts)                            AS Rank
                 FROM ArchiveMessages am
                 JOIN ArchiveMessages_fts ON am.rowid = ArchiveMessages_fts.rowid
                 WHERE am.Context = @context
@@ -180,7 +181,8 @@ public class DatabaseChatArchive
         return rows
               .Select(r => new ArchiveFtsSearchResult(
                    ulong.Parse(r.MessageId, CultureInfo.InvariantCulture),
-                   r.Snippet ?? string.Empty,
+                   r.Snippet ?? "",
+                   r.Highlight ?? "",
                    (float)r.Rank)
                )
               .ToList();
@@ -190,6 +192,7 @@ public class DatabaseChatArchive
     {
         public string MessageId { get; set; } = string.Empty;
         public string? Snippet { get; set; }
+        public string? Highlight { get; set; }
         public double Rank { get; set; }
     }
 

@@ -51,7 +51,7 @@ public record ArchiveItem(ulong Context, ulong Channel, ulong MessageId, ulong S
 /// <param name="MessageId"></param>
 /// <param name="Snippet"></param>
 /// <param name="Rank"></param>
-public record ArchiveFtsSearchResult(ulong MessageId, string Snippet, float Rank);
+public record ArchiveFtsSearchResult(ulong MessageId, string Snippet, string Highlight, float Rank);
 
 /// <summary>
 /// Extensions to IChatArchive

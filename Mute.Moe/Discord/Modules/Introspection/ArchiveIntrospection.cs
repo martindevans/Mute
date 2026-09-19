@@ -109,7 +109,7 @@ public class ArchiveIntrospection(IChatArchiveHoles _holes, IChatArchive _archiv
         }
 
         // Convert to messages from ID
-        var messages = new List<(IMessage, string)>();
+        var messages = new List<(IMessage msg, string snippet)>();
         foreach (var item in results)
         {
             var message = await Context.Channel.GetMessageAsync(item.MessageId);
@@ -122,7 +122,7 @@ public class ArchiveIntrospection(IChatArchiveHoles _holes, IChatArchive _archiv
             items: messages,
             nothing: () => "All results have been deleted.",
             manyPrelude: (list) => $"{list.Count} matches",
-            itemToString: (item, index) => $"{index + 1}. {DiscordLinks.Message(item.Item1)}: '{item.Item2}'"
+            itemToString: (item, index) => $"{index + 1}. {DiscordLinks.Message(item.msg)}: '{item.snippet}'"
         );
     }
     
