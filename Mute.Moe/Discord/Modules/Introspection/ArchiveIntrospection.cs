@@ -96,6 +96,36 @@ public class ArchiveIntrospection(IChatArchiveHoles _holes, IChatArchive _archiv
         await ReplyAsync($"I have {count} archived message{(count == 1 ? "" : "s")} {scope}");
     }
 
+    [Command("search"), Summary("I will search the text archive")]
+    [UsedImplicitly]
+    public async Task Search([Remainder] string query)
+    {
+        // Get matches
+        var results = await _archive.Search(Context.AgentMemoryContextId, query, limit: 10);
+        if (results.Count == 0)
+        {
+            await ReplyAsync("No search results.");
+            return;
+        }
+
+        // Convert to messages from ID
+        var messages = new List<(IMessage msg, string snippet)>();
+        foreach (var item in results)
+        {
+            var message = await Context.Channel.GetMessageAsync(item.MessageId);
+            if (message != null)
+                messages.Add((message, item.Snippet));
+        }
+
+        // Display items
+        await DisplayItemList(
+            items: messages,
+            nothing: () => "All results have been deleted.",
+            manyPrelude: (list) => $"{list.Count} matches",
+            itemToString: (item, index) => $"{index + 1}. {DiscordLinks.Message(item.msg)}: '{item.snippet}'"
+        );
+    }
+    
     private async Task<string> FormatHole(ChatArchiveHole hole, IMessageChannel channel)
     {
         return $"#{hole.ChannelId} from {await FormatMessage(hole, channel)}";
