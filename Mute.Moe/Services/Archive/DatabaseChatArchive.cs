@@ -160,7 +160,7 @@ public class DatabaseChatArchive
         var rows = connection.Query<RawHit>(
             """
                 SELECT am.MessageId                                         AS MessageId,
-                       snippet(ArchiveMessages_fts, 0, '**', '**', '…', 20) AS Snippet
+                       snippet(ArchiveMessages_fts, 0, '**', '**', '…', 10) AS Snippet,
                        highlight(ArchiveMessages_fts, 0, '**', '**')        AS Highlight,
                        bm25(ArchiveMessages_fts)                            AS Rank
                 FROM ArchiveMessages am
