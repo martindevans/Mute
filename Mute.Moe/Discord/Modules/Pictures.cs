@@ -5,10 +5,8 @@ using Mute.Moe.Discord.Attributes;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.ImageGen.Contexts;
 using Mute.Moe.Utilities;
-using SixLabors.ImageSharp;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Discord.Modules;
 
@@ -34,16 +32,15 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
     [UsedImplicitly]
     public async Task Metadata()
     {
-        var images = await GetMessageImages(Context.Message);
-        if (images == null)
+        var streams = await GetMessageImageStreams(Context.Message);
+        if (streams.Count == 0)
             return;
 
         var success = false;
         var count = 1;
-        foreach (var img in images)
+        foreach (var stream in streams)
         {
-            var meta = img.Metadata.GetPngMetadata();
-            var parameters = meta.GetGenerationMetadata();
+            var parameters = stream.GetImageGenerationMetadata();
 
             if (parameters != null)
             {
@@ -94,18 +91,6 @@ public class Pictures(IImageAnalyser _analyser, HttpClient _http)
         {
             await TypingReplyAsync("Please include some image attachments or reply to another message with image attachments!");
             return [];
-        }
-
-        return result;
-    }
-
-    private async Task<IReadOnlyList<Image>?> GetMessageImages(IUserMessage message)
-    {
-        var result = await message.GetMessageImages(_http);
-        if (result.Count == 0)
-        {
-            await TypingReplyAsync("Please include some image attachments or reply to another message with image attachments!");
-            return null;
         }
 
         return result;

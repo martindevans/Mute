@@ -7,7 +7,6 @@ using Discord.WebSocket;
 using Mute.Moe.Discord.Services.ImageGeneration;
 using Mute.Moe.Services.ImageGen;
 using Mute.Moe.Services.ImageGen.Contexts;
-using SixLabors.ImageSharp;
 
 namespace Mute.Moe.Discord.Interaction;
 
@@ -116,9 +115,7 @@ public class Pictures
             return;
         }
 
-        var img = await SixLabors.ImageSharp.Image.IdentifyAsync(image);
-        var meta = img.Metadata.GetPngMetadata();
-        var parameters = meta.GetGenerationMetadata();
+        var parameters = image.GetImageGenerationMetadata();
 
         if (parameters != null)
         {
@@ -196,8 +193,8 @@ public class Pictures
         var firstImage = args.Message.Attachments.FirstOrDefault(a => a.ContentType.StartsWith("image/"));
         if (firstImage != null)
         {
-            using var image = await SixLabors.ImageSharp.Image.LoadAsync(await _http.GetStreamAsync(firstImage.Url));
-            var prompt = image.GetGenerationPrompt();
+            await using var stream = await _http.GetStreamAsync(firstImage.Url);
+            var prompt = stream.GetImageGenerationPrompt();
             if (prompt != null)
                 (positive, negative) = prompt.Value;
         }
