@@ -28,7 +28,7 @@ public static class Program
         var config = JsonConvert.DeserializeObject<Configuration>(await File.ReadAllTextAsync(string.Join(" ", args)))
                   ?? throw new InvalidOperationException("Config was null");
 
-        Console.WriteLine("### Version: 14");
+        Console.WriteLine("### Version: 15");
 
         // Build DI container
         var collection = new ServiceCollection();

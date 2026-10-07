@@ -176,7 +176,7 @@ public class ChatAgentFactory
         // Add middleware that converts images in inputs into a description of the image
         if (!_chatModel.IsVisionModel)
         {
-            var middleware = new AgentAgentImageAnalysisMiddleware(_analyser);
+            var middleware = new AgentImageAnalysisMiddleware(_analyser);
             agent = agent.Use(middleware.Middleware, middleware.MiddlewareStreaming);
         }
 

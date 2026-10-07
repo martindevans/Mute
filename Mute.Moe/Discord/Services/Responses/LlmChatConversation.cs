@@ -209,11 +209,10 @@ public partial class LlmChatConversation
                     {
                         case BaseProcessEvent.Message message:
                         {
+                            string? response;
                             using (Channel.EnterTypingState())
-                            {
-                                var response = await GenerateResponse(session.Session, message, cancellation: _stopper.Token);
-                                await SendResponse(response);
-                            }
+                                response = await GenerateResponse(session.Session, message, cancellation: _stopper.Token);
+                            await SendResponse(response);
                             break;
                         }
 
@@ -337,6 +336,9 @@ public partial class LlmChatConversation
             return;
         }
 
+        // Remove weird unicode characters LLMs love (e.g. emdash)
+        message = message.Deslop();
+
         // Split into individual paragraphs
         var paragraphs = MessageSplitting.SplitIntoParagraphs(message);
 
@@ -344,15 +346,22 @@ public partial class LlmChatConversation
         paragraphs = MessageSplitting.MergeParagraphs(paragraphs, 250);
 
         // Send messages
+        var first = true;
         var rng = new Random();
         foreach (var paragraph in paragraphs)
         {
+            // Enter typing state and delay while "typing" the message
+            if (!first)
+            {
+                var delay = rng.Next(250, 1550) + paragraph.Length * rng.Next(20, 60);
+                delay = Math.Min(delay, 3333);
+                using (Channel.EnterTypingState())
+                    await Task.Delay(millisecondsDelay: delay);
+            }
+            first = false;
+
+            // Send message
             await Channel.SendLongMessageAsync(paragraph);
-
-            var delay = rng.Next(250, 1550) + paragraph.Length * 25;
-            delay = Math.Min(delay, 3333);
-
-            await Task.Delay(millisecondsDelay: delay);
         }
     }
 

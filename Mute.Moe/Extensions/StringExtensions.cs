@@ -165,4 +165,66 @@ public static class StringExtensions
         count = accumulator;
         return result;
     }
+
+    /// <summary>
+    /// Remove weird unicode characters that LLMs love to use
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    public static string Deslop(this string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        var span = input.ToArray().AsSpan();
+
+        // Dashes
+        span.Replace(span, '\u2012', '-'); // figure dash
+        span.Replace(span, '\u2013', '-'); // en dash
+        span.Replace(span, '\u2014', '-'); // em dash
+        span.Replace(span, '\u2015', '-'); // horizontal bar
+        span.Replace(span, '\u2212', '-'); // minus sign
+
+        // Double quotes
+        span.Replace(span, '\u201C', '"'); // left double quotation mark
+        span.Replace(span, '\u201D', '"'); // right double quotation mark
+        span.Replace(span, '\u201E', '"'); // double low-9 quotation mark
+        span.Replace(span, '\u201F', '"'); // double high-reversed-9 quotation mark
+        span.Replace(span, '\u00AB', '"'); // left-pointing double angle quotation mark
+        span.Replace(span, '\u00BB', '"'); // right-pointing double angle quotation mark
+
+        // Single quotes
+        span.Replace(span, '\u2018', '\''); // left single quotation mark
+        span.Replace(span, '\u2019', '\''); // right single quotation mark
+        span.Replace(span, '\u201A', '\''); // single low-9 quotation mark
+        span.Replace(span, '\u201B', '\''); // single high-reversed-9 quotation mark
+
+        // Primes
+        span.Replace(span, '\u2032', '\''); // prime
+        span.Replace(span, '\u2033', '"');  // double prime
+
+        // Bullets
+        span.Replace(span, '\u2022', '-'); // bullet
+        span.Replace(span, '\u2023', '-'); // triangular bullet
+        span.Replace(span, '\u25E6', '-'); // white bullet
+        span.Replace(span, '\u25AA', '-'); // black small square
+        span.Replace(span, '\u25AB', '-'); // white small square
+
+        // Spaces
+        span.Replace(span, '\u00A0', ' '); // no-break space
+        span.Replace(span, '\u2009', ' '); // thin space
+        span.Replace(span, '\u200A', ' '); // hair space
+        span.Replace(span, '\u202F', ' '); // narrow no-break space
+        span.Replace(span, '\u205F', ' '); // medium mathematical space
+        span.Replace(span, '\u3000', ' '); // ideographic space
+
+        return new string(span)
+            .Replace("\u2026", "...") // ellipsis
+            .Replace("\u200B", "")    // zero-width space
+            .Replace("\u200C", "")    // zero-width non-joiner
+            .Replace("\u200D", "")    // zero-width joiner
+            .Replace("\u2060", "")    // word joiner
+            .Replace("\uFEFF", "")    // BOM
+            .Replace("\u00AD", "");   // soft hyphen
+    }
 }

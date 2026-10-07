@@ -66,7 +66,7 @@
     <PackageReference Include="Humanizer.Core" Version="3.0.10" />
     <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" />
     <PackageReference Include="MetadataExtractor" Version="2.9.3" />
-    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.22.0" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.23.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.30.0" />
@@ -91,12 +91,12 @@
     <PackageReference Include="Serpent" Version="0.0.41" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
-    <PackageReference Include="SkiaSharp" Version="4.152.1" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.1" />
+    <PackageReference Include="SkiaSharp" Version="4.153.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
     <PackageReference Include="SourceGear.sqlite3.ext" Version="3.53.4.1" />
     <PackageReference Include="SteamWebAPI2" Version="5.0.0" />
     <PackageReference Include="System.Data.SQLite" Version="2.0.4" />
-    <PackageReference Include="System.IO.Abstractions" Version="22.2.0" />
+    <PackageReference Include="System.IO.Abstractions" Version="22.3.0" />
     <PackageReference Include="System.Linq.LevenshteinDistance" Version="0.99.0-beta" />
     <PackageReference Include="System.Numerics.Tensors" Version="10.0.12" />
     <PackageReference Include="System.ServiceModel.Syndication" Version="10.0.12" />
