@@ -2,8 +2,10 @@
 using MetadataExtractor.Formats.Png;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Metadata;
+using SkiaSharp;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Extensions;
 
@@ -44,21 +46,6 @@ public static class ImageExtensions
     }
 
     /// <summary>
-    /// Get Automatic1111 image generation metadata embedded in this image
-    /// </summary>
-    /// <param name="meta"></param>
-    /// <returns></returns>
-    public static string? GetGenerationMetadata(this PngMetadata meta)
-    {
-        var parameters = meta.TextData.FirstOrDefault(a => a.Keyword == "parameters");
-
-        if (string.IsNullOrEmpty(parameters.Value))
-            return null;
-
-        return parameters.Value;
-    }
-
-    /// <summary>
     /// Get Automatic1111 image generation prompt embedded in this image
     /// </summary>
     /// <param name="stream"></param>
@@ -75,31 +62,20 @@ public static class ImageExtensions
     /// <returns></returns>
     public static (string, string)? GetGenerationPrompt(this Image image)
     {
-        return image.Metadata.GetGenerationPrompt();
+        var pngMeta = image.Metadata.GetPngMetadata();
+        string? ret;
+        var parameters = pngMeta.TextData.FirstOrDefault(a => a.Keyword == "parameters");
+
+        if (string.IsNullOrEmpty(parameters.Value))
+            ret = null;
+        else
+        {
+            ret = parameters.Value;
+        }
+
+        return ParseGenerationMetadata(ret);
     }
 
-    /// <summary>
-    /// Get Automatic1111 image generation prompt embedded in this image
-    /// </summary>
-    /// <param name="meta"></param>
-    /// <returns></returns>
-    public static (string, string)? GetGenerationPrompt(this ImageMetadata meta)
-    {
-        var pngMeta = meta.GetPngMetadata();
-        return pngMeta.GetGenerationPrompt();
-    }
-
-    /// <summary>
-    /// Get Automatic1111 image generation prompt embedded in this image
-    /// </summary>
-    /// <param name="meta"></param>
-    /// <returns></returns>
-    public static (string, string)? GetGenerationPrompt(this PngMetadata meta)
-    {
-        return ParseGenerationMetadata(meta.GetGenerationMetadata());
-    }
-
-    
     private static (string, string)? ParseGenerationMetadata(string? input)
     {
         if (string.IsNullOrEmpty(input))
@@ -119,5 +95,21 @@ public static class ImageExtensions
         negative = negative.Remove(0, npHeader.Length);
 
         return (positive, negative);
+    }
+
+    /// <summary>
+    /// Convert to an SK Bitmap
+    /// </summary>
+    /// <param name="image"></param>
+    /// <param name="cancellation"></param>
+    /// <returns></returns>
+    public static async Task<SKBitmap> ToSkBitmap(this Image image, CancellationToken cancellation = default)
+    {
+        using var mem = new MemoryStream();
+        await image.SaveAsPngAsync(mem, cancellation);
+        mem.Position = 0;
+
+        return SKBitmap.Decode(mem)
+            ?? throw new InvalidOperationException("SkiaSharp failed to decode the image.");
     }
 }

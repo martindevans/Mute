@@ -2,7 +2,7 @@
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using SixLabors.ImageSharp;
+using SkiaSharp;
 
 namespace Mute.Moe.Extensions;
 
@@ -19,20 +19,36 @@ public static class IAttachmentExtensions
     /// <returns></returns>
     public static async Task<Stream?> GetPngStream(this IAttachment attachment, HttpClient http)
     {
+        // Get the HTTP stream
         var input = await http.GetStreamAsync(attachment.Url);
-        if (attachment.ContentType == "image/png")
+
+        // If it's already a PNG, return it
+        if (attachment.ContentType.Equals("image/png", StringComparison.OrdinalIgnoreCase))
             return input;
 
-        if (!attachment.ContentType.StartsWith("image/"))
-            return null;
+        await using (input)
+        {
+            // If it's not an image at all, give up
+            if (!attachment.ContentType.StartsWith("image/"))
+                return null;
 
-        var image = await SixLabors.ImageSharp.Image.LoadAsync(input);
+            // Decode the image, whatever format it is
+            using var bitmap = SKBitmap.Decode(input);
+            if (bitmap == null)
+                return null;
 
-        var output = new MemoryStream();
-        await image.SaveAsPngAsync(output);
+            // Encode to PNG (give up on failure)
+            var output = new MemoryStream();
+            if (!bitmap.Encode(output, SKEncodedImageFormat.Png, 100))
+            {
+                await output.DisposeAsync();
+                return null;
+            }
 
-        output.Position = 0;
-        return output;
+            // Return the new PNG stream
+            output.Position = 0;
+            return output;
+        }
     }
 
     /// <summary>

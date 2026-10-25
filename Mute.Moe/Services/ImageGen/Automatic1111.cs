@@ -10,6 +10,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.Threading.Tasks;
+using Autofocus.SkiaSharp.Extensions;
+using SkiaSharp;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen;
@@ -131,7 +133,7 @@ public class Automatic1111
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image inputImage, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
+    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, SKBitmap inputImage, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         // Get the backend and lock it for the duration of this operation
         using var scope = await (await GetBackend()).Lock(default);
@@ -139,17 +141,8 @@ public class Automatic1111
 
         var model = await backend.StableDiffusionModel(_checkpoint);
 
-        // Clone input image before mutation
-        using var image = inputImage.CloneAs<Rgba32>();
-
-        // Scale down to the correct width
-        image.Mutate(a => a.Resize(new Size((int)_width, 0)));
-
-        // Scale down height if necessary
-        if (image.Height > _height)
-            image.Mutate(a => a.Resize(new Size(0, (int)_height)));
-
-        var autofocusInputImage = await image.ToAutofocusImageAsync();
+        // Resize image to correct size
+        using var resized = inputImage.ResizeFitWithin(checked((int)_width), checked((int)_height));
 
         // Make some progress
         await (progressReporter?.Invoke(new ProgressReport(0.1f, null)) ?? Task.CompletedTask);
@@ -159,7 +152,7 @@ public class Automatic1111
             {
                 Images =
                 {
-                    autofocusInputImage
+                    await resized.ToAutofocusImageAsync()
                 },
 
                 Seed = new() { Seed = seed },
@@ -177,8 +170,8 @@ public class Automatic1111
                 Model = model,
                 BatchSize = batch,
                 Batches = 1,
-                Width = (uint)image.Width,
-                Height = (uint)image.Height,
+                Width = (uint)resized.Width,
+                Height = (uint)resized.Height,
 
                 ClipSkip = _img2imgClipSkip,
             }

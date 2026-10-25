@@ -106,31 +106,4 @@ public static class IUserMessageExtensions
             }
         }
     }
-
-    /// <summary>
-    /// Get all images from this message or the message it references
-    /// </summary>
-    /// <param name="message"></param>
-    /// <param name="http"></param>
-    /// <returns></returns>
-    public static async Task<IReadOnlyList<SixLabors.ImageSharp.Image>> GetMessageImages(this IUserMessage message, HttpClient http)
-    {
-        var images = message.GetMessageImageUrls();
-
-        var result = await images
-                          .ToAsyncEnumerable()
-                          .Select(async (url, ct) => await http.GetAsync(url, ct))
-                          .Where(IsSuccess)
-                          .Select(async (resp, ct) => await SixLabors.ImageSharp.Image.LoadAsync(await resp.Content.ReadAsStreamAsync(ct), ct))
-                          .ToListAsync();
-
-        return result;
-
-        static bool IsSuccess(HttpResponseMessage message)
-        {
-            if (!message.IsSuccessStatusCode)
-                message.Dispose();
-            return message.IsSuccessStatusCode;
-        }
-    }
 }

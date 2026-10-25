@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Autofocus.Utilities.Progress;
+using SkiaSharp;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen;
@@ -28,7 +29,7 @@ public interface IImageGenerator
     /// <param name="progress"></param>
     /// <param name="batch"></param>
     /// <returns></returns>
-    Task<IReadOnlyCollection<Image>> Image2Image(int? seed, Image image, Prompt prompt, Func<ProgressReport, Task>? progress = null, int batch = 1);
+    Task<IReadOnlyCollection<Image>> Image2Image(int? seed, SKBitmap image, Prompt prompt, Func<ProgressReport, Task>? progress = null, int batch = 1);
 }
 
 /// <summary>
