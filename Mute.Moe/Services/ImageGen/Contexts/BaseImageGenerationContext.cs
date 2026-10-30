@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
 using System.IO;
 using System.Net.Http;
+using Autofocus.ImageSharp.Extensions;
+using Autofocus.SkiaSharp.Extensions;
 using Autofocus.Utilities.Progress;
 using Mute.Moe.Discord.Services.ImageGeneration;
 using SkiaSharp;
@@ -174,16 +176,17 @@ public abstract class BaseImageGenerationContext
             return _config.Type switch
             {
                 ImageGenerationType.Generate => await GenerateImage2Image(skReferenceImage),
-                ImageGenerationType.Upscale => [ await GenerateUpscale(referenceImage) ],
+                ImageGenerationType.Upscale => [ await GenerateUpscale(skReferenceImage) ],
                 ImageGenerationType.Outpaint => await GenerateOutpaint(referenceImage),
                 _ => throw new ArgumentOutOfRangeException()
             };
         }
     }
 
-    private Task<Image> GenerateUpscale(Image referenceImage)
+    private async Task<Image> GenerateUpscale(SKBitmap referenceImage)
     {
-        return _upscaler.UpscaleImage(referenceImage, (uint)referenceImage.Width * 2, (uint)referenceImage.Height * 2, OnReportProgress);
+        return await (await _upscaler.UpscaleImage(referenceImage, (uint)referenceImage.Width * 2, (uint)referenceImage.Height * 2, OnReportProgress))
+           .ToImageSharp();
     }
 
     private Task<IReadOnlyCollection<Image>> GenerateImage2Image(SKBitmap referenceImage)

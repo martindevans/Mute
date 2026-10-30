@@ -112,7 +112,7 @@ public record Startup(Configuration Configuration)
 
         services.AddTransient<IImageGeneratorBannedWords, HardcodedBannedWords>();
         services.AddTransient<IImageGenerator, Automatic1111>();
-        services.AddTransient<IImageUpscaler, ImagesharpUpscaler>();
+        services.AddTransient<IImageUpscaler, SkiaSharpUpscaler>();
         services.AddTransient<IImageOutpainter, Automatic1111>();
         services.AddSingleton<StableDiffusionBackendCache>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();

@@ -2,7 +2,6 @@
 using Autofocus.Config;
 using Autofocus.FeatureRepaint;
 using Autofocus.ImageSharp.Extensions;
-using Autofocus.Scripts.UltimateUpscaler;
 using Autofocus.Utilities.Progress;
 using FaceAiSharp;
 using Mute.Moe.Services.ImageGen.Outpaint;
@@ -20,7 +19,7 @@ namespace Mute.Moe.Services.ImageGen;
 /// Implementation of various image related services, using Automatic1111 API
 /// </summary>
 public class Automatic1111
-    : IImageGenerator, IImageUpscaler, IImageOutpainter
+    : IImageGenerator, IImageOutpainter
 {
     private readonly StableDiffusionBackendCache _backends;
 
@@ -34,7 +33,6 @@ public class Automatic1111
     private readonly int _outpaintSteps;
     private readonly uint _width;
     private readonly uint _height;
-    private readonly string _upscaler;
 
     private readonly uint _img2imgClipSkip;
     private readonly uint _txt2imgClipSkip;
@@ -72,7 +70,6 @@ public class Automatic1111
         _outpaintSteps = config.Automatic1111?.OutpaintSteps ?? 75;
         _width = config.Automatic1111?.Width ?? 512;
         _height = config.Automatic1111?.Height ?? 768;
-        _upscaler = config.Automatic1111?.Upscaler ?? "Lanczos";
 
         _img2imgClipSkip = config.Automatic1111?.Image2ImageClipSkip ?? 2;
         _txt2imgClipSkip = config.Automatic1111?.Text2ImageClipSkip ?? 2;
@@ -178,57 +175,6 @@ public class Automatic1111
         );
 
         return await ExtractImagesWithRepaint(result.Images, scope, prompt, progressReporter);
-    }
-
-    /// <inheritdoc />
-    public async Task<Image> UpscaleImage(Image inputImage, uint width, uint height, Func<ProgressReport, Task>? progressReporter = null)
-    {
-        // Get the backend and lock it for the duration of this operation
-        using var scope = await (await GetBackend()).Lock(default);
-        var backend = scope.Backend;
-
-        var model = await backend.StableDiffusionModel(_checkpoint);
-        var upscaler = await backend.Upscaler(_upscaler);
-
-        // Try to get the generation prompt that was originally used for this image
-        var prompt = inputImage.GetGenerationPrompt() ?? (
-            "detailed",
-            "nsfw, bad quality"
-        );
-
-        var upscaleResult = await backend.Image2Image(
-            new()
-            {
-                Images =
-                {
-                    await inputImage.ToAutofocusImageAsync(),
-                },
-
-                Model = model,
-
-                Prompt = new()
-                {
-                    Positive = prompt.Item1,
-                    Negative = prompt.Item2,
-                },
-
-                Seed = new(),
-
-                Sampler = await _i2iSampler.ToSamplerConfig(scope),
-                Lora = await GetLorasConfig(backend, _i2iLoras),
-
-                Width = width,
-                Height = height,
-                DenoisingStrength = 0.25,
-                Script = new UltimateUpscale
-                {
-                    RedrawMode = RedrawMode.Chess,
-                    Upscaler = upscaler
-                }
-            }
-        );
-
-        return await upscaleResult.Images[0].ToImageSharpAsync();
     }
 
     /// <inheritdoc />

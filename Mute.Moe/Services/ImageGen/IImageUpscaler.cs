@@ -1,6 +1,6 @@
-﻿using System.Threading.Tasks;
-using Autofocus.Utilities.Progress;
-using SixLabors.ImageSharp;
+﻿using Autofocus.Utilities.Progress;
+using SkiaSharp;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.ImageGen;
 
@@ -17,5 +17,5 @@ public interface IImageUpscaler
     /// <param name="height"></param>
     /// <param name="progressReporter"></param>
     /// <returns></returns>
-    public Task<Image> UpscaleImage(Image image, uint width, uint height, Func<ProgressReport, Task>? progressReporter = null);
+    public Task<SKBitmap> UpscaleImage(SKBitmap image, uint width, uint height, Func<ProgressReport, Task>? progressReporter = null);
 }

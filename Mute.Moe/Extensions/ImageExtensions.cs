@@ -6,6 +6,8 @@ using SkiaSharp;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Autofocus.ImageSharp.Extensions;
+using Autofocus.SkiaSharp.Extensions;
 
 namespace Mute.Moe.Extensions;
 
@@ -111,5 +113,16 @@ public static class ImageExtensions
 
         return SKBitmap.Decode(mem)
             ?? throw new InvalidOperationException("SkiaSharp failed to decode the image.");
+    }
+
+    /// <summary>
+    /// Convert SK -> IM#
+    /// </summary>
+    /// <param name="image"></param>
+    /// <param name="cancellation"></param>
+    /// <returns></returns>
+    public static async Task<Image> ToImageSharp(this SKBitmap image, CancellationToken cancellation = default)
+    {
+        return await (await image.ToAutofocusImageAsync()).ToImageSharpAsync();
     }
 }
