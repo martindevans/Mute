@@ -20,11 +20,6 @@ public static class MidjourneyStyleImageGenerationButtons
     private const string VariantButtonFullId = CommonPrefix + VariantButtonPrefix + "_";
 
     /// <summary>
-    /// Full ID of the "Outpaint" button (except for the index on the end)
-    /// </summary>
-    private const string OutpaintButtonFullId = CommonPrefix + OutpaintButtonPrefix + "_";
-
-    /// <summary>
     /// Full ID of the "Upscale" button (except for the index on the end)
     /// </summary>
     private const string UpscaleButtonFullId = CommonPrefix + UpscaleButtonPrefix + "_";
@@ -41,11 +36,6 @@ public static class MidjourneyStyleImageGenerationButtons
     public const string VariantButtonPrefix = "VariantButtonId";
 
     /// <summary>
-    /// Middle bit of the outpaint button ID
-    /// </summary>
-    public const string OutpaintButtonPrefix = "OutpaintButtonId";
-
-    /// <summary>
     /// Middle bit of the upscale button ID
     /// </summary>
     public const string UpscaleButtonPrefix = "UpscaleButtonId";
@@ -55,16 +45,6 @@ public static class MidjourneyStyleImageGenerationButtons
     /// </summary>
     public const string RedoButtonPrefix = "RedoButtonId";
 
-
-    /// <summary>
-    /// Get the ID for the outpaint button
-    /// </summary>
-    /// <param name="index">Index of which image to outpaint</param>
-    /// <returns></returns>
-    public static string GetOutpaintButtonId(int index)
-    {
-        return OutpaintButtonFullId + index;
-    }
 
     /// <summary>
     /// Get the ID for the variant button

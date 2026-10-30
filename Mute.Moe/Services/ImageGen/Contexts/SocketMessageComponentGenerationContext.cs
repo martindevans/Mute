@@ -22,12 +22,11 @@ public class SocketMessageComponentGenerationContext
     /// <param name="config"></param>
     /// <param name="generator"></param>
     /// <param name="upscaler"></param>
-    /// <param name="outpainter"></param>
     /// <param name="http"></param>
     /// <param name="component"></param>
     /// <param name="storage"></param>
-    public SocketMessageComponentGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http, SocketMessageComponent component, IImageGenerationConfigStorage storage)
-        : base(config, storage, generator, upscaler, outpainter, http)
+    public SocketMessageComponentGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, HttpClient http, SocketMessageComponent component, IImageGenerationConfigStorage storage)
+        : base(config, storage, generator, upscaler, http)
     {
         _component = component;
     }

@@ -50,6 +50,7 @@ public record ArchiveItem(ulong Context, ulong Channel, ulong MessageId, ulong S
 /// </summary>
 /// <param name="MessageId"></param>
 /// <param name="Snippet"></param>
+/// <param name="Highlight"></param>
 /// <param name="Rank"></param>
 public record ArchiveFtsSearchResult(ulong MessageId, string Snippet, string Highlight, float Rank);
 

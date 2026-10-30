@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using Autofocus;
 using Autofocus.Utilities.Progress;
 using SkiaSharp;
-using Image = SixLabors.ImageSharp.Image;
+using System.Threading.Tasks;
 
 namespace Mute.Moe.Services.ImageGen;
 
@@ -18,7 +18,7 @@ public interface IImageGenerator
     /// <param name="progress"></param>
     /// <param name="batch"></param>
     /// <returns></returns>
-    Task<IReadOnlyCollection<Image>> Text2Image(int? seed, Prompt prompt, Func<ProgressReport, Task>? progress = null, int batch = 1);
+    Task<IReadOnlyCollection<Base64EncodedImage>> Text2Image(int? seed, Prompt prompt, Func<ProgressReport, Task>? progress = null, int batch = 1);
 
     /// <summary>
     /// Generate an image from an image prompt and a text prompt
@@ -29,7 +29,7 @@ public interface IImageGenerator
     /// <param name="progress"></param>
     /// <param name="batch"></param>
     /// <returns></returns>
-    Task<IReadOnlyCollection<Image>> Image2Image(int? seed, SKBitmap image, Prompt prompt, Func<ProgressReport, Task>? progress = null, int batch = 1);
+    Task<IReadOnlyCollection<Base64EncodedImage>> Image2Image(int? seed, SKBitmap image, Prompt prompt, Func<ProgressReport, Task>? progress = null, int batch = 1);
 }
 
 /// <summary>

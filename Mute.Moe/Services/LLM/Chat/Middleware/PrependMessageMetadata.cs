@@ -40,7 +40,7 @@ public class PrependMessageMetadata
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<AgentResponseUpdate> MiddlewareStreaming(IEnumerable<ChatMessage> messages, AgentSession? session, AgentRunOptions? options, AIAgent innerAgent, CancellationToken cancellationToken)
+    public async IAsyncEnumerable<AgentResponseUpdate> MiddlewareStreaming(IEnumerable<ChatMessage> messages, AgentSession? session, AgentRunOptions? options, AIAgent innerAgent, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var results = innerAgent.RunStreamingAsync(
             await ModifyMessages(messages, cancellationToken).ToListAsync(cancellationToken),

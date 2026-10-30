@@ -26,7 +26,6 @@ public class Pictures
     private readonly IImageGenerationConfigStorage _storage;
     private readonly IImageGenerator _generator;
     private readonly IImageUpscaler _upscaler;
-    private readonly IImageOutpainter _outpainter;
     private readonly IImageGeneratorBannedWords _blacklist;
 
     /// <summary>
@@ -38,9 +37,8 @@ public class Pictures
     /// <param name="storage"></param>
     /// <param name="generator"></param>
     /// <param name="upscaler"></param>
-    /// <param name="outpainter"></param>
     /// <param name="blacklist"></param>
-    public Pictures(IImageAnalyser analyser, HttpClient http, StableDiffusionBackendCache backends, IImageGenerationConfigStorage storage, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, IImageGeneratorBannedWords blacklist)
+    public Pictures(IImageAnalyser analyser, HttpClient http, StableDiffusionBackendCache backends, IImageGenerationConfigStorage storage, IImageGenerator generator, IImageUpscaler upscaler, IImageGeneratorBannedWords blacklist)
     {
         _analyser = analyser;
         _http = http;
@@ -48,7 +46,6 @@ public class Pictures
         _storage = storage;
         _generator = generator;
         _upscaler = upscaler;
-        _outpainter = outpainter;
         _blacklist = blacklist;
     }
 
@@ -165,14 +162,12 @@ public class Pictures
                     config.Type = ImageGenerationType.Generate;
                 else if (buttonType.StartsWith(MidjourneyStyleImageGenerationButtons.UpscaleButtonPrefix))
                     config.Type = ImageGenerationType.Upscale;
-                else if (buttonType.StartsWith(MidjourneyStyleImageGenerationButtons.OutpaintButtonPrefix))
-                    config.Type = ImageGenerationType.Outpaint;
                 else
                     throw new InvalidOperationException($"Unknown button type: {buttonType}");
             }
 
             // Do the actual generation!
-            await new SocketMessageComponentGenerationContext(config, _generator, _upscaler, _outpainter, _http, args, _storage).Run();
+            await new SocketMessageComponentGenerationContext(config, _generator, _upscaler, _http, args, _storage).Run();
         }
         catch (Exception ex)
         {

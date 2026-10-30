@@ -1,6 +1,5 @@
 ﻿using Discord.Addons.Interactive;
 using Discord.WebSocket;
-using FaceAiSharp;
 using HandyAgentFramework;
 using HandyAgentFramework.Embedding;
 using HandyAgentFramework.Embedding.SqliteCache;
@@ -113,10 +112,8 @@ public record Startup(Configuration Configuration)
         services.AddTransient<IImageGeneratorBannedWords, HardcodedBannedWords>();
         services.AddTransient<IImageGenerator, Automatic1111>();
         services.AddTransient<IImageUpscaler, SkiaSharpUpscaler>();
-        services.AddTransient<IImageOutpainter, Automatic1111>();
         services.AddSingleton<StableDiffusionBackendCache>();
         services.AddSingleton<IImageGenerationConfigStorage, DatabaseImageGenerationStorage>();
-        services.AddSingleton<IFaceDetectorWithLandmarks>(_ => new ScrfdDetector(new ScrfdDetectorOptions { ModelPath = Path.Combine(AppContext.BaseDirectory, "onnx", "scrfd_2.5g_kps.onnx") }));
 
         services.AddSingleton<IKeyValueStorage<AgentDomainDocument>, AgentDomainDocumentStorage>();
 

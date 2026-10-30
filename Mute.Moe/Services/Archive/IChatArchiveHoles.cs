@@ -46,6 +46,8 @@ public interface IChatArchiveHoles
 /// <summary>
 /// a potential "hole" in the message archive
 /// </summary>
+/// <param name="Id"></param>
+/// <param name="ChannelId"></param>
 /// <param name="StartMessageId"></param>
 /// <param name="Forward"></param>
 public record ChatArchiveHole(long Id, ulong ChannelId, ulong StartMessageId, bool Forward);

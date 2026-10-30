@@ -21,12 +21,11 @@ public class MuteCommandContextGenerationContext
     /// <param name="config"></param>
     /// <param name="generator"></param>
     /// <param name="upscaler"></param>
-    /// <param name="outpainter"></param>
     /// <param name="http"></param>
     /// <param name="reply"></param>
     /// <param name="storage"></param>
-    public MuteCommandContextGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http, IUserMessage reply, IImageGenerationConfigStorage storage)
-        : base(config, storage, generator, upscaler, outpainter, http)
+    public MuteCommandContextGenerationContext(ImageGenerationConfig config, IImageGenerator generator, IImageUpscaler upscaler, HttpClient http, IUserMessage reply, IImageGenerationConfigStorage storage)
+        : base(config, storage, generator, upscaler, http)
     {
         _reply = reply;
     }

@@ -1,13 +1,6 @@
 ﻿using MetadataExtractor;
 using MetadataExtractor.Formats.Png;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Png;
-using SkiaSharp;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Autofocus.ImageSharp.Extensions;
-using Autofocus.SkiaSharp.Extensions;
 
 namespace Mute.Moe.Extensions;
 
@@ -57,27 +50,6 @@ public static class ImageExtensions
         return ParseGenerationMetadata(stream.GetImageGenerationMetadata());
     }
 
-    /// <summary>
-    /// Get Automatic1111 image generation prompt embedded in this image
-    /// </summary>
-    /// <param name="image"></param>
-    /// <returns></returns>
-    public static (string, string)? GetGenerationPrompt(this Image image)
-    {
-        var pngMeta = image.Metadata.GetPngMetadata();
-        string? ret;
-        var parameters = pngMeta.TextData.FirstOrDefault(a => a.Keyword == "parameters");
-
-        if (string.IsNullOrEmpty(parameters.Value))
-            ret = null;
-        else
-        {
-            ret = parameters.Value;
-        }
-
-        return ParseGenerationMetadata(ret);
-    }
-
     private static (string, string)? ParseGenerationMetadata(string? input)
     {
         if (string.IsNullOrEmpty(input))
@@ -97,32 +69,5 @@ public static class ImageExtensions
         negative = negative.Remove(0, npHeader.Length);
 
         return (positive, negative);
-    }
-
-    /// <summary>
-    /// Convert to an SK Bitmap
-    /// </summary>
-    /// <param name="image"></param>
-    /// <param name="cancellation"></param>
-    /// <returns></returns>
-    public static async Task<SKBitmap> ToSkBitmap(this Image image, CancellationToken cancellation = default)
-    {
-        using var mem = new MemoryStream();
-        await image.SaveAsPngAsync(mem, cancellation);
-        mem.Position = 0;
-
-        return SKBitmap.Decode(mem)
-            ?? throw new InvalidOperationException("SkiaSharp failed to decode the image.");
-    }
-
-    /// <summary>
-    /// Convert SK -> IM#
-    /// </summary>
-    /// <param name="image"></param>
-    /// <param name="cancellation"></param>
-    /// <returns></returns>
-    public static async Task<Image> ToImageSharp(this SKBitmap image, CancellationToken cancellation = default)
-    {
-        return await (await image.ToAutofocusImageAsync()).ToImageSharpAsync();
     }
 }

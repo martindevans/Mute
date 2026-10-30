@@ -1,17 +1,9 @@
 ﻿using Autofocus;
 using Autofocus.Config;
-using Autofocus.FeatureRepaint;
-using Autofocus.ImageSharp.Extensions;
 using Autofocus.Utilities.Progress;
-using FaceAiSharp;
-using Mute.Moe.Services.ImageGen.Outpaint;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using System.Threading.Tasks;
 using Autofocus.SkiaSharp.Extensions;
 using SkiaSharp;
-using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen;
 
@@ -19,7 +11,7 @@ namespace Mute.Moe.Services.ImageGen;
 /// Implementation of various image related services, using Automatic1111 API
 /// </summary>
 public class Automatic1111
-    : IImageGenerator, IImageOutpainter
+    : IImageGenerator
 {
     private readonly StableDiffusionBackendCache _backends;
 
@@ -30,22 +22,18 @@ public class Automatic1111
     private readonly SamplerOptions _i2iSampler;
     private readonly string[] _i2iLoras;
 
-    private readonly int _outpaintSteps;
     private readonly uint _width;
     private readonly uint _height;
 
     private readonly uint _img2imgClipSkip;
     private readonly uint _txt2imgClipSkip;
 
-    private readonly IFaceDetectorWithLandmarks _detector;
-
     /// <summary>
     /// 
     /// </summary>
     /// <param name="config"></param>
     /// <param name="backends"></param>
-    /// <param name="detector"></param>
-    public Automatic1111(Configuration config, StableDiffusionBackendCache backends, IFaceDetectorWithLandmarks detector)
+    public Automatic1111(Configuration config, StableDiffusionBackendCache backends)
     {
         _backends = backends;
 
@@ -67,14 +55,11 @@ public class Automatic1111
         );
         _i2iLoras = config.Automatic1111?.Image2ImageLoras ?? [ ];
 
-        _outpaintSteps = config.Automatic1111?.OutpaintSteps ?? 75;
         _width = config.Automatic1111?.Width ?? 512;
         _height = config.Automatic1111?.Height ?? 768;
 
         _img2imgClipSkip = config.Automatic1111?.Image2ImageClipSkip ?? 2;
         _txt2imgClipSkip = config.Automatic1111?.Text2ImageClipSkip ?? 2;
-
-        _detector = detector;
     }
 
     private async Task<StableDiffusionBackendCache.IBackendAccessor> GetBackend()
@@ -84,7 +69,7 @@ public class Automatic1111
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<Image>> Text2Image(int? seed, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
+    public async Task<IReadOnlyCollection<Base64EncodedImage>> Text2Image(int? seed, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         // Get the backend and lock it for the duration of this operation
         using var scope = await (await GetBackend()).Lock(default);
@@ -118,7 +103,7 @@ public class Automatic1111
             }
         );
 
-        return await ExtractImagesWithRepaint(rawResults.Images, scope, prompt, progressReporter);
+        return rawResults.Images;
     }
 
     private static async Task<LoraConfig[]> GetLorasConfig(IStableDiffusion backend, string[] loras)
@@ -130,7 +115,7 @@ public class Automatic1111
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyCollection<Image>> Image2Image(int? seed, SKBitmap inputImage, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
+    public async Task<IReadOnlyCollection<Base64EncodedImage>> Image2Image(int? seed, SKBitmap inputImage, Prompt prompt, Func<ProgressReport, Task>? progressReporter = null, int batch = 1)
     {
         // Get the backend and lock it for the duration of this operation
         using var scope = await (await GetBackend()).Lock(default);
@@ -174,124 +159,7 @@ public class Automatic1111
             }
         );
 
-        return await ExtractImagesWithRepaint(result.Images, scope, prompt, progressReporter);
-    }
-
-    /// <inheritdoc />
-    public async Task<IReadOnlyCollection<Image>> Outpaint(Image inputImage, string positive, string negative, Func<ProgressReport, Task>? progressReporter = null)
-    {
-        // Get the backend and lock it for the duration of this operation
-        using var scope = await (await GetBackend()).Lock(default);
-        var backend = scope.Backend;
-
-        var model = await backend.StableDiffusionModel(_checkpoint);
-        var conf = await _i2iSampler.ToSamplerConfig(scope);
-        var outpainter = new AutofocusTwoStepOutpainter(backend, model, conf.Sampler, conf.Scheduler, 2, 1, scope.Steps(_outpaintSteps));
-
-        // Clone input image before mutation
-        using var image = inputImage.CloneAs<Rgba32>();
-
-        // Scale down to the correct width
-        image.Mutate(a => a.Resize(new Size((int)_width, 0)));
-
-        // Scale down height if necessary
-        if (image.Height > _height)
-            image.Mutate(a => a.Resize(new Size(0, (int)_height)));
-
-        // Do the actual outpainting
-        return await outpainter.Outpaint(image, positive, negative, progressReporter);
-    }
-
-    private async Task<List<Image>> ExtractImagesWithRepaint(
-        IReadOnlyList<Base64EncodedImage> rawResults,
-        StableDiffusionBackendCache.BackendScope scope,
-        Prompt prompt,
-        Func<ProgressReport, Task>? progressReporter
-    )
-    {
-        // Should we redraw faces?
-        var redraw = !string.IsNullOrWhiteSpace(prompt.FaceEnhancementPositive) || !string.IsNullOrWhiteSpace(prompt.EyeEnhancementPositive);
-        FeatureRepainter? repainter = null;
-        if (redraw)
-        {
-            repainter = new FeatureRepainter(
-                scope.Backend,
-                await scope.Backend.StableDiffusionModel(_checkpoint),
-                await _i2iSampler.ToSamplerConfig(scope),
-                await GetLorasConfig(scope.Backend, _t2iLoras),
-                _detector
-            );
-        }
-
-        // Update progress report
-        if (progressReporter != null)
-            await progressReporter(new ProgressReport(redraw ? 0.5f : 0.9f, null));
-
-        // Extract results and apply repainting
-        var progressStep = 0.45f / rawResults.Count;
-        var progress = 0.5f;
-        var results = new List<Image>();
-        foreach (var item in rawResults)
-        {
-            var itemImage = await item.ToImageSharpAsync<Rgb24>();
-            if (redraw)
-            {
-                using (itemImage)
-                    results.Add(await RepaintFaces(itemImage, repainter!, prompt));
-
-                progress += progressStep;
-                await (progressReporter?.Invoke(new ProgressReport(progress, null)) ?? Task.CompletedTask);
-            }
-            else
-            {
-                results.Add(itemImage);
-            }
-        }
-
-        return results;
-    }
-
-    private static async Task<Image> RepaintFaces(Image<Rgb24> input, FeatureRepainter repainter, Prompt prompt)
-    {
-        var positivesF = prompt.FaceEnhancementPositive?.Split("[SEP]") ?? [];
-        var negativesF = prompt.FaceEnhancementNegative?.Split("[SEP]") ?? [];
-        var positivesE = prompt.EyeEnhancementPositive?.Split("[SEP]") ?? [];
-        var negativesE = prompt.EyeEnhancementNegative?.Split("[SEP]") ?? [];
-
-        var count = Math.Max(Math.Max(positivesF.Length, positivesE.Length), Math.Max(negativesF.Length, negativesE.Length));
-        var prompts = new List<FacePrompt>();
-        for (var i = 0; i < count; i++)
-        {
-            var pf = GetIndexOrLast(positivesF, i);
-            var nf = GetIndexOrLast(negativesF, i);
-            var pe = GetIndexOrLast(positivesE, i);
-            var ne = GetIndexOrLast(negativesE, i);
-            var n = $"{nf}, {ne}";
-            prompts.Add(new FacePrompt(pf, pe, n));
-        }
-
-        var analysis = await repainter.Analyse(input, new AnalysisConfig
-        {
-            MinSize = (64, 64),
-            MaxDetections = 3,
-            MinConfidence = 0.5f,
-        });
-
-        var result = await repainter.Repaint(
-            input,
-            analysis,
-            prompts
-        );
-
-        return result;
-
-        static string GetIndexOrLast(string[]? items, int index)
-        {
-            if (items == null || items.Length == 0)
-                return "";
-
-            return index >= items.Length ? items[^1] : items[index];
-        }
+        return result.Images;
     }
 
     private record SamplerOptions(string Sampler, string Scheduler, float CFG, int Steps)

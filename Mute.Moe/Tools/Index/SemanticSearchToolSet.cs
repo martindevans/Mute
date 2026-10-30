@@ -29,7 +29,7 @@ public partial class SemanticSearchToolSet<TEmbeddingElement>
     private readonly Dictionary<string, ToolDefinition[]> _groups;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SemanticSearchToolSet{byte}"/> class.
+    /// Initializes a new instance of the <see cref="SemanticSearchToolSet{TEmbeddingElement}"/> class.
     /// </summary>
     /// <param name="embeddings">The embeddings provider used for semantic search operations.</param>
     /// <param name="reranking"></param>

@@ -2,15 +2,13 @@
 using System.Threading.Tasks;
 using Discord;
 using Microsoft.Extensions.DependencyInjection;
-using SixLabors.ImageSharp;
 using System.IO;
 using System.Net.Http;
-using Autofocus.ImageSharp.Extensions;
+using Autofocus;
 using Autofocus.SkiaSharp.Extensions;
 using Autofocus.Utilities.Progress;
 using Mute.Moe.Discord.Services.ImageGeneration;
 using SkiaSharp;
-using Image = SixLabors.ImageSharp.Image;
 
 namespace Mute.Moe.Services.ImageGen.Contexts;
 
@@ -24,7 +22,6 @@ public abstract class BaseImageGenerationContext
 
     private readonly IImageGenerator _generator;
     private readonly IImageUpscaler _upscaler;
-    private readonly IImageOutpainter _outpainter;
     private readonly HttpClient _http;
 
     private float _latestProgress;
@@ -41,16 +38,14 @@ public abstract class BaseImageGenerationContext
     /// <param name="storage"></param>
     /// <param name="generator"></param>
     /// <param name="upscaler"></param>
-    /// <param name="outpainter"></param>
     /// <param name="http"></param>
-    protected BaseImageGenerationContext(ImageGenerationConfig config, IImageGenerationConfigStorage storage, IImageGenerator generator, IImageUpscaler upscaler, IImageOutpainter outpainter, HttpClient http)
+    protected BaseImageGenerationContext(ImageGenerationConfig config, IImageGenerationConfigStorage storage, IImageGenerator generator, IImageUpscaler upscaler, HttpClient http)
     {
         _config = config;
         _storage = storage;
         _generator = generator;
         _upscaler = upscaler;
         _http = http;
-        _outpainter = outpainter;
     }
 
     /// <summary>
@@ -104,7 +99,7 @@ public abstract class BaseImageGenerationContext
         return ModifyReply(msg => msg.Content = $"Image generation failed!\n{exception.Message}");
     }
 
-    private async Task OnCompleted(Prompt prompt, IEnumerable<Image?> images)
+    private async Task OnCompleted(Prompt prompt, IEnumerable<Base64EncodedImage?> images)
     {
         var attachments = new List<FileAttachment>();
         foreach (var image in images)
@@ -113,7 +108,7 @@ public abstract class BaseImageGenerationContext
                 continue;
 
             var mem = new MemoryStream();
-            await image.SaveAsPngAsync(mem);
+            (await image.ToSkiaSharpBitmapAsync()).Encode(mem, SKEncodedImageFormat.Png, 90);
             mem.Position = 0;
             attachments.Add(new FileAttachment(mem, $"diffusion{attachments.Count}.png"));
         }
@@ -160,50 +155,42 @@ public abstract class BaseImageGenerationContext
     /// </summary>
     /// <returns></returns>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
-    protected async Task<IReadOnlyCollection<Image?>> Generate()
+    protected async Task<IReadOnlyCollection<Base64EncodedImage?>> Generate()
     {
-        Image? referenceImage = null;
+        SKBitmap? referenceImage = null;
         if (_config.ReferenceImageUrl != null)
-            referenceImage = await Image.LoadAsync(await _http.GetStreamAsync(_config.ReferenceImageUrl));
+            referenceImage = SKBitmap.Decode(await _http.GetStreamAsync(_config.ReferenceImageUrl));
 
         if (referenceImage == null)
             return await GenerateText2Image();
 
         using (referenceImage)
         {
-            using var skReferenceImage = await referenceImage.ToSkBitmap();
-
             return _config.Type switch
             {
-                ImageGenerationType.Generate => await GenerateImage2Image(skReferenceImage),
-                ImageGenerationType.Upscale => [ await GenerateUpscale(skReferenceImage) ],
-                ImageGenerationType.Outpaint => await GenerateOutpaint(referenceImage),
+                ImageGenerationType.Generate => await GenerateImage2Image(referenceImage),
+                ImageGenerationType.Upscale => [ await GenerateUpscale(referenceImage) ],
                 _ => throw new ArgumentOutOfRangeException()
             };
         }
     }
 
-    private async Task<Image> GenerateUpscale(SKBitmap referenceImage)
+    private async Task<Base64EncodedImage> GenerateUpscale(SKBitmap referenceImage)
     {
         return await (await _upscaler.UpscaleImage(referenceImage, (uint)referenceImage.Width * 2, (uint)referenceImage.Height * 2, OnReportProgress))
-           .ToImageSharp();
+           .ToAutofocusImageAsync();
     }
 
-    private Task<IReadOnlyCollection<Image>> GenerateImage2Image(SKBitmap referenceImage)
+    private Task<IReadOnlyCollection<Base64EncodedImage>> GenerateImage2Image(SKBitmap referenceImage)
     {
         var prompt = _config.ToPrompt();
         return _generator.Image2Image(null, referenceImage, prompt, OnReportProgress, _config.BatchSize);
     }
 
-    private Task<IReadOnlyCollection<Image>> GenerateText2Image()
+    private Task<IReadOnlyCollection<Base64EncodedImage>> GenerateText2Image()
     {
         var prompt = _config.ToPrompt();
         return _generator.Text2Image(null, prompt, OnReportProgress, _config.BatchSize);
-    }
-
-    private Task<IReadOnlyCollection<Image>> GenerateOutpaint(Image referenceImage)
-    {
-        return _outpainter.Outpaint(referenceImage, _config.Positive, _config.Negative, OnReportProgress);
     }
     #endregion
 
@@ -212,12 +199,10 @@ public abstract class BaseImageGenerationContext
     {
         var upscaleRow = new ActionRowBuilder();
         var variantRow = new ActionRowBuilder();
-        var outpaintRow = new ActionRowBuilder();
         for (var i = 0; i < count; i++)
         {
             upscaleRow.AddComponent(ButtonBuilder.CreatePrimaryButton($"U{i + 1}", MidjourneyStyleImageGenerationButtons.GetUpscaleButtonId(i)));
             variantRow.AddComponent(ButtonBuilder.CreateSuccessButton($"V{i + 1}", MidjourneyStyleImageGenerationButtons.GetVariantButtonId(i)));
-            outpaintRow.AddComponent(ButtonBuilder.CreateDangerButton($"O{i + 1}", MidjourneyStyleImageGenerationButtons.GetOutpaintButtonId(i)));
         }
 
         upscaleRow.AddComponent(ButtonBuilder.CreateSecondaryButton("♻️", MidjourneyStyleImageGenerationButtons.GetRedoButtonId()));
@@ -225,7 +210,6 @@ public abstract class BaseImageGenerationContext
         var components = new ComponentBuilder();
         components.AddRow(upscaleRow);
         components.AddRow(variantRow);
-        components.AddRow(outpaintRow);
         return components;
     }
     #endregion
@@ -249,7 +233,6 @@ public static class ContextImageGenerationExtensions
         var blacklist = context.Services.GetRequiredService<IImageGeneratorBannedWords>();
         var generator = context.Services.GetRequiredService<IImageGenerator>();
         var upscaler = context.Services.GetRequiredService<IImageUpscaler>();
-        var outpainter = context.Services.GetRequiredService<IImageOutpainter>();
         var http = context.Services.GetRequiredService<HttpClient>();
         var muteConfig = context.Services.GetRequiredService<Configuration>();
 
@@ -271,7 +254,7 @@ public static class ContextImageGenerationExtensions
 
         // Do the actual work
         var config = ImageGenerationConfig.FromPrompt(parsedPrompt, referenceUrl, context.IsPrivate, muteConfig.ImageGeneration?.BatchSize ?? 2, ImageGenerationType.Generate);
-        var ctx = new MuteCommandContextGenerationContext(config, generator, upscaler, outpainter, http, reply, storage);
+        var ctx = new MuteCommandContextGenerationContext(config, generator, upscaler, http, reply, storage);
         await ctx.Run();
     }
 
