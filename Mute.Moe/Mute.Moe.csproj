@@ -68,9 +68,9 @@
     <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" />
     <PackageReference Include="MetadataExtractor" Version="2.9.3" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.26.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.13" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.14" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.1" />
     <PackageReference Include="Microsoft.Recognizers.Text" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.Choice" Version="1.8.13" />
     <PackageReference Include="Microsoft.Recognizers.Text.DateTime" Version="1.8.13" />
@@ -92,15 +92,15 @@
     <PackageReference Include="Serpent" Version="0.0.41" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
-    <PackageReference Include="SkiaSharp" Version="4.153.1" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
+    <PackageReference Include="SkiaSharp" Version="4.154.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.154.0" />
     <PackageReference Include="SourceGear.sqlite3.ext" Version="3.53.4.1" />
     <PackageReference Include="SteamWebAPI2" Version="5.0.0" />
     <PackageReference Include="System.Data.SQLite" Version="2.0.4" />
     <PackageReference Include="System.IO.Abstractions" Version="22.3.0" />
     <PackageReference Include="System.Linq.LevenshteinDistance" Version="0.99.0-beta" />
-    <PackageReference Include="System.Numerics.Tensors" Version="10.0.13" />
-    <PackageReference Include="System.ServiceModel.Syndication" Version="10.0.13" />
+    <PackageReference Include="System.Numerics.Tensors" Version="10.0.14" />
+    <PackageReference Include="System.ServiceModel.Syndication" Version="10.0.14" />
     <PackageReference Include="Whisper.Runtime" Version="1.4.2001" />
   </ItemGroup>
 
