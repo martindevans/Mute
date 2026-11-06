@@ -1,7 +1,4 @@
-﻿using Microsoft.Recognizers.Text;
-using Microsoft.Recognizers.Text.Choice;
-using Microsoft.Recognizers.Text.DateTime;
-using Microsoft.Recognizers.Text.NumberWithUnit;
+﻿using Microsoft.Recognizers.Text.DateTime;
 
 namespace Mute.Moe.Utilities;
 
@@ -14,9 +11,8 @@ public static class FuzzyParsing
     /// Extract a range of time
     /// </summary>
     /// <param name="userInput"></param>
-    /// <param name="culture"></param>
     /// <returns></returns>
-    public static MomentRangeExtraction MomentRange(string userInput, string culture = Culture.EnglishOthers)
+    public static MomentRangeExtraction MomentRange(string userInput)
     {
         return Extract(userInput)
             ?? new MomentRangeExtraction(
@@ -28,7 +24,7 @@ public static class FuzzyParsing
         MomentRangeExtraction? Extract(string input)
         {
             // Get DateTime for the specified culture
-            var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview, DateTime.UtcNow);
+            var results = DateTimeRecognizer.RecognizeDateTime(input, "en-*", DateTimeOptions.EnablePreview, DateTime.UtcNow);
 
             //Try to get the date/time range
             var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2.daterange"));
@@ -104,10 +100,9 @@ public static class FuzzyParsing
     /// Extract a single point in time
     /// </summary>
     /// <param name="userInput"></param>
-    /// <param name="culture"></param>
     /// <param name="biasNext">If there are multiple resolutions take the first one in the future</param>
     /// <returns></returns>
-    public static MomentExtraction Moment(string userInput, string culture = Culture.EnglishOthers, bool biasNext = true)
+    public static MomentExtraction Moment(string userInput, bool biasNext = true)
     {
         return Extract(userInput)
             ?? Extract($"in {userInput}")
@@ -120,7 +115,7 @@ public static class FuzzyParsing
         MomentExtraction? Extract(string input)
         {
             // Get DateTime for the specified culture
-            var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview, DateTime.UtcNow);
+            var results = DateTimeRecognizer.RecognizeDateTime(input, "en-*", DateTimeOptions.EnablePreview, DateTime.UtcNow);
 
             // Try to get the date/time
             var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2.datetime"));
@@ -209,207 +204,4 @@ public static class FuzzyParsing
     /// <param name="Value"></param>
     /// <param name="ErrorMessage"></param>
     public record MomentExtraction(bool IsValid, DateTime Value, string? ErrorMessage = null);
-
-
-    /// <summary>
-    /// Extract a time offset (i.e. timezone) from user input
-    /// </summary>
-    /// <param name="input"></param>
-    /// <param name="culture"></param>
-    /// <returns></returns>
-    public static TimeOffsetExtraction TimeOffset(string input, string culture = Culture.EnglishOthers)
-    {
-        return Extract() ?? new TimeOffsetExtraction(
-            IsValid: false,
-            UtcOffset: TimeSpan.Zero,
-            ErrorMessage: "I'm sorry, that doesn't seem to be a valid timezone"
-        );
-
-        TimeOffsetExtraction? Extract()
-        {
-            var results = DateTimeRecognizer.RecognizeDateTime(input, culture, DateTimeOptions.EnablePreview);
-
-            var dt = results.FirstOrDefault(d => d.TypeName.StartsWith("datetimeV2"));
-            if (dt == null)
-                return null;
-
-            var resolutionValues = (IList<Dictionary<string, string>>)dt.Resolution["values"];
-            var subType = dt.TypeName.Split('.').Last();
-
-            if (subType.Contains("timezone"))
-            {
-                var values = resolutionValues.FirstOrDefault();
-                if (values == null)
-                    return null;
-
-                if (!values.TryGetValue("utcOffsetMins", out var utcOff))
-                    return null;
-
-                // https://github.com/Microsoft/Recognizers-Text/issues/871
-                if (utcOff == "-10000")
-                    return null;
-
-                return new TimeOffsetExtraction(IsValid: true, UtcOffset: TimeSpan.FromMinutes(int.Parse(utcOff)));
-            }
-
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Result from trying to extract a timeoffset from user input
-    /// </summary>
-    /// <param name="IsValid"></param>
-    /// <param name="UtcOffset"></param>
-    /// <param name="ErrorMessage"></param>
-    public record TimeOffsetExtraction(bool IsValid, TimeSpan UtcOffset, string? ErrorMessage = null);
-
-
-    /// <summary>
-    /// Extract a boolean choice from user input
-    /// </summary>
-    /// <param name="input"></param>
-    /// <param name="culture"></param>
-    /// <returns></returns>
-    public static BooleanChoiceExtraction BooleanChoice(string input, string culture = Culture.EnglishOthers)
-    {
-        var bools = ChoiceRecognizer.RecognizeBoolean(input, culture).Where(a => a.TypeName == "boolean").ToArray();
-
-        var trues = 0;
-        var falses = 0;
-        float bestConfidence = 0;
-
-        foreach (var item in bools)
-        {
-            if (!item.Resolution.TryGetValue("value", out var valueObj))
-                continue;
-            if (!item.Resolution.TryGetValue("score", out var confidenceObj))
-                continue;
-
-            var value = Convert.ToBoolean(valueObj);
-            var confidence = Convert.ToSingle(confidenceObj);
-
-            // Keep a count of true and false matches
-            if (value)
-                trues++;
-            else
-                falses++;
-
-            // Return false as soon as we find both results (i.e. we're not sure)
-            if (trues * falses != 0)
-                return new BooleanChoiceExtraction(false, 0);
-
-            bestConfidence = Math.Max(bestConfidence, confidence);
-        }
-
-        return new BooleanChoiceExtraction(trues > 0, bestConfidence);
-    }
-
-    /// <summary>
-    /// Result from trying to extract a boolean choice from user input
-    /// </summary>
-    /// <param name="Value"></param>
-    /// <param name="Confidence"></param>
-    public record BooleanChoiceExtraction(bool Value, float Confidence);
-
-
-    /// <summary>
-    /// Extract a currency and an amount in that currency from user input
-    /// </summary>
-    /// <param name="input"></param>
-    /// <param name="culture"></param>
-    /// <returns></returns>
-    public static CurrencyAndAmountExtraction CurrencyAndAmount(string input, string culture = Culture.EnglishOthers)
-    {
-        return Extract() ?? CurrencyAndAmountExtraction.CreateError("value,unit");
-
-        CurrencyAndAmountExtraction? Extract()
-        {
-            var results = NumberWithUnitRecognizer.RecognizeCurrency(input, culture);
-
-            //Try to get the result
-            var cur = results.FirstOrDefault(d => d.TypeName.StartsWith("currency"));
-            if (cur == null)
-                return null;
-
-            var values = cur.Resolution;
-
-            if (!values.TryGetValue("unit", out var unitObj) || unitObj is not string unit)
-                return CurrencyAndAmountExtraction.CreateError("unit");
-
-            if (!values.TryGetValue("value", out var valueObj) || valueObj is not string value)
-                return CurrencyAndAmountExtraction.CreateError("value");
-
-            if (!decimal.TryParse(value, out var deci))
-                return CurrencyAndAmountExtraction.CreateError("value");
-
-            return CurrencyAndAmountExtraction.CreateValid(unit, deci);
-        }
-    }
-
-    /// <summary>
-    /// Result from trying to extract currency and amount from user input
-    /// </summary>
-    public record CurrencyAndAmountExtraction
-    {
-        /// <summary>
-        /// Indicates if this represents a successful extraction
-        /// </summary>
-        public bool IsValid { get; private init; }
-
-        /// <summary>
-        /// The currency unit, null if this is an error state (IsValid == false)
-        /// </summary>
-        public string? Currency { get; private init; }
-
-        /// <summary>
-        /// The currency amount, zero if this is an error state (IsValid == false)
-        /// </summary>
-        public decimal Amount { get; private init; }
-
-        /// <summary>
-        /// Error message, only non-null when IsValid == false
-        /// </summary>
-        public string? ErrorMessage { get; private init; }
-
-        private CurrencyAndAmountExtraction()
-        {
-            
-        }
-
-        /// <summary>
-        /// Create an error state
-        /// </summary>
-        /// <param name="error"></param>
-        /// <returns></returns>
-        public static CurrencyAndAmountExtraction CreateError(string error)
-        {
-            return new CurrencyAndAmountExtraction
-            {
-                IsValid = false,
-                ErrorMessage = error,
-
-                Currency = null,
-                Amount = 0
-            };
-        }
-
-        /// <summary>
-        /// Create a valid state
-        /// </summary>
-        /// <param name="currency"></param>
-        /// <param name="amount"></param>
-        /// <returns></returns>
-        public static CurrencyAndAmountExtraction CreateValid(string currency, decimal amount)
-        {
-            return new CurrencyAndAmountExtraction
-            {
-                IsValid = true,
-                ErrorMessage = null,
-
-                Currency = currency,
-                Amount = amount
-            };
-        }
-    }
 }
