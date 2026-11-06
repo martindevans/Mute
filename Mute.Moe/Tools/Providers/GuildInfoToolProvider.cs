@@ -56,7 +56,7 @@ public class GuildInfoToolProvider
             return await CannotFindGuildError(id);
 
         // Limit length of description
-        var desc = guild.Description;
+        var desc = guild.Description ?? "";
         if (desc.Length > 128)
         {
             var sliced = desc.Length - 128;
@@ -76,11 +76,15 @@ public class GuildInfoToolProvider
         var channelResults = new List<object>();
         foreach (var channel in await guild.GetChannelsAsync())
         {
+            var tc = channel as ITextChannel;
+
             channelResults.Add(new
             {
                 name = channel.Name,
                 id = channel.Id,
-                type = channel.ChannelType
+                type = channel.ChannelType,
+                topic = tc?.Topic ?? "",
+                nsfw = tc?.IsNsfw ?? false,
             });
         }
 
