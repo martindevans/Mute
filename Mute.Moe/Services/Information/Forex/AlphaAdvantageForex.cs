@@ -1,8 +1,9 @@
-﻿using System.IO;
+﻿using FluidCaching;
+using Humanizer;
+using Newtonsoft.Json;
+using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using FluidCaching;
-using Newtonsoft.Json;
 
 namespace Mute.Moe.Services.Information.Forex;
 
@@ -15,7 +16,9 @@ public class AlphaAdvantageForex
 
     private readonly FluidCache<IForexQuote> _cache;
     private readonly IIndex<KeyValuePair<string, string>, IForexQuote> _bySymbolPair;
-        
+
+    private readonly Task<HashSet<string>> _validCodes;
+
     /// <summary>
     /// 
     /// </summary>
@@ -29,11 +32,19 @@ public class AlphaAdvantageForex
 
         _cache = new FluidCache<IForexQuote>(config.AlphaAdvantage.CacheSize, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(config.AlphaAdvantage.CacheMaxAgeSeconds), () => DateTime.UtcNow);
         _bySymbolPair = _cache.AddIndex("BySymbolPair", a => new KeyValuePair<string, string>(a.FromCode, a.ToCode));
+
+        _validCodes = GetCurrencyCodeSet();
     }
 
     /// <inheritdoc />
     public async Task<IForexQuote?> GetExchangeRate(string fromSymbol, string toSymbol)
     {
+        // Check that the inputs are valid
+        var valid = await _validCodes;
+        if (!valid.Contains(fromSymbol) || !valid.Contains(toSymbol))
+            return null;
+
+        // Try to get it from the cache
         var cached = await _bySymbolPair.GetItem(new KeyValuePair<string, string>(fromSymbol, toSymbol));
         if (cached != null)
             return cached;
@@ -57,6 +68,50 @@ public class AlphaAdvantageForex
         _cache.Add(response.Response);
         return response.Response;
     }
+
+    private async Task<HashSet<string>> GetCurrencyCodeSet()
+    {
+        var physical = await GetCurrencyList("https://www.alphavantage.co/physical_currency_list/");
+        var crypto = await GetCurrencyList("https://www.alphavantage.co/cryptocurrency_list/");
+
+        return
+        [
+            ..physical.Concat(crypto).Select(a => a.Code),
+        ];
+    }
+
+    private async Task<IReadOnlyList<Currency>> GetCurrencyList(string url)
+    {
+        using var result = await _http.GetAsync(url);
+        if (!result.IsSuccessStatusCode)
+            return [];
+
+        using var reader = new StreamReader(await result.Content.ReadAsStreamAsync());
+
+        // Read header ("currency code,currency name")
+        await reader.ReadLineAsync();
+
+        // Read and parse lines
+        var results = new List<Currency>();
+        while (true)
+        {
+            var line = await reader.ReadLineAsync();
+            if (string.IsNullOrWhiteSpace(line))
+                break;
+
+            var splits = line.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            if (splits.Length != 2)
+                continue;
+
+            var code = splits[0];
+            var name = splits[1];
+            results.Add(new Currency(code, name));
+        }
+
+        return results;
+    }
+
+    private record Currency(string Code, string Name);
 
     #region model
     private class ExchangeRateResponseContainer

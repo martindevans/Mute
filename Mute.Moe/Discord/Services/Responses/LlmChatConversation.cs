@@ -435,6 +435,7 @@ public partial class LlmChatConversation
     }
     #endregion
 
+    #region status
     /// <summary>
     /// Current state of the processing task for this conversation
     /// </summary>
@@ -472,6 +473,7 @@ public partial class LlmChatConversation
         UsageDetails? Usage = default,
         int? Messages = default
     );
+    #endregion
 
     #region logging
     [LoggerMessage(LogLevel.Warning, "Conversation processor OperationCanceledException for channel {name} ({id})")]
